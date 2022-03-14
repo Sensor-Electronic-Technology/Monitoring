@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MonitoringConfig.Infrastructure.Services {
-    public interface IRepository {
+namespace MonitoringData.Infrastructure.Model {
+    public interface IDataRepository {
 
     }
 }

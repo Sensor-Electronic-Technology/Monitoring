@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MonitoringSystem.Shared.Data;
 
 namespace MonitoringConfig.Infrastructure.Data.Model {
+
     public abstract class AlertLevel {
         public int Id { get; set; }
         public bool Bypass { get; set; }
@@ -13,6 +14,7 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public bool Enabled { get; set; }
         public int? FacilityActionId { get; set; }
         public FacilityAction FacilityAction { get; set; }
+        
     }
 
     public class AnalogLevel : AlertLevel {

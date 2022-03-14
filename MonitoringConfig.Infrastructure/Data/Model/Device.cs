@@ -16,4 +16,12 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public string DatabaseName { get; set; }
         public ICollection<FacilityZone> Zones { get; set; } = new List<FacilityZone>();
     }
+
+    public class ApiDevice : Device {
+        public string ApiToken { get; set; }
+    }
+
+    public class BnetDevice : Device {
+
+    }
 }

@@ -3,21 +3,25 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringSystem.Shared", "MonitoringSystem.Shared\MonitoringSystem.Shared.csproj", "{E0E9D5E7-D5F6-4344-9E97-69B034D72217}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringSystem.Shared", "MonitoringSystem.Shared\MonitoringSystem.Shared.csproj", "{E0E9D5E7-D5F6-4344-9E97-69B034D72217}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringConfig.Infrastructure", "MonitoringConfig.Infrastructure\MonitoringConfig.Infrastructure.csproj", "{F3B3D8B1-B78B-4F44-BFE2-EF63F2F5AB76}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringConfig.Infrastructure", "MonitoringConfig.Infrastructure\MonitoringConfig.Infrastructure.csproj", "{F3B3D8B1-B78B-4F44-BFE2-EF63F2F5AB76}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MonitoringConfig", "MonitoringConfig", "{4EAC5195-C134-4FD8-955B-0A3FC69DE50B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{38A3A20D-6DDB-49C0-B934-3E9782311FB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringData.Streaming", "MonitoringData.Streaming\MonitoringData.Streaming.csproj", "{33D6F688-3D22-4157-B3D8-246999F5DD12}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringData.Streaming", "MonitoringData.Streaming\MonitoringData.Streaming.csproj", "{33D6F688-3D22-4157-B3D8-246999F5DD12}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringData.API", "MonitoringData.API\MonitoringData.API.csproj", "{AA0AE214-BE33-4E40-9B3D-9C3704FD16D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringData.API", "MonitoringData.API\MonitoringData.API.csproj", "{AA0AE214-BE33-4E40-9B3D-9C3704FD16D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringConfig.ConfigAPI", "MonitoringConfig.ConfigAPI\MonitoringConfig.ConfigAPI.csproj", "{80F02670-C57B-4FFE-86CB-828492A794E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringConfig.ConfigAPI", "MonitoringConfig.ConfigAPI\MonitoringConfig.ConfigAPI.csproj", "{80F02670-C57B-4FFE-86CB-828492A794E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringData.Infrastructure", "MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj", "{B223EC12-9D45-4ACE-9F0C-7883C5718655}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringData.Infrastructure", "MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj", "{B223EC12-9D45-4ACE-9F0C-7883C5718655}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Testing", "Testing", "{199BA538-0A44-421B-8FC9-3A10F16EEE6B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringSystem.ConsoleTesting", "MonitoringSystem.ConsoleTesting\MonitoringSystem.ConsoleTesting.csproj", "{49515509-5FF6-4E9D-A75F-4E0013794E73}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +53,10 @@ Global
 		{B223EC12-9D45-4ACE-9F0C-7883C5718655}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B223EC12-9D45-4ACE-9F0C-7883C5718655}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B223EC12-9D45-4ACE-9F0C-7883C5718655}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49515509-5FF6-4E9D-A75F-4E0013794E73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49515509-5FF6-4E9D-A75F-4E0013794E73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49515509-5FF6-4E9D-A75F-4E0013794E73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49515509-5FF6-4E9D-A75F-4E0013794E73}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -59,6 +67,7 @@ Global
 		{AA0AE214-BE33-4E40-9B3D-9C3704FD16D5} = {38A3A20D-6DDB-49C0-B934-3E9782311FB6}
 		{80F02670-C57B-4FFE-86CB-828492A794E5} = {4EAC5195-C134-4FD8-955B-0A3FC69DE50B}
 		{B223EC12-9D45-4ACE-9F0C-7883C5718655} = {38A3A20D-6DDB-49C0-B934-3E9782311FB6}
+		{49515509-5FF6-4E9D-A75F-4E0013794E73} = {199BA538-0A44-421B-8FC9-3A10F16EEE6B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1E2B0F8D-F1CD-4933-8EB8-770DED0DB5FF}

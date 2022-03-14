@@ -15,4 +15,21 @@ namespace MonitoringSystem.Shared.Data {
         DiscreteInput = 3,
         Input = 4
     }
+
+    public enum ActionType {
+        Okay = 6,
+        Alarm = 5,
+        Warning = 4,
+        SoftWarn = 3,
+        Maintenance = 2,
+        Custom = 1
+    }
+
+    public enum DeviceState { 
+        OKAY, 
+        WARNING, 
+        ALARM,
+        MAINTENANCE
+    }
+
 }

@@ -3,15 +3,6 @@ using MonitoringSystem.Shared.Data;
 using System.Collections.ObjectModel;
 
 namespace MonitoringConfig.Infrastructure.Data.Model {
-    public enum ActionType {
-        Okay = 6,
-        Alarm = 5,
-        Warning = 4,
-        SoftWarn = 3,
-        Maintenance = 2,
-        Custom = 1
-    }
-
     [Owned]
     public class ActionOutput {
         public DiscreteOutput Output { get; set; }
@@ -26,12 +17,13 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public int FacilityActionId { get; set; }
         public FacilityAction FacilityAction { get; set; }
         public ModbusAddress ModbusAddress { get; set; }
-
     }
 
     public class FacilityAction {
         public int Id { get; set; }
         public string ActionName { get; set; }
+        public bool EmailEnabled { get; set; }
+        public int EmailPeriod { get; set; }
         public ActionType ActionType { get; set; }
         public ICollection<ModbusActionMap> ModbusActionMapping { get; set; } = new List<ModbusActionMap>();
         public ICollection<ActionOutput> ActionOutputs { get; set; } = new List<ActionOutput>();

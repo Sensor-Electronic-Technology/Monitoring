@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using MonitoringSystem.Shared.Data;
 
 namespace MonitoringConfig.Infrastructure.Data.Model {
     public class FacilityContext:DbContext {
@@ -76,9 +77,9 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
                     a.HasKey("Id");
                 });
 
-            builder.Entity<MonitoringBox>()
-                .Property(e => e.DataConfigIteration)
-                .HasDefaultValue(0);
+            //builder.Entity<MonitoringBox>()
+            //    .Property(e => e.DataConfigIteration)
+            //    .HasDefaultValue(0);
 
             builder.Entity<FacilityZone>()
                 .OwnsOne(p => p.ZoneSize);

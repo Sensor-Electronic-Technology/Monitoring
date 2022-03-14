@@ -17,13 +17,5 @@ namespace MonitoringConfig.Infrastructure.Data.DataAccess {
             this._context = context;
             this._logger = logger;
         }
-
-        //public async Task<T> GetDevice<T>(string deviceId) where T:Device {
-        //    return await this._context.Devices.OfType<T>().FirstOrDefaultAsync(e => e.Identifier == deviceId);
-        //}
-
-        //public async Task<NetworkConfiguration> GetNetworkConfiguration() {
-
-        //}
     }
 }
