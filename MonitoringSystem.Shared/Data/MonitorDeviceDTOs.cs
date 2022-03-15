@@ -8,7 +8,6 @@ namespace MonitoringSystem.Shared.Data {
     public class DeviceDTO {
         public string Identifier { get; set; }
         public string DatabaseName { get; set; }
-        public ChannelRegisterMapping Mapping { get; set; }
         public NetworkConfiguration NetworkConfiguration { get; set; }
     }
 

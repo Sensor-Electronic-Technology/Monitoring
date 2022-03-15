@@ -4,7 +4,7 @@
 
 namespace FacilityMonitoring.Infrastructure.Migrations
 {
-    public partial class AddEmailDefinitions : Migration
+    public partial class updateEmailSettings : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -14,14 +14,14 @@ namespace FacilityMonitoring.Infrastructure.Migrations
 
             migrationBuilder.AddColumn<bool>(
                 name: "EmailEnabled",
-                table: "AlertLevel",
+                table: "FacilityActions",
                 type: "bit",
                 nullable: false,
                 defaultValue: false);
 
             migrationBuilder.AddColumn<int>(
                 name: "EmailPeriod",
-                table: "AlertLevel",
+                table: "FacilityActions",
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
@@ -31,11 +31,11 @@ namespace FacilityMonitoring.Infrastructure.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "EmailEnabled",
-                table: "AlertLevel");
+                table: "FacilityActions");
 
             migrationBuilder.DropColumn(
                 name: "EmailPeriod",
-                table: "AlertLevel");
+                table: "FacilityActions");
 
             migrationBuilder.AddColumn<int>(
                 name: "DataConfigIteration",

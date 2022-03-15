@@ -26,7 +26,7 @@ namespace MonitoringData.Infrastructure.Services {
         private MonitorDevice _monitorDevice;
         private readonly IMongoCollection<AnalogChannel> _analogChannels;
         private readonly IMongoCollection<DiscreteChannel> _discreteChannels;
-        private readonly IMongoCollection<OutputChannel> _outputChannels;
+        //private readonly IMongoCollection<OutputChannel> _outputChannels;
         private readonly IMongoCollection<VirtualChannel> _virtualChannels;
         private readonly IMongoCollection<MonitorAlert> _monitorAlerts;
         private readonly IMongoCollection<MonitorAction> _monitorActions;

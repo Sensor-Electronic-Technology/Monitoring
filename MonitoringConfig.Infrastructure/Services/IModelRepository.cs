@@ -10,6 +10,6 @@ namespace MonitoringConfig.Infrastructure.Services {
     public interface IModelRepository {
         Task<T> GetDevice<T>(string identifier) where T:Device;
         Task<IList<Channel>> Channels(string deviceId);
-        Task<NetworkConfiguration> GetNetworkConfiguration(string deviceId);
+        Task<DeviceDTO> GetNetworkConfiguration(string deviceId);
     }
 }

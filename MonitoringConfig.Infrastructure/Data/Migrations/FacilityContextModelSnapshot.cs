@@ -123,12 +123,6 @@ namespace FacilityMonitoring.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("EmailEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("EmailPeriod")
-                        .HasColumnType("int");
-
                     b.Property<bool>("Enabled")
                         .HasColumnType("bit");
 
@@ -237,6 +231,12 @@ namespace FacilityMonitoring.Infrastructure.Migrations
                     b.Property<int>("ActionType")
                         .HasColumnType("int");
 
+                    b.Property<bool>("EmailEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("EmailPeriod")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.ToTable("FacilityActions");
@@ -246,37 +246,49 @@ namespace FacilityMonitoring.Infrastructure.Migrations
                         {
                             Id = 1,
                             ActionName = "Okay",
-                            ActionType = 6
+                            ActionType = 6,
+                            EmailEnabled = false,
+                            EmailPeriod = 0
                         },
                         new
                         {
                             Id = 2,
                             ActionName = "Alarm",
-                            ActionType = 5
+                            ActionType = 5,
+                            EmailEnabled = false,
+                            EmailPeriod = 0
                         },
                         new
                         {
                             Id = 3,
                             ActionName = "Warning",
-                            ActionType = 4
+                            ActionType = 4,
+                            EmailEnabled = false,
+                            EmailPeriod = 0
                         },
                         new
                         {
                             Id = 4,
                             ActionName = "SoftWarn",
-                            ActionType = 3
+                            ActionType = 3,
+                            EmailEnabled = false,
+                            EmailPeriod = 0
                         },
                         new
                         {
                             Id = 5,
                             ActionName = "Maintenance",
-                            ActionType = 2
+                            ActionType = 2,
+                            EmailEnabled = false,
+                            EmailPeriod = 0
                         },
                         new
                         {
                             Id = 6,
                             ActionName = "ResetWetFloor",
-                            ActionType = 1
+                            ActionType = 1,
+                            EmailEnabled = false,
+                            EmailPeriod = 0
                         });
                 });
 
