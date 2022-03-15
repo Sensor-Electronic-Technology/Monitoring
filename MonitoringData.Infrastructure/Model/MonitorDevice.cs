@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MonitoringData.Infrastructure.Model {
-    public interface IDataRepository {
+    public class MonitorDevice {
 
     }
 }

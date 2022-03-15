@@ -29,8 +29,4 @@ namespace MonitoringData.Infrastructure.Model {
     public class ActionItem : MonitorItem {
 
     }
-
-    public class MonitorDevice : MonitorItem {
-
-    }
 }
