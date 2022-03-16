@@ -9,12 +9,11 @@ using System.Threading.Tasks;
 namespace MonitoringSystem.ConsoleTesting {
     public class Parsing {
         static async Task Main(string[] args) {
-            ParseConfiguation();
+            //ParseConfiguation();
             //await FixDiscreteNames("Epi1");
             //await FixAnalogNames("Epi1");
             //await FixOutputNames("Epi1");
             //await SetAlertNames();
-
         }
         static async Task SetAlertNames() {
             using var context = new FacilityContext();

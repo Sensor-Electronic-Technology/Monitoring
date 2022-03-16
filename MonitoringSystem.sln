@@ -21,7 +21,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringData.Infrastructu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Testing", "Testing", "{199BA538-0A44-421B-8FC9-3A10F16EEE6B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringSystem.ConsoleTesting", "MonitoringSystem.ConsoleTesting\MonitoringSystem.ConsoleTesting.csproj", "{49515509-5FF6-4E9D-A75F-4E0013794E73}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringSystem.ConsoleTesting", "MonitoringSystem.ConsoleTesting\MonitoringSystem.ConsoleTesting.csproj", "{49515509-5FF6-4E9D-A75F-4E0013794E73}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{15D9C67A-9861-4B3B-B225-92E898C90146}"
+	ProjectSection(SolutionItems) = preProject
+		Assembiles\Microsoft.Exchange.WebServices.NETStandard.deps.json = Assembiles\Microsoft.Exchange.WebServices.NETStandard.deps.json
+		Assembiles\Microsoft.Exchange.WebServices.NETStandard.dll = Assembiles\Microsoft.Exchange.WebServices.NETStandard.dll
+		Assembiles\Microsoft.Exchange.WebServices.NETStandard.pdb = Assembiles\Microsoft.Exchange.WebServices.NETStandard.pdb
+		Assembiles\NModbus4.deps.json = Assembiles\NModbus4.deps.json
+		Assembiles\NModbus4.dll = Assembiles\NModbus4.dll
+		Assembiles\NModbus4.pdb = Assembiles\NModbus4.pdb
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

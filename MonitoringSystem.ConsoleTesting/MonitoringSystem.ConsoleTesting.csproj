@@ -16,5 +16,11 @@
     <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
   </ItemGroup>
 	
+  <ItemGroup>
+    <Reference Include="NModbus4">
+      <HintPath>..\Assembiles\NModbus4.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+	
 
 </Project>

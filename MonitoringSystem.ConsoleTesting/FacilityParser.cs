@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace MonitoringSystem.ConsoleTesting {
     public class FacilityParser {
 
-        public static string boxId = "Epi1";
+        public static string boxId = "Epi2";
         public static string boxAnalogPath = $@"C:\MonitorFiles\{boxId}\ANALOG.TXT";
         public static string boxActionPath = $@"C:\MonitorFiles\{boxId}\ACTIONS.TXT";
         public static string boxDiscretePath = $@"C:\MonitorFiles\{boxId}\DIGITAL.TXT";
@@ -141,7 +141,7 @@ namespace MonitoringSystem.ConsoleTesting {
             context.Devices.Add(box);
             var ret = context.SaveChanges();
             if (ret > 0) {
-                Console.WriteLine("Monitoring Boxx added");
+                Console.WriteLine("Monitoring Box added");
             } else {
                 Console.WriteLine("Failed to add Monitoring Box");
             }
@@ -180,15 +180,15 @@ namespace MonitoringSystem.ConsoleTesting {
 
             channelMapping.DiscreteRegisterType = ModbusRegister.DiscreteInput;
             channelMapping.DiscreteStart = 0;
-            channelMapping.DiscreteStop = 31;
+            channelMapping.DiscreteStop = 39;
 
             channelMapping.OutputRegisterType = ModbusRegister.DiscreteInput;
-            channelMapping.OutputStart = 32;
-            channelMapping.OutputStop = 39;
+            channelMapping.OutputStart = 40;
+            channelMapping.OutputStop = 47;
 
             channelMapping.ActionRegisterType = ModbusRegister.DiscreteInput;
-            channelMapping.ActionStart = 40;
-            channelMapping.ActionStop = 45;
+            channelMapping.ActionStart = 48;
+            channelMapping.ActionStop = 53;
 
             channelMapping.VirtualRegisterType = ModbusRegister.Coil;
             channelMapping.VirtualStart = 0;
@@ -196,11 +196,11 @@ namespace MonitoringSystem.ConsoleTesting {
 
             channelMapping.AlertRegisterType = ModbusRegister.Holding;
             channelMapping.AlertStart = 0;
-            channelMapping.AlertStop = 51;
+            channelMapping.AlertStop = 59;
 
             channelMapping.DeviceRegisterType = ModbusRegister.Holding;
-            channelMapping.DeviceStart = 52;
-            channelMapping.DeviceStop = 52;
+            channelMapping.DeviceStart = 60;
+            channelMapping.DeviceStop = 60;
 
             netConfig.ModbusConfig.ChannelMapping = channelMapping;
 
