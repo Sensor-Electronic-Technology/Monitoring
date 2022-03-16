@@ -1,4 +1,5 @@
 ﻿using MongoDB.Bson;
+using MonitoringSystem.Shared.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,6 @@ namespace MonitoringData.Infrastructure.Model {
     public class MonitorItem {
         public int _id { get; set; }
         public string identifier { get; set; }
-        public ObjectId deviceId { get; set; }
     }
 
     public class AnalogChannel : MonitorItem {
@@ -29,6 +29,7 @@ namespace MonitoringData.Infrastructure.Model {
     }
 
     public class ActionItem : MonitorItem {
+        public ActionType actionType { get; set; }
         public bool EmailEnabled { get; set; }
         public int EmailPeriod { get; set; }
     }
