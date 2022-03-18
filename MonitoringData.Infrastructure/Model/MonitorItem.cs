@@ -10,6 +10,7 @@ namespace MonitoringData.Infrastructure.Model {
     public class MonitorItem {
         public int _id { get; set; }
         public string identifier { get; set; }
+        public ObjectId deviceId { get; set; }
     }
 
     public class AnalogChannel : MonitorItem {

@@ -18,12 +18,10 @@
   <ItemGroup>
     <ProjectReference Include="..\MonitoringConfig.Infrastructure\MonitoringConfig.Infrastructure.csproj" />
     <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
+	<PackageReference Include="Microsoft.Exchange.WebServices.NETStandard" Version="1.1.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Microsoft.Exchange.WebServices.NETStandard">
-      <HintPath>..\Assembiles\Microsoft.Exchange.WebServices.NETStandard.dll</HintPath>
-    </Reference>
     <Reference Include="NModbus4">
       <HintPath>..\Assembiles\NModbus4.dll</HintPath>
     </Reference>

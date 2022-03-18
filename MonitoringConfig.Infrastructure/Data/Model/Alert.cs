@@ -7,6 +7,7 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public bool Bypass { get; set; }
         public int  BypassResetTime { get; set; }
         public bool Enabled { get; set; }
+        public AlertItemType AlertItemType { get; set; }
         public ModbusAddress ModbusAddress { get; set; }
         public int? InputChannelId { get; set; }
         public InputChannel InputChannel { get; set; }

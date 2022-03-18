@@ -8,9 +8,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Timers;
 using System.Text;
 using System.IO;
+using System.Threading;
 
 namespace MonitoringSystem.ConsoleTesting {
     public class Program {
@@ -18,10 +18,35 @@ namespace MonitoringSystem.ConsoleTesting {
             //await CreateConfigDatabse();
             //await CreateReadingsDatabase();
             //await TestReading();
-            var controller = new DeviceController();
-            await controller.Load();
-            await controller.Start();
-            controller.Run();
+            //var controller = new DeviceController();
+            //await controller.Load();
+            //await controller.Start();
+            //controller.Run();
+
+            var datalogger = new DataLoggerWrapper();
+            await datalogger.StartAsync();
+            Console.WriteLine("Press q to exit");
+            do {
+
+            } while (Console.ReadKey().Key != ConsoleKey.Q);
+
+            Console.WriteLine("Exiting program");
+
+            //using var context = new FacilityContext();
+            //var analogAlerts = await context.Alerts.Include(e => e.InputChannel).ToListAsync();
+            //foreach(var alert in analogAlerts) {
+            //    alert.DisplayName = alert.InputChannel.DisplayName;
+            //}
+            //context.UpdateRange(analogAlerts);
+            //var ret = await context.SaveChangesAsync();
+            //if (ret > 0) {
+            //    Console.WriteLine("Alerts should be saved");
+            //} else {
+            //    Console.WriteLine("Error: Failed to save alerts");
+            //}
+            //Console.WriteLine("Press any key to exit");
+            //Console.ReadKey();
+
         }
 
         static async Task WriteOutFile() {
@@ -320,183 +345,202 @@ namespace MonitoringSystem.ConsoleTesting {
         }
     }
 
-    public class DeviceController {
-        private Timer timer;
-        private FacilityContext _context;
-        private IMongoCollection<AnalogChannel> _analogChannels;
-        private IMongoCollection<DiscreteChannel> _discreteChannels;
-        private IMongoCollection<VirtualChannel> _virtualChannels;
-        private IMongoCollection<OutputItem> _outputChannels;
-        private IMongoCollection<ActionItem> _actionItems;
-        private IMongoCollection<MonitorAlert> _monitorAlerts;
-
-        private IMongoCollection<AnalogReading> _analogReadings;
-        private IMongoCollection<DiscreteReading> _discreteReadings;
-        private IMongoCollection<VirtualReading> _virtualReadings;
-        private IMongoCollection<OutputReading> _outputReadings;
-        private IMongoCollection<ActionReading> _actionReadings;
-        private IMongoCollection<AlertReading> _alertReadings;
-
-        private List<AnalogChannel> _analogConfig;
-        private List<OutputItem> _outputConfig;
-        private List<DiscreteChannel> _discreteConfig;
-        private List<VirtualChannel> _virtualConfig;
-        private List<ActionItem> _actionConfig;
-        private List<MonitorAlert> _alertConfig;
-
-        private NetworkConfiguration _networkConfig;
-        private ModbusConfig _modbusConfig;
-        private ChannelRegisterMapping _channelMapping;
-
-        private bool loaded=false;
-
-        public DeviceController() {
-            var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase("epi2_data");
-            this._context = new FacilityContext();
-            this._analogChannels = database.GetCollection<AnalogChannel>("analog_items");
-            this._discreteChannels = database.GetCollection<DiscreteChannel>("discrete_items");
-            this._outputChannels = database.GetCollection<OutputItem>("output_items");
-            this._virtualChannels = database.GetCollection<VirtualChannel>("virtual_items");
-            this._actionItems = database.GetCollection<ActionItem>("action_items");
-            this._monitorAlerts = database.GetCollection<MonitorAlert>("alert_items");
-
-            this._analogReadings = database.GetCollection<AnalogReading>("analog_readings");
-            this._discreteReadings = database.GetCollection<DiscreteReading>("discrete_readings");
-            this._outputReadings = database.GetCollection<OutputReading>("output_readings");
-            this._virtualReadings = database.GetCollection<VirtualReading>("virtual_readings");
-            this._alertReadings = database.GetCollection<AlertReading>("alert_readings");
-            this._actionReadings = database.GetCollection<ActionReading>("action_readings");         
+    public class DataLoggerWrapper {
+        private IDataLogger _dataLogger;
+        private Timer _timer;
+        
+        public DataLoggerWrapper() {
+            this._dataLogger = new ModbusDataLogger(new MonitorDataService("mongodb://172.20.3.30", "epi2_data"), new FacilityContext());
         }
-
-        public Task Start() {
-            this.timer = new Timer();
-            this.timer.Enabled = true;
-            this.timer.AutoReset = true;
-            this.timer.Interval = 1000;
-            this.timer.Elapsed += Timer_Elapsed;
-            return Task.CompletedTask;
+        public async Task StartAsync() {
+            Console.WriteLine("Starting Logging Service");
+            await this._dataLogger.Load();
+            this._timer = new Timer(this.DataLogCallback, null,TimeSpan.Zero, TimeSpan.FromSeconds(1));
         }
-
-        public void Run() {
-            Console.WriteLine("Press any key to exit");
-            Console.ReadKey();
-        }
-
-        private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
-            var result=ModbusService.Read(this._networkConfig.IPAddress,this._networkConfig.Port,this._modbusConfig).GetAwaiter().GetResult();
-
-            var discreteInputs = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart, (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
-            var outputs = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.OutputStart, (this._channelMapping.OutputStop - this._channelMapping.OutputStart) + 1).ToArray();
-            var actions = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.ActionStart, (this._channelMapping.ActionStop - this._channelMapping.ActionStart) + 1).ToArray();
-            var analogInputs = new ArraySegment<ushort>(result.InputRegisters, this._channelMapping.AnalogStart, (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1).ToArray();
-            var alerts = new ArraySegment<ushort>(result.HoldingRegisters, this._channelMapping.AlertStart, (this._channelMapping.AlertStop - this._channelMapping.AlertStart) + 1).ToArray();
-            var virts = new ArraySegment<bool>(result.Coils, this._channelMapping.VirtualStart, (this._channelMapping.VirtualStop - this._channelMapping.VirtualStart) + 1).ToArray();
-
-            var now = DateTime.Now;
-
-            List<AnalogReading> aTempReadings = new List<AnalogReading>();
-            for (int i = 0; i < analogInputs.Length; i++) {
-                aTempReadings.Add(new AnalogReading() { itemid = this._analogConfig[i]._id, timestamp = now, value = analogInputs[i] });
-            }
-            this._analogReadings.InsertMany(aTempReadings);
-
-            List<DiscreteReading> dTempReadings = new List<DiscreteReading>();
-            for (int i = 0; i < discreteInputs.Length; i++) {
-                dTempReadings.Add(new DiscreteReading() { itemid = this._discreteConfig[i]._id, timestamp = now, value = discreteInputs[i] });
-            }
-            this._discreteReadings.InsertMany(dTempReadings);
-
-            List<OutputReading> oReadings = new List<OutputReading>();
-            for (int i = 0; i < outputs.Length; i++) {
-                oReadings.Add(new OutputReading() { itemid = this._outputConfig[i]._id, timestamp = now, value = outputs[i] });
-            }
-            this._outputReadings.InsertMany(oReadings);
-
-            List<ActionReading> actReadingTemp = new List<ActionReading>();
-            for (int i = 0; i < actions.Length; i++) {
-                actReadingTemp.Add(new ActionReading() { itemid = this._actionConfig[i]._id, timestamp = now, value = actions[i] });
-            }
-            this._actionReadings.InsertMany(actReadingTemp);
-
-            List<AlertReading> alertReadingTemp = new List<AlertReading>();
-            
-            for(int i = 0; i < alerts.Length; i++) {
-                var alertReading = new AlertReading() {
-                    itemid = this._alertConfig[i]._id,
-                    timestamp = now,
-                    value = this.ToActionType(alerts[i])
-                };
-
-                switch (alertReading.value) {
-                    case ActionType.Okay:
-                        break;
-                    case ActionType.Alarm:
-                        Console.WriteLine($"Alarm: {this._alertConfig[i]._id} Value: {alertReading.value}");
-                        break;
-                    case ActionType.Warning:
-                        Console.WriteLine($"Warn: {this._alertConfig[i]._id} Value: {alertReading.value}");
-                        break;
-                    case ActionType.SoftWarn:
-                        Console.WriteLine($"SoftWarn: {this._alertConfig[i]._id} Value: {alertReading.value}");
-                        break;
-                    case ActionType.Maintenance:
-                        Console.WriteLine($"Maint: {this._alertConfig[i]._id} Value: {alertReading.value}");
-                        break;
-                    case ActionType.Custom:
-                        break;
-                }
-                alertReadingTemp.Add(alertReading);
-            }
-            this._alertReadings.InsertMany(alertReadingTemp);
-        }
-
-        public async Task Load() {
-            this._analogConfig = await this._analogChannels.Find(_ => true).ToListAsync();
-            this._discreteConfig = await this._discreteChannels.Find(_ => true).ToListAsync();
-            this._outputConfig = await this._outputChannels.Find(_ => true).ToListAsync();
-            this._virtualConfig = await this._virtualChannels.Find(_ => true).ToListAsync();
-            this._alertConfig = await this._monitorAlerts.Find(_ => true).ToListAsync();
-            this._actionConfig = await this._actionItems.Find(_ => true).ToListAsync();
-            var device = await this._context.Devices.AsNoTracking()
-                .OfType<ModbusDevice>()
-                .FirstOrDefaultAsync(e => e.Identifier == "epi2");
-            if(device!=null) {
-                this.loaded = true;
-                this._networkConfig = device.NetworkConfiguration;
-                this._modbusConfig = this._networkConfig.ModbusConfig;
-                this._channelMapping = this._modbusConfig.ChannelMapping;
-                Console.WriteLine("Loading Completed");
-            } else {
-                Console.WriteLine("Error:Device not found");
-                this.loaded = false;
-            }
-        }
-
-        private ActionType ToActionType(ushort value) {
-            switch (value) {
-                case 1: {
-                        return ActionType.Custom;
-                    }
-                case 2: {
-                        return ActionType.Maintenance;
-                    }
-                case 3: {
-                        return ActionType.SoftWarn;
-                    }
-                case 4: {
-                        return ActionType.Warning;
-                    }
-                case 5: {
-                        return ActionType.Alarm;
-                    }
-                case 6: {
-                        return ActionType.Okay;
-                    }
-                default: {
-                        return ActionType.Okay;
-                    }
-            }
+        public async void DataLogCallback(object state) {
+            await this._dataLogger.Read();
+            //Console.WriteLine();
+            Console.WriteLine($"{DateTime.Now}: Logged Data");
         }
     }
+
+    //public class DeviceController {
+    //    private Timer timer;
+    //    private FacilityContext _context;
+    //    private IMongoCollection<AnalogChannel> _analogChannels;
+    //    private IMongoCollection<DiscreteChannel> _discreteChannels;
+    //    private IMongoCollection<VirtualChannel> _virtualChannels;
+    //    private IMongoCollection<OutputItem> _outputChannels;
+    //    private IMongoCollection<ActionItem> _actionItems;
+    //    private IMongoCollection<MonitorAlert> _monitorAlerts;
+
+    //    private IMongoCollection<AnalogReading> _analogReadings;
+    //    private IMongoCollection<DiscreteReading> _discreteReadings;
+    //    private IMongoCollection<VirtualReading> _virtualReadings;
+    //    private IMongoCollection<OutputReading> _outputReadings;
+    //    private IMongoCollection<ActionReading> _actionReadings;
+    //    private IMongoCollection<AlertReading> _alertReadings;
+
+    //    private List<AnalogChannel> _analogConfig;
+    //    private List<OutputItem> _outputConfig;
+    //    private List<DiscreteChannel> _discreteConfig;
+    //    private List<VirtualChannel> _virtualConfig;
+    //    private List<ActionItem> _actionConfig;
+    //    private List<MonitorAlert> _alertConfig;
+
+    //    private NetworkConfiguration _networkConfig;
+    //    private ModbusConfig _modbusConfig;
+    //    private ChannelRegisterMapping _channelMapping;
+
+    //    private bool loaded=false;
+
+    //    public DeviceController() {
+    //        var client = new MongoClient("mongodb://172.20.3.30");
+    //        var database = client.GetDatabase("epi2_data");
+    //        this._context = new FacilityContext();
+    //        this._analogChannels = database.GetCollection<AnalogChannel>("analog_items");
+    //        this._discreteChannels = database.GetCollection<DiscreteChannel>("discrete_items");
+    //        this._outputChannels = database.GetCollection<OutputItem>("output_items");
+    //        this._virtualChannels = database.GetCollection<VirtualChannel>("virtual_items");
+    //        this._actionItems = database.GetCollection<ActionItem>("action_items");
+    //        this._monitorAlerts = database.GetCollection<MonitorAlert>("alert_items");
+
+    //        this._analogReadings = database.GetCollection<AnalogReading>("analog_readings");
+    //        this._discreteReadings = database.GetCollection<DiscreteReading>("discrete_readings");
+    //        this._outputReadings = database.GetCollection<OutputReading>("output_readings");
+    //        this._virtualReadings = database.GetCollection<VirtualReading>("virtual_readings");
+    //        this._alertReadings = database.GetCollection<AlertReading>("alert_readings");
+    //        this._actionReadings = database.GetCollection<ActionReading>("action_readings");         
+    //    }
+
+    //    public Task Start() {
+    //        this.timer = new Timer();
+    //        this.timer.Enabled = true;
+    //        this.timer.AutoReset = true;
+    //        this.timer.Interval = 1000;
+    //        this.timer.Elapsed += Timer_Elapsed;
+    //        return Task.CompletedTask;
+    //    }
+
+    //    public void Run() {
+    //        Console.WriteLine("Press any key to exit");
+    //        Console.ReadKey();
+    //    }
+
+    //    private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
+    //        var result=ModbusService.Read(this._networkConfig.IPAddress,this._networkConfig.Port,this._modbusConfig).GetAwaiter().GetResult();
+
+    //        var discreteInputs = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart, (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
+    //        var outputs = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.OutputStart, (this._channelMapping.OutputStop - this._channelMapping.OutputStart) + 1).ToArray();
+    //        var actions = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.ActionStart, (this._channelMapping.ActionStop - this._channelMapping.ActionStart) + 1).ToArray();
+    //        var analogInputs = new ArraySegment<ushort>(result.InputRegisters, this._channelMapping.AnalogStart, (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1).ToArray();
+    //        var alerts = new ArraySegment<ushort>(result.HoldingRegisters, this._channelMapping.AlertStart, (this._channelMapping.AlertStop - this._channelMapping.AlertStart) + 1).ToArray();
+    //        var virts = new ArraySegment<bool>(result.Coils, this._channelMapping.VirtualStart, (this._channelMapping.VirtualStop - this._channelMapping.VirtualStart) + 1).ToArray();
+
+    //        var now = DateTime.Now;
+
+    //        List<AnalogReading> aTempReadings = new List<AnalogReading>();
+    //        for (int i = 0; i < analogInputs.Length; i++) {
+    //            aTempReadings.Add(new AnalogReading() { itemid = this._analogConfig[i]._id, timestamp = now, value = analogInputs[i] });
+    //        }
+    //        this._analogReadings.InsertMany(aTempReadings);
+
+    //        List<DiscreteReading> dTempReadings = new List<DiscreteReading>();
+    //        for (int i = 0; i < discreteInputs.Length; i++) {
+    //            dTempReadings.Add(new DiscreteReading() { itemid = this._discreteConfig[i]._id, timestamp = now, value = discreteInputs[i] });
+    //        }
+    //        this._discreteReadings.InsertMany(dTempReadings);
+
+    //        List<OutputReading> oReadings = new List<OutputReading>();
+    //        for (int i = 0; i < outputs.Length; i++) {
+    //            oReadings.Add(new OutputReading() { itemid = this._outputConfig[i]._id, timestamp = now, value = outputs[i] });
+    //        }
+    //        this._outputReadings.InsertMany(oReadings);
+
+    //        List<ActionReading> actReadingTemp = new List<ActionReading>();
+    //        for (int i = 0; i < actions.Length; i++) {
+    //            actReadingTemp.Add(new ActionReading() { itemid = this._actionConfig[i]._id, timestamp = now, value = actions[i] });
+    //        }
+    //        this._actionReadings.InsertMany(actReadingTemp);
+
+    //        List<AlertReading> alertReadingTemp = new List<AlertReading>();
+            
+    //        for(int i = 0; i < alerts.Length; i++) {
+    //            var alertReading = new AlertReading() {
+    //                itemid = this._alertConfig[i]._id,
+    //                timestamp = now,
+    //                value = this.ToActionType(alerts[i])
+    //            };
+
+    //            switch (alertReading.value) {
+    //                case ActionType.Okay:
+    //                    break;
+    //                case ActionType.Alarm:
+    //                    Console.WriteLine($"Alarm: {this._alertConfig[i]._id} Value: {alertReading.value}");
+    //                    break;
+    //                case ActionType.Warning:
+    //                    Console.WriteLine($"Warn: {this._alertConfig[i]._id} Value: {alertReading.value}");
+    //                    break;
+    //                case ActionType.SoftWarn:
+    //                    Console.WriteLine($"SoftWarn: {this._alertConfig[i]._id} Value: {alertReading.value}");
+    //                    break;
+    //                case ActionType.Maintenance:
+    //                    Console.WriteLine($"Maint: {this._alertConfig[i]._id} Value: {alertReading.value}");
+    //                    break;
+    //                case ActionType.Custom:
+    //                    break;
+    //            }
+    //            alertReadingTemp.Add(alertReading);
+    //        }
+    //        this._alertReadings.InsertMany(alertReadingTemp);
+    //    }
+
+    //    public async Task Load() {
+    //        this._analogConfig = await this._analogChannels.Find(_ => true).ToListAsync();
+    //        this._discreteConfig = await this._discreteChannels.Find(_ => true).ToListAsync();
+    //        this._outputConfig = await this._outputChannels.Find(_ => true).ToListAsync();
+    //        this._virtualConfig = await this._virtualChannels.Find(_ => true).ToListAsync();
+    //        this._alertConfig = await this._monitorAlerts.Find(_ => true).ToListAsync();
+    //        this._actionConfig = await this._actionItems.Find(_ => true).ToListAsync();
+    //        var device = await this._context.Devices.AsNoTracking()
+    //            .OfType<ModbusDevice>()
+    //            .FirstOrDefaultAsync(e => e.Identifier == "epi2");
+    //        if(device!=null) {
+    //            this.loaded = true;
+    //            this._networkConfig = device.NetworkConfiguration;
+    //            this._modbusConfig = this._networkConfig.ModbusConfig;
+    //            this._channelMapping = this._modbusConfig.ChannelMapping;
+    //            Console.WriteLine("Loading Completed");
+    //        } else {
+    //            Console.WriteLine("Error:Device not found");
+    //            this.loaded = false;
+    //        }
+    //    }
+
+    //    private ActionType ToActionType(ushort value) {
+    //        switch (value) {
+    //            case 1: {
+    //                    return ActionType.Custom;
+    //                }
+    //            case 2: {
+    //                    return ActionType.Maintenance;
+    //                }
+    //            case 3: {
+    //                    return ActionType.SoftWarn;
+    //                }
+    //            case 4: {
+    //                    return ActionType.Warning;
+    //                }
+    //            case 5: {
+    //                    return ActionType.Alarm;
+    //                }
+    //            case 6: {
+    //                    return ActionType.Okay;
+    //                }
+    //            default: {
+    //                    return ActionType.Okay;
+    //                }
+    //        }
+    //    }
+    //}
 }

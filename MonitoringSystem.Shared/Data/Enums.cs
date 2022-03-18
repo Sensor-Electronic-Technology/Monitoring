@@ -25,11 +25,17 @@ namespace MonitoringSystem.Shared.Data {
         Custom = 1
     }
 
-    public enum DeviceState { 
-        OKAY, 
-        WARNING, 
-        ALARM,
-        MAINTENANCE
+    public enum DeviceState {
+        ALARM=0,
+        WARNING=1,
+        MAINTENANCE=2,
+        OKAY=3
+    }
+
+    public enum AlertItemType {
+        Analog,
+        Discrete,
+        Virtual
     }
 
 }

@@ -11,27 +11,32 @@ using MonitoringSystem.Shared.Data;
 
 namespace MonitoringData.Infrastructure.Services {
     public interface IMonitorDataService {
-
+        List<AnalogChannel> AnalogItems { get; }
+        List<DiscreteChannel> DiscreteItems { get; }
+        List<OutputItem> OutputItems { get; }
+        List<VirtualChannel> VirtualItems { get; }
+        List<MonitorAlert> MonitorAlerts { get; }
+        List<ActionItem> ActionItems { get; }
+        Task InsertManyAsync(IEnumerable<ActionReading> readings);
+        Task InsertManyAsync(IEnumerable<AlertReading> readings);
+        Task InsertManyAsync(IEnumerable<AnalogReading> readings);
+        Task InsertManyAsync(IEnumerable<DiscreteReading> readings);
+        Task InsertManyAsync(IEnumerable<OutputReading> readings);
+        Task InsertManyAsync(IEnumerable<VirtualReading> readings);
+        Task InsertDeviceReadingAsync(DeviceReading reading);
+        Task LoadAsync();
     }
 
-    public class MonitorDataService {
+    public class MonitorDataService : IMonitorDataService {
         private IMongoClient _client;
         private IMongoDatabase _database;
-
         private MonitorDevice _monitorDevice;
-        //private IMongoCollection<AnalogChannel> _analogChannels;
-        //private IMongoCollection<DiscreteChannel> _discreteChannels;
-        //private IMongoCollection<OutputItem> _outputChannels;
-        //private IMongoCollection<VirtualChannel> _virtualChannels;
-        //private IMongoCollection<MonitorAlert> _monitorAlerts;
-        //private IMongoCollection<ActionItem> _monitorActions;
-
-        private List<AnalogChannel> _analogChannels;
-        private List<DiscreteChannel> _discreteChannels;
-        private List<OutputItem> _outputChannels;
-        private List<VirtualChannel> _virtualChannels;
-        private List<MonitorAlert> _monitorAlerts;
-        private List<ActionItem> _monitorActions;
+        public List<AnalogChannel> AnalogItems { get; private set; }
+        public List<DiscreteChannel> DiscreteItems { get; private set; }
+        public List<OutputItem> OutputItems { get; private set; }
+        public List<VirtualChannel> VirtualItems { get; private set; }
+        public List<MonitorAlert> MonitorAlerts { get; private set; }
+        public List<ActionItem> ActionItems { get; private set; }
 
         private IMongoCollection<AnalogReading> _analogReadings;
         private IMongoCollection<DiscreteReading> _discreteReadings;
@@ -39,55 +44,61 @@ namespace MonitoringData.Infrastructure.Services {
         private IMongoCollection<VirtualReading> _virtualReadings;
         private IMongoCollection<ActionReading> _actionReadings;
         private IMongoCollection<AlertReading> _alertReadings;
+        private IMongoCollection<DeviceReading> _deviceReadings;
 
         public MonitorDataService(IOptions<MonitorDatabaseSettings> databaseSettings) {
             this._client = new MongoClient(databaseSettings.Value.ConnectionString);
             this._database = this._client.GetDatabase(databaseSettings.Value.DatabaseName);
         }
 
-        public MonitorDataService(string connectionString,string databaseName) {
+        public MonitorDataService(string connectionString, string databaseName) {
             this._client = new MongoClient(connectionString);
             this._database = this._client.GetDatabase(databaseName);
         }
 
-        private async Task InsertManyAsync(IEnumerable<AnalogReading> readings) {
+        public async Task InsertManyAsync(IEnumerable<AnalogReading> readings) {
             await this._analogReadings.InsertManyAsync(readings);
         }
 
-        private async Task InsertManyAsync(IEnumerable<DiscreteReading> readings) {
+        public async Task InsertManyAsync(IEnumerable<DiscreteReading> readings) {
             await this._discreteReadings.InsertManyAsync(readings);
         }
 
-        private async Task InsertManyAsync(IEnumerable<OutputReading> readings) {
+        public async Task InsertManyAsync(IEnumerable<OutputReading> readings) {
             await this._outputReadings.InsertManyAsync(readings);
         }
 
-        private async Task InsertManyAsync(IEnumerable<VirtualReading> readings) {
+        public async Task InsertManyAsync(IEnumerable<VirtualReading> readings) {
             await this._virtualReadings.InsertManyAsync(readings);
         }
 
-        private async Task InsertManyAsync(IEnumerable<ActionReading> readings) {
+        public async Task InsertManyAsync(IEnumerable<ActionReading> readings) {
             await this._actionReadings.InsertManyAsync(readings);
         }
 
-        private async Task InsertManyAsync(IEnumerable<AlertReading> readings) {
+        public async Task InsertManyAsync(IEnumerable<AlertReading> readings) {
             await this._alertReadings.InsertManyAsync(readings);
         }
 
-        private async Task LoadAsync() {
-            this._analogChannels = await this._database.GetCollection<AnalogChannel>("analog_items").Find(_=>true).ToListAsync();
-            this._discreteChannels = await this._database.GetCollection<DiscreteChannel>("discrete_items").Find(_ => true).ToListAsync();
-            this._outputChannels = await this._database.GetCollection<OutputItem>("output_items").Find(_ => true).ToListAsync();
-            this._virtualChannels = await this._database.GetCollection<VirtualChannel>("virtual_channel").Find(_ => true).ToListAsync();
-            this._monitorActions = await this._database.GetCollection<ActionItem>("action_items").Find(_ => true).ToListAsync();
-            this._monitorAlerts = await this._database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToListAsync();
+        public async Task InsertDeviceReadingAsync(DeviceReading reading) {
+            await this._deviceReadings.InsertOneAsync(reading);
+        }
+
+        public async Task LoadAsync() {
+            this.AnalogItems = await this._database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToListAsync();
+            this.DiscreteItems = await this._database.GetCollection<DiscreteChannel>("discrete_items").Find(_ => true).ToListAsync();
+            this.OutputItems = await this._database.GetCollection<OutputItem>("output_items").Find(_ => true).ToListAsync();
+            this.VirtualItems = await this._database.GetCollection<VirtualChannel>("virtual_items").Find(_ => true).ToListAsync();
+            this.ActionItems = await this._database.GetCollection<ActionItem>("action_items").Find(_ => true).ToListAsync();
+            this.MonitorAlerts = await this._database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToListAsync();
 
             this._analogReadings = this._database.GetCollection<AnalogReading>("analog_readings");
-            this._discreteReadings = this._database.GetCollection<DiscreteReading>("dicrete_readings");
+            this._discreteReadings = this._database.GetCollection<DiscreteReading>("discrete_readings");
             this._virtualReadings = this._database.GetCollection<VirtualReading>("virtual_readings");
             this._outputReadings = this._database.GetCollection<OutputReading>("output_readings");
             this._actionReadings = this._database.GetCollection<ActionReading>("action_readings");
-            this._alertReadings = this._database.GetCollection<AlertReading>("alert_reading");
+            this._alertReadings = this._database.GetCollection<AlertReading>("alert_readings");
+            this._deviceReadings = this._database.GetCollection<DeviceReading>("device_readings");
         }
     }
 }
