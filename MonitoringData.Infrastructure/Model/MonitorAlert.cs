@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 namespace MonitoringData.Infrastructure.Model {
     public class MonitorAlert {
         public int _id { get; set; }
+        public string displayName { get; set; }
         public int channelId { get; set; }
+        public AlertItemType itemType { get; set; }
         public bool enabled { get; set; }
         public bool bypassed { get; set; }
         public int bypassResetTime { get; set; }

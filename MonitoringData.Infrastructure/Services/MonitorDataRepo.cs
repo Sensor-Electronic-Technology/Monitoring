@@ -15,7 +15,7 @@ namespace MonitoringData.Infrastructure.Services {
         List<DiscreteChannel> DiscreteItems { get; }
         List<OutputItem> OutputItems { get; }
         List<VirtualChannel> VirtualItems { get; }
-        List<MonitorAlert> MonitorAlerts { get; }
+        List<MonitorAlert> MonitorAlertCache { get; }
         List<ActionItem> ActionItems { get; }
         Task InsertManyAsync(IEnumerable<ActionReading> readings);
         Task InsertManyAsync(IEnumerable<AlertReading> readings);
@@ -24,6 +24,8 @@ namespace MonitoringData.Infrastructure.Services {
         Task InsertManyAsync(IEnumerable<OutputReading> readings);
         Task InsertManyAsync(IEnumerable<VirtualReading> readings);
         Task InsertDeviceReadingAsync(DeviceReading reading);
+        Task<MonitorAlert> GetMonitorAlert(int alertId);
+        Task UpdateAlert(int alertId, UpdateDefinition<MonitorAlert> update);
         Task LoadAsync();
     }
 
@@ -35,9 +37,10 @@ namespace MonitoringData.Infrastructure.Services {
         public List<DiscreteChannel> DiscreteItems { get; private set; }
         public List<OutputItem> OutputItems { get; private set; }
         public List<VirtualChannel> VirtualItems { get; private set; }
-        public List<MonitorAlert> MonitorAlerts { get; private set; }
+        public List<MonitorAlert> MonitorAlertCache { get; private set; }
         public List<ActionItem> ActionItems { get; private set; }
 
+        private IMongoCollection<MonitorAlert> _monitorAlerts;
         private IMongoCollection<AnalogReading> _analogReadings;
         private IMongoCollection<DiscreteReading> _discreteReadings;
         private IMongoCollection<OutputReading> _outputReadings;
@@ -84,13 +87,23 @@ namespace MonitoringData.Infrastructure.Services {
             await this._deviceReadings.InsertOneAsync(reading);
         }
 
+        public async Task<MonitorAlert> GetMonitorAlert(int alertId) {
+            return await this._monitorAlerts.Find(e => e._id == alertId).FirstOrDefaultAsync();
+        }
+
+        public async Task UpdateAlert(int alertId,UpdateDefinition<MonitorAlert> update) {
+            await this._monitorAlerts.UpdateOneAsync(e => e._id == alertId, update);
+        }
+
+
+
         public async Task LoadAsync() {
             this.AnalogItems = await this._database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToListAsync();
             this.DiscreteItems = await this._database.GetCollection<DiscreteChannel>("discrete_items").Find(_ => true).ToListAsync();
             this.OutputItems = await this._database.GetCollection<OutputItem>("output_items").Find(_ => true).ToListAsync();
             this.VirtualItems = await this._database.GetCollection<VirtualChannel>("virtual_items").Find(_ => true).ToListAsync();
             this.ActionItems = await this._database.GetCollection<ActionItem>("action_items").Find(_ => true).ToListAsync();
-            this.MonitorAlerts = await this._database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToListAsync();
+            this.MonitorAlertCache = await this._database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToListAsync();
 
             this._analogReadings = this._database.GetCollection<AnalogReading>("analog_readings");
             this._discreteReadings = this._database.GetCollection<DiscreteReading>("discrete_readings");

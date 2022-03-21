@@ -13,6 +13,8 @@ using System.IO;
 using System.Threading;
 
 namespace MonitoringSystem.ConsoleTesting {
+
+
     public class Program {
         static async Task Main(string[] args) {
             //await CreateConfigDatabse();
@@ -23,14 +25,14 @@ namespace MonitoringSystem.ConsoleTesting {
             //await controller.Start();
             //controller.Run();
 
-            var datalogger = new DataLoggerWrapper();
-            await datalogger.StartAsync();
-            Console.WriteLine("Press q to exit");
-            do {
+            //var datalogger = new DataLoggerWrapper();
+            //await datalogger.StartAsync();
+            //Console.WriteLine("Press q to exit");
+            //do {
 
-            } while (Console.ReadKey().Key != ConsoleKey.Q);
+            //} while (Console.ReadKey().Key != ConsoleKey.Q);
 
-            Console.WriteLine("Exiting program");
+            //Console.WriteLine("Exiting program");
 
             //using var context = new FacilityContext();
             //var analogAlerts = await context.Alerts.Include(e => e.InputChannel).ToListAsync();
@@ -47,6 +49,126 @@ namespace MonitoringSystem.ConsoleTesting {
             //Console.WriteLine("Press any key to exit");
             //Console.ReadKey();
 
+            //var client = new MongoClient("mongodb://172.20.3.30");
+            //var database = client.GetDatabase("epi2_data");
+            //var alertItems = database.GetCollection<MonitorAlert>("alert_items");
+
+            await AlertItemTypeUpdate();
+
+        }
+
+        public static async Task TestAlertQueue() {
+            var client = new MongoClient("mongodb://172.20.3.30");
+            var database = client.GetDatabase("epi2_data");
+
+            var alertItems = database.GetCollection<MonitorAlert>("alert_items");
+            var actionItems = database.GetCollection<ActionItem>("action_items");
+            var alertReading = new AlertReading();
+            alertReading.itemid = 53;
+            alertReading.value = ActionType.Alarm;
+            alertReading.timestamp = DateTime.Now;
+            var alert = await alertItems.Find(e => e._id == alertReading.itemid).FirstOrDefaultAsync();
+            var action = await actionItems.Find(e => e.actionType == alertReading.value).FirstOrDefaultAsync();
+            if (alert != null) {
+
+            } else {
+                Console.WriteLine("Error: Alert not found");
+            }
+        }
+
+        static async Task GenerateAlert(AlertReading reading, MonitorAlert alert,IMongoCollection<MonitorAlert> alerts) {
+
+        }
+
+        static async Task CheckAndUpdateAlert(AlertReading reading,MonitorAlert alert,IMongoCollection<MonitorAlert> alerts) {
+            if (alert.latched) {
+                var tdelta = (alertReading.timestamp - alert.lastAlarm).Minutes;
+                if (tdelta >= action.EmailPeriod) {
+                    var update = AlertUpdateAlreadyLatch(alertReading);
+                }
+            } else {
+
+            }
+        }
+
+        static AlertAction CheckAlert(AlertReading reading) {
+            switch (reading.value) {
+                case ActionType.Okay:
+                    return AlertAction.Clear;
+                case ActionType.Alarm:
+                case ActionType.Warning:
+                case ActionType.SoftWarn:
+                    return AlertAction.Start;
+                case ActionType.Maintenance:
+                case ActionType.Custom:
+                    return AlertAction.Nothing;
+                default:
+                    return AlertAction.Nothing;
+            }
+        }
+
+        static async Task ClearAlert(AlertReading reading,MonitorAlert alert, IMongoCollection<MonitorAlert> alerts) {
+            var update = Builders<MonitorAlert>.Update
+                .Set(e => e.CurrentState, reading.value)
+                .Set(e => e.latched, false);
+            await alerts.UpdateOneAsync(e => e._id == alert._id, update);
+        }
+
+
+
+        static UpdateDefinition<MonitorAlert> AlertUpdateAlreadyLatch(AlertReading reading) {
+            return Builders<MonitorAlert>.Update
+                .Set(e => e.lastAlarm, reading.timestamp)
+                .Set(e => e.CurrentState, reading.value);
+        }
+
+        static UpdateDefinition<MonitorAlert> AlertUpdateLatch(AlertReading reading) {
+            return Builders<MonitorAlert>.Update
+                .Set(e => e.lastAlarm, reading.timestamp)
+                .Set(e => e.CurrentState, reading.value)
+                .Set(e => e.latched, true);
+        }
+
+        public static async Task AlertUpdateName() {
+            var client = new MongoClient("mongodb://172.20.3.30");
+            var database = client.GetDatabase("epi2_data");
+            var alertItems = database.GetCollection<MonitorAlert>("alert_items");
+            using var context = new FacilityContext();
+            var alerts = await context.Alerts
+                .Include(e => e.InputChannel)
+                .ThenInclude(e => e.ModbusDevice)
+                .Where(e => e.InputChannel.ModbusDevice.Identifier == "epi2")
+                .ToListAsync();
+
+            alerts.ForEach((alert) => {
+                var update = Builders<MonitorAlert>.Update.Set(s => s.displayName, alert.DisplayName);
+                var monitorAlert = alertItems.FindOneAndUpdate<MonitorAlert>(e => e._id == alert.Id, update);
+                monitorAlert.displayName = alert.DisplayName;
+                //alertItems.UpdateOne(monitorAlert);
+            });
+
+            Console.WriteLine("Check database");
+        }
+
+        public static async Task AlertItemTypeUpdate() {
+            var client = new MongoClient("mongodb://172.20.3.30");
+            var database = client.GetDatabase("epi2_data");
+            var alertItems = database.GetCollection<MonitorAlert>("alert_items");
+            using var context = new FacilityContext();
+            var alerts = await context.Alerts
+                .Include(e => e.InputChannel)
+                .ThenInclude(e => e.ModbusDevice)
+                .Where(e => e.InputChannel.ModbusDevice.Identifier == "epi2")
+                .ToListAsync();
+
+            alerts.ForEach((alert) => {
+                var update = Builders<MonitorAlert>.Update.Set(s => s.itemType, alert.AlertItemType);
+                var monitorAlert = alertItems.FindOneAndUpdate<MonitorAlert>(e => e._id == alert.Id, update);
+                monitorAlert.displayName = alert.DisplayName;
+                //alertItems.UpdateOne(monitorAlert);
+            });
+
+            Console.WriteLine("Check database");
         }
 
         static async Task WriteOutFile() {
@@ -464,7 +586,7 @@ namespace MonitoringSystem.ConsoleTesting {
     //        this._actionReadings.InsertMany(actReadingTemp);
 
     //        List<AlertReading> alertReadingTemp = new List<AlertReading>();
-            
+
     //        for(int i = 0; i < alerts.Length; i++) {
     //            var alertReading = new AlertReading() {
     //                itemid = this._alertConfig[i]._id,

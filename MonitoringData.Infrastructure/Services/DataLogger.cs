@@ -11,6 +11,12 @@ using System.Threading.Tasks;
 
 namespace MonitoringData.Infrastructure.Services {
 
+    public enum AlertAction {
+        Clear,
+        Start,
+        Nothing
+    }
+
     public interface IDataLogger {
         Task Read();
         Task Load();
@@ -75,37 +81,38 @@ namespace MonitoringData.Infrastructure.Services {
             await this._dataService.InsertManyAsync(actReadingTemp);
 
             List<AlertReading> alertReadingTemp = new List<AlertReading>();
+            
 
             for (int i = 0; i < alertsRaw.Length; i++) {
                 var alertReading = new AlertReading() {
-                    itemid = this._dataService.MonitorAlerts[i]._id,
+                    itemid = this._dataService.MonitorAlertCache[i]._id,
                     timestamp = now,
                     value = this.ToActionType(alertsRaw[i])
                 };
 
-                //switch (alertReading.value) {
-                //    case ActionType.Okay:
+                switch (alertReading.value) {
+                    case ActionType.Okay:
 
-                //        break;
-                //    case ActionType.Alarm:
-                //        Console.WriteLine($"Alarm: {this._dataService.MonitorAlerts[i]._id} Value: {alertReading.value}");
+                        break;
+                    case ActionType.Alarm:
+                        Console.WriteLine($"Alarm: {this._dataService.MonitorAlertCache[i]._id} Value: {alertReading.value}");
 
-                //        break;
-                //    case ActionType.Warning:
-                //        Console.WriteLine($"Warn: {this._dataService.MonitorAlerts[i]._id} Value: {alertReading.value}");
+                        break;
+                    case ActionType.Warning:
+                        Console.WriteLine($"Warn: {this._dataService.MonitorAlertCache[i]._id} Value: {alertReading.value}");
 
-                //        break;
-                //    case ActionType.SoftWarn:
-                //        Console.WriteLine($"SoftWarn: {this._dataService.MonitorAlerts[i]._id} Value: {alertReading.value}");
+                        break;
+                    case ActionType.SoftWarn:
+                        Console.WriteLine($"SoftWarn: {this._dataService.MonitorAlertCache[i]._id} Value: {alertReading.value}");
 
-                //        break;
-                //    case ActionType.Maintenance:
-                //        Console.WriteLine($"Maint: {this._dataService.MonitorAlerts[i]._id} Value: {alertReading.value}");
+                        break;
+                    case ActionType.Maintenance:
+                        Console.WriteLine($"Maint: {this._dataService.MonitorAlertCache[i]._id} Value: {alertReading.value}");
 
-                //        break;
-                //    case ActionType.Custom:
-                //        break;
-                //}
+                        break;
+                    case ActionType.Custom:
+                        break;
+                }
                 alertReadingTemp.Add(alertReading);
             }
             await this._dataService.InsertManyAsync(alertReadingTemp);
@@ -115,6 +122,37 @@ namespace MonitoringData.Infrastructure.Services {
                 timestamp = now,
                 value =this.ToDeviceState(result.HoldingRegisters[this._channelMapping.DeviceStart])
             });
+        }
+
+        private async AlertAction CheckAlert(AlertReading reading) {
+            var tempalert = this._dataService.MonitorAlertCache.FirstOrDefault(e=>e._id==reading.itemid);
+            if (tempalert is null) {
+                return AlertAction.Nothing;
+            }
+            if (tempalert.enabled) {
+                switch (reading.value) {
+                    case ActionType.Okay: {
+                            var alert = await this._dataService.GetMonitorAlert(tempalert._id);
+                            if(alert is null) {
+                                return AlertAction.Nothing;
+                            }
+                            if (alert.latched && alert.CurrentState!=reading.value) {
+                                return AlertAction.Clear;
+                            }
+                        }
+                    case ActionType.Alarm:
+                    case ActionType.Warning:
+                    case ActionType.SoftWarn:
+                        return AlertAction.Start;
+                    case ActionType.Maintenance:
+                    case ActionType.Custom:
+                        return AlertAction.Nothing;
+                    default:
+                        return AlertAction.Nothing;
+                }
+            } else {
+                return AlertAction.Nothing;
+            }
         }
 
         public async Task Load() {
@@ -133,6 +171,8 @@ namespace MonitoringData.Infrastructure.Services {
                 this.initialized = false;
             }
         }
+
+        
 
         private ActionType ToActionType(ushort value) {
             switch (value) {
