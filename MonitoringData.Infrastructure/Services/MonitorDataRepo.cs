@@ -15,7 +15,7 @@ namespace MonitoringData.Infrastructure.Services {
         List<DiscreteChannel> DiscreteItems { get; }
         List<OutputItem> OutputItems { get; }
         List<VirtualChannel> VirtualItems { get; }
-        List<MonitorAlert> MonitorAlertCache { get; }
+        List<MonitorAlert> MonitorAlerts { get; }
         List<ActionItem> ActionItems { get; }
         Task InsertManyAsync(IEnumerable<ActionReading> readings);
         Task InsertManyAsync(IEnumerable<AlertReading> readings);
@@ -37,7 +37,7 @@ namespace MonitoringData.Infrastructure.Services {
         public List<DiscreteChannel> DiscreteItems { get; private set; }
         public List<OutputItem> OutputItems { get; private set; }
         public List<VirtualChannel> VirtualItems { get; private set; }
-        public List<MonitorAlert> MonitorAlertCache { get; private set; }
+        public List<MonitorAlert> MonitorAlerts { get; private set; }
         public List<ActionItem> ActionItems { get; private set; }
 
         private IMongoCollection<MonitorAlert> _monitorAlerts;
@@ -103,7 +103,7 @@ namespace MonitoringData.Infrastructure.Services {
             this.OutputItems = await this._database.GetCollection<OutputItem>("output_items").Find(_ => true).ToListAsync();
             this.VirtualItems = await this._database.GetCollection<VirtualChannel>("virtual_items").Find(_ => true).ToListAsync();
             this.ActionItems = await this._database.GetCollection<ActionItem>("action_items").Find(_ => true).ToListAsync();
-            this.MonitorAlertCache = await this._database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToListAsync();
+            this.MonitorAlerts = await this._database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToListAsync();
 
             this._analogReadings = this._database.GetCollection<AnalogReading>("analog_readings");
             this._discreteReadings = this._database.GetCollection<DiscreteReading>("discrete_readings");

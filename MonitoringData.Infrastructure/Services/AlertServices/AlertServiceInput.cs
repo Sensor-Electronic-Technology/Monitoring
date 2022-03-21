@@ -6,14 +6,10 @@ using System.Threading.Tasks;
 using MonitoringData.Infrastructure.Model;
 
 namespace MonitoringData.Infrastructure.Services.AlertServices {
-    public class AlertServiceInput {
-        List<ItemAlert> Alerting { get; set; }
-        List<ItemAlert> SystemStatus { get; set; }
-    }
-
-    public class ItemAlert {
+    public record ItemAlert  {
         public MonitorAlert Alert { get; set; }
-        public string ItemName { get; set; }
         public float Reading { get; set; }
     }
+
+
 }

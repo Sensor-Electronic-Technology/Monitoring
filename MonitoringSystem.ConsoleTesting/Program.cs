@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Threading;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MonitoringSystem.ConsoleTesting {
 
@@ -53,7 +54,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //var database = client.GetDatabase("epi2_data");
             //var alertItems = database.GetCollection<MonitorAlert>("alert_items");
 
-            await AlertItemTypeUpdate();
+            //await AlertItemTypeUpdate();
 
         }
 
@@ -75,22 +76,6 @@ namespace MonitoringSystem.ConsoleTesting {
                 Console.WriteLine("Error: Alert not found");
             }
         }
-
-        static async Task GenerateAlert(AlertReading reading, MonitorAlert alert,IMongoCollection<MonitorAlert> alerts) {
-
-        }
-
-        static async Task CheckAndUpdateAlert(AlertReading reading,MonitorAlert alert,IMongoCollection<MonitorAlert> alerts) {
-            if (alert.latched) {
-                var tdelta = (alertReading.timestamp - alert.lastAlarm).Minutes;
-                if (tdelta >= action.EmailPeriod) {
-                    var update = AlertUpdateAlreadyLatch(alertReading);
-                }
-            } else {
-
-            }
-        }
-
         static AlertAction CheckAlert(AlertReading reading) {
             switch (reading.value) {
                 case ActionType.Okay:

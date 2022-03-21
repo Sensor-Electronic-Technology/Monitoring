@@ -7,20 +7,28 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MonitoringData.Infrastructure.Services.DataLogging {
-    public class ReadingsCache {
-        public MemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
-        public Stack<AnalogReading> AnalogReadings { get; private set; }
+    public class DataFixedQueue<T> : Queue<T> {
+        private readonly int maxQueueSize;
+        private readonly object syncRoot = new object();
 
-        public ReadingsCache() {
-
+        public DataFixedQueue(int maxSize) {
+            this.maxQueueSize = maxSize;
         }
 
-        public void InsertOne(AnalogReading reading) {
-            this._cache.GetOrCreate<AnalogReading>(reading);
-            if (this.AnalogReadings.Count >= 10) {
-                //this.AnalogReadings.Re
+        public new void Enqueue(T item) {
+            lock (syncRoot) {
+                base.Enqueue(item);
+                if (base.Count >= 10)
+                    base.Dequeue();
             }
         }
 
+    }
+
+    public class DataCache<T> {
+        private IMemoryCache _cache;
+        DataCache() {
+
+        }
     }
 }
