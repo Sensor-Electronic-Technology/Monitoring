@@ -32,18 +32,11 @@ namespace MonitoringData.Infrastructure.Services {
         }
 
         public Task ProcessAlerts(IList<ItemAlert> items) {
-            //List<ItemAlert> status = new List<ItemAlert>();
-            //List<ItemAlert> newAlerts = new List<ItemAlert>();
             ConsoleTable statusTable = new ConsoleTable("Alert","Status","Reading");
             ConsoleTable newAlertTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable newStateTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable activeTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable resendTable = new ConsoleTable("Alert", "Status", "Reading");
-            StringBuilder statusAlerts = new StringBuilder();
-            StringBuilder newAlerts = new StringBuilder();
-            StringBuilder newStates = new StringBuilder();
-            StringBuilder activeAlerts = new StringBuilder();
-            StringBuilder resendAlerts = new StringBuilder();
             foreach (var item in this.Process(items)) {
                 switch (item.AlertAction) {
                     case AlertAction.Clear: {
@@ -95,8 +88,6 @@ namespace MonitoringData.Infrastructure.Services {
             Console.WriteLine("Status");
             Console.WriteLine(statusTable.ToMinimalString());
             Console.WriteLine();
-            Console.WriteLine();
-
             return Task.CompletedTask;
         }
 
