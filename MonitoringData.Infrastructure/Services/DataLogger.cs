@@ -12,9 +12,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MonitoringData.Infrastructure.Services {
-
-
-
     public interface IDataLogger {
         Task Read();
         Task Load();
@@ -97,7 +94,6 @@ namespace MonitoringData.Infrastructure.Services {
         }
 
         private async Task ProcessAlertReadings(ushort[] raw,DateTime now) {
-
             List<AlertReading> alertReadings = new List<AlertReading>();
             for (int i = 0; i < raw.Length; i++) {
                 var alertReading = new AlertReading() {
@@ -106,11 +102,7 @@ namespace MonitoringData.Infrastructure.Services {
                     value = this.ToActionType(raw[i])
                 };
                 alertReadings.Add(alertReading);
-                this._itemAlerts.Add(new ItemAlert() {
-                    Alert = this._dataService.MonitorAlerts[i],
-                    AlertReading=alertReading,
-                    Reading=0.00f
-                });
+                this._itemAlerts.Add(new ItemAlert(this._dataService.MonitorAlerts[i], alertReading.value));
             }
             await this._dataService.InsertManyAsync(alertReadings);
         }

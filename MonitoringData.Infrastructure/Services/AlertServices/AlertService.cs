@@ -25,52 +25,71 @@ namespace MonitoringData.Infrastructure.Services {
 
     public class AlertService : IAlertService {
         private readonly IMonitorDataService _dataService;
+        private IEmailService _emailService;
         private List<ItemAlert> _activeAlerts = new List<ItemAlert>();
-
         public AlertService(IMonitorDataService dataService) {
             this._dataService = dataService;
+            this._emailService = new EmailService();       
         }
 
-        public Task ProcessAlerts(IList<ItemAlert> items) {
+        public async Task ProcessAlerts(IList<ItemAlert> items) {
+            IMessageBuilder messageBuilder = new MessageBuilder();
+            messageBuilder.StartMessage();
             ConsoleTable statusTable = new ConsoleTable("Alert","Status","Reading");
             ConsoleTable newAlertTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable newStateTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable activeTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable resendTable = new ConsoleTable("Alert", "Status", "Reading");
+            bool sendEmail = false;
             foreach (var item in this.Process(items)) {
-                switch (item.AlertAction) {
-                    case AlertAction.Clear: {
-                            this._activeAlerts.Remove(item.ActiveAlert);
-                            break;
-                        }
-                    case AlertAction.ChangeState: {
-                            this._activeAlerts.Remove(item.ActiveAlert);
-                            this._activeAlerts.Add(item);
-                            newStateTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                            break;
-                        }
-                    case AlertAction.Start: {
-                            this._activeAlerts.Add(item);
-                            break;
-                        }
-                    case AlertAction.Resend: {
-                            this._activeAlerts.Remove(item.ActiveAlert);
-                            this._activeAlerts.Add(item);
-                            resendTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());                         
-                            break;
-                        }
-                    case AlertAction.ShowStatus: {
-                            break;
-                        }
-                    case AlertAction.RemainActive: {
-                            break;
-                        }
+                if (item.Alert.enabled) {
+                    switch (item.AlertAction) {
+                        case AlertAction.Clear: {
+                                this._activeAlerts.Remove(item.ActiveAlert);
+                                break;
+                            }
+                        case AlertAction.ChangeState: {
+                                this._activeAlerts.Remove(item.ActiveAlert);
+                                this._activeAlerts.Add(item);
+                                newStateTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                messageBuilder.AppendChanged(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                sendEmail = true;
+                                break;
+                            }
+                        case AlertAction.Start: {
+                                this._activeAlerts.Add(item);
+                                sendEmail = true;
+                                break;
+                            }
+                        case AlertAction.Resend: {
+                                this._activeAlerts.Remove(item.ActiveAlert);
+                                this._activeAlerts.Add(item);
+                                resendTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                sendEmail = true;
+                                break;
+                            }
+                        case AlertAction.ShowStatus: {
+                                break;
+                            }
+                        case AlertAction.RemainActive: {
+                                break;
+                            }
+                    }
+                    statusTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                    messageBuilder.AppendStatus(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
                 }
-                statusTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
             }
-            foreach(var active in this._activeAlerts) {
-                activeTable.AddRow(active.Alert.displayName, active.Alert.CurrentState.ToString(), active.Reading.ToString());
+
+            if (this._activeAlerts.Count > 0) {
+                foreach (var active in this._activeAlerts) {
+                    activeTable.AddRow(active.Alert.displayName, active.Alert.CurrentState.ToString(), active.Reading.ToString());
+                    messageBuilder.AppendAlert(active.Alert.displayName, active.Alert.CurrentState.ToString(), active.Reading.ToString());
+                }
+                if(sendEmail)
+                    await this._emailService.SendMessageAsync("Epi2 Alerts",messageBuilder.FinishMessage());
             }
+
+
 
             Console.Clear();
             Console.WriteLine("New Alerts:");
@@ -88,7 +107,6 @@ namespace MonitoringData.Infrastructure.Services {
             Console.WriteLine("Status");
             Console.WriteLine(statusTable.ToMinimalString());
             Console.WriteLine();
-            return Task.CompletedTask;
         }
 
         public bool IsActive(int alertId) {
@@ -98,11 +116,11 @@ namespace MonitoringData.Infrastructure.Services {
         private IEnumerable<ItemAlert> Process(IList<ItemAlert> itemAlerts) {
             foreach(var itemAlert in itemAlerts) {
                 var alertId = itemAlert.Alert._id;
-                var actionType = itemAlert.AlertReading.value;
+                var actionType = itemAlert.Alert.CurrentState;
                 var activeAlert = this._activeAlerts.FirstOrDefault(e => e.Alert._id == alertId);
                 var actionItem = this._dataService.ActionItems.FirstOrDefault(e => e.actionType == actionType);
                 var now = DateTime.Now;
-                switch (itemAlert.AlertReading.value) {
+                switch (itemAlert.Alert.CurrentState) {
                     case ActionType.Okay: {
                             if (activeAlert != null) {
                                 itemAlert.AlertAction = AlertAction.Clear;
@@ -119,14 +137,13 @@ namespace MonitoringData.Infrastructure.Services {
                     case ActionType.Warning:
                     case ActionType.SoftWarn: {
                             if (activeAlert != null) {
-                                if (activeAlert.Alert.CurrentState != itemAlert.AlertReading.value) {
+                                if (activeAlert.Alert.CurrentState != itemAlert.Alert.CurrentState) {
                                     itemAlert.Alert.lastAlarm = now;
                                     itemAlert.Alert.latched = true;
-                                    itemAlert.Alert.CurrentState = itemAlert.AlertReading.value;
                                     itemAlert.AlertAction = AlertAction.ChangeState;
                                     itemAlert.ActiveAlert = activeAlert;
                                 } else {
-                                    if ((now - activeAlert.Alert.lastAlarm).TotalSeconds >= 5) {
+                                    if ((now - activeAlert.Alert.lastAlarm).TotalSeconds >= actionItem.EmailPeriod) {
                                         itemAlert.AlertAction = AlertAction.Resend;
                                         itemAlert.Alert.lastAlarm = now;
                                     } else {
@@ -137,7 +154,6 @@ namespace MonitoringData.Infrastructure.Services {
                             } else {
                                 itemAlert.AlertAction = AlertAction.Start;
                                 itemAlert.Alert.lastAlarm = now;
-                                itemAlert.Alert.CurrentState = itemAlert.AlertReading.value;
                                 itemAlert.ActiveAlert = null;
                             }
                             break;

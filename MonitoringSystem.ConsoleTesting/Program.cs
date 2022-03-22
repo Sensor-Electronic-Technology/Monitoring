@@ -26,14 +26,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await controller.Start();
             //controller.Run();
 
-            //var datalogger = new DataLoggerWrapper();
-            //await datalogger.StartAsync();
-            //Console.WriteLine("Press q to exit");
-            //do {
 
-            //} while (Console.ReadKey().Key != ConsoleKey.Q);
-
-            //Console.WriteLine("Exiting program");
 
             //using var context = new FacilityContext();
             //var analogAlerts = await context.Alerts.Include(e => e.InputChannel).ToListAsync();
@@ -54,8 +47,21 @@ namespace MonitoringSystem.ConsoleTesting {
             //var database = client.GetDatabase("epi2_data");
             //var alertItems = database.GetCollection<MonitorAlert>("alert_items");
 
-            //await AlertItemTypeUpdate();
-            await TestAlerts();
+            //await AlertItemUpdateEnabled();
+
+            await RunDataLogger();
+            //await TestAlerts();
+        }
+
+        public static async Task RunDataLogger() {
+            var datalogger = new DataLoggerWrapper();
+            await datalogger.StartAsync();
+            Console.WriteLine("Press q to exit");
+            do {
+
+            } while (Console.ReadKey().Key != ConsoleKey.Q);
+
+            Console.WriteLine("Exiting program");
         }
 
         public static async Task TestAlerts() {
@@ -105,7 +111,7 @@ namespace MonitoringSystem.ConsoleTesting {
             alerts.ForEach((alert) => {
                 var update = Builders<MonitorAlert>.Update.Set(s => s.displayName, alert.DisplayName);
                 var monitorAlert = alertItems.FindOneAndUpdate<MonitorAlert>(e => e._id == alert.Id, update);
-                monitorAlert.displayName = alert.DisplayName;
+                //monitorAlert.displayName = alert.DisplayName;
                 //alertItems.UpdateOne(monitorAlert);
             });
 
@@ -127,6 +133,27 @@ namespace MonitoringSystem.ConsoleTesting {
                 var update = Builders<MonitorAlert>.Update.Set(s => s.itemType, alert.AlertItemType);
                 var monitorAlert = alertItems.FindOneAndUpdate<MonitorAlert>(e => e._id == alert.Id, update);
                 monitorAlert.displayName = alert.DisplayName;
+                //alertItems.UpdateOne(monitorAlert);
+            });
+
+            Console.WriteLine("Check database");
+        }
+
+        public static async Task AlertItemUpdateEnabled() {
+            var client = new MongoClient("mongodb://172.20.3.30");
+            var database = client.GetDatabase("epi2_data");
+            var alertItems = database.GetCollection<MonitorAlert>("alert_items");
+            using var context = new FacilityContext();
+            var alerts = await context.Alerts
+                .Include(e => e.InputChannel)
+                .ThenInclude(e => e.ModbusDevice)
+                .Where(e => e.InputChannel.ModbusDevice.Identifier == "epi2")
+                .ToListAsync();
+
+            alerts.ForEach((alert) => {
+                var update = Builders<MonitorAlert>.Update.Set(s => s.enabled, alert.Enabled);
+                var monitorAlert = alertItems.FindOneAndUpdate<MonitorAlert>(e => e._id == alert.Id, update);
+                //monitorAlert.displayName = alert.DisplayName;
                 //alertItems.UpdateOne(monitorAlert);
             });
 
