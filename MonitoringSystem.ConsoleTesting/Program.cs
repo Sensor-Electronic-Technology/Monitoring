@@ -55,51 +55,28 @@ namespace MonitoringSystem.ConsoleTesting {
             //var alertItems = database.GetCollection<MonitorAlert>("alert_items");
 
             //await AlertItemTypeUpdate();
-
+            await TestAlerts();
         }
 
-        public static async Task TestAlertQueue() {
+        public static async Task TestAlerts() {
             var client = new MongoClient("mongodb://172.20.3.30");
             var database = client.GetDatabase("epi2_data");
+            IDataLogger dataLogger= new ModbusDataLogger(new MonitorDataService("mongodb://172.20.3.30", "epi2_data"), new FacilityContext());
+            await dataLogger.Load();
+            ConsoleKey key;
+            do {
+                await dataLogger.Read();
+                Console.WriteLine("Press Enter to continue, Q to quit");
+                key = Console.ReadKey().Key;
+            } while (key != ConsoleKey.Q);
 
-            var alertItems = database.GetCollection<MonitorAlert>("alert_items");
-            var actionItems = database.GetCollection<ActionItem>("action_items");
-            var alertReading = new AlertReading();
-            alertReading.itemid = 53;
-            alertReading.value = ActionType.Alarm;
-            alertReading.timestamp = DateTime.Now;
-            var alert = await alertItems.Find(e => e._id == alertReading.itemid).FirstOrDefaultAsync();
-            var action = await actionItems.Find(e => e.actionType == alertReading.value).FirstOrDefaultAsync();
-            if (alert != null) {
-
-            } else {
-                Console.WriteLine("Error: Alert not found");
-            }
         }
-        static AlertAction CheckAlert(AlertReading reading) {
-            switch (reading.value) {
-                case ActionType.Okay:
-                    return AlertAction.Clear;
-                case ActionType.Alarm:
-                case ActionType.Warning:
-                case ActionType.SoftWarn:
-                    return AlertAction.Start;
-                case ActionType.Maintenance:
-                case ActionType.Custom:
-                    return AlertAction.Nothing;
-                default:
-                    return AlertAction.Nothing;
-            }
-        }
-
         static async Task ClearAlert(AlertReading reading,MonitorAlert alert, IMongoCollection<MonitorAlert> alerts) {
             var update = Builders<MonitorAlert>.Update
                 .Set(e => e.CurrentState, reading.value)
                 .Set(e => e.latched, false);
             await alerts.UpdateOneAsync(e => e._id == alert._id, update);
         }
-
-
 
         static UpdateDefinition<MonitorAlert> AlertUpdateAlreadyLatch(AlertReading reading) {
             return Builders<MonitorAlert>.Update
