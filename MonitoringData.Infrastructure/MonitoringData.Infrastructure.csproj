@@ -6,6 +6,7 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
 	<ItemGroup>
+		<PackageReference Include="ConsoleTables" Version="2.4.2" />
 		<PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
 		<PackageReference Include="MongoDB.Driver" Version="2.14.1" />
 	</ItemGroup>

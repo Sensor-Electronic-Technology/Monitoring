@@ -6,6 +6,7 @@ using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringSystem.Shared.Data;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,6 +45,8 @@ namespace MonitoringData.Infrastructure.Services {
             this._context = context;
         }
         public async Task Read() {
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
             var result = ModbusService.Read(this._networkConfig.IPAddress, this._networkConfig.Port, this._modbusConfig).GetAwaiter().GetResult();
             var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart, (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
             var outputsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.OutputStart, (this._channelMapping.OutputStop - this._channelMapping.OutputStart) + 1).ToArray();
@@ -70,6 +73,9 @@ namespace MonitoringData.Infrastructure.Services {
             await this.ProcessOutputReadings(outputsRaw, now);
             await this.ProcessActionReadings(actionsRaw, now);
             await this._alertService.ProcessAlerts(this._itemAlerts);
+            watch.Stop();
+            Console.WriteLine($"Elapsed: {watch.ElapsedMilliseconds}");
+            watch.Restart();
         }
 
         public async Task Load() {
