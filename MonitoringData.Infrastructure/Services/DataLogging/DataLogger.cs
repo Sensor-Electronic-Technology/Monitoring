@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using MonitoringConfig.Infrastructure.Data.Model;
 using MonitoringData.Infrastructure.Model;
 using MonitoringData.Infrastructure.Services.AlertServices;
+using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringSystem.Shared.Data;
 using System;
 using System.Collections.Generic;
@@ -18,28 +19,32 @@ namespace MonitoringData.Infrastructure.Services {
     }
 
     public class ModbusDataLogger : IDataLogger {
-        private readonly IMonitorDataService _dataService;
+        private readonly IMonitorDataRepo _dataService;
         private IAlertService _alertService;
         private readonly ILogger _logger;
         private readonly FacilityContext _context;
+        private string deviceIdentifier;
 
         private NetworkConfiguration _networkConfig;
         private ModbusConfig _modbusConfig;
         private ChannelRegisterMapping _channelMapping;
-
         private bool initialized = false;
-
+        private bool loggingEnabled = false;
         private IList<ItemAlert> _itemAlerts;
 
-        public ModbusDataLogger(IMonitorDataService dataService,ILogger logger,FacilityContext context) {
+        public ModbusDataLogger(IMonitorDataRepo dataService,ILogger<ModbusDataLogger> logger,IAlertService alertService,FacilityContext context) {
             this._dataService = dataService;
+            this._alertService = alertService;
             this._logger = logger;
             this._context = context;
+            this.loggingEnabled = true;
         }
 
-        public ModbusDataLogger(IMonitorDataService dataService,FacilityContext context) {
-            this._dataService = dataService;
-            this._context = context;
+        public ModbusDataLogger(string connName,string databaseName,Dictionary<Type,string> collectionNames) {
+            this._dataService = new MonitorDataService(connName,databaseName,collectionNames);
+            this._context = new FacilityContext();            
+            this._alertService = new AlertService(connName,databaseName,collectionNames[typeof(ActionItem)],collectionNames[typeof(AlertItemType)]);
+            this.loggingEnabled = true;
         }
         public async Task Read() {
             Stopwatch watch = new Stopwatch();
@@ -61,7 +66,7 @@ namespace MonitoringData.Infrastructure.Services {
                     value = deviceRaw
                 });
             } else {
-                //Log Error
+                this.LogError("Error: HoldingRegister count is < DeviceStart Address");
             }
             await this.ProcessAlertReadings(alertsRaw,now);
             await this.ProcessAnalogReadings(analogRaw,now);
@@ -77,7 +82,8 @@ namespace MonitoringData.Infrastructure.Services {
 
         public async Task Load() {
             await this._dataService.LoadAsync();
-            this._alertService = new AlertService(this._dataService);
+            await this._alertService.Initialize();
+            //this._alertService = new AlertService(this._dataService);
             var device = await this._context.Devices.AsNoTracking()
                 .OfType<ModbusDevice>()
                 .FirstOrDefaultAsync(e => e.Identifier == "epi2");
@@ -86,9 +92,7 @@ namespace MonitoringData.Infrastructure.Services {
                 this._networkConfig = device.NetworkConfiguration;
                 this._modbusConfig = this._networkConfig.ModbusConfig;
                 this._channelMapping = this._modbusConfig.ChannelMapping;
-                Console.WriteLine("Loading Completed");
             } else {
-                Console.WriteLine("Error:Device not found");
                 this.initialized = false;
             }
         }
@@ -123,7 +127,7 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 await this._dataService.InsertManyAsync(analogReadings);
             } else {
-                //Log Error
+                this.LogError("Error: AnalogItems count doesn't match raw data count");
             }
         }
 
@@ -147,7 +151,7 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 await this._dataService.InsertManyAsync(readings);
             } else {
-                //Log Error
+                this.LogError("Error: DiscreteItems count doesn't match raw data count");
             }
         }
 
@@ -171,7 +175,7 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 await this._dataService.InsertManyAsync(readings);
             } else {
-                //Log Error
+                this.LogError("Error: Virtualitems count doesn't match raw data count");
             }
 
         }
@@ -184,7 +188,7 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 await this._dataService.InsertManyAsync(readings);
             } else {
-                //Log Error
+                this.LogError("Error: OutputItems count doesn't match raw data count");
             }
         }
 
@@ -200,7 +204,31 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 await this._dataService.InsertManyAsync(readings);
             } else {
-                //Log Error
+                this.LogError("Error: ActionItem Count doesn't match raw data count");
+            }
+        }
+
+        private void LogInformation(string msg) {
+            if (this.loggingEnabled) {
+                this._logger.LogInformation(msg);
+            }else {
+                Console.WriteLine(msg);
+            }
+        }
+
+        private void LogWarning(string msg) {
+            if (this.loggingEnabled) {
+                this._logger.LogWarning(msg);
+            } else {
+                Console.WriteLine(msg);
+            }
+        }
+
+        private void LogError(string msg) {
+            if (this.loggingEnabled) {
+                this._logger.LogError(msg);
+            } else {
+                Console.WriteLine(msg);
             }
         }
 

@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-MonitoringData.DataLoggingService-D5276EDF-5BE2-441F-A5F3-FB9D44E210DD</UserSecretsId>
+    <UserSecretsId>dotnet-MonitoringData.AlertingService-EA1A63FF-C9F8-4C6A-AA97-73B83AB7F30E</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
@@ -14,8 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonitoringConfig.Infrastructure\MonitoringConfig.Infrastructure.csproj" />
     <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
-    <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
   </ItemGroup>
 </Project>

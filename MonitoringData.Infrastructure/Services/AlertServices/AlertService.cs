@@ -5,8 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using ConsoleTables;
 using MonitoringData.Infrastructure.Model;
+using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringSystem.Shared.Data;
+using Microsoft.Extensions.Logging;
 
 namespace MonitoringData.Infrastructure.Services {
     public enum AlertAction {
@@ -17,19 +19,25 @@ namespace MonitoringData.Infrastructure.Services {
         ShowStatus,
         RemainActive
     }
-
     public interface IAlertService {
         Task ProcessAlerts(IList<ItemAlert> items);
-        bool IsActive(int alertId);
+        Task Initialize();
     }
 
     public class AlertService : IAlertService {
-        private readonly IMonitorDataService _dataService;
+        private readonly IAlertRepo _alertRepo;
+        private readonly ILogger<AlertService> _logger; 
         private IEmailService _emailService;
         private List<ItemAlert> _activeAlerts = new List<ItemAlert>();
-        public AlertService(IMonitorDataService dataService) {
-            this._dataService = dataService;
+
+        public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger) {
+            this._alertRepo = alertRepo;
+            this._logger = logger;
             this._emailService = new EmailService();       
+        }
+
+        public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
+            this._alertRepo = new AlertRepo(connName, databaseName, actionCol, alertCol);
         }
 
         public async Task ProcessAlerts(IList<ItemAlert> items) {
@@ -88,37 +96,29 @@ namespace MonitoringData.Infrastructure.Services {
                 if(sendEmail)
                     await this._emailService.SendMessageAsync("Epi2 Alerts",messageBuilder.FinishMessage());
             }
-
-
-
-            Console.Clear();
-            Console.WriteLine("New Alerts:");
-            Console.WriteLine(newAlertTable.ToMinimalString());
-            Console.WriteLine();
-            Console.WriteLine("Active Alerts");
-            Console.WriteLine(activeTable.ToMinimalString());
-            Console.WriteLine();
-            Console.WriteLine("Resend Alerts");
-            Console.WriteLine(resendTable.ToMinimalString());
-            Console.WriteLine();
-            Console.WriteLine("ChangeState Alerts");
-            Console.WriteLine(newStateTable.ToMinimalString());
-            Console.WriteLine();
-            Console.WriteLine("Status");
-            Console.WriteLine(statusTable.ToMinimalString());
-            Console.WriteLine();
+            //Console.Clear();
+            //Console.WriteLine("New Alerts:");
+            //Console.WriteLine(newAlertTable.ToMinimalString());
+            //Console.WriteLine();
+            //Console.WriteLine("Active Alerts");
+            //Console.WriteLine(activeTable.ToMinimalString());
+            //Console.WriteLine();
+            //Console.WriteLine("Resend Alerts");
+            //Console.WriteLine(resendTable.ToMinimalString());
+            //Console.WriteLine();
+            //Console.WriteLine("ChangeState Alerts");
+            //Console.WriteLine(newStateTable.ToMinimalString());
+            //Console.WriteLine();
+            //Console.WriteLine("Status");
+            //Console.WriteLine(statusTable.ToMinimalString());
+            //Console.WriteLine();
         }
-
-        public bool IsActive(int alertId) {
-            return (this._activeAlerts.FirstOrDefault(e => e.Alert._id == alertId) != null);
-        }
-
         private IEnumerable<ItemAlert> Process(IList<ItemAlert> itemAlerts) {
             foreach(var itemAlert in itemAlerts) {
                 var alertId = itemAlert.Alert._id;
                 var actionType = itemAlert.Alert.CurrentState;
                 var activeAlert = this._activeAlerts.FirstOrDefault(e => e.Alert._id == alertId);
-                var actionItem = this._dataService.ActionItems.FirstOrDefault(e => e.actionType == actionType);
+                var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.actionType == actionType);
                 var now = DateTime.Now;
                 switch (itemAlert.Alert.CurrentState) {
                     case ActionType.Okay: {
@@ -143,11 +143,16 @@ namespace MonitoringData.Infrastructure.Services {
                                     itemAlert.AlertAction = AlertAction.ChangeState;
                                     itemAlert.ActiveAlert = activeAlert;
                                 } else {
-                                    if ((now - activeAlert.Alert.lastAlarm).TotalSeconds >= actionItem.EmailPeriod) {
-                                        itemAlert.AlertAction = AlertAction.Resend;
-                                        itemAlert.Alert.lastAlarm = now;
+                                    if (actionItem != null) {
+                                        if ((now - activeAlert.Alert.lastAlarm).TotalMinutes >= actionItem.EmailPeriod) {
+                                            itemAlert.AlertAction = AlertAction.Resend;
+                                            itemAlert.Alert.lastAlarm = now;
+                                        } else {
+                                            itemAlert.AlertAction = AlertAction.RemainActive;
+                                        }
                                     } else {
                                         itemAlert.AlertAction = AlertAction.RemainActive;
+                                        this._logger.LogError($"ActionItem not found: {actionType.ToString()}");
                                     }
                                 }
                                 itemAlert.ActiveAlert = activeAlert;
@@ -167,6 +172,9 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 yield return itemAlert;
             }
+        }   
+        public async Task Initialize() {
+            await this._alertRepo.Load();
         }
     }
 }

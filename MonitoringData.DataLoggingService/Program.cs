@@ -1,23 +1,24 @@
+using MonitoringConfig.Infrastructure.Data.Model;
 using MonitoringData.DataLoggingService;
+using MonitoringData.Infrastructure.Model;
 using MonitoringData.Infrastructure.Services;
+using MonitoringData.Infrastructure.Services.DataAccess;
 
 var builder = Host.CreateDefaultBuilder(args);
 
 builder.ConfigureAppConfiguration((hostContext, configuration) => {
-    configuration.AddJsonFile("dbSettings.json", optional: true, reloadOnChange: true);
+    configuration.AddJsonFile(MonitorDatabaseSettings.FileName, optional: true, reloadOnChange: true);
 });
 
 builder.ConfigureServices((hostContext, services) => {
-    services.Configure<ServiceConfiguration>(hostContext.Configuration.GetSection(ServiceConfiguration.Section));
-    ServiceConfiguration sConfig = new();
-    hostContext.Configuration.GetSection(ServiceConfiguration.Section).Bind(sConfig);
-
+    services.Configure<MonitorDatabaseSettings>(hostContext.Configuration.GetSection(MonitorDatabaseSettings.SectionName));
+    services.AddSingleton<IMonitorDataRepo,MonitorDataService>();
+    services.AddDbContext<FacilityContext>();
+    services.AddSingleton<IAlertRepo,AlertRepo>();
+    services.AddTransient<IDataLogger,ModbusDataLogger>();
+    services.AddHostedService<Worker>();
 });
 
-IHost host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services => {
-        services.AddHostedService<Worker>();
-    })
-    .Build();
+IHost host = builder.Build();
 
 await host.RunAsync();
