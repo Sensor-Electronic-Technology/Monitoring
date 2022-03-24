@@ -497,7 +497,7 @@ namespace MonitoringSystem.ConsoleTesting {
             collectionNames.Add(typeof(ActionReading), "action_readings");
 
             collectionNames.Add(typeof(DeviceReading), "device_readings");
-            this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi2_data","","",collectionNames, new FacilityContext());
+            //this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi2_data","","",collectionNames, new FacilityContext());
         }
         public async Task StartAsync() {
             Console.WriteLine("Starting Logging Service");

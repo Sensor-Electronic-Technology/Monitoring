@@ -9,6 +9,8 @@ using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringSystem.Shared.Data;
 using Microsoft.Extensions.Logging;
+using MassTransit;
+using MonitoringSystem.Shared.Contracts;
 
 namespace MonitoringData.Infrastructure.Services {
     public enum AlertAction {
@@ -26,14 +28,16 @@ namespace MonitoringData.Infrastructure.Services {
 
     public class AlertService : IAlertService {
         private readonly IAlertRepo _alertRepo;
-        private readonly ILogger<AlertService> _logger; 
+        private readonly ILogger<AlertService> _logger;
+        private readonly ISendEndpointProvider _sendEnpoint;
         private IEmailService _emailService;
         private List<ItemAlert> _activeAlerts = new List<ItemAlert>();
 
-        public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger) {
+        public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,ISendEndpointProvider sendEndpoint) {
             this._alertRepo = alertRepo;
             this._logger = logger;
-            this._emailService = new EmailService();       
+            this._emailService = new EmailService();
+            this._sendEnpoint = sendEndpoint;
         }
 
         public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
@@ -93,8 +97,10 @@ namespace MonitoringData.Infrastructure.Services {
                     activeTable.AddRow(active.Alert.displayName, active.Alert.CurrentState.ToString(), active.Reading.ToString());
                     messageBuilder.AppendAlert(active.Alert.displayName, active.Alert.CurrentState.ToString(), active.Reading.ToString());
                 }
-                if(sendEmail)
-                    await this._emailService.SendMessageAsync("Epi2 Alerts",messageBuilder.FinishMessage());
+                if (sendEmail) {
+                    var endpoint = await this._sendEnpoint.GetSendEndpoint(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
+                    await endpoint.Send<EmailContract>(new { Subject = "Epi2 Alerts", Message = messageBuilder.FinishMessage() });
+                }
             }
             //Console.Clear();
             //Console.WriteLine("New Alerts:");
