@@ -33,11 +33,11 @@ namespace MonitoringData.Infrastructure.Services {
         private IEmailService _emailService;
         private List<ItemAlert> _activeAlerts = new List<ItemAlert>();
 
-        public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,ISendEndpointProvider sendEndpoint) {
+        public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger) {
             this._alertRepo = alertRepo;
             this._logger = logger;
             this._emailService = new EmailService();
-            this._sendEnpoint = sendEndpoint;
+            //this._sendEnpoint = sendEndpoint;
         }
 
         public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
@@ -64,7 +64,7 @@ namespace MonitoringData.Infrastructure.Services {
                                 this._activeAlerts.Remove(item.ActiveAlert);
                                 this._activeAlerts.Add(item);
                                 newStateTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                                messageBuilder.AppendChanged(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                //messageBuilder.AppendChanged(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
                                 sendEmail = true;
                                 break;
                             }
@@ -98,26 +98,27 @@ namespace MonitoringData.Infrastructure.Services {
                     messageBuilder.AppendAlert(active.Alert.displayName, active.Alert.CurrentState.ToString(), active.Reading.ToString());
                 }
                 if (sendEmail) {
-                    var endpoint = await this._sendEnpoint.GetSendEndpoint(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
-                    await endpoint.Send<EmailContract>(new { Subject = "Epi2 Alerts", Message = messageBuilder.FinishMessage() });
+                    //var endpoint = await this._sendEnpoint.GetSendEndpoint(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
+                    //await endpoint.Send<EmailContract>(new { Subject = "Epi2 Alerts", Message = messageBuilder.FinishMessage() });
+                    await this._emailService.SendMessageAsync("Epi2 Alerts", messageBuilder.FinishMessage());
                 }
             }
-            //Console.Clear();
-            //Console.WriteLine("New Alerts:");
-            //Console.WriteLine(newAlertTable.ToMinimalString());
-            //Console.WriteLine();
-            //Console.WriteLine("Active Alerts");
-            //Console.WriteLine(activeTable.ToMinimalString());
-            //Console.WriteLine();
-            //Console.WriteLine("Resend Alerts");
-            //Console.WriteLine(resendTable.ToMinimalString());
-            //Console.WriteLine();
-            //Console.WriteLine("ChangeState Alerts");
-            //Console.WriteLine(newStateTable.ToMinimalString());
-            //Console.WriteLine();
-            //Console.WriteLine("Status");
-            //Console.WriteLine(statusTable.ToMinimalString());
-            //Console.WriteLine();
+            Console.Clear();
+            Console.WriteLine("New Alerts:");
+            Console.WriteLine(newAlertTable.ToMinimalString());
+            Console.WriteLine();
+            Console.WriteLine("Active Alerts");
+            Console.WriteLine(activeTable.ToMinimalString());
+            Console.WriteLine();
+            Console.WriteLine("Resend Alerts");
+            Console.WriteLine(resendTable.ToMinimalString());
+            Console.WriteLine();
+            Console.WriteLine("ChangeState Alerts");
+            Console.WriteLine(newStateTable.ToMinimalString());
+            Console.WriteLine();
+            Console.WriteLine("Status");
+            Console.WriteLine(statusTable.ToMinimalString());
+            Console.WriteLine();
         }
         private IEnumerable<ItemAlert> Process(IList<ItemAlert> itemAlerts) {
             foreach(var itemAlert in itemAlerts) {

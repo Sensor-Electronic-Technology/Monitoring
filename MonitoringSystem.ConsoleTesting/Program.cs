@@ -497,7 +497,7 @@ namespace MonitoringSystem.ConsoleTesting {
             collectionNames.Add(typeof(ActionReading), "action_readings");
 
             collectionNames.Add(typeof(DeviceReading), "device_readings");
-            //this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi2_data","","",collectionNames, new FacilityContext());
+            this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi2_data",collectionNames);
         }
         public async Task StartAsync() {
             Console.WriteLine("Starting Logging Service");
@@ -505,8 +505,8 @@ namespace MonitoringSystem.ConsoleTesting {
             this._timer = new Timer(this.DataLogCallback, null,TimeSpan.Zero, TimeSpan.FromSeconds(1));
         }
         public async void DataLogCallback(object state) {
-            await this._dataLogger.Read();
             Console.WriteLine($"{DateTime.Now}: Logged Data");
+            await this._dataLogger.Read();
         }
     }
 }

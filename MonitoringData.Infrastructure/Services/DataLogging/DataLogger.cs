@@ -43,40 +43,44 @@ namespace MonitoringData.Infrastructure.Services {
         public ModbusDataLogger(string connName,string databaseName,Dictionary<Type,string> collectionNames) {
             this._dataService = new MonitorDataService(connName,databaseName,collectionNames);
             this._context = new FacilityContext();            
-            this._alertService = new AlertService(connName,databaseName,collectionNames[typeof(ActionItem)],collectionNames[typeof(AlertItemType)]);
+            this._alertService = new AlertService(connName,databaseName,collectionNames[typeof(ActionItem)],collectionNames[typeof(MonitorAlert)]);
             this.loggingEnabled = true;
         }
         public async Task Read() {
             Stopwatch watch = new Stopwatch();
             watch.Start();
-            var result = ModbusService.Read(this._networkConfig.IPAddress, this._networkConfig.Port, this._modbusConfig).GetAwaiter().GetResult();
-            var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart, (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
-            var outputsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.OutputStart, (this._channelMapping.OutputStop - this._channelMapping.OutputStart) + 1).ToArray();
-            var actionsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.ActionStart, (this._channelMapping.ActionStop - this._channelMapping.ActionStart) + 1).ToArray();
-            var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._channelMapping.AnalogStart, (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1).ToArray();
-            var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._channelMapping.AlertStart, (this._channelMapping.AlertStop - this._channelMapping.AlertStart) + 1).ToArray();
-            var virtualRaw = new ArraySegment<bool>(result.Coils, this._channelMapping.VirtualStart, (this._channelMapping.VirtualStop - this._channelMapping.VirtualStart) + 1).ToArray();
-            var now = DateTime.Now;
-            this._itemAlerts = new List<ItemAlert>();
-            if (result.HoldingRegisters.Length > this._channelMapping.DeviceStart - 1) {
-                var deviceRaw = this.ToDeviceState(result.HoldingRegisters[this._channelMapping.DeviceStart]);
-                await this._dataService.InsertDeviceReadingAsync(new DeviceReading() {
-                    itemid = 1,
-                    timestamp = now,
-                    value = deviceRaw
-                });
+            var result = await ModbusService.Read(this._networkConfig.IPAddress, this._networkConfig.Port, this._modbusConfig);
+            if (result._success) {
+                var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart, (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
+                var outputsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.OutputStart, (this._channelMapping.OutputStop - this._channelMapping.OutputStart) + 1).ToArray();
+                var actionsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.ActionStart, (this._channelMapping.ActionStop - this._channelMapping.ActionStart) + 1).ToArray();
+                var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._channelMapping.AnalogStart, (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1).ToArray();
+                var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._channelMapping.AlertStart, (this._channelMapping.AlertStop - this._channelMapping.AlertStart) + 1).ToArray();
+                var virtualRaw = new ArraySegment<bool>(result.Coils, this._channelMapping.VirtualStart, (this._channelMapping.VirtualStop - this._channelMapping.VirtualStart) + 1).ToArray();
+                var now = DateTime.Now;
+                this._itemAlerts = new List<ItemAlert>();
+                if (result.HoldingRegisters.Length > this._channelMapping.DeviceStart - 1) {
+                    var deviceRaw = this.ToDeviceState(result.HoldingRegisters[this._channelMapping.DeviceStart]);
+                    await this._dataService.InsertDeviceReadingAsync(new DeviceReading() {
+                        itemid = 1,
+                        timestamp = now,
+                        value = deviceRaw
+                    });
+                } else {
+                    this.LogError("Error: HoldingRegister count is < DeviceStart Address");
+                }
+                await this.ProcessAlertReadings(alertsRaw, now);
+                await this.ProcessAnalogReadings(analogRaw, now);
+                await this.ProcessDiscreteReadings(discreteRaw, now);
+                await this.ProcessVirtualReadings(virtualRaw, now);
+                await this.ProcessOutputReadings(outputsRaw, now);
+                await this.ProcessActionReadings(actionsRaw, now);
+                await this._alertService.ProcessAlerts(this._itemAlerts);
             } else {
-                this.LogError("Error: HoldingRegister count is < DeviceStart Address");
+                this._logger.LogError("Modbus read failed");
             }
-            await this.ProcessAlertReadings(alertsRaw,now);
-            await this.ProcessAnalogReadings(analogRaw,now);
-            await this.ProcessDiscreteReadings(discreteRaw, now);
-            await this.ProcessVirtualReadings(virtualRaw, now);
-            await this.ProcessOutputReadings(outputsRaw, now);
-            await this.ProcessActionReadings(actionsRaw, now);
-            await this._alertService.ProcessAlerts(this._itemAlerts);
-            watch.Stop();
             Console.WriteLine($"Elapsed: {watch.ElapsedMilliseconds}");
+            watch.Stop();
             watch.Restart();
         }
 
@@ -122,7 +126,7 @@ namespace MonitoringData.Infrastructure.Services {
                     if (itemAlert != null) {
                         itemAlert.Reading = (float)analogReading.value;
                     } else {
-                        //Log Error
+                        this.LogError("Analog ItemAlert not found");
                     }
                 }
                 await this._dataService.InsertManyAsync(analogReadings);
@@ -146,7 +150,7 @@ namespace MonitoringData.Infrastructure.Services {
                     if (itemAlert != null) {
                         itemAlert.Reading = reading.value == true ? 1.00f : 0.00f;
                     } else {
-                        //Log Error
+                        this.LogError("Discrete ItemAlert not found");
                     }
                 }
                 await this._dataService.InsertManyAsync(readings);
@@ -170,7 +174,7 @@ namespace MonitoringData.Infrastructure.Services {
                     if (itemAlert != null) {
                         itemAlert.Reading = reading.value == true ? 1.00f : 0.00f;
                     } else {
-                        //Log Error
+                        this.LogError("Virual ItemAlert not found");
                     }
                 }
                 await this._dataService.InsertManyAsync(readings);

@@ -17,14 +17,14 @@ builder.ConfigureAppConfiguration((hostContext, configuration) => {
 builder.ConfigureServices((hostContext, services) => {
 
     services.Configure<MonitorDatabaseSettings>(hostContext.Configuration.GetSection(MonitorDatabaseSettings.SectionName));
-    services.AddMassTransit(bus => {
-        bus.UsingRabbitMq((context,rabbitcfg) => {
-            rabbitcfg.Host(new Uri("rabbitmq://172.20.3.28:5672/"), (hostcfg) => {
-                hostcfg.Username("setiadmin");
-                hostcfg.Password("Sens0r20471#!");
-            });
-        });
-    });
+    //services.AddMassTransit(bus => {
+    //    bus.UsingRabbitMq((context,rabbitcfg) => {
+    //        rabbitcfg.Host(new Uri("rabbitmq://172.20.3.28:5672/"), (hostcfg) => {
+    //            hostcfg.Username("setiadmin");
+    //            hostcfg.Password("Sens0r20471#!");
+    //        });
+    //    });
+    //});
     //services.AddTransient<ISendEndpoint>();
     services.AddSingleton<IMonitorDataRepo,MonitorDataService>();
     services.AddDbContext<FacilityContext>();
