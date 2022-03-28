@@ -32,6 +32,7 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly ISendEndpointProvider _sendEnpoint;
         private IEmailService _emailService;
         private List<ItemAlert> _activeAlerts = new List<ItemAlert>();
+        private readonly object _locker = new object();
 
         public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger) {
             this._alertRepo = alertRepo;
@@ -42,6 +43,7 @@ namespace MonitoringData.Infrastructure.Services {
 
         public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
             this._alertRepo = new AlertRepo(connName, databaseName, actionCol, alertCol);
+            this._emailService = new EmailService();
         }
 
         public async Task ProcessAlerts(IList<ItemAlert> items) {
@@ -57,27 +59,35 @@ namespace MonitoringData.Infrastructure.Services {
                 if (item.Alert.enabled) {
                     switch (item.AlertAction) {
                         case AlertAction.Clear: {
-                                this._activeAlerts.Remove(item.ActiveAlert);
+                                lock (_locker) {
+                                    this._activeAlerts.Remove(item.ActiveAlert);
+                                }
                                 break;
                             }
                         case AlertAction.ChangeState: {
-                                this._activeAlerts.Remove(item.ActiveAlert);
-                                this._activeAlerts.Add(item);
-                                newStateTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                                //messageBuilder.AppendChanged(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                                sendEmail = true;
+                                lock (_locker) {
+                                    this._activeAlerts.Remove(item.ActiveAlert);
+                                    this._activeAlerts.Add(item);
+                                    newStateTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                    //messageBuilder.AppendChanged(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                    sendEmail = true;
+                                }
                                 break;
                             }
                         case AlertAction.Start: {
-                                this._activeAlerts.Add(item);
-                                sendEmail = true;
+                                lock (_locker) {
+                                    this._activeAlerts.Add(item);
+                                    sendEmail = true;
+                                }
                                 break;
                             }
                         case AlertAction.Resend: {
-                                this._activeAlerts.Remove(item.ActiveAlert);
-                                this._activeAlerts.Add(item);
-                                resendTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                                sendEmail = true;
+                                lock (_locker) {
+                                    this._activeAlerts.Remove(item.ActiveAlert);
+                                    this._activeAlerts.Add(item);
+                                    resendTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                    sendEmail = true;
+                                }
                                 break;
                             }
                         case AlertAction.ShowStatus: {
