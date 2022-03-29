@@ -49,10 +49,25 @@ namespace MonitoringSystem.ConsoleTesting {
             //var alertItems = database.GetCollection<MonitorAlert>("alert_items");
 
             //await AlertItemUpdateEnabled();
-
-            await RunDataLogger();
+            List<string> list = new List<string>() { "3", "2", "1" };
+            Console.WriteLine("Before: ");
+            foreach(var item in list) {
+                Console.Write($"{item}  ");
+            }
+            await TestListAsync(list);
+            Console.WriteLine("After: ");
+            foreach(var item in list) {
+                Console.Write($"{item}  ");
+            }
+            //await RunDataLogger();
             //await TestAlerts();
             //ActionItemUpdate();
+        }
+
+        public static async Task TestListAsync(List<string> modify) {
+            for(int i = 0; i < modify.Count; i++) {
+                modify[i] = (i + 1).ToString();
+            }
         }
 
         public static async Task RunDataLogger() {
