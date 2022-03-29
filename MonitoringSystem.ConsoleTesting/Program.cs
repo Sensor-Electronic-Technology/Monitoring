@@ -13,6 +13,7 @@ using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Caching.Memory;
 using MonitoringData.Infrastructure.Services.DataAccess;
+using MonitoringData.Infrastructure.Services.AlertServices;
 
 namespace MonitoringSystem.ConsoleTesting {
 
@@ -50,14 +51,53 @@ namespace MonitoringSystem.ConsoleTesting {
 
             //await AlertItemUpdateEnabled();
 
-            await RunDataLogger();
+            //await RunDataLogger();
             //await TestAlerts();
             //ActionItemUpdate();
+            await TestAlerts();
         }
 
-        public static async Task TestListAsync(List<string> modify) {
-            for(int i = 0; i < modify.Count; i++) {
-                modify[i] = (i + 1).ToString();
+        public static async Task TestAlerts() {
+            Dictionary<Type, string> collectionNames = new Dictionary<Type, string>();
+            collectionNames.Add(typeof(MonitorAlert), "alert_items");
+            collectionNames.Add(typeof(ActionItem), "action_items");
+            collectionNames.Add(typeof(AnalogChannel), "analog_items");
+            collectionNames.Add(typeof(DiscreteChannel), "discrete_items");
+            collectionNames.Add(typeof(VirtualChannel), "virtual_items");
+            collectionNames.Add(typeof(OutputItem), "output_items");
+
+            collectionNames.Add(typeof(AnalogReading), "analog_readings");
+            collectionNames.Add(typeof(DiscreteReading), "discrete_readings");
+            collectionNames.Add(typeof(VirtualReading), "virtual_readings");
+            collectionNames.Add(typeof(OutputReading), "output_readings");
+            collectionNames.Add(typeof(AlertReading), "alert_readings");
+            collectionNames.Add(typeof(ActionReading), "action_readings");
+
+            collectionNames.Add(typeof(DeviceReading), "device_readings");
+
+            var repo = new MonitorDataService("mongodb://172.20.3.30","epi2_data", collectionNames);
+            var alertService = new AlertService("mongodb://172.20.3.30", "epi2_data", collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
+            await repo.LoadAsync();
+            await alertService.Initialize();
+            var itemAlerts = repo.MonitorAlerts.Select(alert => new ItemAlert(alert, ActionType.Okay)).ToList();
+            int count = 0;
+            while (true) {
+                await alertService.ProcessAlerts(itemAlerts);
+                var itemAlert=itemAlerts.FirstOrDefault(e => e.Alert.channelId ==109);
+                if (count == 0) {
+                    itemAlert.Alert.CurrentState = ActionType.SoftWarn;
+                    itemAlert.Reading = 100.0f;
+                    count++;
+                } else if (count == 1) {
+                    itemAlert.Alert.CurrentState = ActionType.Warning;
+                    itemAlert.Reading = 500.0f;
+                    count++;
+                } else {
+                    itemAlert.Alert.CurrentState = ActionType.Alarm;
+                    itemAlert.Reading = 1000.0f;
+                    count = 0;
+                }
+                await Task.Delay(1000);
             }
         }
 

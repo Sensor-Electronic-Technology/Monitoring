@@ -55,32 +55,34 @@ namespace MonitoringData.Infrastructure.Services {
             ConsoleTable activeTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable resendTable = new ConsoleTable("Alert", "Status", "Reading");
             bool sendEmail = false;
-            this.Process(items);
-            foreach (var item in items) {
+            
+            foreach (var item in this.Process(items)) {
                 if (item.Alert.enabled) {
                     switch (item.AlertAction) {
                         case AlertAction.Clear: {
-                                lock (_locker) {
-                                    this._activeAlerts.Remove(item.ActiveAlert);
-                                }
+                                this._activeAlerts.RemoveAll(e=>e.Alert._id==item.Alert._id);
                                 break;
                             }
                         case AlertAction.ChangeState: {
-                                this._activeAlerts.Remove(item.ActiveAlert);
-                                this._activeAlerts.Add(item);
+                                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.Alert._id == item.Alert._id);
+                                if (activeAlert != null) {
+                                    activeAlert.Alert.CurrentState = item.Alert.CurrentState;
+                                    activeAlert.Reading = item.Reading;
+                                    activeAlert.AlertAction = item.AlertAction;
+                                } else {
+                                    //Log Error
+                                }
                                 newStateTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
                                 //messageBuilder.AppendChanged(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
                                 sendEmail = true;
                                 break;
                             }
                         case AlertAction.Start: {
-                                this._activeAlerts.Add(item);
+                                this._activeAlerts.Add(item.Clone());
                                 sendEmail = true;
                                 break;
                             }
                         case AlertAction.Resend: {
-                                this._activeAlerts.Remove(item.ActiveAlert);
-                                this._activeAlerts.Add(item);
                                 resendTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
                                 sendEmail = true;
                                 break;
@@ -125,23 +127,21 @@ namespace MonitoringData.Infrastructure.Services {
             Console.WriteLine(statusTable.ToMinimalString());
             Console.WriteLine();
         }
-        private void Process(IList<ItemAlert> itemAlerts) {
-            foreach(var itemAlert in itemAlerts) {
+        private IEnumerable<ItemAlert> Process(IList<ItemAlert> itemAlerts) {
+            var now = DateTime.Now;
+            foreach (var itemAlert in itemAlerts) {
                 var alertId = itemAlert.Alert._id;
                 var actionType = itemAlert.Alert.CurrentState;
-                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.Alert._id == alertId);
-                var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.actionType == actionType);
-                var now = DateTime.Now;
+                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.Alert._id == itemAlert.Alert._id);
+                var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.actionType == actionType);                
                 switch (itemAlert.Alert.CurrentState) {
                     case ActionType.Okay: {
                             if (activeAlert != null) {
                                 itemAlert.AlertAction = AlertAction.Clear;
                                 itemAlert.Alert.latched = false;
-                                itemAlert.ActiveAlert = activeAlert;
                                 break;
                             } else {
                                 itemAlert.AlertAction = AlertAction.ShowStatus;
-                                itemAlert.ActiveAlert = null;
                                 break;
                             }
                         }
@@ -153,7 +153,6 @@ namespace MonitoringData.Infrastructure.Services {
                                     itemAlert.Alert.lastAlarm = now;
                                     itemAlert.Alert.latched = true;
                                     itemAlert.AlertAction = AlertAction.ChangeState;
-                                    itemAlert.ActiveAlert = activeAlert;
                                 } else {
                                     if (actionItem != null) {
                                         if ((now - activeAlert.Alert.lastAlarm).TotalMinutes >= actionItem.EmailPeriod) {
@@ -167,11 +166,10 @@ namespace MonitoringData.Infrastructure.Services {
                                         //this._logger.LogError($"ActionItem not found: {actionType.ToString()}");
                                     }
                                 }
-                                itemAlert.ActiveAlert = activeAlert;
+
                             } else {
                                 itemAlert.AlertAction = AlertAction.Start;
                                 itemAlert.Alert.lastAlarm = now;
-                                itemAlert.ActiveAlert = null;
                             }
                             break;
                         }
@@ -179,10 +177,9 @@ namespace MonitoringData.Infrastructure.Services {
                     case ActionType.Custom:
                     default:
                         itemAlert.AlertAction = AlertAction.ShowStatus;
-                        itemAlert.ActiveAlert = null;
                         break;
                 }
-                //yield return itemAlert;
+                yield return itemAlert;
             }
         }   
         public async Task Initialize() {
