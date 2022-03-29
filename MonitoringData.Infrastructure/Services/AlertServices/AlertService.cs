@@ -55,7 +55,8 @@ namespace MonitoringData.Infrastructure.Services {
             ConsoleTable activeTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable resendTable = new ConsoleTable("Alert", "Status", "Reading");
             bool sendEmail = false;
-            foreach (var item in this.Process(items)) {
+            this.Process(items);
+            foreach (var item in items) {
                 if (item.Alert.enabled) {
                     switch (item.AlertAction) {
                         case AlertAction.Clear: {
@@ -65,29 +66,23 @@ namespace MonitoringData.Infrastructure.Services {
                                 break;
                             }
                         case AlertAction.ChangeState: {
-                                lock (_locker) {
-                                    this._activeAlerts.Remove(item.ActiveAlert);
-                                    this._activeAlerts.Add(item);
-                                    newStateTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                                    //messageBuilder.AppendChanged(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                                    sendEmail = true;
-                                }
+                                this._activeAlerts.Remove(item.ActiveAlert);
+                                this._activeAlerts.Add(item);
+                                newStateTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                //messageBuilder.AppendChanged(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                sendEmail = true;
                                 break;
                             }
                         case AlertAction.Start: {
-                                lock (_locker) {
-                                    this._activeAlerts.Add(item);
-                                    sendEmail = true;
-                                }
+                                this._activeAlerts.Add(item);
+                                sendEmail = true;
                                 break;
                             }
                         case AlertAction.Resend: {
-                                lock (_locker) {
-                                    this._activeAlerts.Remove(item.ActiveAlert);
-                                    this._activeAlerts.Add(item);
-                                    resendTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                                    sendEmail = true;
-                                }
+                                this._activeAlerts.Remove(item.ActiveAlert);
+                                this._activeAlerts.Add(item);
+                                resendTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                sendEmail = true;
                                 break;
                             }
                         case AlertAction.ShowStatus: {
@@ -130,7 +125,7 @@ namespace MonitoringData.Infrastructure.Services {
             Console.WriteLine(statusTable.ToMinimalString());
             Console.WriteLine();
         }
-        private IEnumerable<ItemAlert> Process(IList<ItemAlert> itemAlerts) {
+        private void Process(IList<ItemAlert> itemAlerts) {
             foreach(var itemAlert in itemAlerts) {
                 var alertId = itemAlert.Alert._id;
                 var actionType = itemAlert.Alert.CurrentState;
@@ -169,7 +164,7 @@ namespace MonitoringData.Infrastructure.Services {
                                         }
                                     } else {
                                         itemAlert.AlertAction = AlertAction.RemainActive;
-                                        this._logger.LogError($"ActionItem not found: {actionType.ToString()}");
+                                        //this._logger.LogError($"ActionItem not found: {actionType.ToString()}");
                                     }
                                 }
                                 itemAlert.ActiveAlert = activeAlert;
@@ -187,7 +182,7 @@ namespace MonitoringData.Infrastructure.Services {
                         itemAlert.ActiveAlert = null;
                         break;
                 }
-                yield return itemAlert;
+                //yield return itemAlert;
             }
         }   
         public async Task Initialize() {

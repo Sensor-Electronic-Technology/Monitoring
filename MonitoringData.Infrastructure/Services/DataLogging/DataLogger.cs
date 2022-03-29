@@ -49,8 +49,9 @@ namespace MonitoringData.Infrastructure.Services {
         }
         public async Task Read() {
             Stopwatch watch = new Stopwatch();
-            watch.Start();
+
             var result = await ModbusService.Read(this._networkConfig.IPAddress, this._networkConfig.Port, this._modbusConfig);
+            watch.Start();
             if (result._success) {
                 var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart, (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
                 var outputsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.OutputStart, (this._channelMapping.OutputStop - this._channelMapping.OutputStart) + 1).ToArray();
@@ -71,7 +72,7 @@ namespace MonitoringData.Infrastructure.Services {
                     this.LogError("Error: HoldingRegister count is < DeviceStart Address");
                 }
 
-                var t1= this.ProcessAlertReadings(alertsRaw, now,this._dataService.MonitorAlerts.AsReadOnly());
+                var t1=this.ProcessAlertReadings(alertsRaw, now,this._dataService.MonitorAlerts.AsReadOnly());
                 var t2=this.ProcessAnalogReadings(analogRaw, now, this._dataService.AnalogItems.AsReadOnly());
                 var t3=this.ProcessDiscreteReadings(discreteRaw, now, this._dataService.DiscreteItems.AsReadOnly());
                 var t4=this.ProcessVirtualReadings(virtualRaw, now, this._dataService.VirtualItems.AsReadOnly());
@@ -81,17 +82,60 @@ namespace MonitoringData.Infrastructure.Services {
                 var alertReadings = t1.Result.readings;
                 var analogAlerts = t1.Result.aAlerts;
                 var discreteAlerts = t1.Result.dAlerts;
-                var virtualAlerts = t1.Result.vAlerts;          
+                var virtualAlerts = t1.Result.vAlerts;         
                 var analogReadings = t2.Result;
-                var discreteReading = t3.Result;
+                var discreteReadings = t3.Result;
                 var virtualReadings = t4.Result;
 
                 var outputReadings = t5.Result;
                 var actionReadings = t6.Result;
 
+                var ta = Task.Factory.StartNew(() => { 
+                    for(int i=0;i<analogReadings.Count;i++) {
+                        if (analogReadings[i].itemid == analogAlerts[i].Alert.channelId) {
+                            analogAlerts[i].Reading = (float)analogReadings[i].value;
+                        } else {
+                            Console.WriteLine($"Error: id doesnt match");
+                        }
+                    }
+                });
+
+                var td = Task.Factory.StartNew(() => {
+                    for (int i = 0; i < discreteReadings.Count; i++) {
+                        if (discreteReadings[i].itemid == discreteAlerts[i].Alert.channelId) {
+                            discreteAlerts[i].Reading = discreteReadings[i].value ? 1.00f:0.00f;
+                        } else {
+                            Console.WriteLine($"Error: id doesnt match");
+                        }
+                    }
+                });
+
+                var tv = Task.Factory.StartNew(() => {
+                    for (int i = 0; i < virtualReadings.Count; i++) {
+                        if (virtualReadings[i].itemid == virtualAlerts[i].Alert.channelId) {
+                            virtualAlerts[i].Reading = virtualReadings[i].value ? 1.00f : 0.00f;
+                        } else {
+                            Console.WriteLine($"Error: id doesnt match");
+                        }
+                    }
+                });
+
+                await Task.WhenAll(ta, td, tv);
+                await this._dataService.InsertManyAsync(analogReadings);
+                await this._dataService.InsertManyAsync(discreteReadings);
+                await this._dataService.InsertManyAsync(virtualReadings);
+                await this._dataService.InsertManyAsync(outputReadings);
+                await this._dataService.InsertManyAsync(actionReadings);
+                await this._dataService.InsertManyAsync(alertReadings);
+
+                var itemAlerts = new List<ItemAlert>();
+                itemAlerts.AddRange(analogAlerts);
+                itemAlerts.AddRange(discreteAlerts);
+                itemAlerts.AddRange(virtualAlerts);
+
+                await this._alertService.ProcessAlerts(itemAlerts);
 
 
-                //var t7=this._alertService.ProcessAlerts(this._itemAlerts);
             } else {
                 this._logger.LogError("Modbus read failed");
             }
@@ -131,9 +175,9 @@ namespace MonitoringData.Infrastructure.Services {
                     alertReadings.Add(alertReading);
                     itemAlerts.Add(new ItemAlert(monitorAlerts[i], alertReading.value));
                 }
-                var aAlerts = itemAlerts.Where(e => e.Alert.itemType == AlertItemType.Analog).ToList();
-                var dAlerts = itemAlerts.Where(e => e.Alert.itemType == AlertItemType.Discrete).ToList();
-                var vAlerts = itemAlerts.Where(e => e.Alert.itemType == AlertItemType.Virtual).ToList();
+                var aAlerts = itemAlerts.Where(e => e.Alert.itemType == AlertItemType.Analog).OrderBy(e => e.Alert.channelId).ToList();
+                var dAlerts = itemAlerts.Where(e => e.Alert.itemType == AlertItemType.Discrete).OrderBy(e => e.Alert.channelId).ToList();
+                var vAlerts = itemAlerts.Where(e => e.Alert.itemType == AlertItemType.Virtual).OrderBy(e => e.Alert.channelId).ToList();
                 return (alertReadings,aAlerts,dAlerts,vAlerts);
             });
         }
