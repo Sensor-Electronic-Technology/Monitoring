@@ -26,4 +26,15 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             return other;
         }
     }
+
+    public record AlertRecord {
+        public int AlertId { get; set; }
+        public int ChannelId { get; set; }
+        public string DisplayName { get; set; }
+        public ActionType CurrentState { get; set; }
+        public bool Enabled { get; set; }
+        public DateTime LastAlert { get; set; }
+        public bool Bypassed { get; set; }
+        public float ChannelReading { get; set; }
+    }
 }

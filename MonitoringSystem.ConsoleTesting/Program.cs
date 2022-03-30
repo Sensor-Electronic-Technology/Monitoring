@@ -16,7 +16,9 @@ using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 
 namespace MonitoringSystem.ConsoleTesting {
-
+    public record class Test {
+        public int Value { get; set; }
+    }
 
     public class Program {
         static async Task Main(string[] args) {
@@ -54,7 +56,29 @@ namespace MonitoringSystem.ConsoleTesting {
             //await RunDataLogger();
             //await TestAlerts();
             //ActionItemUpdate();
-            await TestAlerts();
+            //await TestAlerts();
+            List<Test> list = new List<Test>() { 
+                new Test(){Value=1},
+                new Test(){Value=2},
+                new Test(){Value=3},
+                new Test(){Value=4},
+            };
+            Console.WriteLine("Before: ");
+            foreach (var item in list) {
+                Console.Write($"{item.Value}  ");
+            }
+
+            TestRecordList(list);
+            Console.WriteLine("After: ");
+            foreach (var item in list) {
+                Console.Write($"{item.Value}    ");
+            }
+        }
+
+        public static void TestRecordList(IList<Test> modify) {
+            for(int i = 0; i < modify.Count; i++) {
+                modify[i].Value += 1;
+            }
         }
 
         public static async Task TestAlerts() {
