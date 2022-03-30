@@ -17,6 +17,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         List<VirtualChannel> VirtualItems { get; }
         List<MonitorAlert> MonitorAlerts { get; }
         List<ActionItem> ActionItems { get; }
+        MonitorDevice MonitorDevice { get; }
         Task InsertManyAsync(IEnumerable<ActionReading> readings);
         Task InsertManyAsync(IEnumerable<AlertReading> readings);
         Task InsertManyAsync(IEnumerable<AnalogReading> readings);
@@ -32,7 +33,9 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoClient _client;
         private IMongoDatabase _database;
         private readonly ILogger<MonitorDataService> _logger;
+        private bool _initialized=false;
 
+        public MonitorDevice MonitorDevice { get; private set; }
         public List<AnalogChannel> AnalogItems { get; private set; }
         public List<DiscreteChannel> DiscreteItems { get; private set; }
         public List<OutputItem> OutputItems { get; private set; }
@@ -46,6 +49,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<OutputItem> _outputItems;
         private IMongoCollection<VirtualChannel> _virtualItems;
         private IMongoCollection<ActionItem> _actionItems;
+        private IMongoCollection<MonitorDevice> _deviceConfigurations;
 
         private IMongoCollection<AnalogReading> _analogReadings;
         private IMongoCollection<DiscreteReading> _discreteReadings;
@@ -54,11 +58,11 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<ActionReading> _actionReadings;
         private IMongoCollection<AlertReading> _alertReadings;
         private IMongoCollection<DeviceReading> _deviceReadings;
-
         public MonitorDataService(IOptions<MonitorDatabaseSettings> databaseSettings,ILogger<MonitorDataService> logger) {
             this._client = new MongoClient(databaseSettings.Value.ConnectionString);
             this._database = this._client.GetDatabase(databaseSettings.Value.DatabaseName);
             this._logger = logger;
+            this._initialized = false;
             
             this._analogReadings = this._database.GetCollection<AnalogReading>(databaseSettings.Value.AnalogReadingCollection);
             this._discreteReadings = this._database.GetCollection<DiscreteReading>(databaseSettings.Value.DiscreteReadingCollection);
@@ -74,11 +78,12 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._virtualItems = this._database.GetCollection<VirtualChannel>(databaseSettings.Value.VirtualItemColleciton);
             this._outputItems = this._database.GetCollection<OutputItem>(databaseSettings.Value.OutputItemCollection);
             this._monitorAlerts = this._database.GetCollection<MonitorAlert>(databaseSettings.Value.AlertItemCollection);
+            this._deviceConfigurations = this._database.GetCollection<MonitorDevice>(databaseSettings.Value.MonitorDeviceCollection);
         }
         public MonitorDataService(string connectionString, string databaseName,Dictionary<Type,string> collectionNames) {
             this._client = new MongoClient(connectionString);
             this._database = this._client.GetDatabase(databaseName);
-           
+            this._initialized = false;
             this._analogReadings = this._database.GetCollection<AnalogReading>(collectionNames[typeof(AnalogReading)]);
             this._discreteReadings = this._database.GetCollection<DiscreteReading>(collectionNames[typeof(DiscreteReading)]);
             this._virtualReadings = this._database.GetCollection<VirtualReading>(collectionNames[typeof(VirtualReading)]);
@@ -93,6 +98,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._outputItems = this._database.GetCollection<OutputItem>(collectionNames[typeof(OutputItem)]);
             this._monitorAlerts = this._database.GetCollection<MonitorAlert>(collectionNames[typeof(MonitorAlert)]);
             this._actionItems = this._database.GetCollection<ActionItem>(collectionNames[typeof(ActionItem)]);
+            this._deviceConfigurations = this._database.GetCollection<MonitorDevice>(collectionNames[typeof(MonitorDevice)]);
         }
 
         public async Task InsertManyAsync(IEnumerable<AnalogReading> readings) {
@@ -138,6 +144,14 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this.VirtualItems = await (await this._virtualItems.FindAsync(_ => true)).ToListAsync();
             this.ActionItems = await (await this._actionItems.FindAsync(_ => true)).ToListAsync();
             this.MonitorAlerts = await (await this._monitorAlerts.FindAsync(_ => true)).ToListAsync();
+            var latest = this._deviceConfigurations.AsQueryable().Where(_ => true).Max(e =>(DateTime?)e.Created);
+            if(latest is not null) {
+                var monitorDevice = await this._deviceConfigurations.Find(e => e.Created == latest).FirstOrDefaultAsync();
+                if(monitorDevice is not null) {
+                    this.MonitorDevice = monitorDevice;
+                    this._initialized = true;
+                }
+            }
         }
     }
 }

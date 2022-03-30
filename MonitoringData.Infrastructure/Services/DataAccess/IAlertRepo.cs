@@ -15,7 +15,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         Task<MonitorAlert> GetAlert(int alertId);
         Task UpdateAlert(int alertId, UpdateDefinition<MonitorAlert> update);
         Task Load();
-
     }
 
     public class AlertRepo : IAlertRepo {

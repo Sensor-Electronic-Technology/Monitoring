@@ -14,6 +14,7 @@
     "DiscreteReadingCollection": "discrete_readings",
     "VirtualReadingCollection": "virtual_readings",
     "OutputReadingCollection": "output_readings",
-    "DeviceReadingCollection": "device_readings"
+    "DeviceReadingCollection": "device_readings",
+    "MonitorDeviceCollection": "device_items"
   }
 }

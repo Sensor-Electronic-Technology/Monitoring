@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using MonitoringConfig.Infrastructure.Data.Model;
+﻿using Microsoft.Extensions.Logging;
 using MonitoringData.Infrastructure.Model;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataAccess;
@@ -22,7 +20,6 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly IMonitorDataRepo _dataService;
         private IAlertService _alertService;
         private readonly ILogger _logger;
-        private readonly FacilityContext _context;
         private string deviceIdentifier;
 
         private NetworkConfiguration _networkConfig;
@@ -30,19 +27,17 @@ namespace MonitoringData.Infrastructure.Services {
         private ChannelRegisterMapping _channelMapping;
         private bool initialized = false;
         private bool loggingEnabled = false;
-        private IList<ItemAlert> _itemAlerts;
+        private IList<AlertRecord> _alerts;
 
-        public ModbusDataLogger(IMonitorDataRepo dataService, ILogger<ModbusDataLogger> logger, IAlertService alertService, FacilityContext context) {
+        public ModbusDataLogger(IMonitorDataRepo dataService, ILogger<ModbusDataLogger> logger, IAlertService alertService) {
             this._dataService = dataService;
             this._alertService = alertService;
             this._logger = logger;
-            this._context = context;
             this.loggingEnabled = true;
         }
 
         public ModbusDataLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
             this._dataService = new MonitorDataService(connName, databaseName, collectionNames);
-            this._context = new FacilityContext();
             this._alertService = new AlertService(connName, databaseName, collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
             this.loggingEnabled = true;
         }
@@ -58,7 +53,7 @@ namespace MonitoringData.Infrastructure.Services {
                 var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._channelMapping.AlertStart, (this._channelMapping.AlertStop - this._channelMapping.AlertStart) + 1).ToArray();
                 var virtualRaw = new ArraySegment<bool>(result.Coils, this._channelMapping.VirtualStart, (this._channelMapping.VirtualStop - this._channelMapping.VirtualStart) + 1).ToArray();
                 var now = DateTime.Now;
-                this._itemAlerts = new List<ItemAlert>();
+                this._alerts = new List<AlertRecord>();
                 if (result.HoldingRegisters.Length > this._channelMapping.DeviceStart - 1) {
                     var deviceRaw = this.ToDeviceState(result.HoldingRegisters[this._channelMapping.DeviceStart]);
                     await this._dataService.InsertDeviceReadingAsync(new DeviceReading() {
@@ -75,7 +70,7 @@ namespace MonitoringData.Infrastructure.Services {
                 await this.ProcessVirtualReadings(virtualRaw, now);
                 await this.ProcessOutputReadings(outputsRaw, now);
                 await this.ProcessActionReadings(actionsRaw, now);
-                await this._alertService.ProcessAlerts(this._itemAlerts);
+                await this._alertService.ProcessAlerts(this._alerts);
             } else {
                 this._logger.LogError("Modbus read failed");
             }
@@ -87,18 +82,22 @@ namespace MonitoringData.Infrastructure.Services {
         public async Task Load() {
             await this._dataService.LoadAsync();
             await this._alertService.Initialize();
+            this._networkConfig = this._dataService.MonitorDevice.NetworkConfiguration;
+            this._modbusConfig = this._networkConfig.ModbusConfig;
+            this._channelMapping = this._modbusConfig.ChannelMapping;
+            this.initialized = true;
             //this._alertService = new AlertService(this._dataService);
-            var device = await this._context.Devices.AsNoTracking()
-                .OfType<ModbusDevice>()
-                .FirstOrDefaultAsync(e => e.Identifier == "epi2");
-            if (device != null) {
-                this.initialized = true;
-                this._networkConfig = device.NetworkConfiguration;
-                this._modbusConfig = this._networkConfig.ModbusConfig;
-                this._channelMapping = this._modbusConfig.ChannelMapping;
-            } else {
-                this.initialized = false;
-            }
+            //var device = await this._context.Devices.AsNoTracking()
+            //    .OfType<ModbusDevice>()
+            //    .FirstOrDefaultAsync(e => e.Identifier == "epi2");
+            //if (device != null) {
+            //    this.initialized = true;
+            //    this._networkConfig = device.NetworkConfiguration;
+            //    this._modbusConfig = this._networkConfig.ModbusConfig;
+            //    this._channelMapping = this._modbusConfig.ChannelMapping;
+            //} else {
+            //    this.initialized = false;
+            //}
         }
 
         private async Task ProcessAlertReadings(ushort[] raw, DateTime now) {
@@ -110,7 +109,7 @@ namespace MonitoringData.Infrastructure.Services {
                     value = this.ToActionType(raw[i])
                 };
                 alertReadings.Add(alertReading);
-                this._itemAlerts.Add(new ItemAlert(this._dataService.MonitorAlerts[i], alertReading.value));
+                this._alerts.Add(new AlertRecord(this._dataService.MonitorAlerts[i], alertReading.value));
             }
             await this._dataService.InsertManyAsync(alertReadings);
         }
@@ -119,12 +118,15 @@ namespace MonitoringData.Infrastructure.Services {
             if (this._dataService.AnalogItems.Count == raw.Length) {
                 List<AnalogReading> analogReadings = new List<AnalogReading>();
                 for (int i = 0; i < raw.Length; i++) {
-                    var analogReading = new AnalogReading() { itemid = this._dataService.AnalogItems[i]._id, timestamp = now, value = raw[i] / 10 };
-                    var alert = this._dataService.MonitorAlerts.FirstOrDefault(e => e._id == analogReading.itemid);
+                    var analogReading = new AnalogReading() { 
+                        itemid = this._dataService.AnalogItems[i]._id, 
+                        timestamp = now, 
+                        value = raw[i] / this._dataService.AnalogItems[i].factor
+                    };
                     analogReadings.Add(analogReading);
-                    var itemAlert = this._itemAlerts.FirstOrDefault(e => e.Alert.channelId == analogReading.itemid);
-                    if (itemAlert != null) {
-                        itemAlert.Reading = (float)analogReading.value;
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.itemid);
+                    if (alertRecord != null) {
+                        alertRecord.ChannelReading = (float)analogReading.value;
                     } else {
                         this.LogError("Analog ItemAlert not found");
                     }
@@ -145,10 +147,9 @@ namespace MonitoringData.Infrastructure.Services {
                         value = raw[i]
                     };
                     readings.Add(reading);
-                    var alert = this._dataService.MonitorAlerts.FirstOrDefault(e => e._id == reading.itemid);
-                    var itemAlert = this._itemAlerts.FirstOrDefault(e => e.Alert.channelId == reading.itemid);
-                    if (itemAlert != null) {
-                        itemAlert.Reading = reading.value == true ? 1.00f : 0.00f;
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid);
+                    if (alertRecord != null) {
+                        alertRecord.ChannelReading = reading.value == true ? 1.00f : 0.00f;
                     } else {
                         this.LogError("Discrete ItemAlert not found");
                     }
@@ -170,9 +171,9 @@ namespace MonitoringData.Infrastructure.Services {
                     };
                     var alert = this._dataService.MonitorAlerts.FirstOrDefault(e => e._id == reading.itemid);
                     readings.Add(reading);
-                    var itemAlert = this._itemAlerts.FirstOrDefault(e => e.Alert.channelId == reading.itemid);
-                    if (itemAlert != null) {
-                        itemAlert.Reading = reading.value == true ? 1.00f : 0.00f;
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid);
+                    if (alertRecord != null) {
+                        alertRecord.ChannelReading = reading.value == true ? 1.00f : 0.00f;
                     } else {
                         this.LogError("Virual ItemAlert not found");
                     }

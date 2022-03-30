@@ -22,7 +22,7 @@ namespace MonitoringData.Infrastructure.Services {
         RemainActive
     }
     public interface IAlertService {
-        Task ProcessAlerts(IList<ItemAlert> items);
+        Task ProcessAlerts(IList<AlertRecord> items);
         Task Initialize();
     }
 
@@ -31,7 +31,7 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly ILogger<AlertService> _logger;
         private readonly ISendEndpointProvider _sendEnpoint;
         private IEmailService _emailService;
-        private List<ItemAlert> _activeAlerts = new List<ItemAlert>();
+        private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
         private readonly object _locker = new object();
 
         public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger) {
@@ -46,7 +46,7 @@ namespace MonitoringData.Infrastructure.Services {
             this._emailService = new EmailService();
         }
 
-        public async Task ProcessAlerts(IList<ItemAlert> items) {
+        public async Task ProcessAlerts(IList<AlertRecord> alerts) {
             IMessageBuilder messageBuilder = new MessageBuilder();
             messageBuilder.StartMessage();
             ConsoleTable statusTable = new ConsoleTable("Alert","Status","Reading");
@@ -56,34 +56,34 @@ namespace MonitoringData.Infrastructure.Services {
             ConsoleTable resendTable = new ConsoleTable("Alert", "Status", "Reading");
             bool sendEmail = false;
             
-            foreach (var item in this.Process(items)) {
-                if (item.Alert.enabled) {
-                    switch (item.AlertAction) {
+            foreach (var alert in this.Process(alerts)) {
+                if (alert.Enabled) {
+                    switch (alert.AlertAction) {
                         case AlertAction.Clear: {
-                                this._activeAlerts.RemoveAll(e=>e.Alert._id==item.Alert._id);
+                                this._activeAlerts.RemoveAll(e=>e.AlertId==alert.AlertId);
                                 break;
                             }
                         case AlertAction.ChangeState: {
-                                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.Alert._id == item.Alert._id);
+                                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
                                 if (activeAlert != null) {
-                                    activeAlert.Alert.CurrentState = item.Alert.CurrentState;
-                                    activeAlert.Reading = item.Reading;
-                                    activeAlert.AlertAction = item.AlertAction;
+                                    activeAlert.CurrentState = alert.CurrentState;
+                                    activeAlert.ChannelReading = alert.ChannelReading;
+                                    activeAlert.AlertAction = alert.AlertAction;
                                 } else {
                                     //Log Error
                                 }
-                                newStateTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                                //messageBuilder.AppendChanged(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                newStateTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                                messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                                 sendEmail = true;
                                 break;
                             }
                         case AlertAction.Start: {
-                                this._activeAlerts.Add(item.Clone());
+                                this._activeAlerts.Add(alert.Clone());
                                 sendEmail = true;
                                 break;
                             }
                         case AlertAction.Resend: {
-                                resendTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                                resendTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                                 sendEmail = true;
                                 break;
                             }
@@ -94,15 +94,15 @@ namespace MonitoringData.Infrastructure.Services {
                                 break;
                             }
                     }
-                    statusTable.AddRow(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
-                    messageBuilder.AppendStatus(item.Alert.displayName, item.Alert.CurrentState.ToString(), item.Reading.ToString());
+                    statusTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                    messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
             }
 
             if (this._activeAlerts.Count > 0) {
-                foreach (var active in this._activeAlerts) {
-                    activeTable.AddRow(active.Alert.displayName, active.Alert.CurrentState.ToString(), active.Reading.ToString());
-                    messageBuilder.AppendAlert(active.Alert.displayName, active.Alert.CurrentState.ToString(), active.Reading.ToString());
+                foreach (var alert in this._activeAlerts) {
+                    activeTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                    messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
                     //var endpoint = await this._sendEnpoint.GetSendEndpoint(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
@@ -127,21 +127,18 @@ namespace MonitoringData.Infrastructure.Services {
             Console.WriteLine(statusTable.ToMinimalString());
             Console.WriteLine();
         }
-        private IEnumerable<ItemAlert> Process(IList<ItemAlert> itemAlerts) {
+        private IEnumerable<AlertRecord> Process(IList<AlertRecord> alertRecords) {
             var now = DateTime.Now;
-            foreach (var itemAlert in itemAlerts) {
-                var alertId = itemAlert.Alert._id;
-                var actionType = itemAlert.Alert.CurrentState;
-                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.Alert._id == itemAlert.Alert._id);
-                var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.actionType == actionType);                
-                switch (itemAlert.Alert.CurrentState) {
+            foreach (var alert in alertRecords) {
+                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
+                var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.actionType == alert.CurrentState);
+                switch (alert.CurrentState) {
                     case ActionType.Okay: {
                             if (activeAlert != null) {
-                                itemAlert.AlertAction = AlertAction.Clear;
-                                itemAlert.Alert.latched = false;
+                                alert.AlertAction = AlertAction.Clear;
                                 break;
                             } else {
-                                itemAlert.AlertAction = AlertAction.ShowStatus;
+                                alert.AlertAction=AlertAction.ShowStatus;
                                 break;
                             }
                         }
@@ -149,39 +146,43 @@ namespace MonitoringData.Infrastructure.Services {
                     case ActionType.Warning:
                     case ActionType.SoftWarn: {
                             if (activeAlert != null) {
-                                if (activeAlert.Alert.CurrentState != itemAlert.Alert.CurrentState) {
-                                    itemAlert.Alert.lastAlarm = now;
-                                    itemAlert.Alert.latched = true;
-                                    itemAlert.AlertAction = AlertAction.ChangeState;
+                                if (activeAlert.CurrentState != alert.CurrentState) {
+                                    alert.LastAlert = now;
+                                    alert.AlertAction = AlertAction.ChangeState;
                                 } else {
                                     if (actionItem != null) {
-                                        if ((now - activeAlert.Alert.lastAlarm).TotalMinutes >= actionItem.EmailPeriod) {
-                                            itemAlert.AlertAction = AlertAction.Resend;
-                                            itemAlert.Alert.lastAlarm = now;
+                                        if ((now - activeAlert.LastAlert).TotalMinutes >= actionItem.EmailPeriod) {
+                                            alert.AlertAction = AlertAction.Resend;
+                                            alert.LastAlert = now;
                                         } else {
-                                            itemAlert.AlertAction = AlertAction.RemainActive;
+                                            alert.AlertAction = AlertAction.RemainActive;
                                         }
                                     } else {
-                                        itemAlert.AlertAction = AlertAction.RemainActive;
+                                        alert.AlertAction = AlertAction.RemainActive;
                                         //this._logger.LogError($"ActionItem not found: {actionType.ToString()}");
                                     }
                                 }
 
                             } else {
-                                itemAlert.AlertAction = AlertAction.Start;
-                                itemAlert.Alert.lastAlarm = now;
+                                alert.AlertAction = AlertAction.Start;
+                                alert.LastAlert = now;
                             }
                             break;
                         }
                     case ActionType.Maintenance:
                     case ActionType.Custom:
                     default:
-                        itemAlert.AlertAction = AlertAction.ShowStatus;
+                        alert.AlertAction = AlertAction.ShowStatus;
                         break;
                 }
-                yield return itemAlert;
+                yield return alert;
             }
         }   
+
+        private bool CheckBypassReset(AlertRecord alert,DateTime now) {
+            return (now - alert.TimeBypassed).Minutes >= alert.BypassResetTime;
+        }
+
         public async Task Initialize() {
             await this._alertRepo.Load();
         }
