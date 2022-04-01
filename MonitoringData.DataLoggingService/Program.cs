@@ -1,4 +1,3 @@
-using MonitoringConfig.Infrastructure.Data.Model;
 using MonitoringData.DataLoggingService;
 using MonitoringData.Infrastructure.Model;
 using MonitoringData.Infrastructure.Services;
@@ -27,7 +26,6 @@ builder.ConfigureServices((hostContext, services) => {
     //});
     //services.AddTransient<ISendEndpoint>();
     services.AddSingleton<IMonitorDataRepo,MonitorDataService>();
-    services.AddDbContext<FacilityContext>();
     services.AddSingleton<IAlertRepo,AlertRepo>();
     services.AddTransient<IAlertService, AlertService>();
     services.AddTransient<IDataLogger,ModbusDataLogger>();

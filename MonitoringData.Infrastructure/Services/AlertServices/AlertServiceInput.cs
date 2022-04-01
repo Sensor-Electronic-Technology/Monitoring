@@ -46,7 +46,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this.AlertId = alert._id;
             this.ChannelId = alert.channelId;
             this.DisplayName = alert.displayName;
-            this.CurrentState = alert.CurrentState;
+            this.CurrentState = reading;
             this.Enabled = alert.enabled;
             this.AlertAction = AlertAction.Clear;
             this.ItemType = alert.itemType;

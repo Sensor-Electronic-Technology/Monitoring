@@ -22,60 +22,11 @@ namespace MonitoringSystem.ConsoleTesting {
 
     public class Program {
         static async Task Main(string[] args) {
-            //await CreateConfigDatabse();
-            //await CreateReadingsDatabase();
-            //await TestReading();
-            //var controller = new DeviceController();
-            //await controller.Load();
-            //await controller.Start();
-            //controller.Run();
-
-
-
-            //using var context = new FacilityContext();
-            //var analogAlerts = await context.Alerts.Include(e => e.InputChannel).ToListAsync();
-            //foreach(var alert in analogAlerts) {
-            //    alert.DisplayName = alert.InputChannel.DisplayName;
-            //}
-            //context.UpdateRange(analogAlerts);
-            //var ret = await context.SaveChangesAsync();
-            //if (ret > 0) {
-            //    Console.WriteLine("Alerts should be saved");
-            //} else {
-            //    Console.WriteLine("Error: Failed to save alerts");
-            //}
-            //Console.WriteLine("Press any key to exit");
-            //Console.ReadKey();
-
-            //var client = new MongoClient("mongodb://172.20.3.30");
-            //var database = client.GetDatabase("epi2_data");
-            //var alertItems = database.GetCollection<MonitorAlert>("alert_items");
-
-            //await AlertItemUpdateEnabled();
-
-            //await RunDataLogger();
-            //await TestAlerts();
-            //ActionItemUpdate();
-            //await TestAlerts();
-            //List<Test> list = new List<Test>() { 
-            //    new Test(){Value=1},
-            //    new Test(){Value=2},
-            //    new Test(){Value=3},
-            //    new Test(){Value=4},
-            //};
-            //Console.WriteLine("Before: ");
-            //foreach (var item in list) {
-            //    Console.Write($"{item.Value}  ");
-            //}
-
-            //TestRecordList(list);
-            //Console.WriteLine("After: ");
-            //foreach (var item in list) {
-            //    Console.Write($"{item.Value}    ");
-            //}
-            //await WriteOutFile();
             //await CreateMongoDevice();
-            await ModifyAnalog();
+            //await ModifyAnalog();
+            //await WriteOutAlertFile();
+            //await WriteOutAnalogFile();
+            await RunDataLogger();
         }
 
         public static async Task ModifyAnalog() {
@@ -281,14 +232,14 @@ namespace MonitoringSystem.ConsoleTesting {
             }
             Console.WriteLine("Check Database");
         }
-        static async Task WriteOutFile() {
+        static async Task WriteOutAnalogFile() {
             var client = new MongoClient("mongodb://172.20.3.30");
             var database = client.GetDatabase("epi2_data");
 
             var analogItems = database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToList();
             var analogReadings = database.GetCollection<AnalogReading>("analog_readings");
 
-            var start = new DateTime(2022, 3, 16, 0, 0, 0);
+            var start = new DateTime(2022, 3,30, 0, 0, 0);
             //var stop = new DateTime(2022, 3, 16, 12, 0, 0);
             var stop = DateTime.Now;
             Console.WriteLine("Starting query");
@@ -305,11 +256,42 @@ namespace MonitoringSystem.ConsoleTesting {
             groupedReadings.ForEach((item) => {
                 StringBuilder builder = new StringBuilder();
                 builder.Append($"{item.Key.Subtract(new TimeSpan(5, 0, 0))}\t");
-                item.OrderBy(e => e.itemid).Select(e => $"{e.value / 10}\t").ToList().ForEach(s => builder.Append(s));
+                item.OrderBy(e => e.itemid).Select(e => $"{e.value}\t").ToList().ForEach(s => builder.Append(s));
                 lines.Add(builder.ToString());
             });
             Console.WriteLine("Writing Out Data");
-            File.WriteAllLines(@"C:\MonitorFiles\epi1_newDataTest2.txt", lines);
+            File.WriteAllLines(@"C:\MonitorFiles\epi1_analogReadings.txt", lines);
+            Console.WriteLine("Check File");
+        }
+        static async Task WriteOutAlertFile() {
+            var client = new MongoClient("mongodb://172.20.3.30");
+            var database = client.GetDatabase("epi2_data");
+
+            var alertItems = database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToList();
+            var alertReadings = database.GetCollection<AlertReading>("alert_readings");
+
+            var start = new DateTime(2022, 3, 30, 0, 0, 0);
+            //var stop = new DateTime(2022, 3, 16, 12, 0, 0);
+            var stop = DateTime.Now;
+            Console.WriteLine("Starting query");
+            var aReadings = alertReadings.Find(_ => true).ToList();
+            var headers = aReadings.Select(e => e.itemid).OrderBy(e => e).Distinct().ToList();
+            StringBuilder builder = new StringBuilder();
+            headers.ForEach((id) => {
+                builder.Append($"{id}\t");
+            });
+            var groupedReadings = aReadings.GroupBy(e => e.timestamp).ToList();
+            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
+            List<string> lines = new List<string>();
+
+            groupedReadings.ForEach((item) => {
+                StringBuilder builder = new StringBuilder();
+                builder.Append($"{item.Key.Subtract(new TimeSpan(5, 0, 0))}\t");
+                item.OrderBy(e => e.itemid).Select(e => $"{e.value}\t").ToList().ForEach(s => builder.Append(s));
+                lines.Add(builder.ToString());
+            });
+            Console.WriteLine("Writing Out Data");
+            File.WriteAllLines(@"C:\MonitorFiles\epi1_alertreadings-1.txt", lines);
             Console.WriteLine("Check File");
         }
         static async Task CreateConfigDatabse() {

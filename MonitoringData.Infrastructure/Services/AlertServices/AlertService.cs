@@ -107,7 +107,7 @@ namespace MonitoringData.Infrastructure.Services {
                 if (sendEmail) {
                     //var endpoint = await this._sendEnpoint.GetSendEndpoint(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
                     //await endpoint.Send<EmailContract>(new { Subject = "Epi2 Alerts", Message = messageBuilder.FinishMessage() });
-                    await this._emailService.SendMessageAsync("Epi2 Alerts", messageBuilder.FinishMessage());
+                    //await this._emailService.SendMessageAsync("Epi2 Alerts", messageBuilder.FinishMessage());
                 }
             }
             Console.Clear();
