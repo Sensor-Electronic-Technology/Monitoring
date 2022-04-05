@@ -18,7 +18,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Update="dbSettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 </Project>

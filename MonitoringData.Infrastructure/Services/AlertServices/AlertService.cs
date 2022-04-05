@@ -42,7 +42,7 @@ namespace MonitoringData.Infrastructure.Services {
         }
 
         public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
-            this._alertRepo = new AlertRepo(connName, databaseName, actionCol, alertCol);
+            this._alertRepo = new AlertRepo(connName, databaseName, actionCol, alertCol,"alert_readings");
             this._emailService = new EmailService();
         }
 
@@ -107,7 +107,7 @@ namespace MonitoringData.Infrastructure.Services {
                 if (sendEmail) {
                     //var endpoint = await this._sendEnpoint.GetSendEndpoint(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
                     //await endpoint.Send<EmailContract>(new { Subject = "Epi2 Alerts", Message = messageBuilder.FinishMessage() });
-                    //await this._emailService.SendMessageAsync("Epi2 Alerts", messageBuilder.FinishMessage());
+                    await this._emailService.SendMessageAsync("Epi1 Alerts", messageBuilder.FinishMessage());
                 }
             }
             Console.Clear();
@@ -159,10 +159,8 @@ namespace MonitoringData.Infrastructure.Services {
                                         }
                                     } else {
                                         alert.AlertAction = AlertAction.RemainActive;
-                                        //this._logger.LogError($"ActionItem not found: {actionType.ToString()}");
                                     }
                                 }
-
                             } else {
                                 alert.AlertAction = AlertAction.Start;
                                 alert.LastAlert = now;

@@ -27,7 +27,8 @@ namespace MonitoringData.Infrastructure.Model {
     }
 
     public class AlertReading : ItemReading {
-        public ActionType value { get; set; }
+        public ActionType state { get; set; }
+        public float reading { get; set; }
     }
 
     public class DeviceReading : ItemReading {

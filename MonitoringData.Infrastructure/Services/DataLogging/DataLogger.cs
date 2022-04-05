@@ -47,8 +47,8 @@ namespace MonitoringData.Infrastructure.Services {
             var result = await ModbusService.Read(this._networkConfig.IPAddress, this._networkConfig.Port, this._modbusConfig);
             if (result._success) {
                 var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart, (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
-                var outputsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.OutputStart, (this._channelMapping.OutputStop - this._channelMapping.OutputStart) + 1).ToArray();
-                var actionsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.ActionStart, (this._channelMapping.ActionStop - this._channelMapping.ActionStart) + 1).ToArray();
+                //var outputsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.OutputStart, (this._channelMapping.OutputStop - this._channelMapping.OutputStart) + 1).ToArray();
+                //var actionsRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.ActionStart, (this._channelMapping.ActionStop - this._channelMapping.ActionStart) + 1).ToArray();
                 var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._channelMapping.AnalogStart, (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1).ToArray();
                 var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._channelMapping.AlertStart, (this._channelMapping.AlertStop - this._channelMapping.AlertStart) + 1).ToArray();
                 var virtualRaw = new ArraySegment<bool>(result.Coils, this._channelMapping.VirtualStart, (this._channelMapping.VirtualStop - this._channelMapping.VirtualStart) + 1).ToArray();
@@ -68,8 +68,8 @@ namespace MonitoringData.Infrastructure.Services {
                 await this.ProcessAnalogReadings(analogRaw, now);
                 await this.ProcessDiscreteReadings(discreteRaw, now);
                 await this.ProcessVirtualReadings(virtualRaw, now);
-                await this.ProcessOutputReadings(outputsRaw, now);
-                await this.ProcessActionReadings(actionsRaw, now);
+                //await this.ProcessOutputReadings(outputsRaw, now);
+                //await this.ProcessActionReadings(actionsRaw, now);
                 await this._alertService.ProcessAlerts(this._alerts);
             } else {
                 this._logger.LogError("Modbus read failed");
@@ -86,32 +86,20 @@ namespace MonitoringData.Infrastructure.Services {
             this._modbusConfig = this._networkConfig.ModbusConfig;
             this._channelMapping = this._modbusConfig.ChannelMapping;
             this.initialized = true;
-            //this._alertService = new AlertService(this._dataService);
-            //var device = await this._context.Devices.AsNoTracking()
-            //    .OfType<ModbusDevice>()
-            //    .FirstOrDefaultAsync(e => e.Identifier == "epi2");
-            //if (device != null) {
-            //    this.initialized = true;
-            //    this._networkConfig = device.NetworkConfiguration;
-            //    this._modbusConfig = this._networkConfig.ModbusConfig;
-            //    this._channelMapping = this._modbusConfig.ChannelMapping;
-            //} else {
-            //    this.initialized = false;
-            //}
         }
 
-        private async Task ProcessAlertReadings(ushort[] raw, DateTime now) {
+        private Task ProcessAlertReadings(ushort[] raw, DateTime now) {
             List<AlertReading> alertReadings = new List<AlertReading>();
             for (int i = 0; i < raw.Length; i++) {
                 var alertReading = new AlertReading() {
                     itemid = this._dataService.MonitorAlerts[i]._id,
                     timestamp = now,
-                    value = this.ToActionType(raw[i])
+                    state = this.ToActionType(raw[i])
                 };
                 alertReadings.Add(alertReading);
-                this._alerts.Add(new AlertRecord(this._dataService.MonitorAlerts[i], alertReading.value));
+                this._alerts.Add(new AlertRecord(this._dataService.MonitorAlerts[i], alertReading.state));
             }
-            await this._dataService.InsertManyAsync(alertReadings);
+            return Task.CompletedTask;
         }
 
         private async Task ProcessAnalogReadings(ushort[] raw, DateTime now) {
@@ -121,7 +109,7 @@ namespace MonitoringData.Infrastructure.Services {
                     var analogReading = new AnalogReading() { 
                         itemid = this._dataService.AnalogItems[i]._id, 
                         timestamp = now, 
-                        value = raw[i] / this._dataService.AnalogItems[i].factor
+                        value = (float)raw[i] / (float)this._dataService.AnalogItems[i].factor
                     };
                     analogReadings.Add(analogReading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.itemid);

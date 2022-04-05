@@ -11,19 +11,19 @@ namespace MonitoringSystem.ConsoleTesting {
         static async Task Main(string[] args) {
             //ParseConfiguation();
             //await FixDiscreteNames("Epi1");
-            //await FixAnalogNames("Epi1");
+            //await FixAnalogNames("epi1");
             //await FixOutputNames("Epi1");
-            //await SetAlertNames();
+            await SetAlertNames("epi2");
         }
-        static async Task SetAlertNames() {
+        static async Task SetAlertNames(string deviceName) {
             using var context = new FacilityContext();
             var monitoring = await context.Devices.OfType<MonitoringBox>()
                 .Include(e => e.Channels)
-                .FirstOrDefaultAsync(e => e.Identifier == "Epi2");
+                .FirstOrDefaultAsync(e => e.Identifier == deviceName);
             if (monitoring != null) {
-                var channels = await context.Channels.OfType<AnalogInput>().Include(e => e.Alert).ToListAsync();
+                var channels = await context.Channels.OfType<InputChannel>().Include(e => e.Alert).ToListAsync();
                 foreach (var ain in channels) {
-                    ain.Alert.DisplayName = ain.DisplayName + " Alert";
+                    ain.Alert.DisplayName = ain.DisplayName;
                 }
                 var alerts = channels.Select(e => e.Alert).ToList();
                 context.UpdateRange(alerts);

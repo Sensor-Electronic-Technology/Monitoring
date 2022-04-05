@@ -18,7 +18,7 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public DbSet<FacilityZone> FacilityZones { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-            optionsBuilder.UseSqlServer("server=172.20.4.20;database=MonitorModelTesting;" +
+            optionsBuilder.UseSqlServer("server=172.20.4.20;database=facilitymodel;" +
               "User Id=aelmendorf;Password=Drizzle123!;");
         }
 

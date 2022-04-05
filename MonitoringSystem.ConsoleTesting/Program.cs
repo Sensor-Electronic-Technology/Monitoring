@@ -22,41 +22,102 @@ namespace MonitoringSystem.ConsoleTesting {
 
     public class Program {
         static async Task Main(string[] args) {
-            //await CreateMongoDevice();
+            //await CreateMongoDevice("epi1");
+            //Console.WriteLine("Epi updated");
+            //await CreateMongoDevice("epi2");
+            //Console.WriteLine("Epi2 Updated");
+            //Console.WriteLine("Check Databases");
+            //ActionItemUpdate();
+            //Console.WriteLine("Press any key to continue");
+            //Console.ReadKey();
+            //UpdateActionEmailSettings();
             //await ModifyAnalog();
             //await WriteOutAlertFile();
             //await WriteOutAnalogFile();
+            //await CreateConfigDatabase("epi1");
+            //await CreateConfigDatabase("epi2");
+            //await CreateReadingsDatabase("epi1");
+            //await CreateReadingsDatabase("epi2");
+            //await AlertUpdate("epi1");
+            //await AlertUpdate("epi2");
+
+
             await RunDataLogger();
+            //await ModifyAnalog();
+            //await UpdateChannels("epi1");
+            //await UpdateChannels("epi2");
+
+
+            //var client = new MongoClient("mongodb://172.20.3.30");
+            //var database = client.GetDatabase("epi2_data");
+            //var collection = database.GetCollection<AnalogChannel>("analog_items");
+            //var items = (await collection.FindAsync(_ => true)).ToList();
+            //foreach(var item in items) {
+            //    Console.WriteLine($"A{item.identifier}: {item.factor}");
+            //}
+            //Console.ReadKey();
+
         }
 
-        public static async Task ModifyAnalog() {
+        public static async Task UpdateChannels(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase("epi2_data");
+            var database = client.GetDatabase(deviceName+"_data");
             var analogItems = database.GetCollection<AnalogChannel>("analog_items");
-            var analogChannels = context.Channels
+            var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items");
+            var virtualItems = database.GetCollection<VirtualChannel>("virtual_items");
+
+            var analogChannels = await context.Channels.OfType<AnalogInput>()
                 .AsNoTracking()
-                .OfType<AnalogInput>()
-                .Include(e=>e.ModbusDevice)
-                .Where(e => e.ModbusDevice.Identifier == "epi2");
-            if (analogChannels.Count() > 0) {
-                foreach(var channel in analogChannels) {
-                    var update = Builders<AnalogChannel>.Update
-                        .Set(e => e.factor, 10);
-                    await analogItems.UpdateOneAsync(e=>e._id==channel.Id,update);
-                }
+                .Include(e => e.ModbusDevice)
+                .Where(e => e.ModbusDevice.Identifier == deviceName)
+                .ToListAsync();
+
+
+            var discreteChannels = await context.Channels.OfType<DiscreteInput>()
+                .AsNoTracking()
+                .Include(e => e.ModbusDevice)
+                .Where(e => e.ModbusDevice.Identifier == deviceName)
+                .ToListAsync();
+
+            var virtualChannels = await context.Channels.OfType<VirtualInput>()
+                .AsNoTracking()
+                .Include(e => e.ModbusDevice)
+                .Where(e => e.ModbusDevice.Identifier == deviceName)
+                .ToListAsync();
+
+            foreach (var channel in analogChannels) {
+                var update = Builders<AnalogChannel>.Update
+                    .Set(e => e.factor, 10)
+                    .Set(e=>e.display,channel.Connected)
+                    .Set(e=>e.identifier,channel.DisplayName);
+                await analogItems.UpdateOneAsync(e=>e._id==channel.Id,update);
             }
+
+            foreach (var channel in discreteChannels) {
+                var update = Builders<DiscreteChannel>.Update
+                    .Set(e => e.display, channel.Connected)
+                    .Set(e => e.identifier, channel.DisplayName);
+                await discreteItems.UpdateOneAsync(e => e._id == channel.Id, update);
+            }
+
+            foreach (var channel in virtualChannels) {
+                var update = Builders<VirtualChannel>.Update
+                    .Set(e => e.display, channel.Connected)
+                    .Set(e => e.identifier, channel.DisplayName);
+                await virtualItems.UpdateOneAsync(e => e._id == channel.Id, update);
+            }
+            Console.WriteLine("Check Database");
         }
 
-        public static async Task CreateMongoDevice() {
+        public static async Task CreateMongoDevice(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase("epi2_data");
+            var database = client.GetDatabase(deviceName+"_data");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
-                .FirstOrDefault(e => e.Identifier == "epi2");
+                .FirstOrDefault(e => e.Identifier == deviceName);
             if(device is not null) {
-
                 var deviceItems = database.GetCollection<MonitorDevice>("device_items");
                 MonitorDevice deviceConfig = new MonitorDevice();
                 deviceConfig.Created = DateTime.Now;
@@ -130,13 +191,9 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Exiting program");
         }
 
-        static async Task UpdateAnalogItem(int factor,IMongoCollection<AnalogChannel> analogItems) {
-
-        }
-
         static async Task ClearAlert(AlertReading reading,MonitorAlert alert, IMongoCollection<MonitorAlert> alerts) {
             var update = Builders<MonitorAlert>.Update
-                .Set(e => e.CurrentState, reading.value)
+                .Set(e => e.CurrentState, reading.state)
                 .Set(e => e.latched, false);
             await alerts.UpdateOneAsync(e => e._id == alert._id, update);
         }
@@ -144,29 +201,32 @@ namespace MonitoringSystem.ConsoleTesting {
         static UpdateDefinition<MonitorAlert> AlertUpdateAlreadyLatch(AlertReading reading) {
             return Builders<MonitorAlert>.Update
                 .Set(e => e.lastAlarm, reading.timestamp)
-                .Set(e => e.CurrentState, reading.value);
+                .Set(e => e.CurrentState, reading.state);
         }
 
         static UpdateDefinition<MonitorAlert> AlertUpdateLatch(AlertReading reading) {
             return Builders<MonitorAlert>.Update
                 .Set(e => e.lastAlarm, reading.timestamp)
-                .Set(e => e.CurrentState, reading.value)
+                .Set(e => e.CurrentState, reading.state)
                 .Set(e => e.latched, true);
         }
 
-        public static async Task AlertUpdateName() {
+        public static async Task AlertUpdate(string deviceName) {
             var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase("epi2_data");
+            var database = client.GetDatabase(deviceName+"_data");
             var alertItems = database.GetCollection<MonitorAlert>("alert_items");
             using var context = new FacilityContext();
             var alerts = await context.Alerts
                 .Include(e => e.InputChannel)
                 .ThenInclude(e => e.ModbusDevice)
-                .Where(e => e.InputChannel.ModbusDevice.Identifier == "epi2")
+                .Where(e => e.InputChannel.ModbusDevice.Identifier == deviceName)
                 .ToListAsync();
 
             alerts.ForEach((alert) => {
-                var update = Builders<MonitorAlert>.Update.Set(s => s.displayName, alert.DisplayName);
+                var update = Builders<MonitorAlert>.Update
+                .Set(s => s.displayName, alert.DisplayName)
+                .Set(s=>s.itemType,alert.AlertItemType)
+                .Set(s=>s.enabled,alert.Enabled);
                 var monitorAlert = alertItems.FindOneAndUpdate<MonitorAlert>(e => e._id == alert.Id, update);
                 //monitorAlert.displayName = alert.DisplayName;
                 //alertItems.UpdateOne(monitorAlert);
@@ -217,8 +277,10 @@ namespace MonitoringSystem.ConsoleTesting {
 
         public static void ActionItemUpdate() {
             var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase("epi2_data");
-            var actionItems = database.GetCollection<ActionItem>("action_items");
+            var e2Db = client.GetDatabase("epi2_data");
+            var e1Db = client.GetDatabase("epi1_data");
+            var e2AItems = e2Db.GetCollection<ActionItem>("action_items");
+            var e1AItems = e1Db.GetCollection<ActionItem>("action_items");
             Dictionary<int, ActionType> actionTypeMap = new Dictionary<int, ActionType>();
             actionTypeMap.Add(1, ActionType.Okay);
             actionTypeMap.Add(2, ActionType.Alarm);
@@ -228,10 +290,32 @@ namespace MonitoringSystem.ConsoleTesting {
             actionTypeMap.Add(6, ActionType.Custom);
             foreach(var item in actionTypeMap) {
                 var update = Builders<ActionItem>.Update.Set(s => s.actionType, item.Value);
-                var actionItem = actionItems.FindOneAndUpdate(e => e._id == item.Key, update);
+                var e2Item = e2AItems.FindOneAndUpdate(e => e._id == item.Key, update);
+                var e1Item = e1AItems.FindOneAndUpdate(e => e._id == item.Key, update);
             }
             Console.WriteLine("Check Database");
         }
+
+        public static void UpdateActionEmailSettings() {
+            using var context = new FacilityContext();
+            var actions = context.FacilityActions.ToList();
+            var client = new MongoClient("mongodb://172.20.3.30");
+            var epi1Db = client.GetDatabase("epi1_data");
+            var epi2Db = client.GetDatabase("epi2_data");
+            var e1Actions = epi1Db.GetCollection<ActionItem>("action_items");
+            var e2Actions = epi2Db.GetCollection<ActionItem>("action_items");
+
+
+            actions.ForEach((act) => {
+                var update = Builders<ActionItem>.Update
+                .Set(e => e.EmailEnabled, act.EmailEnabled)
+                .Set(e => e.EmailPeriod, act.EmailPeriod);
+                e1Actions.FindOneAndUpdate(e => e.actionType == act.ActionType, update);
+                e2Actions.FindOneAndUpdate(e => e.actionType == act.ActionType, update);
+            });
+            Console.WriteLine("Check Databases");
+        }
+
         static async Task WriteOutAnalogFile() {
             var client = new MongoClient("mongodb://172.20.3.30");
             var database = client.GetDatabase("epi2_data");
@@ -239,11 +323,12 @@ namespace MonitoringSystem.ConsoleTesting {
             var analogItems = database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToList();
             var analogReadings = database.GetCollection<AnalogReading>("analog_readings");
 
-            var start = new DateTime(2022, 3,30, 0, 0, 0);
+            var start = new DateTime(2022, 4,1, 0, 0, 0);
             //var stop = new DateTime(2022, 3, 16, 12, 0, 0);
             var stop = DateTime.Now;
             Console.WriteLine("Starting query");
-            var aReadings = analogReadings.Find(_ => true).ToList();
+            //var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+            var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
             var headers = aReadings.Select(e => e.itemid).OrderBy(e => e).Distinct().ToList();
             StringBuilder builder = new StringBuilder();
             headers.ForEach((id) => {
@@ -260,7 +345,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 lines.Add(builder.ToString());
             });
             Console.WriteLine("Writing Out Data");
-            File.WriteAllLines(@"C:\MonitorFiles\epi1_analogReadings.txt", lines);
+            File.WriteAllLines(@"C:\MonitorFiles\epi1_analogReadings-4-2.txt", lines);
             Console.WriteLine("Check File");
         }
         static async Task WriteOutAlertFile() {
@@ -274,7 +359,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //var stop = new DateTime(2022, 3, 16, 12, 0, 0);
             var stop = DateTime.Now;
             Console.WriteLine("Starting query");
-            var aReadings = alertReadings.Find(_ => true).ToList();
+            var aReadings = await (await alertReadings.FindAsync(e=>e.timestamp>=start && e.timestamp<=stop)).ToListAsync();
             var headers = aReadings.Select(e => e.itemid).OrderBy(e => e).Distinct().ToList();
             StringBuilder builder = new StringBuilder();
             headers.ForEach((id) => {
@@ -287,20 +372,20 @@ namespace MonitoringSystem.ConsoleTesting {
             groupedReadings.ForEach((item) => {
                 StringBuilder builder = new StringBuilder();
                 builder.Append($"{item.Key.Subtract(new TimeSpan(5, 0, 0))}\t");
-                item.OrderBy(e => e.itemid).Select(e => $"{e.value}\t").ToList().ForEach(s => builder.Append(s));
+                item.OrderBy(e => e.itemid).Select(e => $"{e.state}\t").ToList().ForEach(s => builder.Append(s));
                 lines.Add(builder.ToString());
             });
             Console.WriteLine("Writing Out Data");
             File.WriteAllLines(@"C:\MonitorFiles\epi1_alertreadings-1.txt", lines);
             Console.WriteLine("Check File");
         }
-        static async Task CreateConfigDatabse() {
+        static async Task CreateConfigDatabase(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.30");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
                 .Select(e => new DeviceDTO() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration })
-                .FirstOrDefault(e => e.Identifier == "epi2");
+                .FirstOrDefault(e => e.Identifier == deviceName);
 
             if (device != null) {
                 Console.WriteLine($"Device {device.Identifier.ToLower()} found");
@@ -395,13 +480,13 @@ namespace MonitoringSystem.ConsoleTesting {
             }
             Console.ReadKey();
         }
-        static async Task CreateReadingsDatabase() {
+        static async Task CreateReadingsDatabase(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.30");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
-                .Select(e => new DeviceDTO() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration })
-                .FirstOrDefault(e => e.Identifier == "epi2");
+                .Select(e => new DeviceDTO() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration})
+                .FirstOrDefault(e => e.Identifier == deviceName);
 
             if (device != null) {
                 Console.WriteLine($"Device {device.Identifier} found");
@@ -488,7 +573,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 await discreteReadings.InsertOneAsync(new DiscreteReading() { itemid = -1, timestamp = DateTime.Now, value = false });
                 await outputReadings.InsertOneAsync(new OutputReading() { itemid = -1, timestamp = DateTime.Now, value = false });
                 await virtualReadings.InsertOneAsync(new VirtualReading() { itemid = -1, timestamp = DateTime.Now, value = false });
-                await alertReadings.InsertOneAsync(new AlertReading() { itemid = -1, timestamp = DateTime.Now, value = ActionType.Custom });
+                await alertReadings.InsertOneAsync(new AlertReading() { itemid = -1, timestamp = DateTime.Now, state = ActionType.Custom });
                 await actionReadings.InsertOneAsync(new ActionReading() { itemid = -1, timestamp = DateTime.Now, value = false });
                 await deviceReadings.InsertOneAsync(new DeviceReading() { itemid = -1, timestamp = DateTime.Now, value = DeviceState.OKAY });
 
@@ -579,7 +664,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             collectionNames.Add(typeof(DeviceReading), "device_readings");
             collectionNames.Add(typeof(MonitorDevice), "device_items");
-            this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi2_data",collectionNames);
+            this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi1_data",collectionNames);
         }
         public async Task StartAsync() {
             Console.WriteLine("Starting Logging Service");

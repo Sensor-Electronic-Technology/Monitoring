@@ -19,8 +19,7 @@ namespace MonitoringData.Infrastructure.Model {
         public bool latched { get; set; }
         public ActionType CurrentState { get; set; }
         public MonitorAlert Clone() {
-            MonitorAlert other = (MonitorAlert)this.MemberwiseClone();
-            return other;
+            return (MonitorAlert)this.MemberwiseClone();
         }
     }
 }
