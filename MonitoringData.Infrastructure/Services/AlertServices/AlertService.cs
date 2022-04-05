@@ -29,7 +29,6 @@ namespace MonitoringData.Infrastructure.Services {
     public class AlertService : IAlertService {
         private readonly IAlertRepo _alertRepo;
         private readonly ILogger<AlertService> _logger;
-        private readonly ISendEndpointProvider _sendEnpoint;
         private IEmailService _emailService;
         private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
         private readonly object _locker = new object();
@@ -54,8 +53,7 @@ namespace MonitoringData.Infrastructure.Services {
             ConsoleTable newStateTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable activeTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable resendTable = new ConsoleTable("Alert", "Status", "Reading");
-            bool sendEmail = false;
-            
+            bool sendEmail = false;     
             foreach (var alert in this.Process(alerts)) {
                 if (alert.Enabled) {
                     switch (alert.AlertAction) {
@@ -105,9 +103,7 @@ namespace MonitoringData.Infrastructure.Services {
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
-                    //var endpoint = await this._sendEnpoint.GetSendEndpoint(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
-                    //await endpoint.Send<EmailContract>(new { Subject = "Epi2 Alerts", Message = messageBuilder.FinishMessage() });
-                    await this._emailService.SendMessageAsync("Epi1 Alerts", messageBuilder.FinishMessage());
+                    //await this._emailService.SendMessageAsync("Epi1 Alerts", messageBuilder.FinishMessage());
                 }
             }
             Console.Clear();

@@ -23,15 +23,15 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
 
         public void SendMessage(string subject,string msg) {
             EmailMessage message = new EmailMessage(this._exchange);
-            //var recp = new List<string>() {
-            //    "aelmendorf@s-et.com",
-            //    "rakesh@s-et.com",
-            //    "bmurdaugh@s-et.com",
-            //    "achapman@s-et.com"
-            //};
             var recp = new List<string>() {
-                "aelmendorf@s-et.com"
+                "aelmendorf@s-et.com",
+                "rakesh@s-et.com",
+                "bmurdaugh@s-et.com",
+                "achapman@s-et.com"
             };
+            //var recp = new List<string>() {
+            //    "aelmendorf@s-et.com"
+            //};
             message.ToRecipients.AddRange(recp);
             message.Subject = subject;
             MessageBody body = new MessageBody();
@@ -43,15 +43,15 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
 
         public async Task SendMessageAsync(string subject,string msg) {
             EmailMessage message = new EmailMessage(this._exchange);
-            //var recp = new List<string>() {
-            //    "aelmendorf@s-et.com",
-            //    "rakesh@s-et.com",
-            //    "bmurdaugh@s-et.com",
-            //    "achapman@s-et.com"
-            //};
             var recp = new List<string>() {
                 "aelmendorf@s-et.com",
+                "rakesh@s-et.com",
+                "bmurdaugh@s-et.com",
+                "achapman@s-et.com"
             };
+            //var recp = new List<string>() {
+            //    "aelmendorf@s-et.com",
+            //};
             message.ToRecipients.AddRange(recp);
             message.Subject = subject;
             MessageBody body = new MessageBody();

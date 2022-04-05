@@ -41,7 +41,8 @@ namespace MonitoringSystem.ConsoleTesting {
             //await AlertUpdate("epi1");
             //await AlertUpdate("epi2");
 
-
+            //await CreateConfigDatabase("epi2");
+            //await CreateReadingsDatabase("epi2");
             await RunDataLogger();
             //await ModifyAnalog();
             //await UpdateChannels("epi1");
@@ -62,7 +63,7 @@ namespace MonitoringSystem.ConsoleTesting {
         public static async Task UpdateChannels(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase(deviceName+"_data");
+            var database = client.GetDatabase(deviceName+"_data_temp");
             var analogItems = database.GetCollection<AnalogChannel>("analog_items");
             var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items");
             var virtualItems = database.GetCollection<VirtualChannel>("virtual_items");
@@ -72,7 +73,6 @@ namespace MonitoringSystem.ConsoleTesting {
                 .Include(e => e.ModbusDevice)
                 .Where(e => e.ModbusDevice.Identifier == deviceName)
                 .ToListAsync();
-
 
             var discreteChannels = await context.Channels.OfType<DiscreteInput>()
                 .AsNoTracking()
@@ -384,12 +384,14 @@ namespace MonitoringSystem.ConsoleTesting {
             var client = new MongoClient("mongodb://172.20.3.30");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
-                .Select(e => new DeviceDTO() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration })
-                .FirstOrDefault(e => e.Identifier == deviceName);
+                .Select(e => new DeviceDTO() { 
+                    Identifier = e.Identifier, 
+                    NetworkConfiguration = e.NetworkConfiguration 
+                }).FirstOrDefault(e => e.Identifier == deviceName);
 
             if (device != null) {
                 Console.WriteLine($"Device {device.Identifier.ToLower()} found");
-                var database = client.GetDatabase($"{device.Identifier.ToLower()}_data");
+                var database = client.GetDatabase($"{device.Identifier.ToLower()}_data_test");
 
                 Console.WriteLine("Creating Collections");
                 await database.CreateCollectionAsync("analog_items");
@@ -400,7 +402,11 @@ namespace MonitoringSystem.ConsoleTesting {
                 await database.CreateCollectionAsync("alert_items");
                 await database.CreateCollectionAsync("device_items");
 
-                Console.WriteLine("Creating Analog Channels");
+                IMongoCollection<MonitorDevice> deviceItems = database.GetCollection<MonitorDevice>("device_items");
+                MonitorDevice deviceConfig = new MonitorDevice();
+                deviceConfig.Created = DateTime.Now;
+                deviceConfig.identifier = device.Identifier;
+                deviceConfig.NetworkConfiguration = device.NetworkConfiguration;
 
                 IMongoCollection<AnalogChannel> analogItems = database.GetCollection<AnalogChannel>("analog_items");
                 var analogChannels = await context.Channels.OfType<AnalogInput>()
@@ -408,8 +414,12 @@ namespace MonitoringSystem.ConsoleTesting {
                     .Include(e=>e.ModbusDevice)
                     .Where(e => e.ModbusDevice.Identifier == device.Identifier)
                     .OrderBy(e=>e.SystemChannel)
-                    .Select(e=>new AnalogChannel() { identifier=e.DisplayName,_id=e.Id})
-                    .ToListAsync();
+                    .Select(e=>new AnalogChannel() { 
+                        identifier=e.DisplayName
+                        ,_id=e.Id,
+                        factor=10,
+                        display=e.Display
+                    }).ToListAsync();
 
                 var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items");
                 var discreteChannels = await context.Channels.OfType<DiscreteInput>()
@@ -417,8 +427,11 @@ namespace MonitoringSystem.ConsoleTesting {
                     .Include(e=>e.ModbusDevice)
                     .Where(e => e.ModbusDevice.Identifier == device.Identifier)
                     .OrderBy(e=>e.SystemChannel)
-                    .Select(e => new DiscreteChannel() { identifier = e.DisplayName, _id = e.Id })
-                    .ToListAsync();
+                    .Select(e => new DiscreteChannel() { 
+                        identifier = e.DisplayName,
+                        _id = e.Id,
+                        display=e.Display
+                    }).ToListAsync();
 
                 IMongoCollection<OutputItem> outputItems = database.GetCollection<OutputItem>("output_items");
                 var outputs = await context.Channels.OfType<OutputChannel>()
@@ -426,8 +439,11 @@ namespace MonitoringSystem.ConsoleTesting {
                     .Include(e => e.ModbusDevice)
                     .Where(e => e.ModbusDevice.Identifier == device.Identifier)
                     .OrderBy(e=>e.SystemChannel)
-                    .Select(e => new OutputItem() { identifier = e.DisplayName, _id = e.Id })
-                    .ToListAsync();
+                    .Select(e => new OutputItem() { 
+                        identifier = e.DisplayName, 
+                        _id = e.Id,
+                        display=e.Display
+                    }).ToListAsync();
 
                 IMongoCollection<ActionItem> actionItems = database.GetCollection<ActionItem>("action_items");
                 var actions = await context.FacilityActions
@@ -436,8 +452,10 @@ namespace MonitoringSystem.ConsoleTesting {
                         identifier = e.ActionName, 
                         _id = e.Id,
                         EmailEnabled=e.EmailEnabled,
-                        EmailPeriod=e.EmailPeriod})
-                    .ToListAsync();
+                        EmailPeriod=e.EmailPeriod,
+                        actionType=e.ActionType,
+                        display=true
+                    }).ToListAsync();
 
                 IMongoCollection<VirtualChannel> virtualItems = database.GetCollection<VirtualChannel>("virtual_items");
                 var virtualChannels = await context.Channels.OfType<VirtualInput>()
@@ -445,8 +463,11 @@ namespace MonitoringSystem.ConsoleTesting {
                     .Include(e=>e.ModbusDevice)
                     .Where(e => e.ModbusDevice.Identifier == device.Identifier)
                     .OrderBy(e => e.SystemChannel)
-                    .Select(e => new VirtualChannel() { identifier = e.DisplayName, _id = e.Id })
-                    .ToListAsync();
+                    .Select(e => new VirtualChannel() { 
+                        identifier = e.DisplayName, 
+                        _id = e.Id,
+                        display=e.Display
+                    }).ToListAsync();
 
                 IMongoCollection<MonitorAlert> monitorAlerts = database.GetCollection<MonitorAlert>("alert_items");
                 var alerts = await context.Channels.OfType<InputChannel>()
@@ -459,11 +480,14 @@ namespace MonitoringSystem.ConsoleTesting {
                         channelId = e.InputChannel.Id,
                         enabled = e.Enabled,
                         bypassed = e.Bypass,
+                        displayName=e.DisplayName,
                         bypassResetTime = e.BypassResetTime,
+                        itemType=e.AlertItemType,
                         latched = false,
-                        CurrentState = ActionType.Okay })
-                    .ToListAsync();
+                        CurrentState = ActionType.Okay 
+                    }).ToListAsync();
 
+                await deviceItems.InsertOneAsync(deviceConfig);
                 await analogItems.InsertManyAsync(analogChannels);
                 await discreteItems.InsertManyAsync(discreteChannels);
                 await outputItems.InsertManyAsync(outputs);
@@ -471,10 +495,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 await monitorAlerts.InsertManyAsync(alerts);
                 await virtualItems.InsertManyAsync(virtualChannels);
                 
-
-                Console.WriteLine("Check database");
-
-
+                Console.WriteLine("Check database, press any key to exit");
             } else {
                 Console.WriteLine("Device Not Found, Please Check Identifier");
             }
@@ -490,7 +511,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             if (device != null) {
                 Console.WriteLine($"Device {device.Identifier} found");
-                var database = client.GetDatabase($"{device.Identifier.ToLower()}_data");
+                var database = client.GetDatabase($"{device.Identifier.ToLower()}_data_test");
                 Console.WriteLine("Creating Collections");
 
                 await database.CreateCollectionAsync("analog_readings",
@@ -664,7 +685,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             collectionNames.Add(typeof(DeviceReading), "device_readings");
             collectionNames.Add(typeof(MonitorDevice), "device_items");
-            this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi1_data",collectionNames);
+            this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi2_data_test",collectionNames);
         }
         public async Task StartAsync() {
             Console.WriteLine("Starting Logging Service");

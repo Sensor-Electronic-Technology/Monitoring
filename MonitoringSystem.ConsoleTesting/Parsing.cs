@@ -13,7 +13,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await FixDiscreteNames("Epi1");
             //await FixAnalogNames("epi1");
             //await FixOutputNames("Epi1");
-            await SetAlertNames("epi2");
+            await SetAlertNames("epi1");
         }
         static async Task SetAlertNames(string deviceName) {
             using var context = new FacilityContext();

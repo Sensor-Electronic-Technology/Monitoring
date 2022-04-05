@@ -22,13 +22,15 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<ActionItem> _actionItems;
         private IMongoCollection<MonitorAlert> _monitorAlerts;
         private IMongoCollection<AlertReading> _alertReadings;
+        private readonly MonitorDatabaseSettings _settings;
         public IList<ActionItem> ActionItems { get; private set; }
         public AlertRepo(IOptions<MonitorDatabaseSettings> databaseSettings) {
             var client = new MongoClient(databaseSettings.Value.ConnectionString);
             var database = client.GetDatabase(databaseSettings.Value.DatabaseName);
-            this._actionItems = database.GetCollection<ActionItem>(databaseSettings.Value.ActionItemCollection);
-            this._monitorAlerts = database.GetCollection<MonitorAlert>(databaseSettings.Value.AlertItemCollection);
-            this._alertReadings = database.GetCollection<AlertReading>(databaseSettings.Value.AlertReadingCollection);
+            this._settings = databaseSettings.Value;
+            this._actionItems = database.GetCollection<ActionItem>(this._settings.ActionItemCollection);
+            this._monitorAlerts = database.GetCollection<MonitorAlert>(this._settings.AlertItemCollection);
+            this._alertReadings = database.GetCollection<AlertReading>(this._settings.AlertReadingCollection);
         }
 
         public AlertRepo(string connectionName,string databaseName,string actionColName,string alertCollName,string alertReadCol) {

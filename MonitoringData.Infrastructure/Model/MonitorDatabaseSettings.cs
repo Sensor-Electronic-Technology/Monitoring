@@ -11,6 +11,7 @@ namespace MonitoringData.Infrastructure.Model {
         public static string SectionName = "MonitorDatabaseSettings";
         public string ConnectionString { get; set; } = null!;
         public string DatabaseName { get; set; } = null!;
+        public string EmailSubject { get; set; } = null!;
         public string AlertItemCollection { get; set; } = null!;
         public string ActionItemCollection { get; set; } = null!;
         public string AnalogItemCollection { get; set; } = null!;
