@@ -43,7 +43,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             //await CreateConfigDatabase("epi2");
             //await CreateReadingsDatabase("epi2");
-            await RunDataLogger();
+            //await RunDataLogger();
             //await ModifyAnalog();
             //await UpdateChannels("epi1");
             //await UpdateChannels("epi2");
@@ -57,7 +57,39 @@ namespace MonitoringSystem.ConsoleTesting {
             //    Console.WriteLine($"A{item.identifier}: {item.factor}");
             //}
             //Console.ReadKey();
+            //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.txt");
+            await WriteOutAnalogFile("epi2", new DateTime(2022, 4, 11, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-11.csv");
+        }
 
+        static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
+            var client = new MongoClient("mongodb://172.20.3.30");
+            var database = client.GetDatabase(deviceName+"_data");
+
+            var analogItems = database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToList();
+            var analogReadings = database.GetCollection<AnalogReading>("analog_readings");
+            Console.WriteLine("Starting query");
+            var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+            var headers = analogItems.Select(e => e.identifier).ToList();
+            StringBuilder builder = new StringBuilder();
+            headers.ForEach((id) => {
+                builder.Append($"{id},");
+            });
+            var groupedReadings = aReadings.OrderBy(e=>e.itemid).GroupBy(e => e.timestamp).ToList();
+            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
+            List<string> lines = new List<string>();
+            lines.Add(builder.ToString());
+            groupedReadings.ForEach((item) => {
+                StringBuilder builder = new StringBuilder();
+                builder.Append($"{item.Key.Subtract(new TimeSpan(5, 0, 0))},");
+                item.OrderBy(e => e.itemid).Select(e => $"{e.value},").ToList().ForEach(s => builder.Append(s));
+                lines.Add(builder.ToString());
+            });
+            Console.WriteLine("Writing Out Data");
+            File.WriteAllLines(fileName, lines);
+
+            //File.WriteAllLines(@"C:\MonitorFiles\epi1_analogReadings_4-8_4-11.txt", lines);
+            Console.WriteLine("Check File");
         }
 
         public static async Task UpdateChannels(string deviceName) {
@@ -316,38 +348,7 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Check Databases");
         }
 
-        static async Task WriteOutAnalogFile() {
-            var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase("epi2_data");
 
-            var analogItems = database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToList();
-            var analogReadings = database.GetCollection<AnalogReading>("analog_readings");
-
-            var start = new DateTime(2022, 4,1, 0, 0, 0);
-            //var stop = new DateTime(2022, 3, 16, 12, 0, 0);
-            var stop = DateTime.Now;
-            Console.WriteLine("Starting query");
-            //var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
-            var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
-            var headers = aReadings.Select(e => e.itemid).OrderBy(e => e).Distinct().ToList();
-            StringBuilder builder = new StringBuilder();
-            headers.ForEach((id) => {
-                builder.Append($"{id}\t");
-            });
-            var groupedReadings = aReadings.GroupBy(e => e.timestamp).ToList();
-            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
-            List<string> lines = new List<string>();
-
-            groupedReadings.ForEach((item) => {
-                StringBuilder builder = new StringBuilder();
-                builder.Append($"{item.Key.Subtract(new TimeSpan(5, 0, 0))}\t");
-                item.OrderBy(e => e.itemid).Select(e => $"{e.value}\t").ToList().ForEach(s => builder.Append(s));
-                lines.Add(builder.ToString());
-            });
-            Console.WriteLine("Writing Out Data");
-            File.WriteAllLines(@"C:\MonitorFiles\epi1_analogReadings-4-2.txt", lines);
-            Console.WriteLine("Check File");
-        }
         static async Task WriteOutAlertFile() {
             var client = new MongoClient("mongodb://172.20.3.30");
             var database = client.GetDatabase("epi2_data");
