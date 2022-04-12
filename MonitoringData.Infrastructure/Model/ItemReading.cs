@@ -1,10 +1,12 @@
-﻿using MonitoringSystem.Shared.Data;
+﻿using MongoDB.Bson;
+using MonitoringSystem.Shared.Data;
 
 namespace MonitoringData.Infrastructure.Model {
     public class ItemReading {
         public int itemid { get; set; }
         public DateTime timestamp { get; set; }
     }
+
 
     public class AnalogReading : ItemReading {
         public double value { get; set; }
@@ -33,5 +35,25 @@ namespace MonitoringData.Infrastructure.Model {
 
     public class DeviceReading : ItemReading {
         public DeviceState value { get; set; }
+    }
+
+    public class ItemReadings {
+        public ObjectId _id { get; set; }
+        public DateTime timestamp { get; set; }
+    }
+
+    public class AnalogReadings:ItemReadings {
+        public AnalogReading[] readings { get; set; }    }
+
+    public class AlertReadings:ItemReadings {
+        public AlertReading[] readings { get; set; }
+    }
+
+    public class DiscreteReadings : ItemReadings {
+        public DiscreteReading[] readings { get; set; }
+    }
+
+    public class VirtualReadings : ItemReadings {
+        public VirtualReading[] readings { get; set; }
     }
 }

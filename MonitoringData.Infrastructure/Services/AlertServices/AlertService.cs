@@ -18,11 +18,10 @@ namespace MonitoringData.Infrastructure.Services {
         ChangeState,
         Start,
         Resend,
-        ShowStatus,
-        RemainActive
+        Nothing
     }
     public interface IAlertService {
-        Task ProcessAlerts(IList<AlertRecord> items);
+        Task ProcessAlerts(IList<AlertRecord> items,DateTime now);
         Task Initialize();
     }
 
@@ -31,13 +30,11 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly ILogger<AlertService> _logger;
         private IEmailService _emailService;
         private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
-        private readonly object _locker = new object();
 
         public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger) {
             this._alertRepo = alertRepo;
             this._logger = logger;
             this._emailService = new EmailService();
-            //this._sendEnpoint = sendEndpoint;
         }
 
         public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
@@ -45,7 +42,7 @@ namespace MonitoringData.Infrastructure.Services {
             this._emailService = new EmailService();
         }
 
-        public async Task ProcessAlerts(IList<AlertRecord> alerts) {
+        public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
             IMessageBuilder messageBuilder = new MessageBuilder();
             messageBuilder.StartMessage();
             ConsoleTable statusTable = new ConsoleTable("Alert","Status","Reading");
@@ -85,12 +82,6 @@ namespace MonitoringData.Infrastructure.Services {
                                 sendEmail = true;
                                 break;
                             }
-                        case AlertAction.ShowStatus: {
-                                break;
-                            }
-                        case AlertAction.RemainActive: {
-                                break;
-                            }
                     }
                     statusTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                     messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
@@ -105,6 +96,12 @@ namespace MonitoringData.Infrastructure.Services {
                 if (sendEmail) {
                     //await this._emailService.SendMessageAsync("Epi1 Alerts", messageBuilder.FinishMessage());
                 }
+                var alertReadings = alerts.Select(e => new AlertReading() { 
+                    itemid = e.AlertId, 
+                    reading = e.ChannelReading, 
+                    state = e.CurrentState
+                });
+                await this._alertRepo.LogAlerts(new AlertReadings() { readings = alertReadings.ToArray(), timestamp = now });
             }
             Console.Clear();
             Console.WriteLine("New Alerts:");
@@ -132,11 +129,10 @@ namespace MonitoringData.Infrastructure.Services {
                     case ActionType.Okay: {
                             if (activeAlert != null) {
                                 alert.AlertAction = AlertAction.Clear;
-                                break;
                             } else {
-                                alert.AlertAction=AlertAction.ShowStatus;
-                                break;
+                                alert.AlertAction = AlertAction.Nothing;
                             }
+                            break;
                         }
                     case ActionType.Alarm:
                     case ActionType.Warning:
@@ -150,11 +146,12 @@ namespace MonitoringData.Infrastructure.Services {
                                         if ((now - activeAlert.LastAlert).TotalMinutes >= actionItem.EmailPeriod) {
                                             alert.AlertAction = AlertAction.Resend;
                                             alert.LastAlert = now;
-                                        } else {
-                                            alert.AlertAction = AlertAction.RemainActive;
-                                        }
+                                        }//
+                                        //else do nothing
+                                        alert.AlertAction = AlertAction.Nothing;
                                     } else {
-                                        alert.AlertAction = AlertAction.RemainActive;
+                                        //log error-ActionItem not found
+                                        alert.AlertAction = AlertAction.Nothing;
                                     }
                                 }
                             } else {
@@ -166,7 +163,7 @@ namespace MonitoringData.Infrastructure.Services {
                     case ActionType.Maintenance:
                     case ActionType.Custom:
                     default:
-                        alert.AlertAction = AlertAction.ShowStatus;
+                        alert.AlertAction = AlertAction.Nothing;
                         break;
                 }
                 yield return alert;

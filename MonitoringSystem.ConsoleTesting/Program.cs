@@ -44,6 +44,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await CreateConfigDatabase("epi2");
             //await CreateReadingsDatabase("epi2");
             //await RunDataLogger();
+            await TestAlerts();
             //await ModifyAnalog();
             //await UpdateChannels("epi1");
             //await UpdateChannels("epi2");
@@ -58,7 +59,54 @@ namespace MonitoringSystem.ConsoleTesting {
             //}
             //Console.ReadKey();
             //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.txt");
-            await WriteOutAnalogFile("epi2", new DateTime(2022, 4, 11, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-11.csv");
+            //await WriteOutAnalogFile("epi2", new DateTime(2022, 4, 11, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-11.csv");
+            //var client = new MongoClient("mongodb://172.20.3.30");
+            //var database = client.GetDatabase("epi1_data_test");
+
+            //await database.CreateCollectionAsync("analog_readings",
+            //    new CreateCollectionOptions() {
+            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+            //    });
+
+            //await database.CreateCollectionAsync("discrete_readings",
+            //    new CreateCollectionOptions() {
+            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+            //    });
+
+            //await database.CreateCollectionAsync("virtual_readings",
+            //    new CreateCollectionOptions() {
+            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+            //    });
+
+
+            //await database.CreateCollectionAsync("alert_readings",
+            //    new CreateCollectionOptions() {
+            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+            //    });
+
+            //Console.WriteLine("Check database");
+
+            //await database.CreateCollectionAsync("device_readings",
+            //    new CreateCollectionOptions() {
+            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", "itemid", granularity: TimeSeriesGranularity.Seconds)
+            //    });
+
+
+
+            //var analogReadings = database.GetCollection<AnalogReadings>("analog_readings_new");
+
+            //analogReadings.Indexes.CreateOne(new CreateIndexModel<AnalogReadings>(Builders<AnalogReadings>.IndexKeys.Ascending(x => x._id),
+            //    new CreateIndexOptions()),
+            //    new CreateOneIndexOptions());
+
+
+            //List<AnalogReading> items = new List<AnalogReading>();
+            //for(int i = 0; i < 16; i++) {
+            //    //analogReadings.InsertOneAsync(new );
+            //    items.Add(new AnalogReading() {itemid=i,value=(i+1)*10});
+            //}
+            //await analogReadings.InsertOneAsync(new AnalogReadings() { timestamp = DateTime.Now, Channels = items.ToArray() });
+            //Console.WriteLine("Check database");
         }
 
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
@@ -186,15 +234,16 @@ namespace MonitoringSystem.ConsoleTesting {
             collectionNames.Add(typeof(DeviceReading), "device_readings");
             collectionNames.Add(typeof(MonitorDevice), "device_items");
 
-            var repo = new MonitorDataService("mongodb://172.20.3.30","epi2_data", collectionNames);
-            var alertService = new AlertService("mongodb://172.20.3.30", "epi2_data", collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
+            var repo = new MonitorDataService("mongodb://172.20.3.30","epi1_data_test", collectionNames);
+            var alertService = new AlertService("mongodb://172.20.3.30", "epi1_data_test", collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
             await repo.LoadAsync();
             await alertService.Initialize();
             var itemAlerts = repo.MonitorAlerts.Select(alert => new AlertRecord(alert, ActionType.Okay)).ToList();
+            DateTime now = DateTime.Now;
             int count = 0;
             while (true) {
-                await alertService.ProcessAlerts(itemAlerts);
-                var alertRecord=itemAlerts.FirstOrDefault(e => e.ChannelId ==109);
+                await alertService.ProcessAlerts(itemAlerts,now);
+                var alertRecord=itemAlerts.FirstOrDefault(e => e.ChannelId==48);
                 if (count == 0) {
                     alertRecord.CurrentState = ActionType.SoftWarn;
                     alertRecord.ChannelReading = 100.0f;
@@ -686,7 +735,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             collectionNames.Add(typeof(DeviceReading), "device_readings");
             collectionNames.Add(typeof(MonitorDevice), "device_items");
-            this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi2_data_test",collectionNames);
+            this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.30", "epi1_data_test",collectionNames);
         }
         public async Task StartAsync() {
             Console.WriteLine("Starting Logging Service");

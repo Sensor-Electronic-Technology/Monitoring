@@ -18,12 +18,19 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         List<MonitorAlert> MonitorAlerts { get; }
         List<ActionItem> ActionItems { get; }
         MonitorDevice MonitorDevice { get; }
-        Task InsertManyAsync(IEnumerable<ActionReading> readings);
-        Task InsertManyAsync(IEnumerable<AlertReading> readings);
-        Task InsertManyAsync(IEnumerable<AnalogReading> readings);
-        Task InsertManyAsync(IEnumerable<DiscreteReading> readings);
-        Task InsertManyAsync(IEnumerable<OutputReading> readings);
-        Task InsertManyAsync(IEnumerable<VirtualReading> readings);
+        //Task InsertManyAsync(IEnumerable<ActionReading> readings);
+        //Task InsertManyAsync(IEnumerable<AlertReading> readings);
+        //Task InsertManyAsync(IEnumerable<AnalogReading> readings);
+        //Task InsertManyAsync(IEnumerable<DiscreteReading> readings);
+        //Task InsertManyAsync(IEnumerable<OutputReading> readings);
+        //Task InsertManyAsync(IEnumerable<VirtualReading> readings);
+
+
+        Task InsertOneAsync(AlertReadings readings);
+        Task InsertOneAsync(AnalogReadings readings);
+        Task InsertOneAsync(DiscreteReadings readings);
+        Task InsertOneAsync(VirtualReadings readings);
+
         Task InsertDeviceReadingAsync(DeviceReading reading);
 
         Task UpdateAlert(int alertId, UpdateDefinition<MonitorAlert> update);
@@ -51,25 +58,33 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<ActionItem> _actionItems;
         private IMongoCollection<MonitorDevice> _deviceConfigurations;
 
-        private IMongoCollection<AnalogReading> _analogReadings;
-        private IMongoCollection<DiscreteReading> _discreteReadings;
-        private IMongoCollection<OutputReading> _outputReadings;
-        private IMongoCollection<VirtualReading> _virtualReadings;
-        private IMongoCollection<ActionReading> _actionReadings;
-        private IMongoCollection<AlertReading> _alertReadings;
+        //private IMongoCollection<AnalogReading> _analogReadings;
+        //private IMongoCollection<DiscreteReading> _discreteReadings;
+        //private IMongoCollection<OutputReading> _outputReadings;
+        //private IMongoCollection<VirtualReading> _virtualReadings;
+        //private IMongoCollection<ActionReading> _actionReadings;
+        //private IMongoCollection<AlertReading> _alertReadings;
+        //private IMongoCollection<DeviceReading> _deviceReadings;
+
+        private IMongoCollection<AnalogReadings> _analogReadings;
+        private IMongoCollection<DiscreteReadings> _discreteReadings;
+
+        private IMongoCollection<VirtualReadings> _virtualReadings;
+        private IMongoCollection<AlertReadings> _alertReadings;
         private IMongoCollection<DeviceReading> _deviceReadings;
+
         public MonitorDataService(IOptions<MonitorDatabaseSettings> databaseSettings,ILogger<MonitorDataService> logger) {
             this._client = new MongoClient(databaseSettings.Value.ConnectionString);
             this._database = this._client.GetDatabase(databaseSettings.Value.DatabaseName);
             this._logger = logger;
             this._initialized = false;
             
-            this._analogReadings = this._database.GetCollection<AnalogReading>(databaseSettings.Value.AnalogReadingCollection);
-            this._discreteReadings = this._database.GetCollection<DiscreteReading>(databaseSettings.Value.DiscreteReadingCollection);
-            this._virtualReadings = this._database.GetCollection<VirtualReading>(databaseSettings.Value.VirtualReadingCollection);
-            this._alertReadings = this._database.GetCollection<AlertReading>(databaseSettings.Value.AlertReadingCollection);
-            this._actionReadings = this._database.GetCollection<ActionReading>(databaseSettings.Value.ActionReadingCollection);
-            this._outputReadings = this._database.GetCollection<OutputReading>(databaseSettings.Value.OutputReadingCollection);
+            this._analogReadings = this._database.GetCollection<AnalogReadings>(databaseSettings.Value.AnalogReadingCollection);
+            this._discreteReadings = this._database.GetCollection<DiscreteReadings>(databaseSettings.Value.DiscreteReadingCollection);
+            this._virtualReadings = this._database.GetCollection<VirtualReadings>(databaseSettings.Value.VirtualReadingCollection);
+            this._alertReadings = this._database.GetCollection<AlertReadings>(databaseSettings.Value.AlertReadingCollection);
+            //this._actionReadings = this._database.GetCollection<ActionReading>(databaseSettings.Value.ActionReadingCollection);
+            //this._outputReadings = this._database.GetCollection<OutputReading>(databaseSettings.Value.OutputReadingCollection);
             this._deviceReadings = this._database.GetCollection<DeviceReading>(databaseSettings.Value.DeviceReadingCollection);
 
             this._actionItems = this._database.GetCollection<ActionItem>(databaseSettings.Value.ActionItemCollection);
@@ -84,12 +99,12 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._client = new MongoClient(connectionString);
             this._database = this._client.GetDatabase(databaseName);
             this._initialized = false;
-            this._analogReadings = this._database.GetCollection<AnalogReading>(collectionNames[typeof(AnalogReading)]);
-            this._discreteReadings = this._database.GetCollection<DiscreteReading>(collectionNames[typeof(DiscreteReading)]);
-            this._virtualReadings = this._database.GetCollection<VirtualReading>(collectionNames[typeof(VirtualReading)]);
-            this._outputReadings = this._database.GetCollection<OutputReading>(collectionNames[typeof(OutputReading)]);
-            this._alertReadings = this._database.GetCollection<AlertReading>(collectionNames[typeof(AlertReading)]);
-            this._actionReadings = this._database.GetCollection<ActionReading>(collectionNames[typeof(ActionReading)]);
+            this._analogReadings = this._database.GetCollection<AnalogReadings>(collectionNames[typeof(AnalogReading)]);
+            this._discreteReadings = this._database.GetCollection<DiscreteReadings>(collectionNames[typeof(DiscreteReading)]);
+            this._virtualReadings = this._database.GetCollection<VirtualReadings>(collectionNames[typeof(VirtualReading)]);
+            //this._outputReadings = this._database.GetCollection<OutputReading>(collectionNames[typeof(OutputReading)]);
+            this._alertReadings = this._database.GetCollection<AlertReadings>(collectionNames[typeof(AlertReading)]);
+            //this._actionReadings = this._database.GetCollection<ActionReading>(collectionNames[typeof(ActionReading)]);
             this._deviceReadings = this._database.GetCollection<DeviceReading>(collectionNames[typeof(DeviceReading)]);
 
             this._analogItems = this._database.GetCollection<AnalogChannel>(collectionNames[typeof(AnalogChannel)]);
@@ -101,29 +116,45 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._deviceConfigurations = this._database.GetCollection<MonitorDevice>(collectionNames[typeof(MonitorDevice)]);
         }
 
-        public async Task InsertManyAsync(IEnumerable<AnalogReading> readings) {
-            await this._analogReadings.InsertManyAsync(readings);
+        public async Task InsertOneAsync(AlertReadings readings) {
+            await this._alertReadings.InsertOneAsync(readings);
         }
 
-        public async Task InsertManyAsync(IEnumerable<DiscreteReading> readings) {
-            await this._discreteReadings.InsertManyAsync(readings);
+        public async Task InsertOneAsync(AnalogReadings readings) {
+            await this._analogReadings.InsertOneAsync(readings);
         }
 
-        public async Task InsertManyAsync(IEnumerable<OutputReading> readings) {
-            await this._outputReadings.InsertManyAsync(readings);
+        public async Task InsertOneAsync(DiscreteReadings readings) {
+            await this._discreteReadings.InsertOneAsync(readings);
         }
 
-        public async Task InsertManyAsync(IEnumerable<VirtualReading> readings) {
-            await this._virtualReadings.InsertManyAsync(readings);
+        public async Task InsertOneAsync(VirtualReadings readings) {
+            await this._virtualReadings.InsertOneAsync(readings);
         }
 
-        public async Task InsertManyAsync(IEnumerable<ActionReading> readings) {
-            await this._actionReadings.InsertManyAsync(readings);
-        }
+        //public async Task InsertManyAsync(IEnumerable<AnalogReading> readings) {
+        //    await this._analogReadings.InsertManyAsync(readings);
+        //}
 
-        public async Task InsertManyAsync(IEnumerable<AlertReading> readings) {
-            await this._alertReadings.InsertManyAsync(readings);
-        }
+        //public async Task InsertManyAsync(IEnumerable<DiscreteReading> readings) {
+        //    await this._discreteReadings.InsertManyAsync(readings);
+        //}
+
+        //public async Task InsertManyAsync(IEnumerable<OutputReading> readings) {
+        //    await this._outputReadings.InsertManyAsync(readings);
+        //}
+
+        //public async Task InsertManyAsync(IEnumerable<VirtualReading> readings) {
+        //    await this._virtualReadings.InsertManyAsync(readings);
+        //}
+
+        //public async Task InsertManyAsync(IEnumerable<ActionReading> readings) {
+        //    await this._actionReadings.InsertManyAsync(readings);
+        //}
+
+        //public async Task InsertManyAsync(IEnumerable<AlertReading> readings) {
+        //    await this._alertReadings.InsertManyAsync(readings);
+        //}
 
         public async Task InsertDeviceReadingAsync(DeviceReading reading) {
             await this._deviceReadings.InsertOneAsync(reading);

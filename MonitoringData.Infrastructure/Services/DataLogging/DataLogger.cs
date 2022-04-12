@@ -70,7 +70,7 @@ namespace MonitoringData.Infrastructure.Services {
                 await this.ProcessVirtualReadings(virtualRaw, now);
                 //await this.ProcessOutputReadings(outputsRaw, now);
                 //await this.ProcessActionReadings(actionsRaw, now);
-                await this._alertService.ProcessAlerts(this._alerts);
+                await this._alertService.ProcessAlerts(this._alerts,now);
             } else {
                 this._logger.LogError("Modbus read failed");
             }
@@ -104,14 +104,14 @@ namespace MonitoringData.Infrastructure.Services {
 
         private async Task ProcessAnalogReadings(ushort[] raw, DateTime now) {
             if (this._dataService.AnalogItems.Count == raw.Length) {
-                List<AnalogReading> analogReadings = new List<AnalogReading>();
+                List<AnalogReading> readings = new List<AnalogReading>();
                 for (int i = 0; i < raw.Length; i++) {
                     var analogReading = new AnalogReading() { 
                         itemid = this._dataService.AnalogItems[i]._id, 
                         timestamp = now, 
                         value = (float)raw[i] / (float)this._dataService.AnalogItems[i].factor
                     };
-                    analogReadings.Add(analogReading);
+                    readings.Add(analogReading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.itemid);
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = (float)analogReading.value;
@@ -119,7 +119,7 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Analog ItemAlert not found");
                     }
                 }
-                await this._dataService.InsertManyAsync(analogReadings);
+                await this._dataService.InsertOneAsync(new AnalogReadings() { readings = readings.ToArray(), timestamp = now });
             } else {
                 this.LogError("Error: AnalogItems count doesn't match raw data count");
             }
@@ -142,7 +142,7 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Discrete ItemAlert not found");
                     }
                 }
-                await this._dataService.InsertManyAsync(readings);
+                await this._dataService.InsertOneAsync(new DiscreteReadings() { readings = readings.ToArray(), timestamp = now });
             } else {
                 this.LogError("Error: DiscreteItems count doesn't match raw data count");
             }
@@ -166,40 +166,40 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Virual ItemAlert not found");
                     }
                 }
-                await this._dataService.InsertManyAsync(readings);
+                await this._dataService.InsertOneAsync(new VirtualReadings() { readings = readings.ToArray(), timestamp = now });
             } else {
                 this.LogError("Error: Virtualitems count doesn't match raw data count");
             }
 
         }
 
-        private async Task ProcessOutputReadings(bool[] raw, DateTime now) {
-            if (this._dataService.OutputItems.Count == raw.Length) {
-                List<OutputReading> readings = new List<OutputReading>();
-                for (int i = 0; i < raw.Length; i++) {
-                    readings.Add(new OutputReading() { itemid = this._dataService.OutputItems[i]._id, timestamp = now, value = raw[i] });
-                }
-                await this._dataService.InsertManyAsync(readings);
-            } else {
-                this.LogError("Error: OutputItems count doesn't match raw data count");
-            }
-        }
+        //private async Task ProcessOutputReadings(bool[] raw, DateTime now) {
+        //    if (this._dataService.OutputItems.Count == raw.Length) {
+        //        List<OutputReading> readings = new List<OutputReading>();
+        //        for (int i = 0; i < raw.Length; i++) {
+        //            readings.Add(new OutputReading() { itemid = this._dataService.OutputItems[i]._id, timestamp = now, value = raw[i] });
+        //        }
+        //        await this._dataService.InsertManyAsync(readings);
+        //    } else {
+        //        this.LogError("Error: OutputItems count doesn't match raw data count");
+        //    }
+        //}
 
-        private async Task ProcessActionReadings(bool[] raw, DateTime now) {
-            if (this._dataService.ActionItems.Count == raw.Length) {
-                List<ActionReading> readings = new List<ActionReading>();
-                for (int i = 0; i < raw.Length; i++) {
-                    readings.Add(new ActionReading() {
-                        itemid = this._dataService.ActionItems[i]._id,
-                        timestamp = now,
-                        value = raw[i]
-                    });
-                }
-                await this._dataService.InsertManyAsync(readings);
-            } else {
-                this.LogError("Error: ActionItem Count doesn't match raw data count");
-            }
-        }
+        //private async Task ProcessActionReadings(bool[] raw, DateTime now) {
+        //    if (this._dataService.ActionItems.Count == raw.Length) {
+        //        List<ActionReading> readings = new List<ActionReading>();
+        //        for (int i = 0; i < raw.Length; i++) {
+        //            readings.Add(new ActionReading() {
+        //                itemid = this._dataService.ActionItems[i]._id,
+        //                timestamp = now,
+        //                value = raw[i]
+        //            });
+        //        }
+        //        await this._dataService.InsertManyAsync(readings);
+        //    } else {
+        //        this.LogError("Error: ActionItem Count doesn't match raw data count");
+        //    }
+        //}
 
         private void LogInformation(string msg) {
             if (this.loggingEnabled) {
