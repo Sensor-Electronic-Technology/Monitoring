@@ -44,7 +44,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await CreateConfigDatabase("epi2");
             //await CreateReadingsDatabase("epi2");
             //await RunDataLogger();
-            await TestAlerts();
+            //await TestAlerts();
             //await ModifyAnalog();
             //await UpdateChannels("epi1");
             //await UpdateChannels("epi2");
@@ -58,85 +58,51 @@ namespace MonitoringSystem.ConsoleTesting {
             //    Console.WriteLine($"A{item.identifier}: {item.factor}");
             //}
             //Console.ReadKey();
-            //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.txt");
+
+            //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.csv");
             //await WriteOutAnalogFile("epi2", new DateTime(2022, 4, 11, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-11.csv");
             //var client = new MongoClient("mongodb://172.20.3.30");
             //var database = client.GetDatabase("epi1_data_test");
 
-            //await database.CreateCollectionAsync("analog_readings",
-            //    new CreateCollectionOptions() {
-            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
-            //    });
+            //await CreateReadingsDatabaseNew("epi1");
 
-            //await database.CreateCollectionAsync("discrete_readings",
-            //    new CreateCollectionOptions() {
-            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
-            //    });
-
-            //await database.CreateCollectionAsync("virtual_readings",
-            //    new CreateCollectionOptions() {
-            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
-            //    });
-
-
-            //await database.CreateCollectionAsync("alert_readings",
-            //    new CreateCollectionOptions() {
-            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
-            //    });
-
-            //Console.WriteLine("Check database");
-
-            //await database.CreateCollectionAsync("device_readings",
-            //    new CreateCollectionOptions() {
-            //        TimeSeriesOptions = new TimeSeriesOptions("timestamp", "itemid", granularity: TimeSeriesGranularity.Seconds)
-            //    });
-
-
-
-            //var analogReadings = database.GetCollection<AnalogReadings>("analog_readings_new");
-
-            //analogReadings.Indexes.CreateOne(new CreateIndexModel<AnalogReadings>(Builders<AnalogReadings>.IndexKeys.Ascending(x => x._id),
-            //    new CreateIndexOptions()),
-            //    new CreateOneIndexOptions());
-
-
-            //List<AnalogReading> items = new List<AnalogReading>();
-            //for(int i = 0; i < 16; i++) {
-            //    //analogReadings.InsertOneAsync(new );
-            //    items.Add(new AnalogReading() {itemid=i,value=(i+1)*10});
-            //}
-            //await analogReadings.InsertOneAsync(new AnalogReadings() { timestamp = DateTime.Now, Channels = items.ToArray() });
-            //Console.WriteLine("Check database");
+            var client = new MongoClient("mongodb://172.20.3.30");
+            var database = client.GetDatabase("epi1_data");
+            var analogReadings = database.GetCollection<AnalogChannel>("analog_items");
+            var cursor = analogReadings.Watch();
+            while (cursor.MoveNext() && cursor.Current.Count() == 0) { }
+            var next = cursor.Current.First();
+            Console.WriteLine(next.ToString());
         }
 
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
             var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase(deviceName+"_data");
+            var database = client.GetDatabase(deviceName + "_data_test");
 
             var analogItems = database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToList();
-            var analogReadings = database.GetCollection<AnalogReading>("analog_readings");
+            var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
             Console.WriteLine("Starting query");
-            var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
-            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+            //var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+            var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
             var headers = analogItems.Select(e => e.identifier).ToList();
-            StringBuilder builder = new StringBuilder();
+            StringBuilder hbuilder = new StringBuilder();
+            hbuilder.Append("timestamp,");
             headers.ForEach((id) => {
-                builder.Append($"{id},");
+                hbuilder.Append($"{id},");
             });
-            var groupedReadings = aReadings.OrderBy(e=>e.itemid).GroupBy(e => e.timestamp).ToList();
             Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
             List<string> lines = new List<string>();
-            lines.Add(builder.ToString());
-            groupedReadings.ForEach((item) => {
+            lines.Add(hbuilder.ToString());
+            foreach(var readings in aReadings) {
                 StringBuilder builder = new StringBuilder();
-                builder.Append($"{item.Key.Subtract(new TimeSpan(5, 0, 0))},");
-                item.OrderBy(e => e.itemid).Select(e => $"{e.value},").ToList().ForEach(s => builder.Append(s));
+                builder.Append(readings.timestamp.ToShortDateString());
+                foreach(var reading in readings.readings) {
+                    builder.Append($"{reading.value},");
+                }
                 lines.Add(builder.ToString());
-            });
+            }
             Console.WriteLine("Writing Out Data");
             File.WriteAllLines(fileName, lines);
-
-            //File.WriteAllLines(@"C:\MonitorFiles\epi1_analogReadings_4-8_4-11.txt", lines);
             Console.WriteLine("Check File");
         }
 
@@ -279,18 +245,18 @@ namespace MonitoringSystem.ConsoleTesting {
             await alerts.UpdateOneAsync(e => e._id == alert._id, update);
         }
 
-        static UpdateDefinition<MonitorAlert> AlertUpdateAlreadyLatch(AlertReading reading) {
-            return Builders<MonitorAlert>.Update
-                .Set(e => e.lastAlarm, reading.timestamp)
-                .Set(e => e.CurrentState, reading.state);
-        }
+        //static UpdateDefinition<MonitorAlert> AlertUpdateAlreadyLatch(AlertReading reading) {
+        //    return Builders<MonitorAlert>.Update
+        //        .Set(e => e.lastAlarm, reading.timestamp)
+        //        .Set(e => e.CurrentState, reading.state);
+        //}
 
-        static UpdateDefinition<MonitorAlert> AlertUpdateLatch(AlertReading reading) {
-            return Builders<MonitorAlert>.Update
-                .Set(e => e.lastAlarm, reading.timestamp)
-                .Set(e => e.CurrentState, reading.state)
-                .Set(e => e.latched, true);
-        }
+        //static UpdateDefinition<MonitorAlert> AlertUpdateLatch(AlertReading reading) {
+        //    return Builders<MonitorAlert>.Update
+        //        .Set(e => e.lastAlarm, reading.timestamp)
+        //        .Set(e => e.CurrentState, reading.state)
+        //        .Set(e => e.latched, true);
+        //}
 
         public static async Task AlertUpdate(string deviceName) {
             var client = new MongoClient("mongodb://172.20.3.30");
@@ -397,38 +363,6 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Check Databases");
         }
 
-
-        static async Task WriteOutAlertFile() {
-            var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase("epi2_data");
-
-            var alertItems = database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToList();
-            var alertReadings = database.GetCollection<AlertReading>("alert_readings");
-
-            var start = new DateTime(2022, 3, 30, 0, 0, 0);
-            //var stop = new DateTime(2022, 3, 16, 12, 0, 0);
-            var stop = DateTime.Now;
-            Console.WriteLine("Starting query");
-            var aReadings = await (await alertReadings.FindAsync(e=>e.timestamp>=start && e.timestamp<=stop)).ToListAsync();
-            var headers = aReadings.Select(e => e.itemid).OrderBy(e => e).Distinct().ToList();
-            StringBuilder builder = new StringBuilder();
-            headers.ForEach((id) => {
-                builder.Append($"{id}\t");
-            });
-            var groupedReadings = aReadings.GroupBy(e => e.timestamp).ToList();
-            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
-            List<string> lines = new List<string>();
-
-            groupedReadings.ForEach((item) => {
-                StringBuilder builder = new StringBuilder();
-                builder.Append($"{item.Key.Subtract(new TimeSpan(5, 0, 0))}\t");
-                item.OrderBy(e => e.itemid).Select(e => $"{e.state}\t").ToList().ForEach(s => builder.Append(s));
-                lines.Add(builder.ToString());
-            });
-            Console.WriteLine("Writing Out Data");
-            File.WriteAllLines(@"C:\MonitorFiles\epi1_alertreadings-1.txt", lines);
-            Console.WriteLine("Check File");
-        }
         static async Task CreateConfigDatabase(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.30");
@@ -551,6 +485,157 @@ namespace MonitoringSystem.ConsoleTesting {
             }
             Console.ReadKey();
         }
+
+        public static async Task CreateReadingsDatabaseNew(string deviceName) {
+            using var context = new FacilityContext();
+            var client = new MongoClient("mongodb://172.20.3.30");
+            var device = context.Devices.OfType<ModbusDevice>()
+                .AsNoTracking()
+                .Select(e => new DeviceDTO() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration })
+                .FirstOrDefault(e => e.Identifier == deviceName);
+
+            if(device is not null) {
+                Console.WriteLine($"Device {device.Identifier} found");
+                var database = client.GetDatabase($"{device.Identifier.ToLower()}_data_test");
+                Console.WriteLine("Creating Collections");
+                Console.WriteLine($"Device {device.Identifier.ToLower()} found");
+
+                Console.WriteLine("Creating Collections");
+                await database.CreateCollectionAsync("analog_items");
+                await database.CreateCollectionAsync("discrete_items");
+                await database.CreateCollectionAsync("output_items");
+                await database.CreateCollectionAsync("virtual_items");
+                await database.CreateCollectionAsync("action_items");
+                await database.CreateCollectionAsync("alert_items");
+                await database.CreateCollectionAsync("device_items");
+
+                await database.CreateCollectionAsync("analog_readings",
+                    new CreateCollectionOptions() {
+                        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+                    });
+
+                await database.CreateCollectionAsync("discrete_readings",
+                    new CreateCollectionOptions() {
+                        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+                    });
+
+                await database.CreateCollectionAsync("virtual_readings",
+                    new CreateCollectionOptions() {
+                        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+                    });
+
+
+                await database.CreateCollectionAsync("alert_readings",
+                    new CreateCollectionOptions() {
+                        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+                    });
+
+                await database.CreateCollectionAsync("device_readings",
+                    new CreateCollectionOptions() {
+                        TimeSeriesOptions = new TimeSeriesOptions("timestamp", "itemid", granularity: TimeSeriesGranularity.Seconds)
+                    });
+
+                Console.WriteLine("Collections Created, Populating configurations");
+
+                IMongoCollection<MonitorDevice> deviceItems = database.GetCollection<MonitorDevice>("device_items");
+                MonitorDevice deviceConfig = new MonitorDevice();
+                deviceConfig.Created = DateTime.Now;
+                deviceConfig.identifier = device.Identifier;
+                deviceConfig.NetworkConfiguration = device.NetworkConfiguration;
+
+                IMongoCollection<AnalogChannel> analogItems = database.GetCollection<AnalogChannel>("analog_items");
+                var analogChannels = await context.Channels.OfType<AnalogInput>()
+                    .AsNoTracking()
+                    .Include(e => e.ModbusDevice)
+                    .Where(e => e.ModbusDevice.Identifier == device.Identifier)
+                    .OrderBy(e => e.SystemChannel)
+                    .Select(e => new AnalogChannel() {
+                        identifier = e.DisplayName,
+                        _id = e.Id,
+                        factor = 10,
+                        display = e.Display
+                    }).ToListAsync();
+
+                var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items");
+                var discreteChannels = await context.Channels.OfType<DiscreteInput>()
+                    .AsNoTracking()
+                    .Include(e => e.ModbusDevice)
+                    .Where(e => e.ModbusDevice.Identifier == device.Identifier)
+                    .OrderBy(e => e.SystemChannel)
+                    .Select(e => new DiscreteChannel() {
+                        identifier = e.DisplayName,
+                        _id = e.Id,
+                        display = e.Display
+                    }).ToListAsync();
+
+                IMongoCollection<OutputItem> outputItems = database.GetCollection<OutputItem>("output_items");
+                var outputs = await context.Channels.OfType<OutputChannel>()
+                    .AsNoTracking()
+                    .Include(e => e.ModbusDevice)
+                    .Where(e => e.ModbusDevice.Identifier == device.Identifier)
+                    .OrderBy(e => e.SystemChannel)
+                    .Select(e => new OutputItem() {
+                        identifier = e.DisplayName,
+                        _id = e.Id,
+                        display = e.Display
+                    }).ToListAsync();
+
+                IMongoCollection<ActionItem> actionItems = database.GetCollection<ActionItem>("action_items");
+                var actions = await context.FacilityActions
+                    .AsNoTracking()
+                    .Select(e => new ActionItem() {
+                        identifier = e.ActionName,
+                        _id = e.Id,
+                        EmailEnabled = e.EmailEnabled,
+                        EmailPeriod = e.EmailPeriod,
+                        actionType = e.ActionType,
+                        display = true
+                    }).ToListAsync();
+
+                IMongoCollection<VirtualChannel> virtualItems = database.GetCollection<VirtualChannel>("virtual_items");
+                var virtualChannels = await context.Channels.OfType<VirtualInput>()
+                    .AsNoTracking()
+                    .Include(e => e.ModbusDevice)
+                    .Where(e => e.ModbusDevice.Identifier == device.Identifier)
+                    .OrderBy(e => e.SystemChannel)
+                    .Select(e => new VirtualChannel() {
+                        identifier = e.DisplayName,
+                        _id = e.Id,
+                        display = e.Display
+                    }).ToListAsync();
+
+                IMongoCollection<MonitorAlert> monitorAlerts = database.GetCollection<MonitorAlert>("alert_items");
+                var alerts = await context.Channels.OfType<InputChannel>()
+                    .AsNoTracking()
+                    .Include(e => e.Alert)
+                    .Where(e => e.ModbusDevice.Identifier == device.Identifier)
+                    .Select(e => e.Alert)
+                    .Select(e => new MonitorAlert() {
+                        _id = e.Id,
+                        channelId = e.InputChannel.Id,
+                        enabled = e.Enabled,
+                        bypassed = e.Bypass,
+                        displayName = e.DisplayName,
+                        bypassResetTime = e.BypassResetTime,
+                        itemType = e.AlertItemType,
+                        latched = false,
+                        CurrentState = ActionType.Okay
+                    }).ToListAsync();
+
+                await deviceItems.InsertOneAsync(deviceConfig);
+                await analogItems.InsertManyAsync(analogChannels);
+                await discreteItems.InsertManyAsync(discreteChannels);
+                await outputItems.InsertManyAsync(outputs);
+                await actionItems.InsertManyAsync(actions);
+                await monitorAlerts.InsertManyAsync(alerts);
+                await virtualItems.InsertManyAsync(virtualChannels);
+                Console.WriteLine("Check database, press any key to exit");
+            } else {
+                Console.WriteLine("Error: Device not found");
+            }
+            Console.ReadKey();
+        }
+
         static async Task CreateReadingsDatabase(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.30");
@@ -640,13 +725,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
 
                 Console.WriteLine("Inserting Initialization Data");
-                await analogReadings.InsertOneAsync(new AnalogReading() { itemid = -1, timestamp = DateTime.Now, value = 0 });
-                await discreteReadings.InsertOneAsync(new DiscreteReading() { itemid = -1, timestamp = DateTime.Now, value = false });
-                await outputReadings.InsertOneAsync(new OutputReading() { itemid = -1, timestamp = DateTime.Now, value = false });
-                await virtualReadings.InsertOneAsync(new VirtualReading() { itemid = -1, timestamp = DateTime.Now, value = false });
-                await alertReadings.InsertOneAsync(new AlertReading() { itemid = -1, timestamp = DateTime.Now, state = ActionType.Custom });
-                await actionReadings.InsertOneAsync(new ActionReading() { itemid = -1, timestamp = DateTime.Now, value = false });
-                await deviceReadings.InsertOneAsync(new DeviceReading() { itemid = -1, timestamp = DateTime.Now, value = DeviceState.OKAY });
+
 
                 Console.WriteLine("Should be done, check database");
             } else {
@@ -667,8 +746,8 @@ namespace MonitoringSystem.ConsoleTesting {
                 var networkConfig = device.NetworkConfiguration;
                 var modbusConfig = networkConfig.ModbusConfig;
                 var channelMapping = modbusConfig.ChannelMapping;
-
-                var result = await ModbusService.Read(networkConfig.IPAddress, networkConfig.Port, networkConfig.ModbusConfig);
+                var modbusService = new ModbusService();
+                var result = await modbusService.Read(networkConfig.IPAddress, networkConfig.Port, networkConfig.ModbusConfig);
                 var discreteInputs = new ArraySegment<bool>(result.DiscreteInputs, channelMapping.DiscreteStart, (channelMapping.DiscreteStop - channelMapping.DiscreteStart) + 1).ToArray();
                 var outputs = new ArraySegment<bool>(result.DiscreteInputs, channelMapping.OutputStart, (channelMapping.OutputStop - channelMapping.OutputStart) + 1).ToArray();
                 var actions = new ArraySegment<bool>(result.DiscreteInputs, channelMapping.ActionStart, (channelMapping.ActionStop - channelMapping.ActionStart) + 1).ToArray();
@@ -702,7 +781,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
                 List<AnalogReading> aTempReadings = new List<AnalogReading>();
                 for(int i = 0; i < analogInputs.Length; i++) {
-                    aTempReadings.Add(new AnalogReading() { itemid = analogConfig[i]._id, timestamp = now, value = analogInputs[i] });
+                    aTempReadings.Add(new AnalogReading() { itemid = analogConfig[i]._id, value = analogInputs[i] });
                 }
                 await analogReadings.InsertManyAsync(aTempReadings);
                 Console.WriteLine("Done: Check Analog Readings");

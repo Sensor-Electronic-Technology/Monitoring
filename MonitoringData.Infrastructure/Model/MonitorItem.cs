@@ -16,7 +16,6 @@ namespace MonitoringData.Infrastructure.Model {
 
     public class AnalogChannel : MonitorItem {
         public int factor { get; set; }
-
     }
 
     public class DiscreteChannel : MonitorItem {

@@ -9,8 +9,8 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
 
     public abstract class AlertLevel {
         public int Id { get; set; }
-        public bool Bypass { get; set; }
-        public int BypassResetTime { get; set; }
+        public bool Bypass { get; set; }// remove
+        public int BypassResetTime { get; set; }//remove
         public bool Enabled { get; set; }
         public int? FacilityActionId { get; set; }
         public FacilityAction FacilityAction { get; set; }

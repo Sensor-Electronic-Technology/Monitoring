@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Modbus.Device;
 using MonitoringSystem.Shared.Data;
 
@@ -21,11 +22,23 @@ namespace MonitoringData.Infrastructure.Services {
 
     public interface IModbusService {
         Task<ModbusResult> Read(string ip, int port, ModbusConfig config);
-        Task Write(string ip, int port, ModbusConfig config);
+        Task WriteCoil(string ip, int port, int slaveId, int addr, bool value);
+        Task WriteMultipleCoils(string ip, int port, int slaveId, int start, bool[] values);
     }
 
-    public static class ModbusService {
-        public static async Task<ModbusResult> Read(string ip, int port, ModbusConfig config) {
+    public class ModbusService : IModbusService {
+        private readonly ILogger<ModbusService> _logger;
+        private bool loggerEnabled;
+        public ModbusService() {
+            this.loggerEnabled = false;
+        }
+
+        public ModbusService(ILogger<ModbusService> logger) {
+            this._logger = logger;
+            this.loggerEnabled = true;
+        }
+
+        public async Task<ModbusResult> Read(string ip, int port, ModbusConfig config) {
             try {
                 using var client = new TcpClient(ip, port);
                 var modbus = ModbusIpMaster.CreateIp(client);
@@ -37,72 +50,45 @@ namespace MonitoringData.Infrastructure.Services {
                 modbus.Dispose();
                 return new ModbusResult(true) { Coils = coils, DiscreteInputs = dInputs, HoldingRegisters = holding, InputRegisters = inputs };
             } catch {
+                this.LogError("Exception reading modbus registers in ModbusService.Read");
                 return new ModbusResult(false);
             }
         }
 
-        public static async Task Write(string ip,int port,ModbusConfig config) {
-            return;
-        }
-
-        public static async Task<ushort[]> ReadHolding(string ip, int port, int slaveId, int start, int length) {
-            try {
-                using var client = new TcpClient(ip, port);
-                var modbus = ModbusIpMaster.CreateIp(client);
-                var holding = await modbus.ReadHoldingRegistersAsync((byte)slaveId, (ushort)start, (ushort)length);
-                client.Close();
-                modbus.Dispose();
-                return holding;
-            } catch {
-                return null;
-            }
-        }
-
-        public static async Task<bool[]> ReadInputs(string ip, int port, int slaveId, int start, int length) {
-            try {
-                using var client = new TcpClient(ip, port);
-                var modbus = ModbusIpMaster.CreateIp(client);
-                var inputs = await modbus.ReadInputsAsync((byte)slaveId, (ushort)start, (ushort)length);
-                client.Close();
-                modbus.Dispose();
-                return inputs;
-            } catch {
-                return null;
-            }
-        }
-
-        public static async Task<ushort[]> ReadInputRegisters(string ip, int port, int slaveId, int start, int length) {
-            try {
-                using var client = new TcpClient(ip, port);
-                var modbus = ModbusIpMaster.CreateIp(client);
-                var holding = await modbus.ReadInputRegistersAsync((byte)slaveId, (ushort)start, (ushort)length);
-                client.Close();
-                modbus.Dispose();
-                return holding;
-            } catch {
-                return null;
-            }
-        }
-
-        public static async Task<bool[]> ReadCoils(string ip, int port, int slaveId, int start, int length) {
-            try {
-                using var client = new TcpClient(ip, port);
-                var modbus = ModbusIpMaster.CreateIp(client);
-                var coils = await modbus.ReadCoilsAsync((byte)slaveId, (ushort)start, (ushort)length);
-                client.Close();
-                modbus.Dispose();
-                return coils;
-            } catch {
-                return null;
-            }
-        }
-
-        public static async Task WriteCoil(string ip, int port, int slaveId, int addr, bool value) {
+        public async Task WriteCoil(string ip, int port, int slaveId, int addr, bool value) {
             try {
                 using var client = new TcpClient(ip, port);
                 var modbus = ModbusIpMaster.CreateIp(client);
                 await modbus.WriteSingleCoilAsync((byte)slaveId, (ushort)addr, value);
-            } catch { }
+            } catch {
+                this.LogError("Exception writing to single coil in ModbusService.WriteCoil");
+            }
+        }
+
+        public async Task WriteMultipleCoils(string ip, int port, int slaveId, int start, bool[] values) {
+            try {
+                using var client = new TcpClient(ip, port);
+                var modbus = ModbusIpMaster.CreateIp(client);
+                await modbus.WriteMultipleCoilsAsync((byte)slaveId, (ushort)start, values);
+            } catch {
+                this.LogError("Exception writing multiple coils in ModbusService.WriteMultipleCoils");
+            }
+        }
+
+        private void LogError(string msg) {
+            if (this.loggerEnabled) {
+                this._logger.LogInformation(msg);
+            } else {
+                Console.WriteLine("ModbusService Error: " + msg);
+            }
+        }
+
+        private void LogInfo(string msg) {
+            if (this.loggerEnabled) {
+                this._logger.LogInformation(msg);
+            } else {
+                Console.WriteLine("ModbusService Info: " + msg);
+            }
         }
     }
 }
