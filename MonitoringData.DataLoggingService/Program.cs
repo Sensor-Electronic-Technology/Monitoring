@@ -25,12 +25,16 @@ builder.ConfigureServices((hostContext, services) => {
     //    });
     //});
     //services.AddTransient<ISendEndpoint>();
+    services.AddMediator(cfg => {
+        cfg.AddConsumer<ModbusDataLogger>();
+    });
     services.AddSingleton<IMonitorDataRepo,MonitorDataService>();
     services.AddSingleton<IAlertRepo,AlertRepo>();
     services.AddSingleton<IModbusService, ModbusService>();
     services.AddTransient<IAlertService, AlertService>();
     services.AddTransient<IDataLogger,ModbusDataLogger>();
     services.AddHostedService<Worker>();
+    services.AddHostedService<MonitorDBChanges>();
 });
 
 IHost host = builder.Build();

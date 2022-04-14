@@ -20,7 +20,9 @@ namespace MonitoringSystem.ConsoleTesting {
         public int Value { get; set; }
     }
 
+
     public class Program {
+        static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
             //await CreateMongoDevice("epi1");
             //Console.WriteLine("Epi updated");
@@ -65,14 +67,21 @@ namespace MonitoringSystem.ConsoleTesting {
             //var database = client.GetDatabase("epi1_data_test");
 
             //await CreateReadingsDatabaseNew("epi1");
+            //await CreateReadingsDatabaseNew("epi2");
 
-            var client = new MongoClient("mongodb://172.20.3.30");
+            var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("epi1_data");
             var analogReadings = database.GetCollection<AnalogChannel>("analog_items");
-            var cursor = analogReadings.Watch();
-            while (cursor.MoveNext() && cursor.Current.Count() == 0) { }
-            var next = cursor.Current.First();
-            Console.WriteLine(next.ToString());
+            
+            using (var cursor = analogReadings.Watch()) {
+                foreach(var change in cursor.ToEnumerable(s_cts.Token)) {
+                    Console.WriteLine(change.ToString());
+                    
+                }
+            }
+            Console.WriteLine("End of the line");
+                //var next = cursor.Current.First();
+            //Console.WriteLine(next.ToString());
         }
 
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
@@ -488,7 +497,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
         public static async Task CreateReadingsDatabaseNew(string deviceName) {
             using var context = new FacilityContext();
-            var client = new MongoClient("mongodb://172.20.3.30");
+            var client = new MongoClient("mongodb://172.20.3.41");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
                 .Select(e => new DeviceDTO() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration })
@@ -496,7 +505,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             if(device is not null) {
                 Console.WriteLine($"Device {device.Identifier} found");
-                var database = client.GetDatabase($"{device.Identifier.ToLower()}_data_test");
+                var database = client.GetDatabase($"{device.Identifier.ToLower()}_data");
                 Console.WriteLine("Creating Collections");
                 Console.WriteLine($"Device {device.Identifier.ToLower()} found");
 

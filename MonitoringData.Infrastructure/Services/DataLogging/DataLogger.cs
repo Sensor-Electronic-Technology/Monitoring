@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using MassTransit;
+using Microsoft.Extensions.Logging;
+using MonitoringData.Infrastructure.Events;
 using MonitoringData.Infrastructure.Model;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataAccess;
@@ -16,7 +18,7 @@ namespace MonitoringData.Infrastructure.Services {
         Task Load();
     }
 
-    public class ModbusDataLogger : IDataLogger {
+    public class ModbusDataLogger : IDataLogger , IConsumer<ReloadConsumer> {
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
         private IAlertService _alertService;
@@ -236,6 +238,12 @@ namespace MonitoringData.Infrastructure.Services {
                         return DeviceState.OKAY;
                     }
             }
+        }
+
+        public async Task Consume(ConsumeContext<ReloadConsumer> context) {
+            this.LogInformation("Reloading System");
+            await this.Load();
+            this.LogInformation("Reload Finshed");
         }
     }
 
