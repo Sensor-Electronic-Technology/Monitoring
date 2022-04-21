@@ -11,6 +11,7 @@ using MonitoringSystem.Shared.Data;
 using Microsoft.Extensions.Logging;
 using MassTransit;
 using MonitoringSystem.Shared.Contracts;
+using Microsoft.Extensions.Options;
 
 namespace MonitoringData.Infrastructure.Services {
     public enum AlertAction {
@@ -28,13 +29,16 @@ namespace MonitoringData.Infrastructure.Services {
     public class AlertService : IAlertService {
         private readonly IAlertRepo _alertRepo;
         private readonly ILogger<AlertService> _logger;
+        private readonly MonitorDatabaseSettings _settings;
         private IEmailService _emailService;
         private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
 
-        public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger) {
+
+        public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,IOptions<MonitorDatabaseSettings> options) {
             this._alertRepo = alertRepo;
             this._logger = logger;
             this._emailService = new EmailService();
+            this._settings = options.Value;
         }
 
         public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
@@ -94,14 +98,14 @@ namespace MonitoringData.Infrastructure.Services {
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
-                    //await this._emailService.SendMessageAsync("Epi1 Alerts", messageBuilder.FinishMessage());
+                    await this._emailService.SendMessageAsync(this._settings.EmailSubject, messageBuilder.FinishMessage());
+                    var alertReadings = alerts.Select(e => new AlertReading() {
+                        itemid = e.AlertId,
+                        reading = e.ChannelReading,
+                        state = e.CurrentState
+                    });
+                    await this._alertRepo.LogAlerts(new AlertReadings() { readings = alertReadings.ToArray(), timestamp = now });
                 }
-                var alertReadings = alerts.Select(e => new AlertReading() { 
-                    itemid = e.AlertId, 
-                    reading = e.ChannelReading, 
-                    state = e.CurrentState
-                });
-                await this._alertRepo.LogAlerts(new AlertReadings() { readings = alertReadings.ToArray(), timestamp = now });
             }
             Console.Clear();
             Console.WriteLine("New Alerts:");

@@ -23,12 +23,12 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly IModbusService _modbusService;
         private IAlertService _alertService;
         private readonly ILogger _logger;
-        private string deviceIdentifier;
+
 
         private NetworkConfiguration _networkConfig;
         private ModbusConfig _modbusConfig;
         private ChannelRegisterMapping _channelMapping;
-        private bool initialized = false;
+
         private bool loggingEnabled = false;
         private IList<AlertRecord> _alerts;
 
@@ -86,7 +86,6 @@ namespace MonitoringData.Infrastructure.Services {
             this._networkConfig = this._dataService.MonitorDevice.NetworkConfiguration;
             this._modbusConfig = this._networkConfig.ModbusConfig;
             this._channelMapping = this._modbusConfig.ChannelMapping;
-            this.initialized = true;
         }
 
         private Task ProcessAlertReadings(ushort[] raw, DateTime now) {

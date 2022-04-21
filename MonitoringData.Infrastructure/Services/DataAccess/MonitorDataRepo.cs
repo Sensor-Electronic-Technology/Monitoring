@@ -31,7 +31,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoClient _client;
         private IMongoDatabase _database;
         private readonly ILogger<MonitorDataService> _logger;
-        private bool _initialized=false;
 
         public MonitorDevice MonitorDevice { get; private set; }
         public List<AnalogChannel> AnalogItems { get; private set; }
@@ -59,7 +58,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._client = new MongoClient(databaseSettings.Value.ConnectionString);
             this._database = this._client.GetDatabase(databaseSettings.Value.DatabaseName);
             this._logger = logger;
-            this._initialized = false;
             
             this._analogReadings = this._database.GetCollection<AnalogReadings>(databaseSettings.Value.AnalogReadingCollection);
             this._discreteReadings = this._database.GetCollection<DiscreteReadings>(databaseSettings.Value.DiscreteReadingCollection);
@@ -79,7 +77,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         public MonitorDataService(string connectionString, string databaseName,Dictionary<Type,string> collectionNames) {
             this._client = new MongoClient(connectionString);
             this._database = this._client.GetDatabase(databaseName);
-            this._initialized = false;
             this._analogReadings = this._database.GetCollection<AnalogReadings>(collectionNames[typeof(AnalogReading)]);
             this._discreteReadings = this._database.GetCollection<DiscreteReadings>(collectionNames[typeof(DiscreteReading)]);
             this._virtualReadings = this._database.GetCollection<VirtualReadings>(collectionNames[typeof(VirtualReading)]);
@@ -133,7 +130,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
                 var monitorDevice = await this._deviceConfigurations.Find(e => e.Created == latest).FirstOrDefaultAsync();
                 if(monitorDevice is not null) {
                     this.MonitorDevice = monitorDevice;
-                    this._initialized = true;
                 }
             }
         }
