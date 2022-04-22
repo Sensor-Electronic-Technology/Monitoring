@@ -62,31 +62,31 @@ namespace MonitoringSystem.ConsoleTesting {
             //Console.ReadKey();
 
             //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.csv");
-            //await WriteOutAnalogFile("epi2", new DateTime(2022, 4, 11, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-11.csv");
+            await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 11, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-20.csv");
             //var client = new MongoClient("mongodb://172.20.3.30");
             //var database = client.GetDatabase("epi1_data_test");
 
             //await CreateReadingsDatabaseNew("epi1");
             //await CreateReadingsDatabaseNew("epi2");
 
-            var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("epi1_data");
-            var analogReadings = database.GetCollection<AnalogChannel>("analog_items");
+            //var client = new MongoClient("mongodb://172.20.3.41");
+            //var database = client.GetDatabase("epi1_data");
+            //var analogReadings = database.GetCollection<AnalogChannel>("analog_items");
             
-            using (var cursor = analogReadings.Watch()) {
-                foreach(var change in cursor.ToEnumerable(s_cts.Token)) {
-                    Console.WriteLine(change.ToString());
+            //using (var cursor = analogReadings.Watch()) {
+            //    foreach(var change in cursor.ToEnumerable(s_cts.Token)) {
+            //        Console.WriteLine(change.ToString());
                     
-                }
-            }
-            Console.WriteLine("End of the line");
+            //    }
+            //}
+            //Console.WriteLine("End of the line");
                 //var next = cursor.Current.First();
             //Console.WriteLine(next.ToString());
         }
 
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
-            var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase(deviceName + "_data_test");
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase(deviceName + "_data");
 
             var analogItems = database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToList();
             var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
@@ -104,7 +104,7 @@ namespace MonitoringSystem.ConsoleTesting {
             lines.Add(hbuilder.ToString());
             foreach(var readings in aReadings) {
                 StringBuilder builder = new StringBuilder();
-                builder.Append(readings.timestamp.ToShortDateString());
+                builder.Append(readings.timestamp.ToString()+",");
                 foreach(var reading in readings.readings) {
                     builder.Append($"{reading.value},");
                 }
