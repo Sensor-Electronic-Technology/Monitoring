@@ -1,9 +1,11 @@
 ﻿using MassTransit;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using MonitoringData.Infrastructure.Events;
 using MonitoringData.Infrastructure.Model;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataAccess;
+using MonitoringData.Infrastructure.Services.SignalR;
 using MonitoringSystem.Shared.Data;
 using System;
 using System.Collections.Generic;
@@ -21,6 +23,7 @@ namespace MonitoringData.Infrastructure.Services {
     public class ModbusDataLogger : IDataLogger , IConsumer<ReloadConsumer> {
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
+        private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
         private IAlertService _alertService;
         private readonly ILogger _logger;
 
@@ -35,7 +38,8 @@ namespace MonitoringData.Infrastructure.Services {
         public ModbusDataLogger(IMonitorDataRepo dataService,
             ILogger<ModbusDataLogger> logger, 
             IAlertService alertService,
-            IModbusService modbusService) {
+            IModbusService modbusService,
+            IHubContext<MonitorHub,IMonitorHub> monitorHub) {
 
             this._dataService = dataService;
             this._alertService = alertService;
@@ -74,7 +78,15 @@ namespace MonitoringData.Infrastructure.Services {
                 await this.ProcessAnalogReadings(analogRaw, now);
                 await this.ProcessDiscreteReadings(discreteRaw, now);
                 await this.ProcessVirtualReadings(virtualRaw, now);
+                var output=this._alerts
+                    .Where(e => e.Enabled)
+                    .Select(e => new ItemStatus() { 
+                        Item = e.DisplayName, 
+                        State = e.CurrentState.ToString(), 
+                        Value = e.ChannelReading.ToString() 
+                    }).ToList();
                 await this._alertService.ProcessAlerts(this._alerts,now);
+                await this._monitorHub.Clients.All.ShowCurrent(output);
             } else {
                 this._logger.LogError("Modbus read failed");
             }

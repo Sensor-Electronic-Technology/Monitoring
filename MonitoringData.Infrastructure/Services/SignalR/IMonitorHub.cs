@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.SignalR;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,5 +15,11 @@ namespace MonitoringData.Infrastructure.Services.SignalR {
 
     public interface IMonitorHub {
         Task ShowCurrent(IList<ItemStatus> items);
+    }
+
+    public class MonitorHub : Hub<IMonitorHub> {
+        public async Task SendDataToClients(IList<ItemStatus> items) {
+            await Clients.All.ShowCurrent(items);
+        }
     }
 }

@@ -14,6 +14,7 @@ using System.Threading;
 using Microsoft.Extensions.Caching.Memory;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
+using System.Diagnostics;
 
 namespace MonitoringSystem.ConsoleTesting {
     public record class Test {
@@ -62,7 +63,13 @@ namespace MonitoringSystem.ConsoleTesting {
             //Console.ReadKey();
 
             //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.csv");
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
             await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 11, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-20.csv");
+            watch.Stop();
+            Console.WriteLine($"Completed: Elapsed: {watch.ElapsedMilliseconds}");
+            Console.ReadKey();
+
             //var client = new MongoClient("mongodb://172.20.3.30");
             //var database = client.GetDatabase("epi1_data_test");
 
