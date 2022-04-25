@@ -2,13 +2,19 @@
   "profiles": {
     "MonitoringData.DataLoggingService": {
       "commandName": "Project",
+      "launchBrowser": true,
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "dotnetRunMessages": true
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:52171;http://localhost:52172"
     },
     "Docker": {
-      "commandName": "Docker"
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "publishAllPorts": true,
+      "useSSL": true
     }
   }
 }

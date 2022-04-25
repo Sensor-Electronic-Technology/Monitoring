@@ -45,6 +45,7 @@ namespace MonitoringData.Infrastructure.Services {
             this._alertService = alertService;
             this._logger = logger;
             this._modbusService = modbusService;
+            this._monitorHub = monitorHub;
             this.loggingEnabled = true;
         }
 

@@ -29,6 +29,7 @@ builder.Services.AddTransient<IAlertService, AlertService>();
 builder.Services.AddTransient<IDataLogger, ModbusDataLogger>();
 builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<MonitorDBChanges>();
+builder.Services.AddSignalR();
 
 //builder.ConfigureServices((hostContext, services) => {
 
