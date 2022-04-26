@@ -16,15 +16,13 @@ namespace MonitoringSystem.ConsoleTesting {
     public class TestAlertConsumer {
 
         public static async Task Main() {
-            var connection = new HubConnectionBuilder().WithUrl("http://172.20.3.201:30081/hubs/epi2streaming").Build();
-            //var connection = new HubConnectionBuilder().WithUrl("https://localhost:49165/hubs/monitor").Build();
-            connection.On<MonitorData>("ShowCurrent", data => {
+            var connection = new HubConnectionBuilder().WithUrl("http://172.20.1.22:61080/hubs/monitor").Build();
+            connection.On<IList<ItemStatus>>("ShowCurrent", data => {
                 ConsoleTable table = new ConsoleTable("Item", "State", "Value");
-                foreach(var val in data.data) {
+                foreach(var val in data) {
                     table.AddRow(val.Item, val.State, val.Value);
                 }
                 Console.WriteLine(table .ToString());
-
             });
             while (true) {
                 try {

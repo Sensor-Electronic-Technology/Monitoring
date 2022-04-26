@@ -3,19 +3,18 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:39149",
-      "sslPort": 44358
+      "applicationUrl": "http://localhost:44129",
+      "sslPort": 44366
     }
   },
   "profiles": {
-    "MonitoringSystem.TestBlazorApp": {
+    "MonitoringWeb.RealtimeWebApp": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
-      "applicationUrl": "https://localhost:7177;http://localhost:5177",
+      "applicationUrl": "https://localhost:7200;http://localhost:5200",
       "dotnetRunMessages": true
     },
     "IIS Express": {
@@ -23,8 +22,7 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}"
+      }
     },
     "Docker": {
       "commandName": "Docker",
