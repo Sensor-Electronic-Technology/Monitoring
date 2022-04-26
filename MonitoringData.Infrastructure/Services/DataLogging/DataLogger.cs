@@ -5,7 +5,7 @@ using MonitoringData.Infrastructure.Events;
 using MonitoringData.Infrastructure.Model;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataAccess;
-using MonitoringData.Infrastructure.Services.SignalR;
+using MonitoringSystem.Shared.SignalR;
 using MonitoringSystem.Shared.Data;
 using System;
 using System.Collections.Generic;
@@ -87,7 +87,9 @@ namespace MonitoringData.Infrastructure.Services {
                         Value = e.ChannelReading.ToString() 
                     }).ToList();
                 await this._alertService.ProcessAlerts(this._alerts,now);
-                await this._monitorHub.Clients.All.ShowCurrent(output);
+                MonitorData monitorData = new MonitorData();
+                monitorData.data = output.ToArray();
+                await this._monitorHub.Clients.All.ShowCurrent(monitorData);
             } else {
                 this._logger.LogError("Modbus read failed");
             }

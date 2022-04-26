@@ -4,7 +4,7 @@ using MonitoringData.Infrastructure.Services;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MassTransit;
 using MonitoringSystem.Shared.Contracts;
-using MonitoringData.Infrastructure.Services.SignalR;
+using MonitoringSystem.Shared.SignalR;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 

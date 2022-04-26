@@ -1,0 +1,9 @@
+version: '3.4'
+
+services:
+  monitoringdata.dataloggingservice:
+    image: ${DOCKER_REGISTRY-}monitoringdatadataloggingservice
+    build:
+      context: .
+      dockerfile: MonitoringData.DataLoggingService/Dockerfile
+

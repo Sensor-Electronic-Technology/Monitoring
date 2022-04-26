@@ -10,13 +10,13 @@ using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringSystem.Shared.Contracts;
 using Microsoft.AspNetCore.SignalR.Client;
 using ConsoleTables;
-using MonitoringData.Infrastructure.Services.SignalR;
+using MonitoringSystem.Shared.SignalR;
 
 namespace MonitoringSystem.ConsoleTesting {
     public class TestAlertConsumer {
 
         public static async Task Main() {
-            var connection = new HubConnectionBuilder().WithUrl("https://localhost:49159/hubs/monitor").Build();
+            var connection = new HubConnectionBuilder().WithUrl("http://172.20.1.22:61080/hubs/monitor").Build();
             connection.On<IList<ItemStatus>>("ShowCurrent", data => {
                 ConsoleTable table = new ConsoleTable("Item", "State", "Value");
                 foreach(var val in data) {
