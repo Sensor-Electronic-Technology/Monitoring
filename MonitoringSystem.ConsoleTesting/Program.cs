@@ -65,7 +65,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.csv");
             Stopwatch watch = new Stopwatch();
             watch.Start();
-            await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 11, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-20.csv");
+            await WriteOutAnalogFile("epi2", new DateTime(2022, 4, 26, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-26.csv");
             watch.Stop();
             Console.WriteLine($"Completed: Elapsed: {watch.ElapsedMilliseconds}");
             Console.ReadKey();
@@ -98,8 +98,8 @@ namespace MonitoringSystem.ConsoleTesting {
             var analogItems = database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToList();
             var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
             Console.WriteLine("Starting query");
-            //var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
-            var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+            var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
             var headers = analogItems.Select(e => e.identifier).ToList();
             StringBuilder hbuilder = new StringBuilder();
             hbuilder.Append("timestamp,");

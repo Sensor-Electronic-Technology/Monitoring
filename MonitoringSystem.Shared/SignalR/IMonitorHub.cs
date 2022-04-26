@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 namespace MonitoringSystem.Shared.SignalR {
 
     public class MonitorData {
-        public ItemStatus[] data;
+        public DateTime TimeStamp { get; set; }
+        public List<ItemStatus> data { get; set; }
     }
 
     public class ItemStatus {

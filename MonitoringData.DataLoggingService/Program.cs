@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Components.Web;
 //var builder = Host.CreateDefaultBuilder(args);
 var builder = WebApplication.CreateBuilder(args);
 
-EndpointConvention.Map<EmailContract>(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
+//EndpointConvention.Map<EmailContract>(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
 
 builder.Configuration.AddJsonFile(MonitorDatabaseSettings.FileName, optional: true, reloadOnChange: true);
 
@@ -48,7 +48,7 @@ builder.Services.AddSignalR();
 //});
 
 var app = builder.Build();
-app.MapHub<MonitorHub>("/hubs/monitor");
+app.MapHub<MonitorHub>("/hubs/epi2streaming");
 await app.RunAsync();
 //await app.RunAsync();
 

@@ -12,6 +12,7 @@ namespace MonitoringData.Infrastructure.Model {
         public string ConnectionString { get; set; } = null!;
         public string DatabaseName { get; set; } = null!;
         public string EmailSubject { get; set; } = null!;
+        public string HubName { get; set; } = null!;
         public string AlertItemCollection { get; set; } = null!;
         public string ActionItemCollection { get; set; } = null!;
         public string AnalogItemCollection { get; set; } = null!;

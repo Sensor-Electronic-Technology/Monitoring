@@ -3,6 +3,7 @@
     "ConnectionString": "mongodb://172.20.3.41",
     "DatabaseName": "epi2_data",
     "EmailSubject": "Epi2 Alerts",
+    "HubName": "epi2streaming",
     "AlertItemCollection": "alert_items",
     "ActionItemCollection": "action_items",
     "AnalogItemCollection": "analog_items",
