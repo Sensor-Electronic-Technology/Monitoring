@@ -8,6 +8,7 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 COPY ["MonitoringWeb.RealtimeWebApp/MonitoringWeb.RealtimeWebApp.csproj", "MonitoringWeb.RealtimeWebApp/"]
+COPY ["MonitoringSystem.Shared/MonitoringSystem.Shared.csproj", "MonitoringSystem.Shared/"]
 RUN dotnet restore "MonitoringWeb.RealtimeWebApp/MonitoringWeb.RealtimeWebApp.csproj"
 COPY . .
 WORKDIR "/src/MonitoringWeb.RealtimeWebApp"

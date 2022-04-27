@@ -37,7 +37,7 @@ Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-co
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{5B2E1BB3-86E5-4C0C-8B2F-7A74B15818E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringWeb.RealtimeWebApp", "MonitoringWeb.RealtimeWebApp\MonitoringWeb.RealtimeWebApp.csproj", "{1B3E5696-9DD7-4653-A11A-5166DB07793E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringWeb.RealtimeWebApp", "MonitoringWeb.RealtimeWebApp\MonitoringWeb.RealtimeWebApp.csproj", "{1B3E5696-9DD7-4653-A11A-5166DB07793E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -92,6 +92,7 @@ Global
 		{B223EC12-9D45-4ACE-9F0C-7883C5718655} = {38A3A20D-6DDB-49C0-B934-3E9782311FB6}
 		{49515509-5FF6-4E9D-A75F-4E0013794E73} = {199BA538-0A44-421B-8FC9-3A10F16EEE6B}
 		{DE7D3816-E3F3-4635-8101-F493112CE618} = {38A3A20D-6DDB-49C0-B934-3E9782311FB6}
+		{1B3E5696-9DD7-4653-A11A-5166DB07793E} = {5B2E1BB3-86E5-4C0C-8B2F-7A74B15818E5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1E2B0F8D-F1CD-4933-8EB8-770DED0DB5FF}

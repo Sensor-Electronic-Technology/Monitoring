@@ -1,9 +1,165 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringSystem.Shared.SignalR
+@using MonitoringWeb.RealtimeWebApp.Data
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
 
 <PageTitle>Index</PageTitle>
 
-<h1>Hello, world!</h1>
+<style>
+    * {
+        box-sizing: border-box;
+    }
 
-Welcome to your new app.
+    .row {
+        margin-left:-5px;
+        margin-right:-5px;
+    }
+  
+    .column {
+        float: left;
+        width: 50%;
+        padding: 5px;
+    }
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+    .row::after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+
+    table {
+      border-collapse: collapse;
+      border-spacing: 0;
+      width: 100%;
+      border: 1px solid #ddd;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 16px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+</style>
+
+
+
+
+<div class="row">
+    <div class="column">
+        <h1>Epi1 Data</h1>
+        @if (epi1Data is null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <p role="status">TimeStamp: @this.epi1Data.TimeStamp.ToString()</p>   
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Status</th>
+                        <th>Reading</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in epi1Data.data)
+                    {
+                        <tr>
+                            <td>@item.Item</td>
+                            <td>@item.State</td>
+                            <td>@item.Value</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+    <div class="column">
+        <h1>Epi2 Data</h1>
+        @if (epi2Data is null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <p role="status">TimeStamp: @this.epi2Data.TimeStamp.ToString()</p>   
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Status</th>
+                        <th>Reading</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in this.epi2Data.data)
+                    {
+                        <tr>
+                            <td>@item.Item</td>
+                            <td>@item.State</td>
+                            <td>@item.Value</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+
+@code {
+    private HubConnection? epi1Connection;
+    private HubConnection? epi2Connection;
+    private MonitorData? epi1Data;
+    private MonitorData? epi2Data;
+    //private List<ItemStatus>? epi1Data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.epi1Connection = new HubConnectionBuilder()
+        .WithUrl("http://172.20.3.200:30080/hubs/epi1streaming")
+        .Build();
+
+
+        this.epi2Connection = new HubConnectionBuilder()
+        .WithUrl("http://172.20.3.201:30081/hubs/epi2streaming")
+        .Build();
+
+        this.epi1Connection.On<MonitorData>("ShowCurrent", data =>{
+            this.epi1Data = data;
+            InvokeAsync(StateHasChanged);
+        });
+
+        this.epi2Connection.On<MonitorData>("ShowCurrent", data =>{
+            this.epi2Data = data;
+            InvokeAsync(StateHasChanged);
+        });
+
+
+        await epi1Connection.StartAsync();
+        await epi2Connection.StartAsync();
+        //var connected = this.IsConnected;
+        //Console.WriteLine($"Connected: {connected}");
+    }
+
+    public bool IsConnected =>
+        this.epi1Connection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (this.epi1Connection is not null)
+        {
+            await epi1Connection.DisposeAsync();
+        }
+
+        if(this.epi2Connection is not null) {
+            await this.epi2Connection.DisposeAsync();
+        }
+    }
+}

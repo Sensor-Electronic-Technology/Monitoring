@@ -46,10 +46,11 @@
 </style>
 
 
-<h1>Epi1 Data</h1>
+
 
 <div class="row">
     <div class="column">
+        <h1>Epi1 Data</h1>
         @if (epi1Data is null)
         {
             <p><em>Loading...</em></p>
@@ -79,13 +80,14 @@
         }
     </div>
     <div class="column">
-        @if (epi1Data is null)
+        <h1>Epi1 Data</h1>
+        @if (epi2Data is null)
         {
             <p><em>Loading...</em></p>
         }
         else
         {
-            <p role="status">TimeStamp: @this.epi1Data.TimeStamp.ToString()</p>   
+            <p role="status">TimeStamp: @this.epi2Data.TimeStamp.ToString()</p>   
             <table class="table">
                 <thead>
                     <tr>
@@ -95,7 +97,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in epi1Data.data)
+                    @foreach (var item in this.epi2Data.data)
                     {
                         <tr>
                             <td>@item.Item</td>
@@ -120,12 +122,12 @@
     protected override async Task OnInitializedAsync()
     {
         this.epi1Connection = new HubConnectionBuilder()
-        .WithUrl("http://172.20.1.77:61080/hubs/monitor")
+        .WithUrl("http://172.20.3.200:30080/hubs/epi1streaming")
         .Build();
 
 
         this.epi2Connection = new HubConnectionBuilder()
-        .WithUrl("http://172.20.1.77:61080/hubs/monitor")
+        .WithUrl("http://172.20.3.201:30081/hubs/epi2streaming")
         .Build();
 
         this.epi1Connection.On<MonitorData>("ShowCurrent", data =>{
@@ -133,7 +135,14 @@
             InvokeAsync(StateHasChanged);
         });
 
+        this.epi2Connection.On<MonitorData>("ShowCurrent", data =>{
+            this.epi2Data = data;
+            InvokeAsync(StateHasChanged);
+        });
+
+
         await epi1Connection.StartAsync();
+        await epi2Connection.StartAsync();
         //var connected = this.IsConnected;
         //Console.WriteLine($"Connected: {connected}");
     }
@@ -146,6 +155,10 @@
         if (this.epi1Connection is not null)
         {
             await epi1Connection.DisposeAsync();
+        }
+
+        if(this.epi2Connection is not null) {
+            await this.epi2Connection.DisposeAsync();
         }
     }
 }
