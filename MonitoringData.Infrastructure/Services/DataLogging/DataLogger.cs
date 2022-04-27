@@ -79,7 +79,9 @@ namespace MonitoringData.Infrastructure.Services {
                 await this.ProcessAnalogReadings(analogRaw, now);
                 await this.ProcessDiscreteReadings(discreteRaw, now);
                 await this.ProcessVirtualReadings(virtualRaw, now);
-                var output=this._alerts
+                MonitorData monitorData = new MonitorData();
+                monitorData.TimeStamp = now;
+                monitorData.data=this._alerts
                     .Where(e => e.Enabled)
                     .Select(e => new ItemStatus() { 
                         Item = e.DisplayName, 
