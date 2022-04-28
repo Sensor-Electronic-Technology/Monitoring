@@ -47,7 +47,7 @@
 </style>
 
 
-
+<h1>Monitoring</h1>
 
 <div class="row">
     <div class="column">
@@ -58,7 +58,7 @@
         }
         else
         {
-            <p role="status">TimeStamp: @this.epi1Data.TimeStamp.ToString()</p>   
+            <p role="status">TimeStamp: @this.epi1Data.TimeStamp.AddHours(-4).ToString()</p>   
             <table class="table">
                 <thead>
                     <tr>
@@ -88,7 +88,7 @@
         }
         else
         {
-            <p role="status">TimeStamp: @this.epi2Data.TimeStamp.ToString()</p>   
+            <p role="status">TimeStamp: @this.epi2Data.TimeStamp.AddHours(-4).ToString()</p>   
             <table class="table">
                 <thead>
                     <tr>
@@ -123,12 +123,12 @@
     protected override async Task OnInitializedAsync()
     {
         this.epi1Connection = new HubConnectionBuilder()
-        .WithUrl("http://172.20.3.200:30080/hubs/epi1streaming")
+        .WithUrl("http://e1streamdev/hubs/epi1streaming")
         .Build();
 
-
+        
         this.epi2Connection = new HubConnectionBuilder()
-        .WithUrl("http://172.20.3.201:30081/hubs/epi2streaming")
+        .WithUrl("http://10.152.183.43/hubs/epi2streaming")
         .Build();
 
         this.epi1Connection.On<MonitorData>("ShowCurrent", data =>{
@@ -144,8 +144,8 @@
 
         await epi1Connection.StartAsync();
         await epi2Connection.StartAsync();
-        //var connected = this.IsConnected;
-        //Console.WriteLine($"Connected: {connected}");
+        var connected = this.IsConnected;
+        Console.WriteLine($"Connected: {connected}");
     }
 
     public bool IsConnected =>
