@@ -81,13 +81,30 @@ namespace MonitoringData.Infrastructure.Services {
                 await this.ProcessVirtualReadings(virtualRaw, now);
                 MonitorData monitorData = new MonitorData();
                 monitorData.TimeStamp = now;
-                monitorData.data=this._alerts
-                    .Where(e => e.Enabled)
+
+                monitorData.analogData=this._alerts
+                    .Where(e => e.Enabled && e.ItemType==AlertItemType.Analog)
                     .Select(e => new ItemStatus() { 
                         Item = e.DisplayName, 
                         State = e.CurrentState.ToString(), 
                         Value = e.ChannelReading.ToString() 
                     }).ToList();
+
+                monitorData.discreteData = this._alerts
+                    .Where(e => e.Enabled && e.ItemType == AlertItemType.Discrete)
+                    .Select(e => new ItemStatus() {
+                        Item = e.DisplayName,
+                        State = e.CurrentState.ToString(),
+                        Value = e.ChannelReading.ToString()
+                    }).ToList();
+
+                monitorData.virtualData = this._alerts
+                .Where(e => e.Enabled && e.ItemType == AlertItemType.Virtual)
+                .Select(e => new ItemStatus() {
+                    Item = e.DisplayName,
+                    State = e.CurrentState.ToString(),
+                    Value = e.ChannelReading.ToString()
+                }).ToList();
                 await this._alertService.ProcessAlerts(this._alerts,now);
                 await this._monitorHub.Clients.All.ShowCurrent(monitorData);
             } else {

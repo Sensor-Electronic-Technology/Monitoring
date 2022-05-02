@@ -47,6 +47,7 @@ builder.Services.AddSignalR();
 //    //services.AddSignalR();
 //});
 
+
 var app = builder.Build();
 app.MapHub<MonitorHub>("/hubs/epi2streaming");
 await app.RunAsync();
