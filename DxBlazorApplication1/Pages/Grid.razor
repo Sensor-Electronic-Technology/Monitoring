@@ -1,0 +1,208 @@
+﻿@page "/grid"
+@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringSystem.Shared.SignalR
+@using MonitoringSystem.Shared.Data
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+@using DxBlazorApplication1.Data
+@inject WeatherForecastService ForecastService
+<style>
+    .warning-item > td {
+        background-color: rgba(144, 248, 144, 0.5);
+    }
+    .alarm-item > td {
+        background-color: rgba(144, 248, 144, 0.5);
+    }
+    .my-class {
+        width: 550px;
+        align-self:center;
+    }
+* {
+  box-sizing: border-box;
+}
+.row{
+    padding:10px;
+    align-self:center;
+}
+/* Create two equal columns that floats next to each other */
+.column {
+  float: left;
+  padding:10px;
+}
+
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+  align-content:center;
+}
+
+h1 {text-align: center;}
+p {text-align: center;}
+
+</style>
+
+
+
+<div class="column">
+    <h1>Epi1 Data</h1>
+    @if (this.timestamp != null) {
+        <p role="status">TimeStamp: @this.timestamp.AddHours(-4).ToString()</p>  
+    }  
+    <div class="row">
+        <p>Analog Channels</p>
+        @if (this.analogData == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <DxGrid Data="@this.analogData" title="Analog Channels" CssClass="my-class" ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
+                <Columns>
+                    <DxGridDataColumn FieldName="Item"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+    <div class="row">
+        <p>Discrete Channels</p>
+        @if (this.discreteData == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <DxGrid Data="@this.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
+                <Columns>
+                    <DxGridDataColumn FieldName="Item"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+    <div class="row">
+        <p>Virtual Channels</p>
+        @if (this.virtualData == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <DxGrid Data="@this.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
+                <Columns>
+                    <DxGridDataColumn FieldName="Item"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+</div>
+<div class="column">
+    <h1>Epi2 Data</h1>
+    @if (this.timestamp != null) {
+        <p role="status">TimeStamp: @this.timestamp.AddHours(-4).ToString()</p>  
+    }    
+    <div class="row">
+        <p>Analog Channels</p>
+        @if (this.analogData == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <DxGrid Data="@this.analogData" title="Analog Channels" CssClass="my-class" ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
+                <Columns>
+                    <DxGridDataColumn FieldName="Item"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+    <div class="row">
+        <p>Discrete Channels</p>
+        @if (this.discreteData == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <DxGrid Data="@this.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
+                <Columns>
+                    <DxGridDataColumn FieldName="Item"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+    <div class="row">
+        <p>Virtual Channels</p>
+        @if (this.virtualData == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <DxGrid Data="@this.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
+                <Columns>
+                    <DxGridDataColumn FieldName="Item"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+</div>
+@code {
+    private HubConnection? epi1Connection;
+    private IList<ItemStatus>? data;
+    private IList<ItemStatus>? analogData;
+    private IList<ItemStatus>? discreteData;
+    private IList<ItemStatus>? virtualData;
+    private DateTime timestamp=DateTime.Now;
+    //private List<ItemStatus>? epi1Data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.epi1Connection = new HubConnectionBuilder()
+        .WithUrl("http://localhost:30080/hubs/epi2streaming")
+        .Build();
+
+        //        this.epi1Connection = new HubConnectionBuilder()
+        //.WithUrl("http://172.20.3.200:30080/hubs/epi1streaming")
+        //.Build();
+
+
+        this.epi1Connection.On<MonitorData>("ShowCurrent", data =>{
+            this.timestamp = data.TimeStamp;
+            this.analogData = data.analogData;
+            this.discreteData = data.discreteData;
+            this.virtualData = data.virtualData;
+            InvokeAsync(StateHasChanged);
+        });
+        await epi1Connection.StartAsync();
+    }
+
+    void Grid_CustomizeElement(GridCustomizeElementEventArgs e) {
+        if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Okay.ToString()) {
+            e.CssClass = "highlighted-item";
+        }
+    }
+
+    public bool IsConnected =>
+        this.epi1Connection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (this.epi1Connection is not null)
+        {
+            await epi1Connection.DisposeAsync();
+        }
+    }
+}
