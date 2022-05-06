@@ -13,6 +13,6 @@
     <Folder Include="wwwroot\images\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MonitoringSystem\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
+    <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

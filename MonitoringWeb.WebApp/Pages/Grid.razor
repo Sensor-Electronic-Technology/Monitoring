@@ -2,63 +2,67 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using MonitoringSystem.Shared.SignalR
 @using MonitoringSystem.Shared.Data
+@using DevExpress.Blazor
 @inject NavigationManager NavigationManager
 @implements IAsyncDisposable
 
-@using DxBlazorApplication1.Data
-@inject WeatherForecastService ForecastService
 <style>
-    .warning-item > td {
-        background-color: rgba(144, 248, 144, 0.5);
+    .okay-item > td {
+        background-color: rgba(153, 255, 155, 0.5);
     }
     .alarm-item > td {
-        background-color: rgba(144, 248, 144, 0.5);
+        background-color: rgba(255, 102, 102 0.5);
+    }
+    .warn-item > td {
+        background-color: rgba(255, 255, 153 0.5);
     }
     .my-class {
         width: 550px;
-        align-self:center;
+        margin:auto;
     }
-* {
-  box-sizing: border-box;
-}
-.row{
-    padding:10px;
-    align-self:center;
-}
-/* Create two equal columns that floats next to each other */
-.column {
-  float: left;
-  padding:10px;
-}
+    * {
+      box-sizing: border-box;
+    }
+    .row{
+        padding:10px;
+        margin:auto;
+    }
+    .column {
+      float: left;
+      padding:10px;
+    }
 
-.row:after {
-  content: "";
-  display: table;
-  clear: both;
-  align-content:center;
-}
+    .row:after {
+      content: "";
+      display: table;
+      clear: both;
+    }
 
-h1 {text-align: center;}
-p {text-align: center;}
+    h1 {
+        text-align: center;
+    }
+    p {
+        text-align: center;
+    }
 
 </style>
 
-
-
 <div class="column">
     <h1>Epi1 Data</h1>
-    @if (this.timestamp != null) {
-        <p role="status">TimeStamp: @this.timestamp.AddHours(-4).ToString()</p>  
-    }  
+    <p role="status">TimeStamp: @this.timestamp.AddHours(-4).ToString()</p>  
     <div class="row">
         <p>Analog Channels</p>
-        @if (this.analogData == null)
+        @if (this.e1Data == null)
         {
             <p><em>Loading...</em></p>
         }
         else
         {
-            <DxGrid Data="@this.analogData" title="Analog Channels" CssClass="my-class" ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
+            <DxGrid Data="@this.e1Data.analogData" 
+                title="Analog Channels" 
+                CssClass="my-class" 
+                ShowAllRows=true 
+                CustomizeElement="Grid_CustomizeElement">
                 <Columns>
                     <DxGridDataColumn FieldName="Item"/>
                     <DxGridDataColumn FieldName="State"/>
@@ -67,15 +71,14 @@ p {text-align: center;}
             </DxGrid>
         }
     </div>
+
     <div class="row">
         <p>Discrete Channels</p>
-        @if (this.discreteData == null)
+        @if (this.e1Data == null)
         {
             <p><em>Loading...</em></p>
-        }
-        else
-        {
-            <DxGrid Data="@this.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
+        }else{
+            <DxGrid Data="@this.e1Data.discreteData" CssClass="my-class" ShowAllRows=true>
                 <Columns>
                     <DxGridDataColumn FieldName="Item"/>
                     <DxGridDataColumn FieldName="State"/>
@@ -86,13 +89,10 @@ p {text-align: center;}
     </div>
     <div class="row">
         <p>Virtual Channels</p>
-        @if (this.virtualData == null)
-        {
+        @if (this.e1Data == null){
             <p><em>Loading...</em></p>
-        }
-        else
-        {
-            <DxGrid Data="@this.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
+        }else{
+            <DxGrid Data="@this.e1Data.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
                 <Columns>
                     <DxGridDataColumn FieldName="Item"/>
                     <DxGridDataColumn FieldName="State"/>
@@ -104,18 +104,14 @@ p {text-align: center;}
 </div>
 <div class="column">
     <h1>Epi2 Data</h1>
-    @if (this.timestamp != null) {
-        <p role="status">TimeStamp: @this.timestamp.AddHours(-4).ToString()</p>  
-    }    
+    <p role="status">TimeStamp: @this.timestamp.AddHours(-4).ToString()</p>     
     <div class="row">
         <p>Analog Channels</p>
-        @if (this.analogData == null)
-        {
+        @if (this.e2Data == null){
             <p><em>Loading...</em></p>
         }
-        else
-        {
-            <DxGrid Data="@this.analogData" title="Analog Channels" CssClass="my-class" ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
+        else{
+            <DxGrid Data="@this.e2Data.analogData" title="Analog Channels" CssClass="my-class" ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
                 <Columns>
                     <DxGridDataColumn FieldName="Item"/>
                     <DxGridDataColumn FieldName="State"/>
@@ -126,13 +122,10 @@ p {text-align: center;}
     </div>
     <div class="row">
         <p>Discrete Channels</p>
-        @if (this.discreteData == null)
-        {
+        @if (this.e2Data == null){
             <p><em>Loading...</em></p>
-        }
-        else
-        {
-            <DxGrid Data="@this.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
+        }else{
+            <DxGrid Data="@this.e2Data.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
                 <Columns>
                     <DxGridDataColumn FieldName="Item"/>
                     <DxGridDataColumn FieldName="State"/>
@@ -143,13 +136,10 @@ p {text-align: center;}
     </div>
     <div class="row">
         <p>Virtual Channels</p>
-        @if (this.virtualData == null)
-        {
+        @if (this.e2Data == null){
             <p><em>Loading...</em></p>
-        }
-        else
-        {
-            <DxGrid Data="@this.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
+        }else{
+            <DxGrid Data="@this.e2Data.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
                 <Columns>
                     <DxGridDataColumn FieldName="Item"/>
                     <DxGridDataColumn FieldName="State"/>
@@ -161,38 +151,50 @@ p {text-align: center;}
 </div>
 @code {
     private HubConnection? epi1Connection;
-    private IList<ItemStatus>? data;
-    private IList<ItemStatus>? analogData;
-    private IList<ItemStatus>? discreteData;
-    private IList<ItemStatus>? virtualData;
+    private HubConnection? epi2Connection;
+    private MonitorData? e1Data;
+    private MonitorData? e2Data;
+
     private DateTime timestamp=DateTime.Now;
     //private List<ItemStatus>? epi1Data;
 
     protected override async Task OnInitializedAsync()
     {
         this.epi1Connection = new HubConnectionBuilder()
-        .WithUrl("http://localhost:30080/hubs/epi2streaming")
         .WithAutomaticReconnect()
+        .WithUrl("http://10.152.183.215/hubs/epi1streaming")
         .Build();
 
-        //        this.epi1Connection = new HubConnectionBuilder()
-        //.WithUrl("http://172.20.3.200:30080/hubs/epi1streaming")
-        //.Build();
+
+        this.epi2Connection = new HubConnectionBuilder()
+        .WithAutomaticReconnect()
+        .WithUrl("http://10.152.183.250/hubs/epi2streaming")
+        .Build();
 
 
         this.epi1Connection.On<MonitorData>("ShowCurrent", data =>{
-            this.timestamp = data.TimeStamp;
-            this.analogData = data.analogData;
-            this.discreteData = data.discreteData;
-            this.virtualData = data.virtualData;
+            this.e1Data = data;
             InvokeAsync(StateHasChanged);
         });
+
+        this.epi2Connection.On<MonitorData>("ShowCurrent", data => {
+            this.e2Data=data;
+            InvokeAsync(StateHasChanged);
+
+        });
         await epi1Connection.StartAsync();
+        await epi2Connection.StartAsync();
     }
 
     void Grid_CustomizeElement(GridCustomizeElementEventArgs e) {
         if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Okay.ToString()) {
-            e.CssClass = "highlighted-item";
+            e.CssClass = "okay-item";
+        }
+        if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Alarm.ToString()) {
+            e.CssClass = "alarm-item";
+        }
+        if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Warning.ToString()) {
+            e.CssClass = "alarm-item";
         }
     }
 

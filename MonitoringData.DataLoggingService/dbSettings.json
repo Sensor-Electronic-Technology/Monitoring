@@ -1,9 +1,9 @@
 {
   "MonitorDatabaseSettings": {
     "ConnectionString": "mongodb://172.20.3.41",
-    "DatabaseName": "epi2_data",
-    "EmailSubject": "Epi2 Alerts",
-    "HubName": "epi2streaming",
+    "DatabaseName": "epi1_data",
+    "EmailSubject": "Epi1 Alerts",
+    "HubName": "epi1streaming",
     "AlertItemCollection": "alert_items",
     "ActionItemCollection": "action_items",
     "AnalogItemCollection": "analog_items",

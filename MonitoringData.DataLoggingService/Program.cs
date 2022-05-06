@@ -49,7 +49,7 @@ builder.Services.AddSignalR();
 
 
 var app = builder.Build();
-app.MapHub<MonitorHub>("/hubs/epi2streaming");
+app.MapHub<MonitorHub>("/hubs/epi1streaming");
 await app.RunAsync();
 //await app.RunAsync();
 
