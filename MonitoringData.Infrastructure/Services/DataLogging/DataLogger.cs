@@ -52,7 +52,7 @@ namespace MonitoringData.Infrastructure.Services {
         public ModbusDataLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
             this._dataService = new MonitorDataService(connName, databaseName, collectionNames);
             this._alertService = new AlertService(connName, databaseName, collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
-            this.loggingEnabled = true;
+            this.loggingEnabled = false;
             this._modbusService = new ModbusService();
         }
 
@@ -106,7 +106,7 @@ namespace MonitoringData.Infrastructure.Services {
                     Value = e.ChannelReading.ToString()
                 }).ToList();
                 await this._alertService.ProcessAlerts(this._alerts,now);
-                await this._monitorHub.Clients.All.ShowCurrent(monitorData);
+                //await this._monitorHub.Clients.All.ShowCurrent(monitorData);
             } else {
                 this._logger.LogError("Modbus read failed");
             }

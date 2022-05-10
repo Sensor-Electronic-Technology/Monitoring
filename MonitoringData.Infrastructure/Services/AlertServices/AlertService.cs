@@ -98,7 +98,7 @@ namespace MonitoringData.Infrastructure.Services {
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
-                    await this._emailService.SendMessageAsync(this._settings.EmailSubject, messageBuilder.FinishMessage());
+                    //await this._emailService.SendMessageAsync(this._settings.EmailSubject, messageBuilder.FinishMessage());
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         itemid = e.AlertId,
                         reading = e.ChannelReading,
