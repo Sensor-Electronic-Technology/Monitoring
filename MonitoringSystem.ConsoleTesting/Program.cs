@@ -25,7 +25,8 @@ namespace MonitoringSystem.ConsoleTesting {
     public class Program {
         static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
-            //await CreateMongoDevice("epi1");
+            //await CreateMongoDevice("gasbay");
+            //await CreateReadingsDatabaseNew("gasbay");
             //Console.WriteLine("Epi updated");
             //await CreateMongoDevice("epi2");
             //Console.WriteLine("Epi2 Updated");
@@ -37,9 +38,9 @@ namespace MonitoringSystem.ConsoleTesting {
             //await ModifyAnalog();
             //await WriteOutAlertFile();
             //await WriteOutAnalogFile();
-            //await CreateConfigDatabase("epi1");
+            //await CreateConfigDatabase("gasbay");
             //await CreateConfigDatabase("epi2");
-            //await CreateReadingsDatabase("epi1");
+            //await CreateReadingsDatabase("gasbay");
             //await CreateReadingsDatabase("epi2");
             //await AlertUpdate("epi1");
             //await AlertUpdate("epi2");
@@ -90,18 +91,19 @@ namespace MonitoringSystem.ConsoleTesting {
             //var next = cursor.Current.First();
             //Console.WriteLine(next.ToString());
 
-            using var context = new FacilityContext();
-            var epi1 = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");
-            if(epi1 is not null) {
-                ModbusService modservice = new ModbusService();
-                var netConfig = epi1.NetworkConfiguration;
-                var modbusConfig = netConfig.ModbusConfig;
+            //using var context = new FacilityContext();
+            //var epi1 = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");
+            //if(epi1 is not null) {
+            //    ModbusService modservice = new ModbusService();
+            //    var netConfig = epi1.NetworkConfiguration;
+            //    var modbusConfig = netConfig.ModbusConfig;
 
-                await modservice.WriteCoil(netConfig.IPAddress, netConfig.Port, netConfig.ModbusConfig.SlaveAddress, 2, false);
-                //modservice.WriteCoil()
-            } else {
-                Console.WriteLine("Could not find device, check name");
-            }
+            //    await modservice.WriteCoil(netConfig.IPAddress, netConfig.Port, netConfig.ModbusConfig.SlaveAddress, 2, false);
+            //    //modservice.WriteCoil()
+            //} else {
+            //    Console.WriteLine("Could not find device, check name");
+            //}
+            await AlertItemTypeUpdate("gasbay");
         }
 
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
@@ -187,7 +189,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
         public static async Task CreateMongoDevice(string deviceName) {
             using var context = new FacilityContext();
-            var client = new MongoClient("mongodb://172.20.3.30");
+            var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase(deviceName+"_data");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
@@ -311,15 +313,15 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Check database");
         }
 
-        public static async Task AlertItemTypeUpdate() {
-            var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase("epi2_data");
+        public static async Task AlertItemTypeUpdate(string deviceName) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase($"{deviceName}_data");
             var alertItems = database.GetCollection<MonitorAlert>("alert_items");
             using var context = new FacilityContext();
             var alerts = await context.Alerts
                 .Include(e => e.InputChannel)
                 .ThenInclude(e => e.ModbusDevice)
-                .Where(e => e.InputChannel.ModbusDevice.Identifier == "epi2")
+                .Where(e => e.InputChannel.ModbusDevice.Identifier == deviceName)
                 .ToListAsync();
             alerts.ForEach((alert) => {
                 var update = Builders<MonitorAlert>.Update.Set(s => s.itemType, alert.AlertItemType);
@@ -328,6 +330,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 //alertItems.UpdateOne(monitorAlert);
             });
             Console.WriteLine("Check database");
+            Console.ReadKey();
         }
 
         public static async Task AlertItemUpdateEnabled() {
@@ -394,7 +397,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
         static async Task CreateConfigDatabase(string deviceName) {
             using var context = new FacilityContext();
-            var client = new MongoClient("mongodb://172.20.3.30");
+            var client = new MongoClient("mongodb://172.20.3.41");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
                 .Select(e => new DeviceDTO() { 

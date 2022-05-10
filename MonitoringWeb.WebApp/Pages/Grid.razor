@@ -4,6 +4,7 @@
 @using MonitoringSystem.Shared.Data
 @using DevExpress.Blazor
 @inject NavigationManager NavigationManager
+@inject ILogger<Grid> logger
 @implements IAsyncDisposable
 
 <style>
@@ -49,7 +50,7 @@
 
 <div class="column">
     <h1>Epi1 Data</h1>
-    <p role="status">TimeStamp: @this.timestamp.AddHours(-4).ToString()</p>  
+    <p role="status">TimeStamp: @this.e1TimeStamp.AddHours(-4).ToString()</p>  
     <div class="row">
         <p>Analog Channels</p>
         @if (this.e1Data == null)
@@ -104,7 +105,7 @@
 </div>
 <div class="column">
     <h1>Epi2 Data</h1>
-    <p role="status">TimeStamp: @this.timestamp.AddHours(-4).ToString()</p>     
+    <p role="status">TimeStamp: @this.e2TimeStamp.AddHours(-4).ToString()</p>     
     <div class="row">
         <p>Analog Channels</p>
         @if (this.e2Data == null){
@@ -154,9 +155,8 @@
     private HubConnection? epi2Connection;
     private MonitorData? e1Data;
     private MonitorData? e2Data;
-
-    private DateTime timestamp=DateTime.Now;
-    //private List<ItemStatus>? epi1Data;
+    private DateTime e1TimeStamp=DateTime.Now;
+    private DateTime e2TimeStamp=DateTime.Now;
 
     protected override async Task OnInitializedAsync()
     {
@@ -165,12 +165,10 @@
         .WithUrl("http://10.152.183.215/hubs/epi1streaming")
         .Build();
 
-
         this.epi2Connection = new HubConnectionBuilder()
         .WithAutomaticReconnect()
         .WithUrl("http://10.152.183.250/hubs/epi2streaming")
         .Build();
-
 
         this.epi1Connection.On<MonitorData>("ShowCurrent", data =>{
             this.e1Data = data;
@@ -182,8 +180,23 @@
             InvokeAsync(StateHasChanged);
 
         });
-        await epi1Connection.StartAsync();
-        await epi2Connection.StartAsync();
+
+        this.epi1Connection.HandshakeTimeout=new TimeSpan(0, 0, 1);
+        this.epi2Connection.HandshakeTimeout = new TimeSpan(0, 0, 1);
+
+        try {
+            await epi1Connection.StartAsync();
+            this.logger.LogInformation("Epi1 Hub Connected");
+        } catch {
+            this.logger.LogError("Epi1 Hub Connection Failed");
+        }
+
+        try {
+            await epi2Connection.StartAsync();
+            this.logger.LogInformation("Epi2 Hub Connected");
+        } catch {
+            this.logger.LogError("Epi1 Hub Connection Failed");
+        }
     }
 
     void Grid_CustomizeElement(GridCustomizeElementEventArgs e) {
@@ -199,13 +212,16 @@
     }
 
     public bool IsConnected =>
-        this.epi1Connection?.State == HubConnectionState.Connected;
+        this.epi1Connection?.State == HubConnectionState.Connected && 
+        this.epi2Connection?.State == HubConnectionState.Connected;
 
-    public async ValueTask DisposeAsync()
-    {
-        if (this.epi1Connection is not null)
-        {
+    public async ValueTask DisposeAsync(){
+        if (this.epi1Connection is not null){
             await epi1Connection.DisposeAsync();
+        }
+
+        if(this.epi2Connection is not null) {
+            await this.epi2Connection.DisposeAsync();
         }
     }
 }

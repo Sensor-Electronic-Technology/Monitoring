@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace MonitoringSystem.ConsoleTesting {
     public class FacilityParser {
 
-        public static string boxId = "Epi2";
+        public static string boxId = "gasbay";
         public static string boxAnalogPath = $@"C:\MonitorFiles\{boxId}\ANALOG.TXT";
         public static string boxActionPath = $@"C:\MonitorFiles\{boxId}\ACTIONS.TXT";
         public static string boxDiscretePath = $@"C:\MonitorFiles\{boxId}\DIGITAL.TXT";
@@ -132,7 +132,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             box.NetworkConfiguration = ParseNetworkConfiguration();
             box.Identifier = boxId;
-            box.DisplayName = boxId + " Lab";
+            box.DisplayName = boxId;
             box.Status = "Normal";
             box.BypassAlarms = false;
             box.ReadInterval = 5;
@@ -176,19 +176,19 @@ namespace MonitoringSystem.ConsoleTesting {
             ChannelRegisterMapping channelMapping = new ChannelRegisterMapping();
             channelMapping.AnalogRegisterType = ModbusRegister.Input;
             channelMapping.AnalogStart = 0;
-            channelMapping.AnalogStop = 15;
+            channelMapping.AnalogStop = 7;
 
             channelMapping.DiscreteRegisterType = ModbusRegister.DiscreteInput;
             channelMapping.DiscreteStart = 0;
-            channelMapping.DiscreteStop = 39;
+            channelMapping.DiscreteStop = 15;
 
             channelMapping.OutputRegisterType = ModbusRegister.DiscreteInput;
-            channelMapping.OutputStart = 40;
-            channelMapping.OutputStop = 47;
+            channelMapping.OutputStart = 16;
+            channelMapping.OutputStop = 23;
 
             channelMapping.ActionRegisterType = ModbusRegister.DiscreteInput;
-            channelMapping.ActionStart = 48;
-            channelMapping.ActionStop = 53;
+            channelMapping.ActionStart = 24;
+            channelMapping.ActionStop = 29;
 
             channelMapping.VirtualRegisterType = ModbusRegister.Coil;
             channelMapping.VirtualStart = 0;
@@ -196,11 +196,11 @@ namespace MonitoringSystem.ConsoleTesting {
 
             channelMapping.AlertRegisterType = ModbusRegister.Holding;
             channelMapping.AlertStart = 0;
-            channelMapping.AlertStop = 59;
+            channelMapping.AlertStop = 27;
 
             channelMapping.DeviceRegisterType = ModbusRegister.Holding;
-            channelMapping.DeviceStart = 60;
-            channelMapping.DeviceStop = 60;
+            channelMapping.DeviceStart = 28;
+            channelMapping.DeviceStop = 28;
 
             netConfig.ModbusConfig.ChannelMapping = channelMapping;
 
@@ -220,6 +220,8 @@ namespace MonitoringSystem.ConsoleTesting {
             netConfig.ModbusConfig.InputRegisters = config["InputRegsters"].Value<int>();
             netConfig.ModbusConfig.Coils = config["Coils"].Value<int>();
             netConfig.ModbusConfig.HoldingRegisters = config["HoldingRegister"].Value<int>();
+            netConfig.Port = 502;
+            netConfig.ModbusConfig.SlaveAddress = 1;
             return netConfig;
         }
         static IList<DiscreteInput> ParseDiscreteInputs(ModbusDevice modbusDevice, IList<FacilityAction> actions) {

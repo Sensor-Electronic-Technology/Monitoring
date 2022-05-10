@@ -10,10 +10,46 @@ namespace MonitoringSystem.ConsoleTesting {
     public class Parsing {
         static async Task Main(string[] args) {
             //ParseConfiguation();
+
+            //await ChangeAnalogSensor(158, 5);
+            //using var context = new FacilityContext();
+
+            //var analogChannels = await context.Channels.OfType<AnalogInput>()
+            //    .Include(e => e.ModbusDevice)
+            //    .Include(e => e.Sensor)
+            //    .Where(e => e.ModbusDevice.Identifier == "gasbay")
+            //    .ToListAsync();
+
+            //foreach(var channel in analogChannels) {
+            //    Console.WriteLine($"Name: {channel.DisplayName} Sensor: {channel.Sensor?.Name}");
+            //}
+
+            //Console.WriteLine("Done");
+            //Console.ReadKey();
+
             //await FixDiscreteNames("Epi1");
             //await FixAnalogNames("epi1");
             //await FixOutputNames("Epi1");
-            await SetAlertNames("epi1");
+            await SetAlertNames("gasbay");
+        }
+
+        static async Task ChangeAnalogSensor(int channelId,int sensorId) {
+            using var context = new FacilityContext();
+            var channel = await context.Channels.OfType<AnalogInput>()
+                .Include(e=>e.Sensor)
+                .FirstOrDefaultAsync(e =>e.Id==channelId);
+            if (channel != null) {
+                channel.SensorId = sensorId;
+                context.Update(channel);
+                var ret=await context.SaveChangesAsync();
+                if (ret > 0) {
+                    Console.WriteLine("Changes Saved, Check Database");
+                } else {
+                    Console.WriteLine("Error: Changes were not saved.");
+                }
+            } else {
+                Console.WriteLine();
+            }
         }
         static async Task SetAlertNames(string deviceName) {
             using var context = new FacilityContext();
@@ -24,6 +60,14 @@ namespace MonitoringSystem.ConsoleTesting {
                 var channels = await context.Channels.OfType<InputChannel>().Include(e => e.Alert).ToListAsync();
                 foreach (var ain in channels) {
                     ain.Alert.DisplayName = ain.DisplayName;
+                    if(ain is AnalogInput) {
+                        ain.Alert.AlertItemType = Shared.Data.AlertItemType.Analog;
+                    }else if(ain is DiscreteInput) {
+                        ain.Alert.AlertItemType = Shared.Data.AlertItemType.Discrete;
+                    } else if(ain is VirtualInput) {
+                        ain.Alert.AlertItemType = Shared.Data.AlertItemType.Virtual;
+                    }
+
                 }
                 var alerts = channels.Select(e => e.Alert).ToList();
                 context.UpdateRange(alerts);

@@ -1,9 +1,9 @@
 {
   "MonitorDatabaseSettings": {
     "ConnectionString": "mongodb://172.20.3.41",
-    "DatabaseName": "epi1_data",
-    "EmailSubject": "Epi1 Alerts",
-    "HubName": "epi1streaming",
+    "DatabaseName": "gasbay_data",
+    "EmailSubject": "Gasbay Alerts",
+    "HubName": "gasbaystreaming",
     "AlertItemCollection": "alert_items",
     "ActionItemCollection": "action_items",
     "AnalogItemCollection": "analog_items",
