@@ -30,7 +30,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await FixDiscreteNames("Epi1");
             //await FixAnalogNames("epi1");
             //await FixOutputNames("Epi1");
-            await SetAlertNames("gasbay");
+            //await SetAlertNames("gasbay");
         }
 
         static async Task ChangeAnalogSensor(int channelId,int sensorId) {

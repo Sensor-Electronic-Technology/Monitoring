@@ -3,7 +3,7 @@
     "ConnectionString": "mongodb://172.20.3.41",
     "DatabaseName": "gasbay_data",
     "EmailSubject": "Gasbay Alerts",
-    "HubName": "gasbaystreaming",
+    "HubName": "gbstreaming",
     "AlertItemCollection": "alert_items",
     "ActionItemCollection": "action_items",
     "AnalogItemCollection": "analog_items",

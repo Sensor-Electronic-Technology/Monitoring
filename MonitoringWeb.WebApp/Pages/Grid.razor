@@ -8,7 +8,7 @@
 @implements IAsyncDisposable
 
 <style>
-    .okay-item > td {
+/*    .okay-item > td {
         background-color: rgba(153, 255, 155, 0.5);
     }
     .alarm-item > td {
@@ -44,119 +44,180 @@
     }
     p {
         text-align: center;
-    }
+    }*/
 
 </style>
 
-<div class="column">
-    <h1>Epi1 Data</h1>
-    <p role="status">TimeStamp: @this.e1TimeStamp.AddHours(-4).ToString()</p>  
-    <div class="row">
-        <p>Analog Channels</p>
-        @if (this.e1Data == null)
-        {
-            <p><em>Loading...</em></p>
-        }
-        else
-        {
-            <DxGrid Data="@this.e1Data.analogData" 
-                title="Analog Channels" 
-                CssClass="my-class" 
-                ShowAllRows=true 
-                CustomizeElement="Grid_CustomizeElement">
-                <Columns>
-                    <DxGridDataColumn FieldName="Item"/>
-                    <DxGridDataColumn FieldName="State"/>
-                    <DxGridDataColumn FieldName="Value"/>
-                </Columns>
-            </DxGrid>
-        }
-    </div>
 
-    <div class="row">
-        <p>Discrete Channels</p>
-        @if (this.e1Data == null)
-        {
-            <p><em>Loading...</em></p>
-        }else{
-            <DxGrid Data="@this.e1Data.discreteData" CssClass="my-class" ShowAllRows=true>
-                <Columns>
-                    <DxGridDataColumn FieldName="Item"/>
-                    <DxGridDataColumn FieldName="State"/>
-                    <DxGridDataColumn FieldName="Value"/>
-                </Columns>
-            </DxGrid>
-        }
-    </div>
-    <div class="row">
-        <p>Virtual Channels</p>
-        @if (this.e1Data == null){
-            <p><em>Loading...</em></p>
-        }else{
-            <DxGrid Data="@this.e1Data.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
-                <Columns>
-                    <DxGridDataColumn FieldName="Item"/>
-                    <DxGridDataColumn FieldName="State"/>
-                    <DxGridDataColumn FieldName="Value"/>
-                </Columns>
-            </DxGrid>
-        }
-    </div>
-</div>
-<div class="column">
-    <h1>Epi2 Data</h1>
-    <p role="status">TimeStamp: @this.e2TimeStamp.AddHours(-4).ToString()</p>     
-    <div class="row">
-        <p>Analog Channels</p>
-        @if (this.e2Data == null){
-            <p><em>Loading...</em></p>
-        }
-        else{
-            <DxGrid Data="@this.e2Data.analogData" title="Analog Channels" CssClass="my-class" ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
-                <Columns>
-                    <DxGridDataColumn FieldName="Item"/>
-                    <DxGridDataColumn FieldName="State"/>
-                    <DxGridDataColumn FieldName="Value"/>
-                </Columns>
-            </DxGrid>
-        }
-    </div>
-    <div class="row">
-        <p>Discrete Channels</p>
-        @if (this.e2Data == null){
-            <p><em>Loading...</em></p>
-        }else{
-            <DxGrid Data="@this.e2Data.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
-                <Columns>
-                    <DxGridDataColumn FieldName="Item"/>
-                    <DxGridDataColumn FieldName="State"/>
-                    <DxGridDataColumn FieldName="Value"/>
-                </Columns>
-            </DxGrid>
-        }
-    </div>
-    <div class="row">
-        <p>Virtual Channels</p>
-        @if (this.e2Data == null){
-            <p><em>Loading...</em></p>
-        }else{
-            <DxGrid Data="@this.e2Data.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
-                <Columns>
-                    <DxGridDataColumn FieldName="Item"/>
-                    <DxGridDataColumn FieldName="State"/>
-                    <DxGridDataColumn FieldName="Value"/>
-                </Columns>
-            </DxGrid>
-        }
-    </div>
-</div>
+
+<DxTabs style="width:950px">
+    <DxTabPage Text="Epi Lab 1">
+        <p role="status">TimeStamp: @this.e1Data?.TimeStamp.AddHours(-4).ToString()</p>  
+        <div class="row">
+            <h1>Analog Channels</h1>
+            @if (this.e1Data == null)
+            {
+                <p><em>Loading...</em></p>
+            }
+            else
+            {
+                <DxGrid Data="@this.e1Data.analogData" 
+                    title="Analog Channels" 
+                    CssClass="my-class" 
+                    ShowAllRows=true 
+                    CustomizeElement="Grid_CustomizeElement">
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+
+        <div class="row">
+            <br />
+            <h1>Discrete Channels</h1>        
+            @if (this.e1Data == null)
+            {
+                <p><em>Loading...</em></p>
+            }else{
+                <DxGrid Data="@this.e1Data.discreteData" CssClass="my-class" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+        <div class="row">
+            <br />
+            <h1>Virtual Channels</h1>
+            @if (this.e1Data == null){
+                <p><em>Loading...</em></p>
+            }else{
+                <DxGrid Data="@this.e1Data.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+    </DxTabPage>
+   <DxTabPage Text="Epi Lab 2">
+        <p role="status">TimeStamp: @this.e2Data?.TimeStamp.AddHours(-4).ToString()</p>     
+        <div class="row">
+            <br/>
+            <h1>Analog Channels</h1>
+            @if (this.e2Data == null){
+                <p><em>Loading...</em></p>
+            }
+            else{
+                <DxGrid Data="@this.e2Data.analogData" title="Analog Channels" CssClass="my-class" 
+                ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+        <div class="row">
+            <br/>
+            <h1>Discrete Channels</h1>
+            @if (this.e2Data == null){
+                <p><em>Loading...</em></p>
+            }else{
+                <DxGrid Data="@this.e2Data.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+        <div class="row">
+            <br />
+            <h1>Virtual Channels</h1>
+            @if (this.e2Data == null){
+                <p><em>Loading...</em></p>
+            }else{
+                <DxGrid Data="@this.e2Data.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+    </DxTabPage>
+    <DxTabPage Text="Gas Bay">
+        <p role="status">TimeStamp: @this.gasBayData?.TimeStamp.AddHours(-4).ToString()</p>     
+        <div class="row">
+            <br/>
+            <h1>Analog Channels</h1>
+            @if (this.gasBayData == null){
+                <p><em>Loading...</em></p>
+            }
+            else{
+                <DxGrid Data="@this.gasBayData.analogData" title="Analog Channels" CssClass="my-class" 
+                ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+        <div class="row">
+            <br />
+            <h1>Discrete Channels</h1>
+            @if (this.gasBayData == null){
+                <p><em>Loading...</em></p>
+            }else{
+                <DxGrid Data="@this.gasBayData.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+        <div class="row">
+            <br/>
+            <h1>Virtual Channels</h1>
+            @if (this.gasBayData == null){
+                <p><em>Loading...</em></p>
+            }else{
+                <DxGrid Data="@this.gasBayData.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+    </DxTabPage>
+</DxTabs>
 @code {
     private HubConnection? epi1Connection;
     private HubConnection? epi2Connection;
+    private HubConnection? gasBayConnection;
     private MonitorData? e1Data;
     private MonitorData? e2Data;
+    private MonitorData? gasBayData;
     private DateTime e1TimeStamp=DateTime.Now;
     private DateTime e2TimeStamp=DateTime.Now;
+    private DateTime gasBayTimeStamp=DateTime.Now;
 
     protected override async Task OnInitializedAsync()
     {
@@ -170,6 +231,11 @@
         .WithUrl("http://10.152.183.250/hubs/epi2streaming")
         .Build();
 
+        this.gasBayConnection=new HubConnectionBuilder()
+        .WithAutomaticReconnect()
+        .WithUrl("http://172.20.3.202:30080/hubs/gasbaystreaming")
+        .Build();
+
         this.epi1Connection.On<MonitorData>("ShowCurrent", data =>{
             this.e1Data = data;
             InvokeAsync(StateHasChanged);
@@ -178,11 +244,20 @@
         this.epi2Connection.On<MonitorData>("ShowCurrent", data => {
             this.e2Data=data;
             InvokeAsync(StateHasChanged);
-
         });
 
-        this.epi1Connection.HandshakeTimeout=new TimeSpan(0, 0, 1);
+        this.gasBayConnection.On<MonitorData>("ShowCurrent", data => { 
+            this.gasBayData=data;
+            InvokeAsync(StateHasChanged);
+        });
+
+        this.epi1Connection.HandshakeTimeout = new TimeSpan(0, 0, 1);
         this.epi2Connection.HandshakeTimeout = new TimeSpan(0, 0, 1);
+        this.gasBayConnection.HandshakeTimeout=new TimeSpan(0,0,1);
+
+        this.epi1Connection.ServerTimeout = new TimeSpan(0, 0, 1);
+        this.epi2Connection.ServerTimeout = new TimeSpan(0, 0, 1);
+        this.gasBayConnection.ServerTimeout = new TimeSpan(0, 0, 1);
 
         try {
             await epi1Connection.StartAsync();
@@ -197,12 +272,16 @@
         } catch {
             this.logger.LogError("Epi1 Hub Connection Failed");
         }
+
+        try {
+            await gasBayConnection.StartAsync();
+            this.logger.LogInformation("GasBay Hub Connected");
+        } catch {
+            this.logger.LogError("GasBay Hub Connection Failed");
+        }
     }
 
     void Grid_CustomizeElement(GridCustomizeElementEventArgs e) {
-        if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Okay.ToString()) {
-            e.CssClass = "okay-item";
-        }
         if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Alarm.ToString()) {
             e.CssClass = "alarm-item";
         }
@@ -213,15 +292,21 @@
 
     public bool IsConnected =>
         this.epi1Connection?.State == HubConnectionState.Connected && 
-        this.epi2Connection?.State == HubConnectionState.Connected;
+        this.epi2Connection?.State == HubConnectionState.Connected &&
+        this.gasBayConnection?.State==HubConnectionState.Connected;
 
     public async ValueTask DisposeAsync(){
+
         if (this.epi1Connection is not null){
             await epi1Connection.DisposeAsync();
         }
 
         if(this.epi2Connection is not null) {
             await this.epi2Connection.DisposeAsync();
+        }
+
+        if(this.gasBayConnection is not null) {
+            await this.gasBayConnection.DisposeAsync();
         }
     }
 }
