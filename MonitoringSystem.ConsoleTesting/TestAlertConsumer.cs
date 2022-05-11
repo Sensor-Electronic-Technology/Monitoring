@@ -16,10 +16,10 @@ namespace MonitoringSystem.ConsoleTesting {
     public class TestAlertConsumer {
 
         public static async Task Main() {
-            var connection = new HubConnectionBuilder().WithUrl("http://172.20.1.22:61080/hubs/monitor").Build();
-            connection.On<IList<ItemStatus>>("ShowCurrent", data => {
+            var connection = new HubConnectionBuilder().WithUrl("http://172.20.3.202/hubs/gbstreaming").Build();
+            connection.On<MonitorData>("ShowCurrent", data => {
                 ConsoleTable table = new ConsoleTable("Item", "State", "Value");
-                foreach(var val in data) {
+                foreach(var val in data.analogData) {
                     table.AddRow(val.Item, val.State, val.Value);
                 }
                 Console.WriteLine(table .ToString());

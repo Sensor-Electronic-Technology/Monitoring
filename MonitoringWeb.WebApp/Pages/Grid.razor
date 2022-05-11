@@ -48,7 +48,54 @@
 
 </style>
 
-
+@*        <p role="status">TimeStamp: @this.gasBayData?.TimeStamp.AddHours(-4).ToString()</p>     
+        <div class="row">
+            <br/>
+            <h1>Analog Channels</h1>
+            @if (this.gasBayData == null){
+                <p><em>Loading...</em></p>
+            }
+            else{
+                <DxGrid Data="@this.gasBayData.analogData" title="Analog Channels" CssClass="my-class" 
+                ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+        <div class="row">
+            <br />
+            <h1>Discrete Channels</h1>
+            @if (this.gasBayData == null){
+                <p><em>Loading...</em></p>
+            }else{
+                <DxGrid Data="@this.gasBayData.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+        <div class="row">
+            <br/>
+            <h1>Virtual Channels</h1>
+            @if (this.gasBayData == null){
+                <p><em>Loading...</em></p>
+            }else{
+                <DxGrid Data="@this.gasBayData.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>*@
 
 <DxTabs style="width:950px">
     <DxTabPage Text="Epi Lab 1">
@@ -233,7 +280,7 @@
 
         this.gasBayConnection=new HubConnectionBuilder()
         .WithAutomaticReconnect()
-        .WithUrl("http://172.20.3.202:30080/hubs/gasbaystreaming")
+        .WithUrl("http://10.152.183.193/hubs/gbstreaming")
         .Build();
 
         this.epi1Connection.On<MonitorData>("ShowCurrent", data =>{
@@ -251,13 +298,13 @@
             InvokeAsync(StateHasChanged);
         });
 
-        this.epi1Connection.HandshakeTimeout = new TimeSpan(0, 0, 1);
-        this.epi2Connection.HandshakeTimeout = new TimeSpan(0, 0, 1);
-        this.gasBayConnection.HandshakeTimeout=new TimeSpan(0,0,1);
+        this.epi1Connection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+        this.epi2Connection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+        this.gasBayConnection.HandshakeTimeout=new TimeSpan(0,0,3);
 
-        this.epi1Connection.ServerTimeout = new TimeSpan(0, 0, 1);
-        this.epi2Connection.ServerTimeout = new TimeSpan(0, 0, 1);
-        this.gasBayConnection.ServerTimeout = new TimeSpan(0, 0, 1);
+        this.epi1Connection.ServerTimeout = new TimeSpan(0, 0, 3);
+        this.epi2Connection.ServerTimeout = new TimeSpan(0, 0, 3);
+        this.gasBayConnection.ServerTimeout = new TimeSpan(0, 0, 3);
 
         try {
             await epi1Connection.StartAsync();
@@ -290,10 +337,10 @@
         }
     }
 
-    public bool IsConnected =>
-        this.epi1Connection?.State == HubConnectionState.Connected && 
-        this.epi2Connection?.State == HubConnectionState.Connected &&
-        this.gasBayConnection?.State==HubConnectionState.Connected;
+    //public bool IsConnected =>
+    //    this.epi1Connection?.State == HubConnectionState.Connected && 
+    //    this.epi2Connection?.State == HubConnectionState.Connected &&
+    //    this.gasBayConnection?.State==HubConnectionState.Connected;
 
     public async ValueTask DisposeAsync(){
 

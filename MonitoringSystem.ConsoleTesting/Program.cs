@@ -98,7 +98,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 var netConfig = gasbay.NetworkConfiguration;
                 var modbusConfig = netConfig.ModbusConfig;
 
-                await modservice.WriteCoil("172.21.100.2", 502, 1, 0, false);
+                await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
                 //modservice.WriteCoil()
             } else {
                 Console.WriteLine("Could not find device, check name");
