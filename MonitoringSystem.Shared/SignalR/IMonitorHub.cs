@@ -22,16 +22,6 @@ namespace MonitoringSystem.Shared.SignalR {
         public string Value { get; set; }
     }
 
-    //public interface IMonitorHub {
-    //    Task ShowCurrent(IList<ItemStatus> items);
-    //}
-
-    //public class MonitorHub : Hub<IMonitorHub> {
-    //    public async Task SendDataToClients(IList<ItemStatus> items) {
-    //        await Clients.All.ShowCurrent(items);
-    //    }
-    //}
-
     public interface IMonitorHub {
         Task ShowCurrent(MonitorData data);
     }

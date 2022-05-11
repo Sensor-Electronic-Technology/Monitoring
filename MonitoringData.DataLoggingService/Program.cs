@@ -8,17 +8,12 @@ using MonitoringSystem.Shared.SignalR;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
-//var builder = Host.CreateDefaultBuilder(args);
+
 var builder = WebApplication.CreateBuilder(args);
-
 //EndpointConvention.Map<EmailContract>(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
-
 builder.Configuration.AddJsonFile(MonitorDatabaseSettings.FileName, optional: true, reloadOnChange: true);
-
-//builder.ConfigureAppConfiguration((hostContext, configuration) => {
-//    configuration.AddJsonFile(MonitorDatabaseSettings.FileName, optional: true, reloadOnChange: true);
-//});
 builder.Services.Configure<MonitorDatabaseSettings>(builder.Configuration.GetSection(MonitorDatabaseSettings.SectionName));
+var hub = builder.Configuration.GetSection(MonitorDatabaseSettings.SectionName).Get<MonitorDatabaseSettings>().HubName;
 builder.Services.AddMediator(cfg => {
     cfg.AddConsumer<ModbusDataLogger>();
 });
@@ -31,26 +26,6 @@ builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<MonitorDBChanges>();
 builder.Services.AddSignalR();
 
-//builder.ConfigureServices((hostContext, services) => {
-
-//    services.Configure<MonitorDatabaseSettings>(hostContext.Configuration.GetSection(MonitorDatabaseSettings.SectionName));
-//    services.AddMediator(cfg => {
-//        cfg.AddConsumer<ModbusDataLogger>();
-//    });
-//    services.AddSingleton<IMonitorDataRepo,MonitorDataService>();
-//    services.AddSingleton<IAlertRepo,AlertRepo>();
-//    services.AddSingleton<IModbusService, ModbusService>();
-//    services.AddTransient<IAlertService, AlertService>();
-//    services.AddTransient<IDataLogger,ModbusDataLogger>();
-//    services.AddHostedService<Worker>();
-//    services.AddHostedService<MonitorDBChanges>();
-//    //services.AddSignalR();
-//});
-
-
 var app = builder.Build();
-app.MapHub<MonitorHub>("/hubs/gbstreaming");
+app.MapHub<MonitorHub>($"/hubs/{hub}");
 await app.RunAsync();
-//await app.RunAsync();
-
-//await host.RunAsync();
