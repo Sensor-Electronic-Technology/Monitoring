@@ -83,16 +83,15 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 }             
                 readings.Add(reading);
                 var alert=this._dataService.MonitorAlerts.FirstOrDefault(e => e.channelId == aItem._id);
+                //Console.WriteLine($"Channel: {aItem.identifier} Alert: {alert.displayName}");
                 if (alert != null) {
-                    ActionType state;
-                    if (reading.value <= aItem.l3setpoint) {
+                    ActionType state=ActionType.Okay;
+                    if ((int)reading.value <= aItem.l3setpoint) {
                         state = aItem.l3action;
-                    } else if (reading.value <= aItem.l2setpoint) {
+                    } else if ((int)reading.value <= aItem.l2setpoint) {
                         state = aItem.l2action;
-                    } else if (reading.value <= aItem.l3setpoint) {
+                    } else if ((int)reading.value <= aItem.l1setpoint) {
                         state = aItem.l1action;
-                    } else {
-                        state = ActionType.Okay;
                     }
                     this._alerts.Add(new AlertRecord(alert,(float)reading.value,state));
                 } else {
