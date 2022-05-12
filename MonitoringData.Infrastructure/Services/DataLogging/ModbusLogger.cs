@@ -83,7 +83,6 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 }             
                 readings.Add(reading);
                 var alert=this._dataService.MonitorAlerts.FirstOrDefault(e => e.channelId == aItem._id);
-                //Console.WriteLine($"Channel: {aItem.identifier} Alert: {alert.displayName}");
                 if (alert != null) {
                     ActionType state=ActionType.Okay;
                     if ((int)reading.value <= aItem.l3setpoint) {

@@ -254,14 +254,36 @@
             }
         </div>
     </DxTabPage>
+    <DxTabPage Text="NH3 Tanks">
+        <p role="status">TimeStamp: @this.nhData?.TimeStamp.AddHours(-4).ToString()</p>     
+        <div class="row">
+            <br/>
+            <h1>NH3 Data</h1>
+            @if (this.nhData == null){
+                <p><em>Loading...</em></p>
+            }
+            else{
+                <DxGrid Data="@this.nhData.analogData" title="Analog Channels" CssClass="my-class" 
+                ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+    </DxTabPage>
 </DxTabs>
 @code {
     private HubConnection? epi1Connection;
     private HubConnection? epi2Connection;
     private HubConnection? gasBayConnection;
+    private HubConnection? nhConnection;
     private MonitorData? e1Data;
     private MonitorData? e2Data;
     private MonitorData? gasBayData;
+    private MonitorData? nhData;
     private DateTime e1TimeStamp=DateTime.Now;
     private DateTime e2TimeStamp=DateTime.Now;
     private DateTime gasBayTimeStamp=DateTime.Now;
@@ -283,6 +305,11 @@
         .WithUrl("http://gbstream/hubs/gbstreaming")
         .Build();
 
+        this.nhConnection=new HubConnectionBuilder()
+        .WithAutomaticReconnect()
+        .WithUrl("http://nhstream/hubs/nhstreaming")
+        .Build();
+
         this.epi1Connection.On<MonitorData>("ShowCurrent", data =>{
             this.e1Data = data;
             InvokeAsync(StateHasChanged);
@@ -298,13 +325,20 @@
             InvokeAsync(StateHasChanged);
         });
 
+        this.nhConnection.On<MonitorData>("ShowCurrent", data => { 
+            this.nhData=data;
+            InvokeAsync(StateHasChanged);
+        });
+
         this.epi1Connection.HandshakeTimeout = new TimeSpan(0, 0, 3);
         this.epi2Connection.HandshakeTimeout = new TimeSpan(0, 0, 3);
         this.gasBayConnection.HandshakeTimeout=new TimeSpan(0,0,3);
+        this.nhConnection.HandshakeTimeout=new TimeSpan(0,0,3);
 
         this.epi1Connection.ServerTimeout = new TimeSpan(0, 0, 3);
         this.epi2Connection.ServerTimeout = new TimeSpan(0, 0, 3);
         this.gasBayConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+        this.nhConnection.ServerTimeout = new TimeSpan(0, 0, 3);
 
         try {
             await epi1Connection.StartAsync();
@@ -325,6 +359,13 @@
             this.logger.LogInformation("GasBay Hub Connected");
         } catch {
             this.logger.LogError("GasBay Hub Connection Failed");
+        }
+
+        try {
+            await nhConnection.StartAsync();
+            this.logger.LogInformation("NH3 Hub Connected");
+        } catch {
+            this.logger.LogError("NH3 Hub Connection Failed");
         }
     }
 
