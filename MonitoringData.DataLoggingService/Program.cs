@@ -7,7 +7,7 @@ using MonitoringSystem.Shared.Contracts;
 using MonitoringSystem.Shared.SignalR;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-
+using MonitoringData.Infrastructure.Services.DataLogging;
 
 var builder = WebApplication.CreateBuilder(args);
 //EndpointConvention.Map<EmailContract>(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));
@@ -21,7 +21,8 @@ builder.Services.AddSingleton<IMonitorDataRepo, MonitorDataService>();
 builder.Services.AddSingleton<IAlertRepo, AlertRepo>();
 builder.Services.AddSingleton<IModbusService, ModbusService>();
 builder.Services.AddTransient<IAlertService, AlertService>();
-builder.Services.AddTransient<IDataLogger, MonitorBoxLogger>();
+//builder.Services.AddTransient<IDataLogger, MonitorBoxLogger>();
+builder.Services.AddSingleton<IDataLogger, ModbusLogger>();
 builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<MonitorDBChanges>();
 builder.Services.AddSignalR();

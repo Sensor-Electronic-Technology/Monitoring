@@ -48,7 +48,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             //await CreateConfigDatabase("epi2");
             //await CreateReadingsDatabase("epi2");
-            //await RunDataLogger();
+            await RunDataLogger();
             //await TestAlerts();
             //await ModifyAnalog();
             //await UpdateChannels("epi1");

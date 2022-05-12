@@ -1,9 +1,9 @@
 {
   "MonitorDatabaseSettings": {
     "ConnectionString": "mongodb://172.20.3.41",
-    "DatabaseName": "gasbay_data",
-    "EmailSubject": "Gasbay Alerts",
-    "HubName": "gbstreaming",
+    "DatabaseName": "nh3_data",
+    "EmailSubject": "NH3 Alerts",
+    "HubName": "nhstreaming",
     "AlertItemCollection": "alert_items",
     "ActionItemCollection": "action_items",
     "AnalogItemCollection": "analog_items",

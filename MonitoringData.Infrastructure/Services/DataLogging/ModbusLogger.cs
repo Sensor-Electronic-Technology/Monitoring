@@ -57,7 +57,6 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     MonitorData monitorData = new MonitorData();
                     monitorData.TimeStamp = now;
                     monitorData.analogData = this._alerts
-                        .Where(e => e.Enabled && e.ItemType == AlertItemType.Analog)
                         .Select(e => new ItemStatus() { 
                             Item=e.DisplayName,
                             State=e.CurrentState.ToString(),
@@ -67,14 +66,12 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     await this._alertService.ProcessAlerts(this._alerts,now);
                     await this._monitorHub.Clients.All.ShowCurrent(monitorData);
                 }
-
             } else {
                 this.LogError("Modbus read failed");
             }
         }
 
         private async Task ProcessAnalogReadings(ushort[] raw, DateTime now) {
-
             List<AnalogReading> readings = new List<AnalogReading>();
             foreach(var aItem in this._dataService.AnalogItems) {
                 var reading = new AnalogReading();
