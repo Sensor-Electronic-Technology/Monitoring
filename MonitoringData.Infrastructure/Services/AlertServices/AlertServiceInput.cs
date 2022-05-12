@@ -33,6 +33,17 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this.ChannelReading = 0.00f;
         }
 
+        public AlertRecord(MonitorAlert alert, float reading, ActionType state) {
+            this.CurrentState = state;
+            this.AlertId = alert._id;
+            this.ChannelId = alert.channelId;
+            this.DisplayName = alert.displayName;
+            this.Enabled = alert.enabled;
+            this.AlertAction = AlertAction.Clear;
+            this.ItemType = alert.itemType;
+            this.ChannelReading = reading;
+        }
+
         public AlertRecord() {
             this.ChannelReading = 0.00f;
             this.AlertId = -1;

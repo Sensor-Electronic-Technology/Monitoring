@@ -15,13 +15,13 @@ builder.Configuration.AddJsonFile(MonitorDatabaseSettings.FileName, optional: tr
 builder.Services.Configure<MonitorDatabaseSettings>(builder.Configuration.GetSection(MonitorDatabaseSettings.SectionName));
 var hub = builder.Configuration.GetSection(MonitorDatabaseSettings.SectionName).Get<MonitorDatabaseSettings>().HubName;
 builder.Services.AddMediator(cfg => {
-    cfg.AddConsumer<ModbusDataLogger>();
+    cfg.AddConsumer<MonitorBoxLogger>();
 });
 builder.Services.AddSingleton<IMonitorDataRepo, MonitorDataService>();
 builder.Services.AddSingleton<IAlertRepo, AlertRepo>();
 builder.Services.AddSingleton<IModbusService, ModbusService>();
 builder.Services.AddTransient<IAlertService, AlertService>();
-builder.Services.AddTransient<IDataLogger, ModbusDataLogger>();
+builder.Services.AddTransient<IDataLogger, MonitorBoxLogger>();
 builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<MonitorDBChanges>();
 builder.Services.AddSignalR();

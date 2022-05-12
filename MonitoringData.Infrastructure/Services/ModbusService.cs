@@ -18,6 +18,10 @@ namespace MonitoringData.Infrastructure.Services {
         public ModbusResult(bool success) {
             this._success = success;
         }
+
+        public ModbusResult() {
+            this._success = false;
+        }
     }
 
     public interface IModbusService {
@@ -42,13 +46,31 @@ namespace MonitoringData.Infrastructure.Services {
             try {
                 using var client = new TcpClient(ip, port);
                 var modbus = ModbusIpMaster.CreateIp(client);
-                var dInputs = await modbus.ReadInputsAsync((byte)config.SlaveAddress, 0, (ushort)config.DiscreteInputs);
-                var holding = await modbus.ReadHoldingRegistersAsync((byte)config.SlaveAddress, 0, (ushort)config.HoldingRegisters);
-                var inputs = await modbus.ReadInputRegistersAsync((byte)config.SlaveAddress, 0, (ushort)config.InputRegisters);
-                var coils = await modbus.ReadCoilsAsync((byte)config.SlaveAddress, 0, (ushort)config.Coils);
+                ModbusResult result = new ModbusResult();
+
+                if (config.DiscreteInputs != 0) {
+                    result.DiscreteInputs = await modbus.ReadInputsAsync((byte)config.SlaveAddress, 0, (ushort)config.DiscreteInputs);
+                    result._success = true;
+                }
+
+                if (config.HoldingRegisters != 0) {
+                    result.HoldingRegisters = await modbus.ReadHoldingRegistersAsync((byte)config.SlaveAddress, 0, (ushort)config.HoldingRegisters);
+                    result._success = true;
+                }
+
+                if (config.InputRegisters != 0) {
+                    result.InputRegisters = await modbus.ReadInputRegistersAsync((byte)config.SlaveAddress, 0, (ushort)config.InputRegisters);
+                    result._success = true;
+                }
+
+                if (config.Coils != 0) {
+                    result.Coils = await modbus.ReadCoilsAsync((byte)config.SlaveAddress, 0, (ushort)config.Coils);
+                    result._success = true;
+                }
+                
                 client.Close();
                 modbus.Dispose();
-                return new ModbusResult(true) { Coils = coils, DiscreteInputs = dInputs, HoldingRegisters = holding, InputRegisters = inputs };
+                return result;
             } catch {
                 this.LogError("Exception reading modbus registers in ModbusService.Read");
                 return new ModbusResult(false);

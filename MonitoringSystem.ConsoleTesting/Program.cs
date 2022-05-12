@@ -15,6 +15,7 @@ using Microsoft.Extensions.Caching.Memory;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using System.Diagnostics;
+using MonitoringData.Infrastructure.Services.DataLogging;
 
 namespace MonitoringSystem.ConsoleTesting {
     public record class Test {
@@ -26,7 +27,7 @@ namespace MonitoringSystem.ConsoleTesting {
         static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
             //await CreateMongoDevice("gasbay");
-            //await CreateReadingsDatabaseNew("gasbay");
+            //await CreateReadingsDatabaseNew("nh3");
             //Console.WriteLine("Epi updated");
             //await CreateMongoDevice("epi2");
             //Console.WriteLine("Epi2 Updated");
@@ -91,18 +92,18 @@ namespace MonitoringSystem.ConsoleTesting {
             //var next = cursor.Current.First();
             //Console.WriteLine(next.ToString());
 
-            using var context = new FacilityContext();
-            var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "gasbay");
-            if (gasbay is not null) {
-                ModbusService modservice = new ModbusService();
-                var netConfig = gasbay.NetworkConfiguration;
-                var modbusConfig = netConfig.ModbusConfig;
+            //using var context = new FacilityContext();
+            //var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "gasbay");
+            //if (gasbay is not null) {
+            //    ModbusService modservice = new ModbusService();
+            //    var netConfig = gasbay.NetworkConfiguration;
+            //    var modbusConfig = netConfig.ModbusConfig;
 
-                await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
-                //modservice.WriteCoil()
-            } else {
-                Console.WriteLine("Could not find device, check name");
-            }
+            //    await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
+            //    //modservice.WriteCoil()
+            //} else {
+            //    Console.WriteLine("Could not find device, check name");
+            //}
             //await AlertItemTypeUpdate("gasbay");
         }
 
@@ -579,13 +580,19 @@ namespace MonitoringSystem.ConsoleTesting {
                 var analogChannels = await context.Channels.OfType<AnalogInput>()
                     .AsNoTracking()
                     .Include(e => e.ModbusDevice)
+                    .Include(e => e.Alert)
                     .Where(e => e.ModbusDevice.Identifier == device.Identifier)
                     .OrderBy(e => e.SystemChannel)
                     .Select(e => new AnalogChannel() {
                         identifier = e.DisplayName,
                         _id = e.Id,
-                        factor = 10,
-                        display = e.Display
+                        factor = 1,
+                        display = e.Display,
+                        l1action=ActionType.SoftWarn,
+                        l2action=ActionType.Warning,
+                        l3action=ActionType.Alarm,
+                        reg=e.ModbusAddress.Address,
+                        reglen=e.ModbusAddress.RegisterLength
                     }).ToListAsync();
 
                 var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items");
@@ -656,11 +663,11 @@ namespace MonitoringSystem.ConsoleTesting {
 
                 await deviceItems.InsertOneAsync(deviceConfig);
                 await analogItems.InsertManyAsync(analogChannels);
-                await discreteItems.InsertManyAsync(discreteChannels);
-                await outputItems.InsertManyAsync(outputs);
+                //await discreteItems.InsertManyAsync(discreteChannels);
+                //await outputItems.InsertManyAsync(outputs);
                 await actionItems.InsertManyAsync(actions);
                 await monitorAlerts.InsertManyAsync(alerts);
-                await virtualItems.InsertManyAsync(virtualChannels);
+                //await virtualItems.InsertManyAsync(virtualChannels);
                 Console.WriteLine("Check database, press any key to exit");
             } else {
                 Console.WriteLine("Error: Device not found");
@@ -846,7 +853,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             collectionNames.Add(typeof(DeviceReading), "device_readings");
             collectionNames.Add(typeof(MonitorDevice), "device_items");
-            this._dataLogger = new ModbusDataLogger("mongodb://172.20.3.41", "gasbay_data",collectionNames);
+            this._dataLogger = new ModbusLogger("mongodb://172.20.3.41", "nh3_data",collectionNames);
         }
         public async Task StartAsync() {
             Console.WriteLine("Starting Logging Service");

@@ -38,4 +38,9 @@ namespace MonitoringSystem.Shared.Data {
         Virtual
     }
 
+    public enum AlertTriggerType {
+        Firmware,
+        Software
+    }
+
 }

@@ -18,6 +18,7 @@ namespace MonitoringData.Infrastructure.Model {
         public DateTime lastAlarm { get; set; }
         public bool latched { get; set; }
         public ActionType CurrentState { get; set; }
+
         public MonitorAlert Clone() {
             return (MonitorAlert)this.MemberwiseClone();
         }

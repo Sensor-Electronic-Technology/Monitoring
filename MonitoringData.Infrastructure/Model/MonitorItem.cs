@@ -16,10 +16,19 @@ namespace MonitoringData.Infrastructure.Model {
 
     public class AnalogChannel : MonitorItem {
         public int factor { get; set; }
+        public int reg { get; set; }
+        public int reglen { get; set; }
+        public ActionType l1action { get; set; }
+        public float l1setpoint { get; set; }
+        public ActionType l2action { get; set; }
+        public float l2setpoint { get; set; }
+        public ActionType l3action { get; set; }
+        public float l3setpoint { get; set; }
     }
 
     public class DiscreteChannel : MonitorItem {
-
+        public ActionType action { get; set; }
+        public DiscreteState TriggerOn { get; set; }
     }
 
     public class OutputItem : MonitorItem {

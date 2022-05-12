@@ -38,31 +38,31 @@ namespace MonitoringSystem.Shared.Data {
 
     public class ChannelRegisterMapping {
         public ModbusRegister AlertRegisterType { get; set; }
-        public int AlertStart { get; set; }
-        public int AlertStop { get; set; }
+        public int AlertStart { get; set; } = 0;
+        public int AlertStop { get; set; } = 0;
 
         public ModbusRegister AnalogRegisterType { get; set; }
-        public int AnalogStart { get; set; }
-        public int AnalogStop { get; set; }
+        public int AnalogStart { get; set; } = 0;
+        public int AnalogStop { get; set; } = 0;
 
         public ModbusRegister DiscreteRegisterType { get; set; }
-        public int DiscreteStart { get; set; }
-        public int DiscreteStop { get; set; }
+        public int DiscreteStart { get; set; } = 0;
+        public int DiscreteStop { get; set; } = 0;
 
         public ModbusRegister VirtualRegisterType { get; set; }
-        public int VirtualStart { get; set; }
-        public int VirtualStop { get; set; }
+        public int VirtualStart { get; set; } = 0;
+        public int VirtualStop { get; set; } = 0;
 
         public ModbusRegister DeviceRegisterType { get; set; }
-        public int DeviceStart { get; set; }
-        public int DeviceStop { get; set; }
+        public int DeviceStart { get; set; } = 0;
+        public int DeviceStop { get; set; } = 0;
 
         public ModbusRegister OutputRegisterType { get; set; }
-        public int OutputStart { get; set; }
-        public int OutputStop { get; set; }
+        public int OutputStart { get; set; } = 0;
+        public int OutputStop { get; set; } = 0;
 
         public ModbusRegister ActionRegisterType { get; set; }
-        public int ActionStart { get; set; }
-        public int ActionStop { get; set; }
+        public int ActionStart { get; set; } = 0;
+        public int ActionStop { get; set; } = 0;
     }
 }

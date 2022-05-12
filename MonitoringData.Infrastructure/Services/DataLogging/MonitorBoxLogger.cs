@@ -7,20 +7,9 @@ using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringSystem.Shared.SignalR;
 using MonitoringSystem.Shared.Data;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MonitoringData.Infrastructure.Services {
-    public interface IDataLogger {
-        Task Read();
-        Task Load();
-    }
-
-    public class ModbusDataLogger : IDataLogger , IConsumer<ReloadConsumer> {
+    public class MonitorBoxLogger : IDataLogger , IConsumer<ReloadConsumer> {
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
         private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
@@ -35,8 +24,8 @@ namespace MonitoringData.Infrastructure.Services {
         private bool loggingEnabled = false;
         private IList<AlertRecord> _alerts;
 
-        public ModbusDataLogger(IMonitorDataRepo dataService,
-            ILogger<ModbusDataLogger> logger, 
+        public MonitorBoxLogger(IMonitorDataRepo dataService,
+            ILogger<MonitorBoxLogger> logger, 
             IAlertService alertService,
             IModbusService modbusService,
             IHubContext<MonitorHub,IMonitorHub> monitorHub) {
@@ -49,7 +38,7 @@ namespace MonitoringData.Infrastructure.Services {
             this.loggingEnabled = true;
         }
 
-        public ModbusDataLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
+        public MonitorBoxLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
             this._dataService = new MonitorDataService(connName, databaseName, collectionNames);
             this._alertService = new AlertService(connName, databaseName, collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
             this.loggingEnabled = false;

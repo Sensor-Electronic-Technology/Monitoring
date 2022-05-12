@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-	<StartupObject>MonitoringSystem.ConsoleTesting.TestAlertConsumer</StartupObject>
+	<StartupObject>MonitoringSystem.ConsoleTesting.Program</StartupObject>
   </PropertyGroup>
 
 	<ItemGroup>
