@@ -1,6 +1,8 @@
 using MonitoringWeb.WebApp.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using MonitoringData.Infrastructure.Services.DataAccess;
+using Blazor.DownloadFileFast;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddDevExpressBlazor();
-builder.Services.AddSingleton<WeatherForecastService>();
+builder.Services.AddBlazorDownloadFile();
+builder.Services.AddSingleton<DataDownload>();
+
 builder.Services.Configure<DevExpress.Blazor.Configuration.GlobalOptions>(options => {
     options.BootstrapVersion = DevExpress.Blazor.BootstrapVersion.v5;
 });

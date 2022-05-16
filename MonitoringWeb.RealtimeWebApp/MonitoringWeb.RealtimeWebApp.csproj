@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BlazorDownloadFileFast" Version="0.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.4" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
   </ItemGroup>

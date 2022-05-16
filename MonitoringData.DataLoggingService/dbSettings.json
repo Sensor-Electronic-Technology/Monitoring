@@ -2,7 +2,7 @@
   "MonitorDatabaseSettings": {
     "ConnectionString": "mongodb://172.20.3.41",
     "DatabaseName": "nh3_data",
-    "EmailSubject": "NH3 Alerts",
+    "EmailSubject": "NH3 Scales",
     "HubName": "nhstreaming",
     "AlertItemCollection": "alert_items",
     "ActionItemCollection": "action_items",
@@ -18,5 +18,8 @@
     "OutputReadingCollection": "output_readings",
     "DeviceReadingCollection": "device_readings",
     "MonitorDeviceCollection": "device_items"
+  },
+  "ServiceOptions": {
+    "ServiceType": "GenericModbus"
   }
 }

@@ -11,6 +11,7 @@ namespace MonitoringData.Infrastructure.Model {
         public ObjectId _id { get; set; }
         public DateTime Created { get; set; }
         public string identifier { get; set; }
+        public int recordInterval { get; set; }
         public NetworkConfiguration NetworkConfiguration { get; set; }
     }
 }

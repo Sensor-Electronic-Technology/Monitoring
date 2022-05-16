@@ -37,7 +37,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringWeb.RealtimeWebAp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MonitoringShared", "MonitoringShared", "{EF35596E-6A43-4981-8458-11B3C822DB91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringWeb.WebApp", "MonitoringWeb.WebApp\MonitoringWeb.WebApp.csproj", "{7AD6DD68-4F7E-4968-B994-712A7035AF34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringWeb.WebApp", "MonitoringWeb.WebApp\MonitoringWeb.WebApp.csproj", "{7AD6DD68-4F7E-4968-B994-712A7035AF34}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

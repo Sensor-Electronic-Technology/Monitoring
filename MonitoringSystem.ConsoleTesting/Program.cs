@@ -48,7 +48,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             //await CreateConfigDatabase("epi2");
             //await CreateReadingsDatabase("epi2");
-            await RunDataLogger();
+            //await RunDataLogger();
             //await TestAlerts();
             //await ModifyAnalog();
             //await UpdateChannels("epi1");
@@ -92,18 +92,18 @@ namespace MonitoringSystem.ConsoleTesting {
             //var next = cursor.Current.First();
             //Console.WriteLine(next.ToString());
 
-            //using var context = new FacilityContext();
-            //var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "gasbay");
-            //if (gasbay is not null) {
-            //    ModbusService modservice = new ModbusService();
-            //    var netConfig = gasbay.NetworkConfiguration;
-            //    var modbusConfig = netConfig.ModbusConfig;
+            using var context = new FacilityContext();
+            var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");
+            if (gasbay is not null) {
+                ModbusService modservice = new ModbusService();
+                var netConfig = gasbay.NetworkConfiguration;
+                var modbusConfig = netConfig.ModbusConfig;
 
-            //    await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
-            //    //modservice.WriteCoil()
-            //} else {
-            //    Console.WriteLine("Could not find device, check name");
-            //}
+                await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
+                //modservice.WriteCoil()
+            } else {
+                Console.WriteLine("Could not find device, check name");
+            }
             //await AlertItemTypeUpdate("gasbay");
         }
 

@@ -48,7 +48,7 @@ namespace MonitoringData.Infrastructure.Services {
 
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
             IMessageBuilder messageBuilder = new MessageBuilder();
-            messageBuilder.StartMessage();
+            messageBuilder.StartMessage(this._settings.EmailSubject);
             ConsoleTable statusTable = new ConsoleTable("Alert","Status","Reading");
             ConsoleTable newAlertTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable newStateTable = new ConsoleTable("Alert", "Status", "Reading");
@@ -98,7 +98,7 @@ namespace MonitoringData.Infrastructure.Services {
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
-                    await this._emailService.SendMessageAsync(this._settings.EmailSubject, messageBuilder.FinishMessage());
+                    await this._emailService.SendMessageAsync(this._settings.EmailSubject+" Alerts", messageBuilder.FinishMessage());
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         itemid = e.AlertId,
                         reading = e.ChannelReading,

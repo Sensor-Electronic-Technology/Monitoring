@@ -16,13 +16,17 @@ namespace MonitoringData.Infrastructure.Services {
         private IAlertService _alertService;
         private readonly ILogger _logger;
 
-
+        private MonitorDevice _device;
         private NetworkConfiguration _networkConfig;
         private ModbusConfig _modbusConfig;
         private ChannelRegisterMapping _channelMapping;
 
         private bool loggingEnabled = false;
         private IList<AlertRecord> _alerts;
+
+        private DateTime lastAnalog, lastDiscrete, lastVirtual;
+        private TimeSpan recordInterval;
+        private bool firstRecord;
 
         public MonitorBoxLogger(IMonitorDataRepo dataService,
             ILogger<MonitorBoxLogger> logger, 
@@ -36,6 +40,7 @@ namespace MonitoringData.Infrastructure.Services {
             this._modbusService = modbusService;
             this._monitorHub = monitorHub;
             this.loggingEnabled = true;
+            this.firstRecord = true;
         }
 
         public MonitorBoxLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
@@ -43,6 +48,7 @@ namespace MonitoringData.Infrastructure.Services {
             this._alertService = new AlertService(connName, databaseName, collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
             this.loggingEnabled = false;
             this._modbusService = new ModbusService();
+            this.firstRecord = true;
         }
 
         public async Task Read() {
@@ -104,9 +110,11 @@ namespace MonitoringData.Infrastructure.Services {
         public async Task Load() {
             await this._dataService.LoadAsync();
             await this._alertService.Initialize();
-            this._networkConfig = this._dataService.MonitorDevice.NetworkConfiguration;
+            this._device = this._dataService.MonitorDevice;
+            this._networkConfig = this._device.NetworkConfiguration;
             this._modbusConfig = this._networkConfig.ModbusConfig;
             this._channelMapping = this._modbusConfig.ChannelMapping;
+            this.recordInterval = new TimeSpan(0, 0, this._device.recordInterval);
         }
 
         private Task ProcessAlertReadings(ushort[] raw, DateTime now) {
@@ -125,11 +133,16 @@ namespace MonitoringData.Infrastructure.Services {
         private async Task ProcessAnalogReadings(ushort[] raw, DateTime now) {
             if (this._dataService.AnalogItems.Count == raw.Length) {
                 List<AnalogReading> readings = new List<AnalogReading>();
+                bool record = false;
                 for (int i = 0; i < raw.Length; i++) {
+                    var item = this._dataService.AnalogItems[i];
                     var analogReading = new AnalogReading() { 
                         itemid = this._dataService.AnalogItems[i]._id, 
                         value = (float)raw[i] / (float)this._dataService.AnalogItems[i].factor
                     };
+                    if (analogReading.value >= item.recordThreshold) {
+                        record = true;
+                    }
                     readings.Add(analogReading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.itemid);
                     if (alertRecord != null) {
@@ -138,7 +151,14 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Analog ItemAlert not found");
                     }
                 }
-                await this._dataService.InsertOneAsync(new AnalogReadings() { readings = readings.ToArray(), timestamp = now });
+                if (this.firstRecord) {
+                    await this._dataService.InsertOneAsync(new AnalogReadings() { readings = readings.ToArray(), timestamp = now });
+                    this.lastAnalog = now;
+                    this.firstRecord = false;
+                }else if (this.CheckSave(now,this.lastAnalog,record)) {
+                    await this._dataService.InsertOneAsync(new AnalogReadings() { readings = readings.ToArray(), timestamp = now });
+                    this.lastAnalog = now;
+                }            
             } else {
                 this.LogError("Error: AnalogItems count doesn't match raw data count");
             }
@@ -188,6 +208,11 @@ namespace MonitoringData.Infrastructure.Services {
                 this.LogError("Error: Virtualitems count doesn't match raw data count");
             }
 
+        }
+
+        private bool CheckSave(DateTime now,DateTime last,bool thresholdMet) {
+            return ((now - last).TotalSeconds >= this.recordInterval.TotalSeconds)
+                    || thresholdMet;
         }
 
         private void LogInformation(string msg) {

@@ -15,6 +15,7 @@ namespace MonitoringData.Infrastructure.Model {
     }
 
     public class AnalogChannel : MonitorItem {
+        public float recordThreshold { get; set; }
         public int factor { get; set; }
         public int reg { get; set; }
         public int reglen { get; set; }
@@ -24,6 +25,7 @@ namespace MonitoringData.Infrastructure.Model {
         public float l2setpoint { get; set; }
         public ActionType l3action { get; set; }
         public float l3setpoint { get; set; }
+
     }
 
     public class DiscreteChannel : MonitorItem {

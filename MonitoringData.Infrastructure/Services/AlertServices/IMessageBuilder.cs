@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MonitoringData.Infrastructure.Services.AlertServices {
     public interface IMessageBuilder {
-        void StartMessage();
+        void StartMessage(string device);
         void AppendAlert(string channelName, string state, string value);
         void AppendStatus(string channelName,string state ,string value);
         void AppendChanged(string channelName,string state, string value);
@@ -16,7 +16,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
     public class MessageBuilder : IMessageBuilder {
         private StringBuilder _bodyBuilder,_alertBuilder, _statusBuilder,_changeStatusBuilder;
         private bool displayChanged = false;
-        public void StartMessage() {
+        public void StartMessage(string device) {
             this._alertBuilder = new StringBuilder();
             this._statusBuilder = new StringBuilder();
             this._changeStatusBuilder = new StringBuilder();
@@ -52,7 +52,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this._bodyBuilder.AppendLine("</head>");
             this._bodyBuilder.AppendLine("<body>");
 
-            this._alertBuilder.AppendLine("<h2>Facility Alerts</h2>");
+            this._alertBuilder.AppendLine($"<h2>{device} Alerts</h2>");
             this._alertBuilder.AppendLine("<table id=\"t01\" style=\"width:50%\">");
             this._alertBuilder.AppendLine("<tr>");
             this._alertBuilder.AppendLine("<th>Item</th>");
@@ -69,7 +69,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this._changeStatusBuilder.AppendLine("</tr>");
 
             this._statusBuilder.AppendLine();
-            this._statusBuilder.AppendLine("<h2>----Facility Status----</h2>");
+            this._statusBuilder.AppendLine($"<h2>----{device} Status----</h2>");
             this._statusBuilder.AppendLine("<table id=\"t01\" style=\"width:50%\">");
             this._statusBuilder.AppendLine("<tr>");
             this._statusBuilder.AppendLine("<th>Item</th>");

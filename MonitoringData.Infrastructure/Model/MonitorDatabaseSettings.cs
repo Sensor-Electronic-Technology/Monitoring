@@ -5,6 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MonitoringData.Infrastructure.Model {
+    public enum ServiceType {
+        GenericModbus,
+        MonitorBox,
+        API,
+        BacNet
+    }
     public class MonitorDatabaseSettings {
 
         public static string FileName = "dbSettings.json";
@@ -29,5 +35,10 @@ namespace MonitoringData.Infrastructure.Model {
         public string OutputReadingCollection { get; set; } = null!;
 
         public string DeviceReadingCollection { get; set; } = null!;
+    }
+
+    public class ServiceOptions {
+        public static string SectionName = "ServiceOptions";
+        public ServiceType ServiceType { get; set; }
     }
 }
