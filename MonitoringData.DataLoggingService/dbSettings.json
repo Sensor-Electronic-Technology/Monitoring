@@ -1,9 +1,9 @@
 {
   "MonitorDatabaseSettings": {
     "ConnectionString": "mongodb://172.20.3.41",
-    "DatabaseName": "nh3_data",
-    "EmailSubject": "NH3 Scales",
-    "HubName": "nhstreaming",
+    "DatabaseName": "gasbay_data",
+    "EmailSubject": "GasBay",
+    "HubName": "gbstreaming",
     "AlertItemCollection": "alert_items",
     "ActionItemCollection": "action_items",
     "AnalogItemCollection": "analog_items",
@@ -20,6 +20,6 @@
     "MonitorDeviceCollection": "device_items"
   },
   "ServiceOptions": {
-    "ServiceType": "GenericModbus"
+    "ServiceType": "MonitorBox"
   }
 }

@@ -64,7 +64,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //}
             //Console.ReadKey();
 
-            //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.csv");
+            //await WriteOutAlertsFile("gasbay", new DateTime(2022, 1, 10, 0, 0, 0),DateTime.Now, @"C:\MonitorFiles\gasbay_alerts.csv");
             //Stopwatch watch = new Stopwatch();
             //watch.Start();
             //await WriteOutAnalogFile("epi2", new DateTime(2022, 4, 26, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-26.csv");
@@ -92,18 +92,20 @@ namespace MonitoringSystem.ConsoleTesting {
             //var next = cursor.Current.First();
             //Console.WriteLine(next.ToString());
 
-            using var context = new FacilityContext();
-            var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");
-            if (gasbay is not null) {
-                ModbusService modservice = new ModbusService();
-                var netConfig = gasbay.NetworkConfiguration;
-                var modbusConfig = netConfig.ModbusConfig;
+            await UpdateChannels("gasbay");
 
-                await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
-                //modservice.WriteCoil()
-            } else {
-                Console.WriteLine("Could not find device, check name");
-            }
+            //using var context = new FacilityContext();
+            //var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");
+            //if (gasbay is not null) {
+            //    ModbusService modservice = new ModbusService();
+            //    var netConfig = gasbay.NetworkConfiguration;
+            //    var modbusConfig = netConfig.ModbusConfig;
+
+            //    await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
+            //    //modservice.WriteCoil()
+            //} else {
+            //    Console.WriteLine("Could not find device, check name");
+            //}
             //await AlertItemTypeUpdate("gasbay");
         }
 
@@ -138,10 +140,42 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Check File");
         }
 
+        static async Task WriteOutAlertsFile(string deviceName, DateTime start, DateTime stop, string fileName) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase(deviceName + "_data");
+
+            var alertItems = database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToList();
+            var alertReadings = database.GetCollection<AlertReadings>("alert_readings");
+            Console.WriteLine("Starting query");
+            var aReadings = await (await alertReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+            var headers = alertItems.Select(e => e.displayName).ToList();
+            StringBuilder hbuilder = new StringBuilder();
+            hbuilder.Append("timestamp,");
+            headers.ForEach((id) => {
+                hbuilder.Append($"{id},");
+            });
+            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
+            List<string> lines = new List<string>();
+            lines.Add(hbuilder.ToString());
+            foreach (var readings in aReadings) {
+                StringBuilder builder = new StringBuilder();
+                builder.Append(readings.timestamp.ToString() + ",");
+                foreach (var reading in readings.readings) {
+                    builder.Append($"{reading.reading},");
+                }
+                lines.Add(builder.ToString());
+            }
+            Console.WriteLine("Writing Out Data");
+            File.WriteAllLines(fileName, lines);
+            Console.WriteLine("Check File");
+        }
+
         public static async Task UpdateChannels(string deviceName) {
             using var context = new FacilityContext();
-            var client = new MongoClient("mongodb://172.20.3.30");
-            var database = client.GetDatabase(deviceName+"_data_temp");
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase(deviceName+"_data");
+            var deviceItems = database.GetCollection<MonitorDevice>("device_items");
             var analogItems = database.GetCollection<AnalogChannel>("analog_items");
             var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items");
             var virtualItems = database.GetCollection<VirtualChannel>("virtual_items");
@@ -149,6 +183,7 @@ namespace MonitoringSystem.ConsoleTesting {
             var analogChannels = await context.Channels.OfType<AnalogInput>()
                 .AsNoTracking()
                 .Include(e => e.ModbusDevice)
+                .Include(e=>e.Sensor)
                 .Where(e => e.ModbusDevice.Identifier == deviceName)
                 .ToListAsync();
 
@@ -164,11 +199,22 @@ namespace MonitoringSystem.ConsoleTesting {
                 .Where(e => e.ModbusDevice.Identifier == deviceName)
                 .ToListAsync();
 
+            var latest = deviceItems.AsQueryable().Where(_ => true).Max(e => (DateTime?)e.Created);
+            if (latest is not null) {
+                var update = Builders<MonitorDevice>.Update.Set(e => e.recordInterval, 60);
+                await deviceItems.UpdateOneAsync<MonitorDevice>(e => e.Created == latest, update);
+            }
+
             foreach (var channel in analogChannels) {
+                double threshold = 10000.00;
+                if (channel.Sensor != null) {
+                    threshold = channel.Sensor.RecordThreshold;
+                }
                 var update = Builders<AnalogChannel>.Update
                     .Set(e => e.factor, 10)
-                    .Set(e=>e.display,channel.Connected)
-                    .Set(e=>e.identifier,channel.DisplayName);
+                    .Set(e => e.display, channel.Connected)
+                    .Set(e => e.identifier, channel.DisplayName)
+                    .Set(e => e.recordThreshold, threshold);
                 await analogItems.UpdateOneAsync(e=>e._id==channel.Id,update);
             }
 

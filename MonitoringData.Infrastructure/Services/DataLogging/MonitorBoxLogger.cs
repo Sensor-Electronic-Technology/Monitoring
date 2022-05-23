@@ -24,7 +24,7 @@ namespace MonitoringData.Infrastructure.Services {
         private bool loggingEnabled = false;
         private IList<AlertRecord> _alerts;
 
-        private DateTime lastAnalog, lastDiscrete, lastVirtual;
+        private DateTime lastRecord;
         private TimeSpan recordInterval;
         private bool firstRecord;
 
@@ -45,7 +45,10 @@ namespace MonitoringData.Infrastructure.Services {
 
         public MonitorBoxLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
             this._dataService = new MonitorDataService(connName, databaseName, collectionNames);
-            this._alertService = new AlertService(connName, databaseName, collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
+            this._alertService = new AlertService(connName, 
+                databaseName,
+                collectionNames[typeof(ActionItem)],
+                collectionNames[typeof(MonitorAlert)]);
             this.loggingEnabled = false;
             this._modbusService = new ModbusService();
             this.firstRecord = true;
@@ -71,18 +74,18 @@ namespace MonitoringData.Infrastructure.Services {
                     this.LogError("Error: HoldingRegister count is < DeviceStart Address");
                 }
                 await this.ProcessAlertReadings(alertsRaw, now);
-                await this.ProcessAnalogReadings(analogRaw, now);
-                await this.ProcessDiscreteReadings(discreteRaw, now);
-                await this.ProcessVirtualReadings(virtualRaw, now);
+                var aret=await this.ProcessAnalogReadings(analogRaw, now);
+                var dret=await this.ProcessDiscreteReadings(discreteRaw, now);
+                var vret=await this.ProcessVirtualReadings(virtualRaw, now);
                 MonitorData monitorData = new MonitorData();
                 monitorData.TimeStamp = now;
 
-                monitorData.analogData=this._alerts
-                    .Where(e => e.Enabled && e.ItemType==AlertItemType.Analog)
-                    .Select(e => new ItemStatus() { 
-                        Item = e.DisplayName, 
-                        State = e.CurrentState.ToString(), 
-                        Value = e.ChannelReading.ToString() 
+                monitorData.analogData = this._alerts
+                    .Where(e => e.Enabled && e.ItemType == AlertItemType.Analog)
+                    .Select(e => new ItemStatus() {
+                        Item = e.DisplayName,
+                        State = e.CurrentState.ToString(),
+                        Value = e.ChannelReading.ToString()
                     }).ToList();
 
                 monitorData.discreteData = this._alerts
@@ -100,6 +103,19 @@ namespace MonitoringData.Infrastructure.Services {
                     State = e.CurrentState.ToString(),
                     Value = e.ChannelReading.ToString()
                 }).ToList();
+
+                if(CheckSave(now,this.lastRecord,(aret.Item2 || dret.Item2 || vret.Item2))) {
+                    this.lastRecord = now;
+                    if (aret.Item1 != null) {
+                        await this._dataService.InsertOneAsync(aret.Item1);
+                    }
+                    if (dret.Item1 != null) {
+                        await this._dataService.InsertOneAsync(dret.Item1);
+                    }
+                    if (vret.Item1 != null) {
+                        await this._dataService.InsertOneAsync(vret.Item1);
+                    }
+                }
                 await this._alertService.ProcessAlerts(this._alerts,now);
                 await this._monitorHub.Clients.All.ShowCurrent(monitorData);
             } else {
@@ -130,7 +146,7 @@ namespace MonitoringData.Infrastructure.Services {
             return Task.CompletedTask;
         }
 
-        private async Task ProcessAnalogReadings(ushort[] raw, DateTime now) {
+        private Task<Tuple<AnalogReadings,bool>> ProcessAnalogReadings(ushort[] raw, DateTime now) {
             if (this._dataService.AnalogItems.Count == raw.Length) {
                 List<AnalogReading> readings = new List<AnalogReading>();
                 bool record = false;
@@ -150,21 +166,16 @@ namespace MonitoringData.Infrastructure.Services {
                     } else {
                         this.LogError("Analog ItemAlert not found");
                     }
-                }
-                if (this.firstRecord) {
-                    await this._dataService.InsertOneAsync(new AnalogReadings() { readings = readings.ToArray(), timestamp = now });
-                    this.lastAnalog = now;
-                    this.firstRecord = false;
-                }else if (this.CheckSave(now,this.lastAnalog,record)) {
-                    await this._dataService.InsertOneAsync(new AnalogReadings() { readings = readings.ToArray(), timestamp = now });
-                    this.lastAnalog = now;
-                }            
+                }                
+                return Task.FromResult<Tuple<AnalogReadings, bool>>(new(new AnalogReadings() { readings = readings.ToArray(), timestamp = now }, record));       
             } else {
                 this.LogError("Error: AnalogItems count doesn't match raw data count");
+                return Task.FromResult<Tuple<AnalogReadings, bool>>(new(null,false));
             }
         }
 
-        private async Task ProcessDiscreteReadings(bool[] raw, DateTime now) {
+        private Task<Tuple<DiscreteReadings,bool>> ProcessDiscreteReadings(bool[] raw, DateTime now) {
+            bool record = false;
             if (this._dataService.DiscreteItems.Count == raw.Length) {
                 List<DiscreteReading> readings = new List<DiscreteReading>();
                 for (int i = 0; i < raw.Length; i++) {
@@ -172,6 +183,9 @@ namespace MonitoringData.Infrastructure.Services {
                         itemid = this._dataService.DiscreteItems[i]._id,
                         value = raw[i]
                     };
+                    if (reading.value) {
+                        record = true;
+                    }              
                     readings.Add(reading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid);
                     if (alertRecord != null) {
@@ -180,20 +194,25 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Discrete ItemAlert not found");
                     }
                 }
-                await this._dataService.InsertOneAsync(new DiscreteReadings() { readings = readings.ToArray(), timestamp = now });
+                return Task.FromResult<Tuple<DiscreteReadings, bool>>(new(new DiscreteReadings() { readings = readings.ToArray(), timestamp = now }, record));
             } else {
                 this.LogError("Error: DiscreteItems count doesn't match raw data count");
+                return Task.FromResult<Tuple<DiscreteReadings, bool>>(new(null, false));
             }
         }
 
-        private async Task ProcessVirtualReadings(bool[] raw, DateTime now) {
+        private Task<Tuple<VirtualReadings,bool>> ProcessVirtualReadings(bool[] raw, DateTime now) {         
             if (this._dataService.VirtualItems.Count == raw.Length) {
+                bool record = false;
                 List<VirtualReading> readings = new List<VirtualReading>();
                 for (int i = 0; i < raw.Length; i++) {
                     var reading = new VirtualReading() {
                         itemid = this._dataService.VirtualItems[i]._id,
                         value = raw[i]
                     };
+                    if(reading.value) {
+                        record = true;
+                    }
                     var alert = this._dataService.MonitorAlerts.FirstOrDefault(e => e._id == reading.itemid);
                     readings.Add(reading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid);
@@ -203,16 +222,21 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Virual ItemAlert not found");
                     }
                 }
-                await this._dataService.InsertOneAsync(new VirtualReadings() { readings = readings.ToArray(), timestamp = now });
+                return Task.FromResult<Tuple<VirtualReadings, bool>>(new(new VirtualReadings() { readings = readings.ToArray(), timestamp = now }, record));
             } else {
                 this.LogError("Error: Virtualitems count doesn't match raw data count");
+                return Task.FromResult<Tuple<VirtualReadings, bool>>(new(null, false));
             }
-
         }
 
         private bool CheckSave(DateTime now,DateTime last,bool thresholdMet) {
-            return ((now - last).TotalSeconds >= this.recordInterval.TotalSeconds)
-                    || thresholdMet;
+            if (this.firstRecord) {
+                this.firstRecord = false;
+                return true;
+            } else {
+                return ((now - last).TotalSeconds >= this.recordInterval.TotalSeconds)
+                        || thresholdMet;
+            }
         }
 
         private void LogInformation(string msg) {

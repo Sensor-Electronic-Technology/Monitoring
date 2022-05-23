@@ -24,8 +24,8 @@ namespace MonitoringData.DataLoggingService {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             var client = new MongoClient(this._settings.ConnectionString);
             var database = client.GetDatabase(this._settings.DatabaseName);
-            using(var cursor=await database.WatchAsync()) {
-                foreach(var change in cursor.ToEnumerable()) {
+            using (var cursor = await database.WatchAsync()) {
+                foreach (var change in cursor.ToEnumerable()) {
                     Console.WriteLine(change.ToString());
                     await this._mediator.Publish<ReloadConsumer>(new ReloadConsumer());
                 }

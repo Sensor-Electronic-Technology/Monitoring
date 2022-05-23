@@ -6,6 +6,7 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public string Name { get; set; }
         public string DisplayName { get; set; }
         public string Description { get; set; }
+        public double RecordThreshold { get; set; }
         public double Slope { get; set; }
         public double Offset { get; set; }
         public double Factor { get; set; }
