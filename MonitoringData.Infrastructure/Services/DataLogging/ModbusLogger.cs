@@ -2,11 +2,10 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using MonitoringData.Infrastructure.Events;
-using MonitoringData.Infrastructure.Model;
+using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringSystem.Shared.SignalR;
-using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Utilities;
 
 namespace MonitoringData.Infrastructure.Services.DataLogging {

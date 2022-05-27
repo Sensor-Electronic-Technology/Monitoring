@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MonitoringData.Infrastructure.Model;
 using MonitoringSystem.Shared.Data;
 
 namespace MonitoringData.Infrastructure.Services.AlertServices {

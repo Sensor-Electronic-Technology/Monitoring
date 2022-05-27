@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Bson;
-using MonitoringSystem.Shared.Data;
 
-namespace MonitoringData.Infrastructure.Model {
+namespace MonitoringSystem.Shared.Data {
     public class MonitorDevice {
         public ObjectId _id { get; set; }
         public DateTime Created { get; set; }

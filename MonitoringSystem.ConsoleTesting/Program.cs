@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 using MonitoringConfig.Infrastructure.Data.Model;
-using MonitoringData.Infrastructure.Model;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services;
 using System;

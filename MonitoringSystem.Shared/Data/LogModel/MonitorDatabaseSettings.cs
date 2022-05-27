@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MonitoringData.Infrastructure.Model {
+namespace MonitoringSystem.Shared.Data {
     public enum ServiceType {
         GenericModbus,
         MonitorBox,

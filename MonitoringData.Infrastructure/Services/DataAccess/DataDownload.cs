@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Driver;
-using MonitoringData.Infrastructure.Model;
+using MonitoringSystem.Shared.Data;
 
 namespace MonitoringData.Infrastructure.Services.DataAccess {
     public class DataDownload {

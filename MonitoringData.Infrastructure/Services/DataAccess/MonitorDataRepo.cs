@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using MonitoringData.Infrastructure.Model;
 using MonitoringSystem.Shared.Data;
 
 namespace MonitoringData.Infrastructure.Services.DataAccess {

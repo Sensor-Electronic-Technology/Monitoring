@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using MonitoringData.Infrastructure.Model;
+using MonitoringSystem.Shared.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;

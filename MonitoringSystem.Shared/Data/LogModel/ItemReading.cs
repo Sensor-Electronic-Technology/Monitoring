@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson;
-using MonitoringSystem.Shared.Data;
 
-namespace MonitoringData.Infrastructure.Model {
+
+namespace MonitoringSystem.Shared.Data {
     public class ItemReading {
         public int itemid { get; set; }
     }

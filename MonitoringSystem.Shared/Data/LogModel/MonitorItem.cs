@@ -1,12 +1,11 @@
 ﻿using MongoDB.Bson;
-using MonitoringSystem.Shared.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MonitoringData.Infrastructure.Model {
+namespace MonitoringSystem.Shared.Data {
     public class MonitorItem {
         public int _id { get; set; }
         public string identifier { get; set; }

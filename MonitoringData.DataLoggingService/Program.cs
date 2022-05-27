@@ -1,5 +1,5 @@
 using MonitoringData.DataLoggingService;
-using MonitoringData.Infrastructure.Model;
+using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MassTransit;
