@@ -77,10 +77,6 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
                     a.HasKey("Id");
                 });
 
-            //builder.Entity<MonitoringBox>()
-            //    .Property(e => e.DataConfigIteration)
-            //    .HasDefaultValue(0);
-
             builder.Entity<FacilityZone>()
                 .OwnsOne(p => p.ZoneSize);
 

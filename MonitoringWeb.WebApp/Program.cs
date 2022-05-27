@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using Blazor.DownloadFileFast;
-
+using MonitoringConfig.Infrastructure.Data.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +13,7 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddDevExpressBlazor();
 builder.Services.AddBlazorDownloadFile();
 builder.Services.AddSingleton<DataDownload>();
+builder.Services.AddDbContextFactory<FacilityContext>();
 
 builder.Services.Configure<DevExpress.Blazor.Configuration.GlobalOptions>(options => {
     options.BootstrapVersion = DevExpress.Blazor.BootstrapVersion.v5;

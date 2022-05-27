@@ -1,0 +1,64 @@
+﻿@page "/config"
+@using Microsoft.EntityFrameworkCore
+@using MonitoringConfig.Infrastructure.Data.Model
+@inject IDbContextFactory<FacilityContext> facilityContextFactory
+@implements IDisposable
+
+<h3>Config</h3>
+
+<DxGrid @ref="Grid" Data="Data" KeyFieldName="Id">
+    <Columns>
+        <DxGridCommandColumn />
+        <DxGridDataColumn FieldName="Identifier" />
+        <DxGridDataColumn FieldName="DisplayName" />
+        <DxGridDataColumn FieldName="ReadInterval" />
+        <DxGridDataColumn FieldName="SaveInterval" />
+    </Columns>
+    <DetailRowTemplate>
+        @{
+            object GridData;
+            var device=(ModbusDevice)context.DataItem;
+            GridData = device;
+            <DxGrid Data="@GridData">
+                <Columns>
+                    <DxGridDataColumn FieldName="NetworkConfiguration.IPAddress" />
+                    <DxGridDataColumn FieldName="NetworkConfiguration.DNS" />
+                    <DxGridDataColumn FieldName="NetworkConfiguration.MAC" />
+                </Columns>
+            </DxGrid>
+        }
+        <Grid_MasterDetail_NestedGrid_DetailContent >
+
+        </Grid_MasterDetail_NestedGrid_DetailContent>
+    </DetailRowTemplate>
+</DxGrid>
+
+@code {
+    IGrid Grid { get; set; }
+    IEnumerable<object>? Data { get; set; }
+    FacilityContext? facilityContext { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        this.facilityContext=await this.facilityContextFactory.CreateDbContextAsync();
+        this.Data = await this.facilityContext.Devices.OfType<ModbusDevice>().ToListAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender) {
+        if(firstRender) {
+            Grid.ExpandDetailRow(0);
+        }
+    }
+
+    //async Task OnEditModelSaving(GridEditModelSavingEventArgs e) {
+
+    //}
+
+    //async Task OnDataItemDeleting(GridDataItemDeletingEventArgs e) {
+
+    //}
+
+    public void Dispose() {
+        this.facilityContext?.Dispose();
+    }
+
+}

@@ -13,11 +13,18 @@
 	<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.4" />
 	<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
 	<PackageReference Include="BlazorDownloadFileFast" Version="0.2.0" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="wwwroot\images\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\MonitoringConfig.Infrastructure\MonitoringConfig.Infrastructure.csproj" />
     <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
