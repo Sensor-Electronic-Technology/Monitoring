@@ -64,7 +64,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //}
             //Console.ReadKey();
 
-            //await WriteOutAlertsFile("gasbay", new DateTime(2022, 1, 10, 0, 0, 0),DateTime.Now, @"C:\MonitorFiles\gasbay_alerts.csv");
+            //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.csv");
             //Stopwatch watch = new Stopwatch();
             //watch.Start();
             //await WriteOutAnalogFile("epi2", new DateTime(2022, 4, 26, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-26.csv");

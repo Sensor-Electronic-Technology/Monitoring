@@ -1,0 +1,24 @@
+﻿<h3>TestPlots</h3>
+
+<DxDateEdit @bind-Date="@StartDate"
+            CssClass="cw-320" />
+<DxTimeEdit @bind-Time="@StartTime"
+            CssClass="cw-320" />
+
+<DxDateEdit @bind-Date="@StopDate"
+            CssClass="cw-320" />
+<DxTimeEdit @bind-Time="@StopTime"
+            CssClass="cw-320" />
+
+
+@code {
+    DateTime StartDate { get; set; } = DateTime.Now;
+    TimeSpan StartTime { get; set; } = DateTime.Now.TimeOfDay;
+
+    DateTime StopDate { get; set; } = DateTime.Now;
+    TimeSpan StopTime { get; set; } = DateTime.Now.TimeOfDay;
+    
+    protected override void OnInitialized() {
+        
+    }
+}

@@ -41,14 +41,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
                     }
                 }
             }
-            //foreach (var readings in data) {
-            //    StringBuilder builder = new StringBuilder();
-            //    builder.Append(readings.timestamp.ToString() + ",");
-            //    foreach (var reading in readings.readings) {
-            //        builder.Append($"{reading.value},");
-            //    }
-            //    hbuilder.AppendLine(builder.ToString());
-            //}
             return Encoding.ASCII.GetBytes(hbuilder.ToString());
         }
     }
