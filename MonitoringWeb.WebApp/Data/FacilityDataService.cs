@@ -10,8 +10,9 @@ namespace MonitoringWeb.WebApp.Data {
         public string Name { get; set; }
     }
     public class AnalogReadingDto {
+        public string Name { get; set; }
         public DateTime TimeStamp { get; set; }
-        public float Value { get; set; }
+        public double Value { get; set; }
     }
     public class FacilityDataService
     {
@@ -24,24 +25,27 @@ namespace MonitoringWeb.WebApp.Data {
             this._analogItems = database.GetCollection<AnalogChannel>("analog_items");
         }
 
-        public async Task<IDictionary<string,IEnumerable<AnalogReadingDto>>> GetData(DateTime start, DateTime stop)
-        {
-            var analogItems = (await (await this._analogItems.FindAsync(e => e.display)).ToListAsync());
-            var analogDtos = analogItems.Select(e=>new AnalogItemDto(){Id=e._id,Name=e.identifier}).ToList();
+        public async Task<IEnumerable<AnalogReadingDto>> GetData(DateTime start, DateTime stop) {
+            List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
+            var analogItems = await this._analogItems.Find(e => e.display)
+                .ToListAsync();
             using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
             while (await cursor.MoveNextAsync()){
                 var batch = cursor.Current;
-                List<AnalogReadingDto> analogReadings=new List<AnalogReadingDto>();
-                
-                foreach (var readings in batch)
-                {
-                    
-                    foreach (var reading in readings.readings){
-                        
+                foreach (var readings in batch){
+                    foreach (var aItem in analogItems) {
+                        var reading =readings.readings.FirstOrDefault(e=>e.itemid==aItem._id);
+                        if (reading != null) {
+                            var aReading=new AnalogReadingDto(){Name=aItem.identifier,
+                                TimeStamp = readings.timestamp,
+                                Value=reading.value
+                            }; 
+                            analogReadings.Add(aReading);
+                        }
                     }
                 }
             }
+            return analogReadings;
         }
-
     }
 }

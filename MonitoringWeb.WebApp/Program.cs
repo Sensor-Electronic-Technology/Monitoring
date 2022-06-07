@@ -14,6 +14,7 @@ builder.Services.AddDevExpressBlazor();
 builder.Services.AddBlazorDownloadFile();
 builder.Services.AddSingleton<DataDownload>();
 builder.Services.AddDbContextFactory<FacilityContext>();
+builder.Services.AddSingleton<FacilityDataService>();
 
 builder.Services.Configure<DevExpress.Blazor.Configuration.GlobalOptions>(options => {
     options.BootstrapVersion = DevExpress.Blazor.BootstrapVersion.v5;

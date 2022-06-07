@@ -10,6 +10,11 @@ namespace MonitoringSystem.Shared.Data {
         public double value { get; set; }
     }
 
+    public class AnalogReadingV2 : ItemReading {
+        public double value { get; set; }
+        public DateTime timestamp { get; set; }
+    }
+
     public class DiscreteReading : ItemReading {
         public bool value { get; set; }
     }

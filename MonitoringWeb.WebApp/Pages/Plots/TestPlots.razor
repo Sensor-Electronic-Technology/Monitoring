@@ -1,6 +1,12 @@
-﻿<h3>TestPlots</h3>
+﻿@page "/plot"
+@using MonitoringWeb.WebApp.Data
+@using System.Drawing
+@inject FacilityDataService PlotService
 
-<DxDateEdit @bind-Date="@StartDate"
+<h3 align="center">Epi2 TestPlots</h3>
+<h3 align="center">Date Range: 5/25-Today</h3>
+
+@*<DxDateEdit @bind-Date="@StartDate"
             CssClass="cw-320" />
 <DxTimeEdit @bind-Time="@StartTime"
             CssClass="cw-320" />
@@ -8,17 +14,79 @@
 <DxDateEdit @bind-Date="@StopDate"
             CssClass="cw-320" />
 <DxTimeEdit @bind-Time="@StopTime"
-            CssClass="cw-320" />
-
+            CssClass="cw-320" />*@
+<DxChart Data="@PlotData"
+         Width="100%"
+         Height="50%">
+    <DxChartLegend AllowToggleSeries="true"
+                   Orientation="Orientation.Vertical"
+                   HorizontalAlignment="HorizontalAlignment.Right">
+        <DxChartTitle Text="Detectors"> </DxChartTitle>
+    </DxChartLegend>
+    <DxChartCommonSeries NameField="@((AnalogReadingDto r)=>r.Name)"
+                         ArgumentField="@((AnalogReadingDto r)=>r.TimeStamp)"
+                         ValueField="@((AnalogReadingDto r)=>(int)r.Value)">
+        <SeriesTemplate Context="settings">
+            <DxChartLineSeries Settings="@settings">
+                <DxChartSeriesLabel Visible="false" />
+                <DxChartSeriesPoint Visible="true"/>
+                <DxChartAggregationSettings Enabled="true"
+                                            Method="ChartAggregationMethod.Max"/>
+                
+            </DxChartLineSeries>
+        </SeriesTemplate>
+    </DxChartCommonSeries>
+    <DxChartArgumentAxis>
+        <DxChartAxisRange StartValue="new DateTime(2022, 5, 20)"
+                          EndValue="new DateTime(2022,6, 1)" />
+    </DxChartArgumentAxis>
+    <DxChartValueAxis>
+        <DxChartAxisRange StartValue="0" EndValue="1000"></DxChartAxisRange>
+        <DxChartAxisTick></DxChartAxisTick>
+        <DxChartAxisTitle Text="PPM" />
+        <DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
+            <DxChartConstantLineLabel Text="Soft-Warn"
+                                      VerticalAlignment="VerticalAlignment.Center"
+                                      Position="RelativePosition.Inside" />
+        </DxChartConstantLine>
+        <DxChartConstantLine Value="500" Width="3" Color="Color.Yellow">
+            <DxChartConstantLineLabel Text="Warning"
+                                      VerticalAlignment="VerticalAlignment.Center"
+                                      Position="RelativePosition.Inside" />
+        </DxChartConstantLine>
+        <DxChartConstantLine Value="1000" Width="3" Color="Color.Red">
+            <DxChartConstantLineLabel Text="Alarm"
+                                      VerticalAlignment="VerticalAlignment.Center"
+                                      Position="RelativePosition.Inside" />
+        </DxChartConstantLine>
+    </DxChartValueAxis>
+    <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
+    <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
+                              ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom" />
+    <DxChartTooltip Enabled="true" Position="RelativePosition.Outside" >
+        <div style="background-color: grey;">
+            <div class="font-weight-bold">
+                @(((DateTime)context.Point.Argument).ToString())
+            </div>
+            <div>
+                Value$=@((context.Point.Value))
+            </div>
+        </div>
+    </DxChartTooltip>
+</DxChart>
 
 @code {
+    IEnumerable<AnalogReadingDto>? PlotData { get; set; }
+    
     DateTime StartDate { get; set; } = DateTime.Now;
     TimeSpan StartTime { get; set; } = DateTime.Now.TimeOfDay;
 
     DateTime StopDate { get; set; } = DateTime.Now;
     TimeSpan StopTime { get; set; } = DateTime.Now.TimeOfDay;
-    
-    protected override void OnInitialized() {
-        
+
+    protected override async Task OnInitializedAsync() {
+        this.PlotData = await this.PlotService.GetData(
+            new DateTime(2022, 5, 24),
+            DateTime.Now);
     }
 }
