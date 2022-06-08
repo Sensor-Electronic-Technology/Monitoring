@@ -172,7 +172,10 @@ namespace MonitoringData.Infrastructure.Services {
                     }
                 }                
                 return Task.FromResult<Tuple<AnalogReadings, bool>>(new(
-                    new AnalogReadings() { readings = readings.ToArray(), timestamp = now }, 
+                    new AnalogReadings() { 
+                        readings = readings.ToArray(), 
+                        timestamp = now 
+                    }, 
                     record));       
             } else {
                 this.LogError("Error: AnalogItems count doesn't match raw data count");
@@ -230,7 +233,11 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Virual ItemAlert not found");
                     }
                 }
-                return Task.FromResult<Tuple<VirtualReadings, bool>>(new(new VirtualReadings() { readings = readings.ToArray(), timestamp = now }, record));
+                return Task.FromResult<Tuple<VirtualReadings, bool>>(new(
+                    new VirtualReadings() { 
+                    readings = readings.ToArray(), 
+                    timestamp = now }, 
+                    record));
             } else {
                 this.LogError("Error: Virtualitems count doesn't match raw data count");
                 return Task.FromResult<Tuple<VirtualReadings, bool>>(new(null, false));

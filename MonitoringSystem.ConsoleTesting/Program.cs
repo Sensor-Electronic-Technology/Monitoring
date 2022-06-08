@@ -31,82 +31,11 @@ namespace MonitoringSystem.ConsoleTesting {
     public class Program {
         static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
-            //await CreateMongoDevice("gasbay");
-            //await CreateReadingsDatabaseNew("nh3");
-            //Console.WriteLine("Epi updated");
-            //await CreateMongoDevice("epi2");
-            //Console.WriteLine("Epi2 Updated");
-            //Console.WriteLine("Check Databases");
-            //ActionItemUpdate();
-            //Console.WriteLine("Press any key to continue");
+
+            await WriteOutAnalogFile("gasbay", new DateTime(2022, 5, 25, 0, 0, 0), new DateTime(2022, 6, 7, 0, 0, 0), @"C:\MonitorFiles\gasbay_analog2.csv");
+            //Stopwatch watch = new Stopwatch();         
+            //Console.WriteLine("Done");
             //Console.ReadKey();
-            //UpdateActionEmailSettings();
-            //await ModifyAnalog();
-            //await WriteOutAlertFile();
-            //await WriteOutAnalogFile();
-            //await CreateConfigDatabase("gasbay");
-            //await CreateConfigDatabase("epi2");
-            //await CreateReadingsDatabase("gasbay");
-            //await CreateReadingsDatabase("epi2");
-            //await AlertUpdate("epi1");
-            //await AlertUpdate("epi2");
-
-            //await CreateConfigDatabase("epi2");
-            //await CreateReadingsDatabase("epi2");
-            //await RunDataLogger();
-            //await TestAlerts();
-            //await ModifyAnalog();
-            //await UpdateChannels("epi1");
-            //await UpdateChannels("epi2");
-
-
-            //var client = new MongoClient("mongodb://172.20.3.30");
-            //var database = client.GetDatabase("epi2_data");
-            //var collection = database.GetCollection<AnalogChannel>("analog_items");
-            //var items = (await collection.FindAsync(_ => true)).ToList();
-            //foreach(var item in items) {
-            //    Console.WriteLine($"A{item.identifier}: {item.factor}");
-            //}
-            //Console.ReadKey();
-
-            //await WriteOutAnalogFile("epi1", new DateTime(2022, 4, 10, 0, 0, 0), new DateTime(2022, 4, 11, 0, 0, 0), @"C:\MonitorFiles\epi1_analogReadings_4-8_4-9.csv");
-            //Stopwatch watch = new Stopwatch();
-            //watch.Start();
-            //await WriteOutAnalogFile("epi2", new DateTime(2022, 4, 26, 3, 0, 0), DateTime.Now, @"C:\MonitorFiles\epi2_analogReadings_4-26.csv");
-            //watch.Stop();
-            //Console.WriteLine($"Completed: Elapsed: {watch.ElapsedMilliseconds}");
-            //Console.ReadKey();
-
-            //var client = new MongoClient("mongodb://172.20.3.30");
-            //var database = client.GetDatabase("epi1_data_test");
-
-            //await CreateReadingsDatabaseNew("epi1");
-            //await CreateReadingsDatabaseNew("epi2");
-
-            //var client = new MongoClient("mongodb://172.20.3.41");
-            //var database = client.GetDatabase("epi1_data");
-            //var analogReadings = database.GetCollection<AnalogChannel>("analog_items");
-
-            //using (var cursor = analogReadings.Watch()) {
-            //    foreach(var change in cursor.ToEnumerable(s_cts.Token)) {
-            //        Console.WriteLine(change.ToString());
-
-            //    }
-            //}
-            //Console.WriteLine("End of the line");
-            //var next = cursor.Current.First();
-            //Console.WriteLine(next.ToString());
-            
-
-            //await UpdateChannels("gasbay");
-            //await CreateMongoDB("epi1");
-            //await SyncDb("epi1_data", "epi1_data_temp");
-            //await SyncReadings("epi1_data", "epi1_data_temp");
-            await BenchmarkOld();
-            await BenchmarkNew();
-            
-            Console.WriteLine("Done");
-            Console.ReadKey();
             //using var context = new FacilityContext();
             //var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");
             //if (gasbay is not null) {

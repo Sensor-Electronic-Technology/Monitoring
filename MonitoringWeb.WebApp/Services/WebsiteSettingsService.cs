@@ -2,6 +2,6 @@
 
 namespace MonitoringWeb.WebApp.Services {
     public class WebsiteSettingsService {
-        //IMongoCollection<>
+
     }
 }

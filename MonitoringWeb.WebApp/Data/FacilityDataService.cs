@@ -18,9 +18,6 @@ namespace MonitoringWeb.WebApp.Data {
     {
         private IMongoCollection<AnalogReadings> _analogReadings;
         private IMongoCollection<AnalogChannel> _analogItems;
-        public FacilityDataService() {
-
-        }
 
         public async Task<IEnumerable<AnalogReadingDto>> GetData(string deviceData,DateTime start, DateTime stop) {
             var client = new MongoClient("mongodb://172.20.3.41");

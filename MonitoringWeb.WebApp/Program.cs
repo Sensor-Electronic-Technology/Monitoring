@@ -15,6 +15,7 @@ builder.Services.AddBlazorDownloadFile();
 builder.Services.AddSingleton<DataDownload>();
 builder.Services.AddDbContextFactory<FacilityContext>();
 builder.Services.AddSingleton<FacilityDataService>();
+builder.Services.AddSingleton<FacilityAlarmService>();
 
 builder.Services.Configure<DevExpress.Blazor.Configuration.GlobalOptions>(options => {
     options.BootstrapVersion = DevExpress.Blazor.BootstrapVersion.v5;
@@ -30,13 +31,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseRouting();
-
-
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
-
 app.Run();

@@ -1,4 +1,6 @@
 ﻿@page "/plot"
+@using DevExpress.Blazor
+@using DevExpress.Blazor.Configuration
 @using MonitoringWeb.WebApp.Data
 @using System.Drawing
 @inject FacilityDataService PlotService
@@ -73,7 +75,6 @@
                             </DxChartArgumentAxis>
                             <DxChartValueAxis>
                                 <DxChartAxisRange StartValue="0" EndValue="1000"></DxChartAxisRange>
-                                <DxChartAxisTick></DxChartAxisTick>
                                 <DxChartAxisTitle Text="PPM" />
                                 <DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
                                     <DxChartConstantLineLabel Text="Soft-Warn"

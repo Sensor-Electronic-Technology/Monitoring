@@ -1,9 +1,13 @@
 ﻿<div class="sidebar @StateCssClass">
 <DxTreeView AllowSelectNodes="true" CssClass="app-sidebar">
     <Nodes>
-        <DxTreeViewNode NavigateUrl="plot" Text="H2 Plots"></DxTreeViewNode>
-        <DxTreeViewNode NavigateUrl="grid" Text="Live View"></DxTreeViewNode>
-        @*<DxTreeViewNode NavigateUrl="" Text="Configuration"></DxTreeViewNode>*@
+        <DxTreeViewNode NavigateUrl="/" Text="Dashboard" ></DxTreeViewNode>
+        <DxTreeViewNode Text="Data">
+            <Nodes>
+                <DxTreeViewNode NavigateUrl="plot" Text="H2 Plots"></DxTreeViewNode>
+                <DxTreeViewNode NavigateUrl="liveview" Text="Live View"></DxTreeViewNode>
+            </Nodes>
+        </DxTreeViewNode>
     </Nodes>
 </DxTreeView>
 </div>
