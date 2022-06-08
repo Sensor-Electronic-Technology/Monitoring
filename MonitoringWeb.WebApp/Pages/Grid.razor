@@ -48,55 +48,6 @@
 
 </style>
 
-@*        <p role="status">TimeStamp: @this.gasBayData?.TimeStamp.AddHours(-4).ToString()</p>     
-        <div class="row">
-            <br/>
-            <h1>Analog Channels</h1>
-            @if (this.gasBayData == null){
-                <p><em>Loading...</em></p>
-            }
-            else{
-                <DxGrid Data="@this.gasBayData.analogData" title="Analog Channels" CssClass="my-class" 
-                ShowAllRows=true CustomizeElement="Grid_CustomizeElement">
-                    <Columns>
-                        <DxGridDataColumn FieldName="Item"/>
-                        <DxGridDataColumn FieldName="State"/>
-                        <DxGridDataColumn FieldName="Value"/>
-                    </Columns>
-                </DxGrid>
-            }
-        </div>
-        <div class="row">
-            <br />
-            <h1>Discrete Channels</h1>
-            @if (this.gasBayData == null){
-                <p><em>Loading...</em></p>
-            }else{
-                <DxGrid Data="@this.gasBayData.discreteData" title="Discrete Channels" CssClass="my-class" ShowAllRows=true>
-                    <Columns>
-                        <DxGridDataColumn FieldName="Item"/>
-                        <DxGridDataColumn FieldName="State"/>
-                        <DxGridDataColumn FieldName="Value"/>
-                    </Columns>
-                </DxGrid>
-            }
-        </div>
-        <div class="row">
-            <br/>
-            <h1>Virtual Channels</h1>
-            @if (this.gasBayData == null){
-                <p><em>Loading...</em></p>
-            }else{
-                <DxGrid Data="@this.gasBayData.virtualData" title="Virtual Channels" CssClass="my-class" ShowAllRows=true>
-                    <Columns>
-                        <DxGridDataColumn FieldName="Item"/>
-                        <DxGridDataColumn FieldName="State"/>
-                        <DxGridDataColumn FieldName="Value"/>
-                    </Columns>
-                </DxGrid>
-            }
-        </div>*@
-
 <DxTabs style="width:950px">
     <DxTabPage Text="Epi Lab 1">
         <p role="status">TimeStamp: @this.e1Data?.TimeStamp.AddHours(-4).ToString()</p>  

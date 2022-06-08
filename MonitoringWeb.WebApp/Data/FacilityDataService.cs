@@ -19,15 +19,16 @@ namespace MonitoringWeb.WebApp.Data {
         private IMongoCollection<AnalogReadings> _analogReadings;
         private IMongoCollection<AnalogChannel> _analogItems;
         public FacilityDataService() {
-            var client=new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("epi2_data");
-            this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
-            this._analogItems = database.GetCollection<AnalogChannel>("analog_items");
+
         }
 
-        public async Task<IEnumerable<AnalogReadingDto>> GetData(DateTime start, DateTime stop) {
+        public async Task<IEnumerable<AnalogReadingDto>> GetData(string deviceData,DateTime start, DateTime stop) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase(deviceData);
+            this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+            this._analogItems = database.GetCollection<AnalogChannel>("analog_items");
             List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
-            var analogItems = await this._analogItems.Find(e => e.display)
+            var analogItems = await this._analogItems.Find(e => e.display && e.identifier.Contains("H2 PPM"))
                 .ToListAsync();
             using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
             while (await cursor.MoveNextAsync()){
