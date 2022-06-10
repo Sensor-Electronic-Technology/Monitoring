@@ -1,0 +1,37 @@
+﻿@using MonitoringSystem.Shared.Data
+@using MonitoringSystem.Shared.SignalR
+
+    <h1>Analog Channels</h1>
+    @if (this.Data == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <DxGrid Data="@this.Data.analogData" 
+            CssClass="my-class" 
+            ShowAllRows=true 
+            CustomizeElement="Grid_CustomizeElement">
+            <Columns>
+                <DxGridDataColumn FieldName="Item"/>
+                <DxGridDataColumn FieldName="State"/>
+                <DxGridDataColumn FieldName="Value"/>
+            </Columns>
+        </DxGrid>
+    }
+
+@code {
+    [Parameter]
+    public MonitorData? Data { get; set; }
+    [Parameter]
+    public string? Header { get; set; }
+
+    void Grid_CustomizeElement(GridCustomizeElementEventArgs e) {
+        if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Alarm.ToString()) {
+            e.CssClass = "alarm-item";
+        }
+        if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Warning.ToString()) {
+            e.CssClass = "alarm-item";
+        }
+    }
+}
