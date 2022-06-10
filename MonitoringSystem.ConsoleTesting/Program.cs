@@ -148,7 +148,7 @@ namespace MonitoringSystem.ConsoleTesting {
             return update;
         }
         
-                public static async Task CreateMongoDB(string deviceName) {
+       public static async Task CreateMongoDB(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.41");
             var device = context.Devices.OfType<ModbusDevice>()

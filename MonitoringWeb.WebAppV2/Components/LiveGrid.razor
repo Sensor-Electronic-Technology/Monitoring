@@ -1,0 +1,106 @@
+﻿@using MonitoringSystem.Shared.Data
+@using MonitoringSystem.Shared.SignalR
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Runtime.CompilerServices
+@inject ILogger<LiveGrid> logger
+@implements IAsyncDisposable
+
+<p role="status">TimeStamp: @this._monitorData?.TimeStamp.ToLocalTime().ToString()</p>  
+<div class="row">
+    <h1>Analog Channels</h1>
+    @if (this.Data == null)
+    {
+        <p><em>Loading...</em></p>
+    }else {
+        <DxGrid Data="@this.Data.analogData" 
+                CssClass="my-class" 
+                ShowAllRows=true 
+                CustomizeElement="Grid_CustomizeElement">
+            <Columns>
+                <DxGridDataColumn FieldName="Item"/>
+                <DxGridDataColumn FieldName="State"/>
+                <DxGridDataColumn FieldName="Value"/>
+            </Columns>
+        </DxGrid>
+    }
+</div>
+<div class="row">
+    <br />
+    <h1>Discrete Channels</h1>        
+    @if (this._monitorData == null)
+    {
+        <p><em>Loading...</em></p>
+    }else{
+        <DxGrid Data="@this._monitorData.discreteData" CssClass="my-class" ShowAllRows=true>
+            <Columns>
+                <DxGridDataColumn FieldName="Item"/>
+                <DxGridDataColumn FieldName="State"/>
+                <DxGridDataColumn FieldName="Value"/>
+            </Columns>
+        </DxGrid>
+    }
+</div>
+<div class="row">
+    <br />
+    <h1>Virtual Channels</h1>
+    @if (this._monitorData == null){
+        <p><em>Loading...</em></p>
+    }else{
+        <DxGrid Data="@this._monitorData.virtualData" 
+                title="Virtual Channels" 
+                CssClass="my-class" ShowAllRows=true>
+            <Columns>
+                <DxGridDataColumn FieldName="Item"/>
+                <DxGridDataColumn FieldName="State"/>
+                <DxGridDataColumn FieldName="Value"/>
+            </Columns>
+        </DxGrid>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public MonitorData? Data { get; set; }
+    [Parameter]
+    public string? Header { get; set; }
+    [Parameter]
+    public string? HubName { get; set; }
+
+    private HubConnection? _hubConnection;
+    private MonitorData? _monitorData;
+
+    protected override async Task OnInitializedAsync() {
+        this._hubConnection = new HubConnectionBuilder()
+            .WithAutomaticReconnect()
+            .WithUrl(this.HubName)
+            .Build();
+        this._hubConnection.On<MonitorData>("ShowCurrent", data => {
+            this._monitorData = data;
+            InvokeAsync(StateHasChanged);
+        });
+        this._hubConnection.HandshakeTimeout = new TimeSpan(0,0,3);
+        this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+
+        try {
+            await this._hubConnection.StartAsync();
+            this.logger.LogInformation(this.HubName+" Connected");
+        } catch {
+            this.logger.LogError(this.HubName+" hub connection failed");
+        }
+    }
+    
+    void Grid_CustomizeElement(GridCustomizeElementEventArgs e) {
+        if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Alarm.ToString()) {
+            e.CssClass = "alarm-item";
+        }
+        if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Warning.ToString()) {
+            e.CssClass = "alarm-item";
+        }
+    }
+
+    public async ValueTask DisposeAsync() {
+        if (this._hubConnection is not null) {
+            await this._hubConnection.DisposeAsync();
+        }
+    }
+}

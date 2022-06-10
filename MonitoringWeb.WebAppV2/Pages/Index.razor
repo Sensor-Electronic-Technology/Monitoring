@@ -1,0 +1,45 @@
+﻿@page "/"
+@using DevExpress.Blazor
+@using DevExpress.Blazor.Configuration
+@using MonitoringData.Infrastructure.Services.DataAccess
+@using System.Drawing
+@inject LatestAlertService AlarmService
+
+<h2 class="pb-2">Facility Monitoring Dashboard</h2>
+
+<h2>Latest Alerts, Timespan=7days</h2>
+
+@if (this.Data == null) {
+    <h3>@Message</h3>
+} else {
+    <DxGrid Data="@Data"
+            ShowGroupPanel="true"
+            AutoExpandAllGroupRows="true"
+            PageSize="10"
+            PagerPosition="GridPagerPosition.Bottom"
+            PageSizeSelectorVisible="true"
+            PageSizeSelectorItems="@(new int[] { 5, 10, 20, 30 })"
+            PageSizeSelectorAllRowsItemVisible="true"
+            PagerSwitchToInputBoxButtonCount="10"
+            PagerVisibleNumericButtonCount="10">
+        <Columns>
+            <DxGridDataColumn FieldName="TimeStamp" DisplayFormat="G"/>
+            <DxGridDataColumn FieldName="Device" GroupIndex="0"  />
+            <DxGridDataColumn FieldName="Name"  />
+            <DxGridDataColumn FieldName="State"  />
+            <DxGridDataColumn FieldName="Value"  />
+        </Columns>
+    </DxGrid>
+}
+
+@code{
+    object? Data { get; set; }
+    string Message { get; set; } = "Data loading...";
+
+    protected override async Task OnInitializedAsync() {
+        this.Data=await this.AlarmService.GetLatestAlarms();
+        if (this.Data==null) {
+            this.Message = "No Recent Alerts";
+        }
+    } 
+}

@@ -1,9 +1,9 @@
 ﻿@page "/plot"
 @using DevExpress.Blazor
 @using DevExpress.Blazor.Configuration
-@using MonitoringWeb.WebApp.Data
+@using MonitoringData.Infrastructure.Services.DataAccess
 @using System.Drawing
-@inject FacilityDataService PlotService
+@inject PlotDataService PlotService
 
 <h3 align="center">H2 Plots</h3>
 <DxStackLayout Orientation="@Orientation.Vertical">
@@ -70,8 +70,8 @@
                                 </SeriesTemplate>
                             </DxChartCommonSeries>
                             <DxChartArgumentAxis>
-                                <DxChartAxisRange StartValue="@this.StartDate"
-                                                  EndValue="@this.StopDate" />
+                                <DxChartAxisRange StartValue="@this.StartDate.Add(this.StartTime).ToLocalTime()"
+                                                  EndValue="@this.StopDate.Add(this.StopTime).ToLocalTime()" />
                             </DxChartArgumentAxis>
                             <DxChartValueAxis>
                                 <DxChartAxisRange StartValue="0" EndValue="1000"></DxChartAxisRange>
@@ -94,11 +94,11 @@
                             </DxChartValueAxis>
                             <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
                             <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
-                                                      ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom" />
+                                                      ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
                             <DxChartTooltip Enabled="true" Position="RelativePosition.Outside" >
                                 <div style="background-color: grey;">
                                     <div class="font-weight-bold">
-                                        @(((DateTime)context.Point.Argument).ToString())
+                                        @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
                                     </div>
                                     <div>
                                         Value$=@((context.Point.Value))
@@ -127,7 +127,7 @@
 
     protected override async Task OnInitializedAsync() {
         this.Message = "Select input parameters to view plot";
-        DateTime now = DateTime.Now.AddHours(-4);
+        DateTime now = DateTime.Now.ToLocalTime();
         this.StartDate=now;
         this.StopDate = now;
         this.StartTime = now.TimeOfDay;
@@ -144,8 +144,10 @@
         this.PlotData=null;
         this.Message = "Loading plot data, please wait...";
         await InvokeAsync(StateHasChanged);
-        DateTime start = this.StartDate.Date.Add(this.StartTime).AddHours(4);
-        DateTime stop = this.StopDate.Date.Add(this.StopTime).AddHours(4);
+        //DateTime start = this.StartDate.Date.Add(this.StartTime).AddHours(4);
+        //DateTime stop = this.StopDate.Date.Add(this.StopTime).AddHours(4);
+        DateTime start=this.StartDate.Date.Add(this.StartTime).ToUniversalTime();
+        DateTime stop = this.StopDate.Date.Add(this.StopTime).ToUniversalTime();
         this.PlotData = await this.PlotService.GetData(this.SelectedDevice,start,stop);
         InvokeAsync(StateHasChanged);
     }

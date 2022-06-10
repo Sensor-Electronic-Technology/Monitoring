@@ -2,57 +2,18 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using MonitoringSystem.Shared.SignalR
 @using MonitoringSystem.Shared.Data
+@using MonitoringWeb.WebApp.Components
 @using DevExpress.Blazor
 @inject NavigationManager NavigationManager
 @inject ILogger<LiveView> logger
 @implements IAsyncDisposable
 
-<style>
-/*    .okay-item > td {
-        background-color: rgba(153, 255, 155, 0.5);
-    }
-    .alarm-item > td {
-        background-color: rgba(255, 102, 102 0.5);
-    }
-    .warn-item > td {
-        background-color: rgba(255, 255, 153 0.5);
-    }
-    .my-class {
-        width: 550px;
-        margin:auto;
-    }
-    * {
-      box-sizing: border-box;
-    }
-    .row{
-        padding:10px;
-        margin:auto;
-    }
-    .column {
-      float: left;
-      padding:10px;
-    }
-
-    .row:after {
-      content: "";
-      display: table;
-      clear: both;
-    }
-
-    h1 {
-        text-align: center;
-    }
-    p {
-        text-align: center;
-    }*/
-
-</style>
-
 <DxTabs style="width:950px">
     <DxTabPage Text="Epi Lab 1">
-        <p role="status">TimeStamp: @this.e1Data?.TimeStamp.AddHours(-4).ToString()</p>  
+        <p role="status">TimeStamp: @this.e1Data?.TimeStamp.ToLocalTime().ToString()</p>  
         <div class="row">
-            <h1>Analog Channels</h1>
+            <LiveGrid Data="@this.e1Data"></LiveGrid>
+@*            <h1>Analog Channels</h1>
             @if (this.e1Data == null)
             {
                 <p><em>Loading...</em></p>
@@ -70,7 +31,7 @@
                         <DxGridDataColumn FieldName="Value"/>
                     </Columns>
                 </DxGrid>
-            }
+            }*@
         </div>
 
         <div class="row">
@@ -106,7 +67,7 @@
         </div>
     </DxTabPage>
    <DxTabPage Text="Epi Lab 2">
-        <p role="status">TimeStamp: @this.e2Data?.TimeStamp.AddHours(-4).ToString()</p>     
+        <p role="status">TimeStamp: @this.e2Data?.TimeStamp.ToLocalTime().ToString()</p>     
         <div class="row">
             <br/>
             <h1>Analog Channels</h1>
@@ -156,7 +117,7 @@
         </div>
     </DxTabPage>
     <DxTabPage Text="Gas Bay">
-        <p role="status">TimeStamp: @this.gasBayData?.TimeStamp.AddHours(-4).ToString()</p>     
+        <p role="status">TimeStamp: @this.gasBayData?.TimeStamp.ToLocalTime().ToString()</p>     
         <div class="row">
             <br/>
             <h1>Analog Channels</h1>
@@ -206,7 +167,7 @@
         </div>
     </DxTabPage>
     <DxTabPage Text="NH3 Tanks">
-        <p role="status">TimeStamp: @this.nhData?.TimeStamp.AddHours(-4).ToString()</p>     
+        <p role="status">TimeStamp: @this.nhData?.TimeStamp.ToLocalTime().ToString()</p>     
         <div class="row">
             <br/>
             <h1>NH3 Data</h1>
@@ -328,11 +289,6 @@
             e.CssClass = "alarm-item";
         }
     }
-
-    //public bool IsConnected =>
-    //    this.epi1Connection?.State == HubConnectionState.Connected && 
-    //    this.epi2Connection?.State == HubConnectionState.Connected &&
-    //    this.gasBayConnection?.State==HubConnectionState.Connected;
 
     public async ValueTask DisposeAsync(){
 
