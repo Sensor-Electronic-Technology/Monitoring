@@ -1,5 +1,35 @@
-﻿<h3>LiveView</h3>
-
+﻿@page "/liveview"
+@using MonitoringWeb.WebAppV2.Components
+@using MonitoringWeb.WebAppV2.Data
+@using MonitoringSystem.Shared.Data
+@inject SettingsService SettingsService
+<DxTabs style="width:950px" TabsRenderMode="@TabsRenderMode.AllTabs">
+    @if (this._devices != null) {
+        foreach (var device in this._devices) {
+            <DxTabPage Text="@device.DeviceName">
+                <LiveGrid Hub="@device.HubAddress"></LiveGrid>
+            </DxTabPage>
+        }
+    } else {
+        <p>Devices not loaded..</p>
+    }
+    @*<DxTabPage Text="Epi Lab 1">
+        <LiveGrid Hub="http://e1streamv2/hubs/epi1streaming"></LiveGrid>
+    </DxTabPage>
+    <DxTabPage Text="Epi Lab 2">
+        <LiveGrid Hub="http://e2streamv2/hubs/epi2streaming"></LiveGrid>
+    </DxTabPage>
+    <DxTabPage Text="Gas Bay">
+        <LiveGrid Hub="http://gbstream/hubs/gbstreaming"></LiveGrid>
+    </DxTabPage>
+    <DxTabPage Text="NH3 Tanks">
+        <LiveGrid Hub="http://nhstream/hubs/nhstreaming"></LiveGrid>
+    </DxTabPage>*@
+</DxTabs>
 @code {
-    
+    IEnumerable<ManagedDevice>? _devices;
+    protected override async Task OnInitializedAsync() {
+        await this.SettingsService.Load();
+        this._devices = await this.SettingsService.GetDevices();
+    }
 }

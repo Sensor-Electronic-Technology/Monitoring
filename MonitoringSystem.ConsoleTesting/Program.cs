@@ -31,8 +31,9 @@ namespace MonitoringSystem.ConsoleTesting {
     public class Program {
         static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
-
-            await WriteOutAnalogFile("gasbay", new DateTime(2022, 5, 25, 0, 0, 0), new DateTime(2022, 6, 7, 0, 0, 0), @"C:\MonitorFiles\gasbay_analog2.csv");
+            //await BuildSettingsDB();
+            await CheckSettings();
+            //await WriteOutAnalogFile("gasbay", new DateTime(2022, 5, 25, 0, 0, 0), new DateTime(2022, 6, 7, 0, 0, 0), @"C:\MonitorFiles\gasbay_analog2.csv");
             //Stopwatch watch = new Stopwatch();         
             //Console.WriteLine("Done");
             //Console.ReadKey();
@@ -49,6 +50,45 @@ namespace MonitoringSystem.ConsoleTesting {
             //    Console.WriteLine("Could not find device, check name");
             //}
             //await AlertItemTypeUpdate("gasbay");
+        }
+
+        static async Task BuildSettingsDB() { 
+            var context = new FacilityContext();
+            
+            var devices = context.Devices.ToList();
+
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            //await database.CreateCollectionAsync("monitor_devices");
+            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices");
+
+            List<ManagedDevice> monitorDevices = new List<ManagedDevice>();
+            foreach (var device in devices) {
+                ManagedDevice dev = new ManagedDevice();
+                dev.DatabaseName = device.DatabaseName;
+                dev.DeviceName = device.Identifier;
+                dev.DeviceType = device.GetType().Name;
+                dev.HubAddress = device.HubName;
+                //Console.WriteLine(dev.DeviceType);
+                monitorDevices.Add(dev);
+            }
+
+            await monitorDevCollection.InsertManyAsync(monitorDevices);
+            Console.WriteLine("Check Database");
+            Console.ReadKey();
+        }
+
+        static async Task CheckSettings() {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            //await database.CreateCollectionAsync("monitor_devices");
+            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices");
+            var monitorDevices = await monitorDevCollection.Find(_ => true).ToListAsync();
+            foreach (var device in monitorDevices) {
+                Console.WriteLine(device.DeviceName);
+            }
+
+            Console.WriteLine("Done");
         }
 
         static async Task BenchmarkOld() {

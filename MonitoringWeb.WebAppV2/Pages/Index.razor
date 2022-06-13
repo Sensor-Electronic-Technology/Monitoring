@@ -3,7 +3,10 @@
 @using DevExpress.Blazor.Configuration
 @using MonitoringData.Infrastructure.Services.DataAccess
 @using System.Drawing
+@using Microsoft.Extensions.Options
+@using MonitoringWeb.WebAppV2.Data
 @inject LatestAlertService AlarmService
+@inject PlotDataService PlotService
 
 <h2 class="pb-2">Facility Monitoring Dashboard</h2>
 
@@ -12,6 +15,9 @@
 @if (this.Data == null) {
     <h3>@Message</h3>
 } else {
+    <div class="row">
+        
+    </div>
     <DxGrid Data="@Data"
             ShowGroupPanel="true"
             AutoExpandAllGroupRows="true"
@@ -30,10 +36,16 @@
             <DxGridDataColumn FieldName="Value"  />
         </Columns>
     </DxGrid>
+    <div class="row" style="padding:1rem">
+        <DxButton Click="@FetchAlertPlot" RenderStyle="ButtonRenderStyle.Primary" 
+                  RenderStyleMode="ButtonRenderStyleMode.Contained" 
+                  Text="Fetch Plot" />
+    </div>
 }
 
 @code{
-    object? Data { get; set; }
+    IEnumerable<AlertDto>? Data { get; set; }
+    AlertDto? SelectedAlert { get; set; }
     string Message { get; set; } = "Data loading...";
 
     protected override async Task OnInitializedAsync() {
@@ -41,5 +53,11 @@
         if (this.Data==null) {
             this.Message = "No Recent Alerts";
         }
-    } 
+    }
+
+    public async void FetchAlertPlot() {
+        if (this.SelectedAlert != null) {
+            //this.PlotService.GetData()
+        }
+    }
 }

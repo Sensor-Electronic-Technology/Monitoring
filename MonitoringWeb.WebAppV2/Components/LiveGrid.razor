@@ -8,11 +8,11 @@
 <p role="status">TimeStamp: @this._monitorData?.TimeStamp.ToLocalTime().ToString()</p>  
 <div class="row">
     <h1>Analog Channels</h1>
-    @if (this.Data == null)
+    @if (this._monitorData == null)
     {
         <p><em>Loading...</em></p>
     }else {
-        <DxGrid Data="@this.Data.analogData" 
+        <DxGrid Data="@this._monitorData.analogData" 
                 CssClass="my-class" 
                 ShowAllRows=true 
                 CustomizeElement="Grid_CustomizeElement">
@@ -59,12 +59,9 @@
 </div>
 
 @code {
+   // [Parameter]
     [Parameter]
-    public MonitorData? Data { get; set; }
-    [Parameter]
-    public string? Header { get; set; }
-    [Parameter]
-    public string? HubName { get; set; }
+    public string? Hub { get; set; }
 
     private HubConnection? _hubConnection;
     private MonitorData? _monitorData;
@@ -72,7 +69,7 @@
     protected override async Task OnInitializedAsync() {
         this._hubConnection = new HubConnectionBuilder()
             .WithAutomaticReconnect()
-            .WithUrl(this.HubName)
+            .WithUrl(this.Hub)
             .Build();
         this._hubConnection.On<MonitorData>("ShowCurrent", data => {
             this._monitorData = data;
@@ -83,9 +80,9 @@
 
         try {
             await this._hubConnection.StartAsync();
-            this.logger.LogInformation(this.HubName+" Connected");
+            this.logger.LogInformation(this.Hub+" Connected");
         } catch {
-            this.logger.LogError(this.HubName+" hub connection failed");
+            this.logger.LogError(this.Hub+" hub connection failed");
         }
     }
     
