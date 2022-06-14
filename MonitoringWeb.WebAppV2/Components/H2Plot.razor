@@ -1,63 +1,75 @@
 ﻿@using MonitoringData.Infrastructure.Services.DataAccess
 @using System.Drawing
-<DxChart Data="@PlotData"
-                     Width="100%"
-                     Height="100%">
-                <DxChartLegend AllowToggleSeries="true"
-                               Orientation="Orientation.Vertical"
-                               HorizontalAlignment="HorizontalAlignment.Right">
-                    <DxChartTitle Text="Detectors"> </DxChartTitle>
-                </DxChartLegend>
-                <DxChartCommonSeries NameField="@((AnalogReadingDto r)=>r.Name)"
-                                     ArgumentField="@((AnalogReadingDto r)=>r.TimeStamp)"
-                                     ValueField="@((AnalogReadingDto r)=>(int)r.Value)">
-                    <SeriesTemplate Context="settings">
-                        <DxChartLineSeries Settings="@settings">
-                            <DxChartSeriesLabel Visible="false" />
-                            <DxChartSeriesPoint Visible="true"/>
-                            <DxChartAggregationSettings Enabled="true"
-                                                        Method="ChartAggregationMethod.Max"/>
-                        </DxChartLineSeries>
-                    </SeriesTemplate>
-                </DxChartCommonSeries>
-                <DxChartArgumentAxis>
-                    <DxChartAxisRange StartValue="@this.StartDate"
-                                      EndValue="@this.StopDate" />
-                </DxChartArgumentAxis>
-                <DxChartValueAxis>
-                    <DxChartAxisRange StartValue="0" EndValue="1000"></DxChartAxisRange>
-                    <DxChartAxisTitle Text="PPM" />
-                    <DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
-                        <DxChartConstantLineLabel Text="Soft-Warn"
-                                                  VerticalAlignment="VerticalAlignment.Center"
-                                                  Position="RelativePosition.Inside" />
-                    </DxChartConstantLine>
-                    <DxChartConstantLine Value="500" Width="3" Color="Color.Yellow">
-                        <DxChartConstantLineLabel Text="Warning"
-                                                  VerticalAlignment="VerticalAlignment.Center"
-                                                  Position="RelativePosition.Inside" />
-                    </DxChartConstantLine>
-                    <DxChartConstantLine Value="1000" Width="3" Color="Color.Red">
-                        <DxChartConstantLineLabel Text="Alarm"
-                                                  VerticalAlignment="VerticalAlignment.Center"
-                                                  Position="RelativePosition.Inside" />
-                    </DxChartConstantLine>
-                </DxChartValueAxis>
-                <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
-                <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
-                                          ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
-                <DxChartTooltip Enabled="true" Position="RelativePosition.Outside" >
-                    <div style="background-color: grey;">
-                        <div class="font-weight-bold">
-                            @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
-                        </div>
-                        <div>
-                            Value$=@((context.Point.Value))
-                        </div>
+<div class="row" style="padding: 1rem">
+    @if (this.PlotData == null) {
+        <p>@PlotMessage</p>
+    }
+    else
+    {
+        <DxChart Data="@PlotData"
+                 Width="100%"
+                 Height="100%">
+            <DxChartLegend AllowToggleSeries="true"
+                           Orientation="Orientation.Vertical"
+                           HorizontalAlignment="HorizontalAlignment.Right">
+                <DxChartTitle Text="Detectors"> </DxChartTitle>
+            </DxChartLegend>
+            <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
+                                 ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
+                                 ValueField="@((AnalogReadingDto r) => (int)r.Value)">
+                <SeriesTemplate Context="settings">
+                    <DxChartLineSeries Settings="@settings">
+                        <DxChartSeriesLabel Visible="false"/>
+                        <DxChartSeriesPoint Visible="true"/>
+                        <DxChartAggregationSettings Enabled="true"
+                                                    Method="ChartAggregationMethod.Max"/>
+                    </DxChartLineSeries>
+                </SeriesTemplate>
+            </DxChartCommonSeries>
+            <DxChartArgumentAxis>
+                <DxChartAxisRange StartValue="@this.StartDate.ToLocalTime()"
+                                  EndValue="@this.StopDate.ToLocalTime()"/>
+            </DxChartArgumentAxis>
+            <DxChartValueAxis>
+                <DxChartAxisRange StartValue="0" EndValue="1000"></DxChartAxisRange>
+                <DxChartAxisTitle Text="PPM"/>
+                <DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
+                    <DxChartConstantLineLabel Text="Soft-Warn"
+                                              VerticalAlignment="VerticalAlignment.Center"
+                                              Position="RelativePosition.Inside"/>
+                </DxChartConstantLine>
+                <DxChartConstantLine Value="500" Width="3" Color="Color.Yellow">
+                    <DxChartConstantLineLabel Text="Warning"
+                                              VerticalAlignment="VerticalAlignment.Center"
+                                              Position="RelativePosition.Inside"/>
+                </DxChartConstantLine>
+                <DxChartConstantLine Value="1000" Width="3" Color="Color.Red">
+                    <DxChartConstantLineLabel Text="Alarm"
+                                              VerticalAlignment="VerticalAlignment.Center"
+                                              Position="RelativePosition.Inside"/>
+                </DxChartConstantLine>
+            </DxChartValueAxis>
+            <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
+            <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
+                                      ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
+            <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
+                <div style="background-color: grey;">
+                    <div class="font-weight-bold">
+                        @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
                     </div>
-                </DxChartTooltip>
-            </DxChart>
+                    <div>
+                        Value$=@((context.Point.Value))
+                    </div>
+                </div>
+            </DxChartTooltip>
+        </DxChart>
+    }
+</div>
+
+
 @code {
+    [Parameter]
+    public string PlotMessage { get; set; }
     [Parameter]
     public IEnumerable<AnalogReadingDto>? PlotData { get; set; }
     [Parameter]

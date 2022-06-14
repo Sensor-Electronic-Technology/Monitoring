@@ -40,5 +40,14 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             }
             return analogReadings;
         }
+        public async Task<IEnumerable<AnalogReadingDto>> GetData(List<string> deviceData,DateTime start, DateTime stop) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
+            foreach (var data in deviceData){
+                var readings=await this.GetData(data, start, stop);
+                analogReadings.AddRange(readings);
+            }
+            return analogReadings;
+        }
     }
 }

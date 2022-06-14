@@ -134,7 +134,8 @@
         this.Devices = new List<string>() {
             "epi1_data",
             "epi2_data",
-            "gasbay_data"
+            "gasbay_data",
+            "combined"
         };
         this.SelectedDevice = this.Devices.First();
     }
@@ -147,7 +148,12 @@
         //DateTime stop = this.StopDate.Date.Add(this.StopTime).AddHours(4);
         DateTime start=this.StartDate.Date.Add(this.StartTime).ToUniversalTime();
         DateTime stop = this.StopDate.Date.Add(this.StopTime).ToUniversalTime();
-        this.PlotData = await this.PlotService.GetData(this.SelectedDevice,start,stop);
+        if (this.SelectedDevice == "combined"){
+            var list = this.Devices.Where(e => e != "combined").ToList();
+            this.PlotData = await this.PlotService.GetData(list,start,stop);
+        }else{
+            this.PlotData = await this.PlotService.GetData(this.SelectedDevice,start,stop);
+        }
         await InvokeAsync(StateHasChanged);
     }
 }

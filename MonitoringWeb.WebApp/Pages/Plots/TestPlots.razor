@@ -149,6 +149,6 @@
         DateTime start=this.StartDate.Date.Add(this.StartTime).ToUniversalTime();
         DateTime stop = this.StopDate.Date.Add(this.StopTime).ToUniversalTime();
         this.PlotData = await this.PlotService.GetData(this.SelectedDevice,start,stop);
-        InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);
     }
 }
