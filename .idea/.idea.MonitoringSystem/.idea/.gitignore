@@ -2,10 +2,17 @@
 /shelf/
 /workspace.xml
 # Rider ignored files
+<<<<<<< HEAD
 /projectSettingsUpdater.xml
 /modules.xml
 /contentModel.xml
 /.idea.MonitoringSystem.iml
+=======
+/contentModel.xml
+/projectSettingsUpdater.xml
+/.idea.MonitoringSystem.iml
+/modules.xml
+>>>>>>> 216ca90 (none)
 # Editor-based HTTP Client requests
 /httpRequests/
 # Datasource local storage ignored files

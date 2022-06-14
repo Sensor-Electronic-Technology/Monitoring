@@ -57,10 +57,14 @@ namespace MonitoringData.Infrastructure.Services {
         public async Task Read() {
             var result = await this._modbusService.Read(this._networkConfig.IPAddress, this._networkConfig.Port, this._modbusConfig);
             if (result._success) {
-                var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart, (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
-                var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._channelMapping.AnalogStart, (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1).ToArray();
-                var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._channelMapping.AlertStart, (this._channelMapping.AlertStop - this._channelMapping.AlertStart) + 1).ToArray();
-                var virtualRaw = new ArraySegment<bool>(result.Coils, this._channelMapping.VirtualStart, (this._channelMapping.VirtualStop - this._channelMapping.VirtualStart) + 1).ToArray();
+                var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart,
+                    (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
+                var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._channelMapping.AnalogStart, 
+                    (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1).ToArray();
+                var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._channelMapping.AlertStart,
+                    (this._channelMapping.AlertStop - this._channelMapping.AlertStart) + 1).ToArray();
+                var virtualRaw = new ArraySegment<bool>(result.Coils, this._channelMapping.VirtualStart, 
+                    (this._channelMapping.VirtualStop - this._channelMapping.VirtualStart) + 1).ToArray();
                 var now = DateTime.Now;
                 this._alerts = new List<AlertRecord>();
                 if (result.HoldingRegisters.Length > this._channelMapping.DeviceStart - 1) {
@@ -167,7 +171,12 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Analog ItemAlert not found");
                     }
                 }                
-                return Task.FromResult<Tuple<AnalogReadings, bool>>(new(new AnalogReadings() { readings = readings.ToArray(), timestamp = now }, record));       
+                return Task.FromResult<Tuple<AnalogReadings, bool>>(new(
+                    new AnalogReadings() { 
+                        readings = readings.ToArray(), 
+                        timestamp = now 
+                    }, 
+                    record));       
             } else {
                 this.LogError("Error: AnalogItems count doesn't match raw data count");
                 return Task.FromResult<Tuple<AnalogReadings, bool>>(new(null,false));
@@ -194,7 +203,9 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Discrete ItemAlert not found");
                     }
                 }
-                return Task.FromResult<Tuple<DiscreteReadings, bool>>(new(new DiscreteReadings() { readings = readings.ToArray(), timestamp = now }, record));
+                return Task.FromResult<Tuple<DiscreteReadings, bool>>(new(
+                    new DiscreteReadings() { readings = readings.ToArray(), timestamp = now }, 
+                    record));
             } else {
                 this.LogError("Error: DiscreteItems count doesn't match raw data count");
                 return Task.FromResult<Tuple<DiscreteReadings, bool>>(new(null, false));
@@ -222,7 +233,11 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Virual ItemAlert not found");
                     }
                 }
-                return Task.FromResult<Tuple<VirtualReadings, bool>>(new(new VirtualReadings() { readings = readings.ToArray(), timestamp = now }, record));
+                return Task.FromResult<Tuple<VirtualReadings, bool>>(new(
+                    new VirtualReadings() { 
+                    readings = readings.ToArray(), 
+                    timestamp = now }, 
+                    record));
             } else {
                 this.LogError("Error: Virtualitems count doesn't match raw data count");
                 return Task.FromResult<Tuple<VirtualReadings, bool>>(new(null, false));
