@@ -5,7 +5,5 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MonitoringSystem.Shared.Data {
-    public class WebsiteSettins {
-        IEnumerable<string> AvailableDevices { get; set; }
-    }
+
 }

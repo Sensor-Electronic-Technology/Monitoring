@@ -1,63 +1,113 @@
 ﻿@page "/"
-@using DevExpress.Blazor
-@using DevExpress.Blazor.Configuration
 @using MonitoringData.Infrastructure.Services.DataAccess
-@using System.Drawing
-@using Microsoft.Extensions.Options
-@using MonitoringWeb.WebAppV2.Data
 @inject LatestAlertService AlarmService
 @inject PlotDataService PlotService
 
 <h2 class="pb-2">Facility Monitoring Dashboard</h2>
 
 <h2>Latest Alerts, Timespan=7days</h2>
+    <div class="row" style="padding:1rem">
+        <div class="col" style="padding:.5rem">
+        <DxSpinEdit @bind-Value="DaysBack"
+                    Increment="1M"
+                    MinValue="1M"
+                    MaxValue="10M"
+                    CssClass="cw-320" />
+        </div>
+        <div class="col" style="padding:.5rem">
+            <DxButton Click="@FetchAlerts" RenderStyle="ButtonRenderStyle.Primary" 
+                      RenderStyleMode="ButtonRenderStyleMode.Contained"
+                      Text="Fetch Alerts" />
+        </div>
+    </div>
 
 @if (this.Data == null) {
     <h3>@Message</h3>
 } else {
-    <div class="row">
-        
+    <div style="padding:1rem">
+        <DxGrid Data="@Data"
+                ShowGroupPanel="true"
+                AutoExpandAllGroupRows="true"
+                SelectionMode="GridSelectionMode.Single"
+                AllowSelectRowByClick="true"
+                KeyFieldNames="@KeyFieldNames"
+                @bind-SelectedDataItem="SelectedAlert"
+                PageSize="10"
+                PagerPosition="GridPagerPosition.Bottom"
+                PageSizeSelectorVisible="true"
+                PageSizeSelectorItems="@(new int[] { 5, 10, 20, 30 })"
+                PageSizeSelectorAllRowsItemVisible="true"
+                PagerSwitchToInputBoxButtonCount="10"
+                PagerVisibleNumericButtonCount="10">
+            <Columns>
+                <DxGridDataColumn FieldName="TimeStamp" DisplayFormat="G"/>
+                <DxGridDataColumn FieldName="Device" GroupIndex="0"  />
+                <DxGridDataColumn FieldName="Name"  GroupIndex="1" />
+                <DxGridDataColumn FieldName="State"  />
+                <DxGridDataColumn FieldName="Value"  />
+            </Columns>
+        </DxGrid>
     </div>
-    <DxGrid Data="@Data"
-            ShowGroupPanel="true"
-            AutoExpandAllGroupRows="true"
-            PageSize="10"
-            PagerPosition="GridPagerPosition.Bottom"
-            PageSizeSelectorVisible="true"
-            PageSizeSelectorItems="@(new int[] { 5, 10, 20, 30 })"
-            PageSizeSelectorAllRowsItemVisible="true"
-            PagerSwitchToInputBoxButtonCount="10"
-            PagerVisibleNumericButtonCount="10">
-        <Columns>
-            <DxGridDataColumn FieldName="TimeStamp" DisplayFormat="G"/>
-            <DxGridDataColumn FieldName="Device" GroupIndex="0"  />
-            <DxGridDataColumn FieldName="Name"  />
-            <DxGridDataColumn FieldName="State"  />
-            <DxGridDataColumn FieldName="Value"  />
-        </Columns>
-    </DxGrid>
     <div class="row" style="padding:1rem">
         <DxButton Click="@FetchAlertPlot" RenderStyle="ButtonRenderStyle.Primary" 
                   RenderStyleMode="ButtonRenderStyleMode.Contained" 
                   Text="Fetch Plot" />
     </div>
 }
+<div class="row" style="padding:1rem">
+    @if (this.PlotData == null) {
+        <p>@PlotMessage</p>
+    } else {
+        <H2Plot PlotData="@this.PlotData" StartDate="@this.StartDate" StopDate="@this.StopDate"></H2Plot>
+    }
+</div>
+
 
 @code{
+    IEnumerable<AnalogReadingDto>? PlotData { get; set; }
+    IReadOnlyList<string> KeyFieldNames = new [] {
+        "alertId",
+        "TimeStamp",
+    };
+    DateTime StartDate { get; set; }
+    DateTime StopDate { get; set; }
+    string PlotMessage { get; set; } = "Select Alert and press FetchPlot button to view plot";
     IEnumerable<AlertDto>? Data { get; set; }
-    AlertDto? SelectedAlert { get; set; }
+    Decimal DaysBack { get; set; } = 7;
+    object? SelectedAlert { get; set; }
+    bool FetchAlertsEnabled { get; set; } = false;
     string Message { get; set; } = "Data loading...";
 
     protected override async Task OnInitializedAsync() {
-        this.Data=await this.AlarmService.GetLatestAlarms();
-        if (this.Data==null) {
-            this.Message = "No Recent Alerts";
+        this.Data=await this.AlarmService.GetLatestAlarms((int)this.DaysBack);
+        if (this.Data == null) {
+            this.Message = $"No Alerts in last {this.DaysBack} days";
         }
     }
 
+    public async void FetchAlerts() {
+        this.Data = null;
+        this.Message = "Fetching Data, Please Wait...";
+        await InvokeAsync(StateHasChanged);
+        this.Data=await this.AlarmService.GetLatestAlarms((int)this.DaysBack);
+        if (this.Data==null) {
+            this.Message = $"No Alerts in last {this.DaysBack} days";
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
     public async void FetchAlertPlot() {
-        if (this.SelectedAlert != null) {
-            //this.PlotService.GetData()
+        if (this.SelectedAlert is AlertDto alert) {
+            this.PlotData=null;
+            this.Message = $"Loading plot data for {alert.Name}, please wait...";
+            await InvokeAsync(StateHasChanged);
+            this.StartDate = alert.TimeStamp.AddDays(-1);
+            this.StopDate = alert.TimeStamp.AddDays(1);
+            this.PlotData = await this.PlotService.GetData(alert.database,this.StartDate.ToUniversalTime(),this.StopDate.ToUniversalTime());
+            if (this.PlotData == null) {
+                this.Message = $"Error: Could not load plot data for {alert.Name}";
+            }
+            await InvokeAsync(StateHasChanged);
         }
     }
 }

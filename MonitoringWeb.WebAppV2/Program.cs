@@ -37,5 +37,11 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.MapBlazorHub();
+var settingsService=app.Services.GetService<SettingsService>();
+if (settingsService is not null) {
+    await settingsService.Load();
+} else {
+    throw new Exception("Error: Could not resolve SettingsService");
+}
 app.MapFallbackToPage("/_Host");
 app.Run();

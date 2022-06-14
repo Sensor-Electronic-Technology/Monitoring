@@ -13,6 +13,7 @@ public class SettingsService {
         this._settings = options.Value;
         var database = client.GetDatabase(this._settings.DatabaseName);
         this._deviceCollection = database.GetCollection<ManagedDevice>(this._settings.CollectionName);
+
     }
 
     public Task<IEnumerable<ManagedDevice>> GetDevices() {
