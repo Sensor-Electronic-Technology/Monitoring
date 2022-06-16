@@ -29,9 +29,9 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 "bmurdaugh@s-et.com",
                 "achapman@s-et.com"
             };
-            //var recp = new List<string>() {
-            //    "aelmendorf@s-et.com"
-            //};
+            /*var recp = new List<string>() {
+                "aelmendorf@s-et.com"
+            };*/
             message.ToRecipients.AddRange(recp);
             message.Subject = subject;
             MessageBody body = new MessageBody();
@@ -49,9 +49,9 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 "bmurdaugh@s-et.com",
                 "achapman@s-et.com"
             };
-            //var recp = new List<string>() {
-            //    "aelmendorf@s-et.com",
-            //};
+            /*var recp = new List<string>() {
+                "aelmendorf@s-et.com",
+            };*/
             message.ToRecipients.AddRange(recp);
             message.Subject = subject;
             MessageBody body = new MessageBody();

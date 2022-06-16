@@ -1,25 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ConsoleTables;
+﻿using ConsoleTables;
 using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using Microsoft.Extensions.Logging;
-using MassTransit;
-using MonitoringSystem.Shared.Contracts;
 using Microsoft.Extensions.Options;
 
 namespace MonitoringData.Infrastructure.Services {
-    public enum AlertAction {
-        Clear,
-        ChangeState,
-        Start,
-        Resend,
-        Nothing
-    }
+
     public interface IAlertService {
         Task ProcessAlerts(IList<AlertRecord> items,DateTime now);
         Task Initialize();
@@ -131,7 +118,11 @@ namespace MonitoringData.Infrastructure.Services {
                 switch (alert.CurrentState) {
                     case ActionType.Okay: {
                             if (activeAlert != null) {
-                                alert.AlertAction = AlertAction.Clear;
+                                if ((now - activeAlert.LastAlert).TotalSeconds >= 60) {
+                                    alert.AlertAction = AlertAction.Clear;
+                                } else {
+                                    alert.AlertAction = AlertAction.Nothing;
+                                }
                             } else {
                                 alert.AlertAction = AlertAction.Nothing;
                             }
@@ -149,9 +140,9 @@ namespace MonitoringData.Infrastructure.Services {
                                         if ((now - activeAlert.LastAlert).TotalMinutes >= actionItem.EmailPeriod) {
                                             alert.AlertAction = AlertAction.Resend;
                                             alert.LastAlert = now;
-                                        }//
-                                        //else do nothing
-                                        alert.AlertAction = AlertAction.Nothing;
+                                        } else {
+                                            alert.AlertAction = AlertAction.Nothing;
+                                        }
                                     } else {
                                         //log error-ActionItem not found
                                         alert.AlertAction = AlertAction.Nothing;

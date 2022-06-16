@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using MonitoringSystem.Shared.Data;
 namespace MonitoringSystem.Shared.Contracts {
     public interface EmailContract {
-        string Subject { get; }
-        string Message { get; }
-        
+        DateTime TimeStamp { get; set; }
+        IList<AlertRecord> Alerts { get; set; }
     }
 }

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MonitoringSystem.Shared.Data;
-
-namespace MonitoringData.Infrastructure.Services.AlertServices {
+﻿namespace MonitoringSystem.Shared.Data {
+    public enum AlertAction {
+        Clear,
+        ChangeState,
+        Start,
+        Resend,
+        Nothing
+    }
     public class AlertRecord {
         public int AlertId { get; set; }
         public int ChannelId { get; set; }
@@ -14,6 +14,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
         public AlertAction AlertAction { get; set; }
         public AlertItemType ItemType { get; set; }
         public bool Enabled { get; set; }
+        public bool Latched { get; set; }
         public DateTime LastAlert { get; set; }
         public bool Bypassed { get; set; }
         public DateTime TimeBypassed { get; set; }
@@ -27,9 +28,10 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this.DisplayName = alert.displayName;
             this.CurrentState = reading;
             this.Enabled = alert.enabled;
-            this.AlertAction = AlertAction.Clear;
+            this.AlertAction = AlertAction.Nothing;
             this.ItemType = alert.itemType;
             this.ChannelReading = 0.00f;
+            this.Latched = false;
         }
 
         public AlertRecord(MonitorAlert alert, float reading, ActionType state) {
@@ -38,9 +40,10 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this.ChannelId = alert.channelId;
             this.DisplayName = alert.displayName;
             this.Enabled = alert.enabled;
-            this.AlertAction = AlertAction.Clear;
+            this.AlertAction = AlertAction.Nothing;
             this.ItemType = alert.itemType;
             this.ChannelReading = reading;
+            this.Latched = false;
         }
 
         public AlertRecord() {
@@ -50,8 +53,9 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this.DisplayName = "Not Set";
             this.CurrentState = ActionType.Okay;
             this.Enabled = false;
-            this.AlertAction = AlertAction.Clear;
+            this.AlertAction = AlertAction.Nothing;
             this.ItemType = AlertItemType.Discrete;
+            this.Latched = false;
         }
 
         public AlertRecord Clone() {

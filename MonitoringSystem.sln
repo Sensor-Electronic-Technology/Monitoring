@@ -37,6 +37,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringWeb.WebApp", "Mon
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringWeb.WebAppV2", "MonitoringWeb.WebAppV2\MonitoringWeb.WebAppV2.csproj", "{82D91F9A-B382-4B5C-B4F1-9B5A347685DD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringTesting.TestAlertService", "MonitoringTesting.TestAlertService\MonitoringTesting.TestAlertService.csproj", "{B39D89AE-CDD8-40BA-ADD3-30AE7ED203A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,10 @@ Global
 		{82D91F9A-B382-4B5C-B4F1-9B5A347685DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82D91F9A-B382-4B5C-B4F1-9B5A347685DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{82D91F9A-B382-4B5C-B4F1-9B5A347685DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B39D89AE-CDD8-40BA-ADD3-30AE7ED203A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B39D89AE-CDD8-40BA-ADD3-30AE7ED203A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B39D89AE-CDD8-40BA-ADD3-30AE7ED203A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B39D89AE-CDD8-40BA-ADD3-30AE7ED203A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -83,6 +89,7 @@ Global
 		{DE7D3816-E3F3-4635-8101-F493112CE618} = {38A3A20D-6DDB-49C0-B934-3E9782311FB6}
 		{7AD6DD68-4F7E-4968-B994-712A7035AF34} = {5B2E1BB3-86E5-4C0C-8B2F-7A74B15818E5}
 		{82D91F9A-B382-4B5C-B4F1-9B5A347685DD} = {5B2E1BB3-86E5-4C0C-8B2F-7A74B15818E5}
+		{B39D89AE-CDD8-40BA-ADD3-30AE7ED203A0} = {199BA538-0A44-421B-8FC9-3A10F16EEE6B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1E2B0F8D-F1CD-4933-8EB8-770DED0DB5FF}

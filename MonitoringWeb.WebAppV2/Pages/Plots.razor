@@ -19,18 +19,12 @@
                        </DxFormLayoutItem>
                         <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
                             <DxFormLayoutItem Caption="Start Date" ColSpanMd="12">
-                                <DxDateEdit @bind-Date="@StartDate" CssClass="cw-320" />
-                            </DxFormLayoutItem>
-                            <DxFormLayoutItem Caption="Start Time" ColSpanMd="12">
-                                <DxTimeEdit @bind-Time="@StartTime" CssClass="cw-320" />
+                                <DxDateEdit @bind-Date="@StartDate" TimeSectionVisible="true" CssClass="cw-320" />
                             </DxFormLayoutItem>
                         </DxFormLayoutGroup>
                         <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
                             <DxFormLayoutItem Caption="Stop Date" ColSpanMd="12">
-                                <DxDateEdit @bind-Date="@StopDate" CssClass="cw-320" />
-                            </DxFormLayoutItem>
-                            <DxFormLayoutItem Caption="Stop Time" ColSpanMd="12">
-                                <DxTimeEdit @bind-Time="@StopTime" CssClass="cw-320" />
+                                <DxDateEdit @bind-Date="@StopDate" TimeSectionVisible="true" CssClass="cw-320" />
                             </DxFormLayoutItem>
                         </DxFormLayoutGroup>
                     </DxFormLayout>
@@ -70,8 +64,8 @@
                                 </SeriesTemplate>
                             </DxChartCommonSeries>
                             <DxChartArgumentAxis>
-                                <DxChartAxisRange StartValue="@this.StartDate.Add(this.StartTime).ToLocalTime()"
-                                                  EndValue="@this.StopDate.Add(this.StopTime).ToLocalTime()" />
+                                <DxChartAxisRange StartValue="@PlotStart"
+                                                  EndValue="@PlotStop" />
                             </DxChartArgumentAxis>
                             <DxChartValueAxis>
                                 <DxChartAxisRange StartValue="0" EndValue="1000"></DxChartAxisRange>
@@ -118,19 +112,19 @@
     IEnumerable<string>? Devices { get; set; }
     string SelectedDevice { get; set; }
     string Message{ get; set; }
-    DateTime StartDate { get; set; } 
-    TimeSpan StartTime { get; set; } 
+    DateTime StartDate { get; set; }
+    DateTime StopDate { get; set; }
 
-    DateTime StopDate { get; set; } 
-    TimeSpan StopTime { get; set; } 
+    DateTime PlotStart { get; set; }
+    DateTime PlotStop { get; set; }
 
     protected override async Task OnInitializedAsync() {
         this.Message = "Select input parameters to view plot";
         DateTime now = DateTime.Now.ToLocalTime();
         this.StartDate=now;
         this.StopDate = now;
-        this.StartTime = now.TimeOfDay;
-        this.StopTime = now.TimeOfDay;
+        this.PlotStart = now;
+        this.PlotStop = now;
         this.Devices = new List<string>() {
             "epi1_data",
             "epi2_data",
@@ -146,8 +140,10 @@
         await InvokeAsync(StateHasChanged);
         //DateTime start = this.StartDate.Date.Add(this.StartTime).AddHours(4);
         //DateTime stop = this.StopDate.Date.Add(this.StopTime).AddHours(4);
-        DateTime start=this.StartDate.Date.Add(this.StartTime).ToUniversalTime();
-        DateTime stop = this.StopDate.Date.Add(this.StopTime).ToUniversalTime();
+        this.PlotStart = this.StartDate.ToLocalTime();
+        this.PlotStop = this.StopDate.ToLocalTime();
+        DateTime start=this.StartDate.Date.ToUniversalTime();
+        DateTime stop = this.StopDate.Date.ToUniversalTime();
         if (this.SelectedDevice == "combined"){
             var list = this.Devices.Where(e => e != "combined").ToList();
             this.PlotData = await this.PlotService.GetData(list,start,stop);

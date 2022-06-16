@@ -47,11 +47,8 @@ namespace MonitoringSystem.ConsoleTesting {
                     e.Consumer<EmailConsumer>();
                 });
             });
-
             var source = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-
             await busControl.StartAsync(source.Token);
-
             try {
                 Console.WriteLine("Press enter to exit");
                 await Task.Run(() => Console.ReadLine());
@@ -72,7 +69,8 @@ namespace MonitoringSystem.ConsoleTesting {
         }
 
         public async Task Consume(ConsumeContext<EmailContract> context) {
-            await this._emailService.SendMessageAsync(context.Message.Subject, context.Message.Message);
+            
+            //await this._emailService.SendMessageAsync(context.Message.Subject, context.Message.Message);
         }
     }
 }

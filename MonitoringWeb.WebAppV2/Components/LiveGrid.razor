@@ -4,65 +4,63 @@
 @using System.Runtime.CompilerServices
 @inject ILogger<LiveGrid> logger
 @implements IAsyncDisposable
-
-<p role="status">TimeStamp: @this._monitorData?.TimeStamp.ToLocalTime().ToString()</p>  
-<div class="row">
-    <h1>Analog Channels</h1>
-    @if (this._monitorData == null)
-    {
-        <p><em>Loading...</em></p>
-    }else {
-        <DxGrid Data="@this._monitorData.analogData" 
-                CssClass="my-class" 
-                ShowAllRows=true 
-                CustomizeElement="Grid_CustomizeElement">
-            <Columns>
-                <DxGridDataColumn FieldName="Item"/>
-                <DxGridDataColumn FieldName="State"/>
-                <DxGridDataColumn FieldName="Value"/>
-            </Columns>
-        </DxGrid>
-    }
-</div>
-<div class="row">
-    <br />
-    <h1>Discrete Channels</h1>        
-    @if (this._monitorData == null)
-    {
-        <p><em>Loading...</em></p>
-    }else{
-        <DxGrid Data="@this._monitorData.discreteData" CssClass="my-class" ShowAllRows=true>
-            <Columns>
-                <DxGridDataColumn FieldName="Item"/>
-                <DxGridDataColumn FieldName="State"/>
-                <DxGridDataColumn FieldName="Value"/>
-            </Columns>
-        </DxGrid>
-    }
-</div>
-<div class="row">
-    <br />
-    <h1>Virtual Channels</h1>
-    @if (this._monitorData == null){
-        <p><em>Loading...</em></p>
-    }else{
-        <DxGrid Data="@this._monitorData.virtualData" 
-                title="Virtual Channels" 
-                CssClass="my-class" ShowAllRows=true>
-            <Columns>
-                <DxGridDataColumn FieldName="Item"/>
-                <DxGridDataColumn FieldName="State"/>
-                <DxGridDataColumn FieldName="Value"/>
-            </Columns>
-        </DxGrid>
-    }
-</div>
-
+<div>
+    <p role="status">TimeStamp: @this._monitorData?.TimeStamp.ToLocalTime().ToString()</p>
+    <div class="row">
+        <h1>Analog Channels</h1>
+        @if (this._monitorData == null) {
+            <p><em>Loading...</em></p>
+        } else {
+            <DxGrid Data="@this._monitorData.analogData"
+                    CssClass="my-class"
+                    ShowAllRows=true
+                    CustomizeElement="Grid_CustomizeElement">
+                <Columns>
+                    <DxGridDataColumn FieldName="Item"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+    <div class="row">
+        <br/>
+        <h1>Discrete Channels</h1>
+        @if (this._monitorData == null) {
+            <p><em>Loading...</em></p>
+        } else {
+            <DxGrid Data="@this._monitorData.discreteData" CssClass="my-class" ShowAllRows=true>
+                <Columns>
+                    <DxGridDataColumn FieldName="Item"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+        <div class="row">
+            <br/>
+            <h1>Virtual Channels</h1>
+            @if (this._monitorData == null) {
+                <p><em>Loading...</em></p>
+            } else {
+                <DxGrid Data="@this._monitorData.virtualData"
+                        title="Virtual Channels"
+                        CssClass="my-class" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
+            }
+        </div>
+    </div>
 @code {
    // [Parameter]
     [Parameter]
     public string? Hub { get; set; }
-
+    
     private HubConnection? _hubConnection;
     private MonitorData? _monitorData;
 
@@ -71,7 +69,11 @@
             .WithAutomaticReconnect()
             .WithUrl(this.Hub)
             .Build();
-        this._hubConnection.On<MonitorData>("ShowCurrent", data => {
+        /*this._hubConnection.On<MonitorData>("ShowCurrent",async (data) => {
+            this._monitorData = data;
+            await InvokeAsync(StateHasChanged);
+        });*/
+        this._hubConnection.On<MonitorData>("ShowCurrent",data => {
             this._monitorData = data;
             InvokeAsync(StateHasChanged);
         });
@@ -80,6 +82,7 @@
 
         try {
             await this._hubConnection.StartAsync();
+            //await InvokeAsync(StateHasChanged);
             this.logger.LogInformation(this.Hub+" Connected");
         } catch {
             this.logger.LogError(this.Hub+" hub connection failed");

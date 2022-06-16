@@ -32,24 +32,38 @@ namespace MonitoringSystem.ConsoleTesting {
         static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
             //await BuildSettingsDB();
-            await CheckSettings();
-            //await WriteOutAnalogFile("gasbay", new DateTime(2022, 5, 25, 0, 0, 0), new DateTime(2022, 6, 7, 0, 0, 0), @"C:\MonitorFiles\gasbay_analog2.csv");
+           // await CheckSettings();
+            //await WriteOutAnalogFile("gasbay", new DateTime(2022, 6, 13, 0, 0, 0), DateTime.Now, @"C:\MonitorFiles\gasbayanalogt2.csv");
+            //await WriteOutAlertsFile("gasbay", new DateTime(2022, 6, 13, 0, 0, 0), DateTime.Now,@"C:\MonitorFiles\gasbayalerts.csv");
             //Stopwatch watch = new Stopwatch();         
             //Console.WriteLine("Done");
             //Console.ReadKey();
-            //using var context = new FacilityContext();
-            //var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");
-            //if (gasbay is not null) {
-            //    ModbusService modservice = new ModbusService();
-            //    var netConfig = gasbay.NetworkConfiguration;
-            //    var modbusConfig = netConfig.ModbusConfig;
+            /*using var context = new FacilityContext();
+            var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");*/
 
-            //    await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
-            //    //modservice.WriteCoil()
-            //} else {
-            //    Console.WriteLine("Could not find device, check name");
-            //}
+            ModbusService modservice = new ModbusService();
+            /*var netConfig = gasbay.NetworkConfiguration;
+            var modbusConfig = netConfig.ModbusConfig;*/
+            Console.WriteLine("Starting test");
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, true);
+            await Task.Delay(5000);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, false);
+            await Task.Delay(5000);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, true);
+            await Task.Delay(5000);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, false);
+            await Task.Delay(5000);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, true);
+            await Task.Delay(5000);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, false);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
             //await AlertItemTypeUpdate("gasbay");
+            Console.WriteLine("Done");
+        }
+
+        static async void ToggleMaint() {
+            
         }
 
         static async Task BuildSettingsDB() { 
@@ -69,7 +83,6 @@ namespace MonitoringSystem.ConsoleTesting {
                 dev.DeviceName = device.Identifier;
                 dev.DeviceType = device.GetType().Name;
                 dev.HubAddress = device.HubName;
-                //Console.WriteLine(dev.DeviceType);
                 monitorDevices.Add(dev);
             }
 
@@ -363,7 +376,7 @@ namespace MonitoringSystem.ConsoleTesting {
             lines.Add(hbuilder.ToString());
             foreach(var readings in aReadings) {
                 StringBuilder builder = new StringBuilder();
-                builder.Append(readings.timestamp.ToString()+",");
+                builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
                 foreach(var reading in readings.readings) {
                     builder.Append($"{reading.value},");
                 }
@@ -394,7 +407,7 @@ namespace MonitoringSystem.ConsoleTesting {
             lines.Add(hbuilder.ToString());
             foreach (var readings in aReadings) {
                 StringBuilder builder = new StringBuilder();
-                builder.Append(readings.timestamp.ToString() + ",");
+                builder.Append(readings.timestamp.ToLocalTime().ToString() + ",");
                 foreach (var reading in readings.readings) {
                     builder.Append($"{reading.reading},");
                 }

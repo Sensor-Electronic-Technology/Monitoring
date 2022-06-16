@@ -7,8 +7,9 @@
     @if (this._devices != null) {
         foreach (var device in this._devices) {
             <DxTabPage Text="@device.DeviceName">
-                <LiveGrid Hub="@device.HubAddress"></LiveGrid>
+                <LiveGrid Hub="@device.HubAddress"/>
             </DxTabPage>
+
         }
     } else {
         <p>Devices not loaded..</p>
@@ -31,5 +32,9 @@
     protected override async Task OnInitializedAsync() {
         await this.SettingsService.Load();
         this._devices = await this.SettingsService.GetDevices();
+    }
+
+    async Task Update() {
+        await InvokeAsync(StateHasChanged);
     }
 }

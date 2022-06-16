@@ -1,16 +1,14 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
-RUN apt-get update && apt-get install -y --no-install-recommends gss-ntlmssp
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
+RUN apt-get update && apt-get install -y --no-install-recommends gss-ntlmssp
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 COPY ["MonitoringData.DataLoggingService/MonitoringData.DataLoggingService.csproj", "MonitoringData.DataLoggingService/"]
-COPY ["MonitoringSystem.Shared/MonitoringSystem.Shared.csproj", "MonitoringSystem.Shared/"]
-COPY ["MonitoringData.Infrastructure/MonitoringData.Infrastructure.csproj", "MonitoringData.Infrastructure/"]
 RUN dotnet restore "MonitoringData.DataLoggingService/MonitoringData.DataLoggingService.csproj"
 COPY . .
 WORKDIR "/src/MonitoringData.DataLoggingService"
