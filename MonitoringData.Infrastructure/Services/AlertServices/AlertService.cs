@@ -16,20 +16,23 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly IAlertRepo _alertRepo;
         private readonly ILogger<AlertService> _logger;
         private readonly MonitorDatabaseSettings _settings;
-        private IEmailService _emailService;
+        private readonly IEmailService _emailService;
         private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
 
 
-        public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,IOptions<MonitorDatabaseSettings> options) {
+        public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,
+            IOptions<MonitorDatabaseSettings> options,
+            IEmailService emailService) {
             this._alertRepo = alertRepo;
             this._logger = logger;
-            this._emailService = new EmailService();
+            //this._emailService = new ExchangeEmailService();
+            this._emailService = emailService;
             this._settings = options.Value;
         }
 
         public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
             this._alertRepo = new AlertRepo(connName, databaseName, actionCol, alertCol,"alert_readings");
-            this._emailService = new EmailService();
+            this._emailService = new ExchangeEmailService();
         }
 
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {

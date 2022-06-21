@@ -21,5 +21,14 @@
   },
   "ServiceOptions": {
     "ServiceType": "MonitorBox"
+  },
+  "MonitorEmailSettings": {
+    "ConnectionString": "mongodb://172.20.3.41",
+    "DatabaseName": "monitor_settings",
+    "SmtpHost": "192.168.0.123",
+    "SmtpPort": "25",
+    "FromUser": "Monitor Alerts",
+    "FromAddress": "monitoralerts@s-et.com",
+    "EmailRecipientCollection": "email_recipients"
   }
 }

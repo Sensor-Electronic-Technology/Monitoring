@@ -5,15 +5,14 @@ using MonitoringSystem.Shared.Data;
 namespace MonitoringWeb.WebAppV2.Data;
 
 public class SettingsService {
-    private WebsiteSettings _settings;
+    private MonitorWebsiteSettings _settings;
     private IMongoCollection<ManagedDevice> _deviceCollection;
     private List<ManagedDevice> _devices;
 
-    public SettingsService(IOptions<WebsiteSettings> options,IMongoClient client) {
+    public SettingsService(IOptions<MonitorWebsiteSettings> options,IMongoClient client) {
         this._settings = options.Value;
         var database = client.GetDatabase(this._settings.DatabaseName);
-        this._deviceCollection = database.GetCollection<ManagedDevice>(this._settings.CollectionName);
-
+        this._deviceCollection = database.GetCollection<ManagedDevice>(this._settings.ManagedDeviceCollection);
     }
 
     public Task<IEnumerable<ManagedDevice>> GetDevices() {

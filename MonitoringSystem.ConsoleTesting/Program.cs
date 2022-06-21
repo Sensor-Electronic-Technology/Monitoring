@@ -16,7 +16,9 @@ using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using System.Diagnostics;
 using MonitoringData.Infrastructure.Services.DataLogging;
-using System.Net.Mail;
+using MailKit.Net.Smtp;
+using MimeKit;
+using MongoDB.Driver.Encryption;
 
 namespace MonitoringSystem.ConsoleTesting {
     public record class Test {
@@ -32,8 +34,10 @@ namespace MonitoringSystem.ConsoleTesting {
     public class Program {
         static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
+            //await BuildEmailSettingsCollection();
+            //await CheckEmailSettigns();
             //await BuildSettingsDB();
-           // await CheckSettings();
+            // await CheckSettings();
             //await WriteOutAnalogFile("gasbay", new DateTime(2022, 6, 16, 0, 0, 0), DateTime.Now, @"C:\MonitorFiles\gasbayanalogt3.csv");
             //await WriteOutAlertsFile("gasbay", new DateTime(2022, 6, 13, 0, 0, 0), DateTime.Now,@"C:\MonitorFiles\gasbayalerts.csv");
             //Stopwatch watch = new Stopwatch();         
@@ -41,49 +45,48 @@ namespace MonitoringSystem.ConsoleTesting {
             //Console.ReadKey();
             /*using var context = new FacilityContext();
             var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");*/
-            EmailService emailService = new EmailService();
-            MailAddress rec1 = new MailAddress("aelmendorf@s-et.com");
-            MailAddress rec2 = new MailAddress("rakesh@s-et.com");
-            MailAddress rec3 = new MailAddress("bmurdaugh@s-et.com");
-            MailAddress rec4 = new MailAddress("achapman@s-et.com");
-            MailAddress from = new MailAddress("monitoralerts@s-et.com");
-            SmtpClient client = new SmtpClient();
-            client.Host = "192.168.0.123";
-            client.Port = 25;
+
             
+            /*SmtpClient client = new SmtpClient();
+            await client.ConnectAsync("192.168.0.123",25,false);
+            MimeMessage mailMessage = new MimeMessage();
+            BodyBuilder bodyBuilder = new BodyBuilder();
+            mailMessage.To.Add(new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com"));
+            mailMessage.From.Add(new MailboxAddress("Monitor Alerts","monitorAlerts@s-et.com"));
+
             MessageBuilder builder = new MessageBuilder();
             builder.StartMessage("A Test");
             builder.AppendAlert("Alert 2","Alarm","50");
             builder.AppendStatus("Alert 1","Okay","0");
             builder.AppendStatus("Alert 2","Alarm","55");
-            var message=builder.FinishMessage();
+            
+            bodyBuilder.HtmlBody=builder.FinishMessage();
+            mailMessage.Body = bodyBuilder.ToMessageBody();
+            await client.SendAsync(mailMessage);*/
+            
             //await emailService.SendMessageAsync("Test",message);
-            MailMessage mailMessage = new MailMessage(from.Address,"aelmendorf@s-et.com,rakesh@s-et.com,bmurdaugh@s-et.com,achapman@s-et.com","Test Smtp Alert Email",message);
-            mailMessage.IsBodyHtml = true;
+            //MailMessage mailMessage = new MailMessage(from.Address,"aelmendorf@s-et.com,rakesh@s-et.com,bmurdaugh@s-et.com,achapman@s-et.com","Test Smtp Alert Email",message);
+            //mailMessage.IsBodyHtml = true;
             //mailMessage.
             
-            await client.SendMailAsync(mailMessage);
+            
             //await client.SendMailAsync()
-            Console.WriteLine("Message sent");
-            /*ModbusService modservice = new ModbusService();
+            //Console.WriteLine("Message sent");
+            ModbusService modservice = new ModbusService();
             /*var netConfig = gasbay.NetworkConfiguration;
-            var modbusConfig = netConfig.ModbusConfig;#1#
+            var modbusConfig = netConfig.ModbusConfig;*/
             Console.WriteLine("Starting test");
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 1, true);
-            await Task.Delay(5000);
-            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, false);
-            await Task.Delay(5000);
-            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, true);
-            await Task.Delay(5000);
-            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, false);
-            await Task.Delay(5000);
-            await modservice.WriteCoil("172.20.5.39", 502, 1, 1, true);
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 2, true);
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 1, true);
             await Task.Delay(5000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 1, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 1, false);
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 2, false);
             //await AlertItemTypeUpdate("gasbay");
-            Console.WriteLine("Done");*/
+            Console.WriteLine("Done");
         }
         
         static async Task BuildSettingsDB() { 
@@ -108,6 +111,51 @@ namespace MonitoringSystem.ConsoleTesting {
 
             await monitorDevCollection.InsertManyAsync(monitorDevices);
             Console.WriteLine("Check Database");
+            Console.ReadKey();
+        }
+        
+        static async Task BuildEmailSettingsCollection() { 
+            var context = new FacilityContext();
+            
+            var devices = context.Devices.ToList();
+
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            //await database.CreateCollectionAsync("monitor_devices");
+            var emailCollection = database.GetCollection<EmailRecipient>("email_recipients");
+            List<EmailRecipient> recipients = new List<EmailRecipient>();
+            recipients.Add(new EmailRecipient() {
+                Username = "Rakesh Jain",
+                Address = "rakesh@s-et.com"
+            });
+            recipients.Add(new EmailRecipient() {
+                Username = "Andrew Elmendorf",
+                Address = "aelmendorf@s-et.com"
+            });
+            recipients.Add(new EmailRecipient() {
+                Username = "Brad Murdaugh",
+                Address = "bmurdaugh@s-et.com"
+            });
+            recipients.Add(new EmailRecipient() {
+                Username = "Andy Chapman",
+                Address = "achapman@s-et.com"
+            });
+            await emailCollection.InsertManyAsync(recipients);
+            Console.WriteLine("Check Database");
+            Console.ReadKey();
+        }
+
+        static async Task CheckEmailSettigns() {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            var recipients = await database.GetCollection<EmailRecipient>("email_recipients").Find(_ => true)
+                .ToListAsync();
+            Console.WriteLine("Recipients: ");
+            foreach (var recipient in recipients) {
+                Console.WriteLine($"User: {recipient.Username} Email: {recipient.Address}");
+            }
+
+            Console.WriteLine("Press Any key to exit");
             Console.ReadKey();
         }
 
