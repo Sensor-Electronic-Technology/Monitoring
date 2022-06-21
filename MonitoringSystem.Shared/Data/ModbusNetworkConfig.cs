@@ -5,12 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MonitoringSystem.Shared.Data {
-    public class DeviceDTO {
-        public string Identifier { get; set; }
-        public string DatabaseName { get; set; }
-        public NetworkConfiguration NetworkConfiguration { get; set; }
-    }
-
     public class NetworkConfiguration {
         public string IPAddress { get; set; }
         public string DNS { get; set; }

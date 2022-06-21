@@ -1,9 +1,9 @@
 ﻿@page "/plot"
-@using DevExpress.Blazor
-@using DevExpress.Blazor.Configuration
 @using MonitoringData.Infrastructure.Services.DataAccess
 @using System.Drawing
+@using MonitoringWeb.WebAppV2.Data
 @inject PlotDataService PlotService
+@inject SettingsService SettingsService
 
 <h3 align="center">H2 Plots</h3>
 <DxStackLayout Orientation="@Orientation.Vertical">
@@ -13,7 +13,7 @@
                 <div>
                    <DxFormLayout CssClass="w-100">
                        <DxFormLayoutItem Caption="Device" ColSpanLg="12">
-                           <DxComboBox Data="@Devices"
+                           <DxComboBox Data="@this.DeviceLookup.Select(e=>e.Key).AsEnumerable()"
                             @bind-Value="@SelectedDevice"
                             CssClass="cw-480" />
                        </DxFormLayoutItem>
@@ -32,12 +32,11 @@
                 <div style="padding:1rem">
                     <DxButton Click="@Submit" RenderStyle="ButtonRenderStyle.Primary" 
                         RenderStyleMode="ButtonRenderStyleMode.Contained" 
-                        Text="Submit" />
+                        Text="Fetch Plot" />
                 </div>
-
             </Template>
         </DxStackLayoutItem>
-        <DxStackLayoutItem Length="4fr">
+        <DxStackLayoutItem Length="6fr">
             <Template>
                 <div style="padding:1rem">
                     @if (this.PlotData == null) {
@@ -109,9 +108,9 @@
 
 @code {
     IEnumerable<AnalogReadingDto>? PlotData { get; set; }
-    IEnumerable<string>? Devices { get; set; }
-    string SelectedDevice { get; set; }
-    string Message{ get; set; }
+    Dictionary<string, string> DeviceLookup { get; set; } = new Dictionary<string, string>();
+    string? SelectedDevice { get; set; }
+    string? Message{ get; set; }
     DateTime StartDate { get; set; }
     DateTime StopDate { get; set; }
 
@@ -120,36 +119,35 @@
 
     protected override async Task OnInitializedAsync() {
         this.Message = "Select input parameters to view plot";
+        var devices=await this.SettingsService.GetDevices();
+        foreach (var device in devices) {
+            this.DeviceLookup.Add(device.DeviceName,device.DatabaseName);
+        }
+        this.DeviceLookup.Add("Combined","combined");
         DateTime now = DateTime.Now.ToLocalTime();
         this.StartDate=now;
         this.StopDate = now;
         this.PlotStart = now;
         this.PlotStop = now;
-        this.Devices = new List<string>() {
-            "epi1_data",
-            "epi2_data",
-            "gasbay_data",
-            "combined"
-        };
-        this.SelectedDevice = this.Devices.First();
+        this.SelectedDevice = this.DeviceLookup.First().Key;
     }
 
     private async void Submit() {
-        this.PlotData=null;
-        this.Message = "Loading plot data, please wait...";
-        await InvokeAsync(StateHasChanged);
-        //DateTime start = this.StartDate.Date.Add(this.StartTime).AddHours(4);
-        //DateTime stop = this.StopDate.Date.Add(this.StopTime).AddHours(4);
-        this.PlotStart = this.StartDate.ToLocalTime();
-        this.PlotStop = this.StopDate.ToLocalTime();
-        DateTime start=this.StartDate.Date.ToUniversalTime();
-        DateTime stop = this.StopDate.Date.ToUniversalTime();
-        if (this.SelectedDevice == "combined"){
-            var list = this.Devices.Where(e => e != "combined").ToList();
-            this.PlotData = await this.PlotService.GetData(list,start,stop);
-        }else{
-            this.PlotData = await this.PlotService.GetData(this.SelectedDevice,start,stop);
+        if (SelectedDevice is not null) {
+            this.PlotData=null;
+            this.Message = "Loading plot data, please wait...";
+            await InvokeAsync(StateHasChanged);
+            this.PlotStart = this.StartDate.ToLocalTime();
+            this.PlotStop = this.StopDate.ToLocalTime();
+            var start=this.StartDate;
+            var stop = this.StopDate;
+            if (this.SelectedDevice == "Combined"){
+                this.PlotData = await this.PlotService.GetData(this.DeviceLookup.Select(e=>e.Value).ToList(),
+                    start,stop);
+            }else{
+                this.PlotData = await this.PlotService.GetData(this.DeviceLookup[this.SelectedDevice],start,stop);
+            }
+            await InvokeAsync(StateHasChanged);
         }
-        await InvokeAsync(StateHasChanged);
     }
 }

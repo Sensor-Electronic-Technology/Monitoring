@@ -1,0 +1,37 @@
+﻿@using MonitoringSystem.Shared.Data
+@*<DxFormLayout>
+    <DxFormLayoutItem ColSpanMd="12" ColSpanLg="12">
+        <Template>
+            <div class="text-center">
+                <img src="Images/@home.PhotoUrl" class="m-auto w-75" />
+            </div>
+        </Template>
+    </DxFormLayoutItem>
+    <DxFormLayoutItem ColSpanMd="12" ColSpanLg="12">
+        <Template>
+            <p>
+                <span class="text-muted">Size: </span> @home.HouseSize ft2
+            </p>
+            <p>
+                <span class="text-muted">Year: </span>  @home.YearBuilt
+            </p>
+             <p style="overflow: hidden;white-space:nowrap;text-overflow:ellipsis;" title=@home.Address >
+                <span  class="text-muted">Address: </span> @home.Address 
+            </p>
+            <div class="text-muted">
+                @home.Features.Substring(0, 50)
+                <a href="#" class="target-container" @onclick="@(() => ShowDetails(home.Features))">...More details</a>
+            </div>
+        </Template>
+    </DxFormLayoutItem>
+    <DxFormLayoutItem ColSpanMd="12">
+        <Template>
+            <h5 class="text-center price">@string.Format("{0:C}", home.Price)</h5>
+        </Template>
+    </DxFormLayoutItem>
+</DxFormLayout>*@
+
+@code {
+    
+
+}

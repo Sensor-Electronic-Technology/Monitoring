@@ -3,17 +3,35 @@
 @using MonitoringWeb.WebAppV2.Data
 @using MonitoringSystem.Shared.Data
 @inject SettingsService SettingsService
-<DxTabs style="width:950px" TabsRenderMode="@TabsRenderMode.AllTabs">
+
+@{
+    RenderFragment<IEnumerable<ManagedDevice>> tabRender = (devices) => 
+        @<DxTabs style="width:950px" TabsRenderMode="@TabsRenderMode.AllTabs">
+            @foreach (var device in devices) {
+                <DxTabPage Text="@device.DeviceName">
+                    <LiveGrid Hub="@device.HubAddress"/>
+                </DxTabPage>
+            }
+        </DxTabs>;
+}
+@if (this._devices == null) {
+    <p>Devices not loaded..</p>
+} else {
+    @tabRender(this._devices)
+}
+
+@*<DxTabs style="width:950px" TabsRenderMode="@TabsRenderMode.AllTabs">
+    
     @if (this._devices != null) {
         foreach (var device in this._devices) {
             <DxTabPage Text="@device.DeviceName">
                 <LiveGrid Hub="@device.HubAddress"/>
             </DxTabPage>
-
         }
     } else {
         <p>Devices not loaded..</p>
     }
+</DxTabs>*@
     @*<DxTabPage Text="Epi Lab 1">
         <LiveGrid Hub="http://e1streamv2/hubs/epi1streaming"></LiveGrid>
     </DxTabPage>
@@ -26,7 +44,7 @@
     <DxTabPage Text="NH3 Tanks">
         <LiveGrid Hub="http://nhstream/hubs/nhstreaming"></LiveGrid>
     </DxTabPage>*@
-</DxTabs>
+
 @code {
     IEnumerable<ManagedDevice>? _devices;
     protected override async Task OnInitializedAsync() {

@@ -16,7 +16,8 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
 
         public EmailService() {
             this._exchange = new ExchangeService(ExchangeVersion.Exchange2016);
-            WebCredentials credentials = new WebCredentials("facilityalerts", "Facility!1sskv", "sskep.com");
+            //WebCredentials credentials = new WebCredentials("facilityalerts", "Facility!1sskv", "sskep.com");
+            WebCredentials credentials = new WebCredentials("600076", "Drizzle3219753!", "sskep.com");
             this._exchange.Credentials = credentials;
             this._exchange.Url = new Uri(@"https://email.seoulsemicon.com/EWS/Exchange.asmx");
         }
@@ -57,6 +58,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             MessageBody body = new MessageBody();
             body.BodyType = BodyType.HTML;
             body.Text = msg;
+            
             message.Body = body;
             await message.Send();
         }

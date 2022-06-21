@@ -13,6 +13,45 @@
     <link href="MonitoringWeb.WebAppV2.styles.css" rel="stylesheet" />
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
     <link href="_content/DevExpress.Blazor/dx-blazor.bs5.css" rel="stylesheet" />
+        <script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-3.4.1.min.js"></script>
+    
+        <!-- DevExtreme themes -->
+        <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/21.2.4/css/dx.common.css">
+        <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/21.2.4/css/dx.light.css">
+    
+        <!-- DevExtreme library -->
+        <script type="text/javascript" src="https://cdn3.devexpress.com/jslib/21.2.4/js/dx.all.js"></script>
+        <script>
+            var circularGauge;
+            function renderDevExtremeControls(circularGaugeCssClass) {
+                renderCircularGauge(`.${circularGaugeCssClass}`);
+            }
+    
+            function renderCircularGauge(container) {            
+                circularGauge = $(container).dxCircularGauge({
+                    geometry: {
+                        startAngle: 225,
+                        endAngle: 315,
+                    },
+                    scale: {
+                        startValue: 20,
+                        endValue: 200,
+                        tickInterval: 20,
+                        minorTickInterval: 10,
+                    },
+                    valueIndicator: {
+                      type: 'twoColorNeedle',
+                      color: 'none',
+                      secondFraction: 0.24,
+                      secondColor: '#f05b41',
+                    },
+                    value: 40,
+                    size: {
+                      width: 260,
+                    },
+                  }).dxCircularGauge('instance');
+            }
+        </script>
 </head>
 <body>
     @{

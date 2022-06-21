@@ -23,6 +23,17 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this._bodyBuilder = new StringBuilder();
             this.displayChanged = false;
 
+            /*this._bodyBuilder.AppendLine("<html xmlns:v=\"urn:schemas-microsoft-com:vml\" " +
+                                         "xmlns:o=\"urn:schemas-microsoft-com:office:office\"" +
+                                         " xmlns:w=\"urn:schemas-microsoft-com:office:word\" " +
+                                         "xmlns:m=\"http://schemas.microsoft.com/office/2004/12/omml\" " +
+                                         "xmlns=\"http://www.w3.org/TR/REC-html40\">");
+            this._bodyBuilder.AppendLine("<head>");
+            this._bodyBuilder.AppendLine("<meta http-equiv=\"Content-Type\" " +
+                                         "content=\"text/html; " +
+                                         "charset=ks_c_5601-1987\">");
+            this._bodyBuilder.AppendLine("<meta name=\"Generator\" content=\"Microsoft Word 15(filtered medium)\">");*/
+            this._bodyBuilder.AppendLine("<html>");
             this._bodyBuilder.AppendLine("<head>");
             this._bodyBuilder.AppendLine("<style>");
             this._bodyBuilder.AppendLine("table, th, td {");
@@ -92,6 +103,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this._bodyBuilder.Append(this._alertBuilder.ToString());
             this._bodyBuilder.Append(this._statusBuilder.ToString());
             this._bodyBuilder.AppendLine("</body>");
+            this._bodyBuilder.AppendLine("</html>");
             //this._alertBuilder.Append(this._statusBuilder.ToString());
 
             return this._bodyBuilder.ToString();

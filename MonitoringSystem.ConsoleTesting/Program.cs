@@ -33,17 +33,26 @@ namespace MonitoringSystem.ConsoleTesting {
         static async Task Main(string[] args) {
             //await BuildSettingsDB();
            // await CheckSettings();
-            //await WriteOutAnalogFile("gasbay", new DateTime(2022, 6, 13, 0, 0, 0), DateTime.Now, @"C:\MonitorFiles\gasbayanalogt2.csv");
+            //await WriteOutAnalogFile("gasbay", new DateTime(2022, 6, 16, 0, 0, 0), DateTime.Now, @"C:\MonitorFiles\gasbayanalogt3.csv");
             //await WriteOutAlertsFile("gasbay", new DateTime(2022, 6, 13, 0, 0, 0), DateTime.Now,@"C:\MonitorFiles\gasbayalerts.csv");
             //Stopwatch watch = new Stopwatch();         
             //Console.WriteLine("Done");
             //Console.ReadKey();
             /*using var context = new FacilityContext();
             var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");*/
-
-            ModbusService modservice = new ModbusService();
+            EmailService emailService = new EmailService();
+            
+            MessageBuilder builder = new MessageBuilder();
+            builder.StartMessage("A Test");
+            builder.AppendAlert("Alert 2","Alarm","50");
+            builder.AppendStatus("Alert 1","Okay","0");
+            builder.AppendStatus("Alert 2","Alarm","55");
+            var message=builder.FinishMessage();
+            await emailService.SendMessageAsync("Test",message);
+            Console.WriteLine("Message sent");
+            /*ModbusService modservice = new ModbusService();
             /*var netConfig = gasbay.NetworkConfiguration;
-            var modbusConfig = netConfig.ModbusConfig;*/
+            var modbusConfig = netConfig.ModbusConfig;#1#
             Console.WriteLine("Starting test");
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 1, true);
@@ -59,13 +68,9 @@ namespace MonitoringSystem.ConsoleTesting {
             await modservice.WriteCoil("172.20.5.39", 502, 1, 1, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
             //await AlertItemTypeUpdate("gasbay");
-            Console.WriteLine("Done");
+            Console.WriteLine("Done");*/
         }
-
-        static async void ToggleMaint() {
-            
-        }
-
+        
         static async Task BuildSettingsDB() { 
             var context = new FacilityContext();
             
@@ -206,7 +211,7 @@ namespace MonitoringSystem.ConsoleTesting {
             var client = new MongoClient("mongodb://172.20.3.41");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
-                .Select(e => new DeviceDTO() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration })
+                .Select(e => new DeviceDto() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration })
                 .FirstOrDefault(e => e.Identifier == deviceName);
 
             if(device is not null) {
@@ -694,7 +699,7 @@ namespace MonitoringSystem.ConsoleTesting {
             var client = new MongoClient("mongodb://172.20.3.41");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
-                .Select(e => new DeviceDTO() { 
+                .Select(e => new DeviceDto() { 
                     Identifier = e.Identifier, 
                     NetworkConfiguration = e.NetworkConfiguration 
                 }).FirstOrDefault(e => e.Identifier == deviceName);
@@ -816,7 +821,7 @@ namespace MonitoringSystem.ConsoleTesting {
             var client = new MongoClient("mongodb://172.20.3.30");
             var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
-                .Select(e => new DeviceDTO() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration})
+                .Select(e => new DeviceDto() { Identifier = e.Identifier, NetworkConfiguration = e.NetworkConfiguration})
                 .FirstOrDefault(e => e.Identifier == deviceName);
 
             if (device != null) {
