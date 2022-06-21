@@ -16,6 +16,7 @@ using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using System.Diagnostics;
 using MonitoringData.Infrastructure.Services.DataLogging;
+using System.Net.Mail;
 
 namespace MonitoringSystem.ConsoleTesting {
     public record class Test {
@@ -41,6 +42,14 @@ namespace MonitoringSystem.ConsoleTesting {
             /*using var context = new FacilityContext();
             var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");*/
             EmailService emailService = new EmailService();
+            MailAddress rec1 = new MailAddress("aelmendorf@s-et.com");
+            MailAddress rec2 = new MailAddress("rakesh@s-et.com");
+            MailAddress rec3 = new MailAddress("bmurdaugh@s-et.com");
+            MailAddress rec4 = new MailAddress("achapman@s-et.com");
+            MailAddress from = new MailAddress("monitoralerts@s-et.com");
+            SmtpClient client = new SmtpClient();
+            client.Host = "192.168.0.123";
+            client.Port = 25;
             
             MessageBuilder builder = new MessageBuilder();
             builder.StartMessage("A Test");
@@ -48,7 +57,13 @@ namespace MonitoringSystem.ConsoleTesting {
             builder.AppendStatus("Alert 1","Okay","0");
             builder.AppendStatus("Alert 2","Alarm","55");
             var message=builder.FinishMessage();
-            await emailService.SendMessageAsync("Test",message);
+            //await emailService.SendMessageAsync("Test",message);
+            MailMessage mailMessage = new MailMessage(from.Address,"aelmendorf@s-et.com,rakesh@s-et.com,bmurdaugh@s-et.com,achapman@s-et.com","Test Smtp Alert Email",message);
+            mailMessage.IsBodyHtml = true;
+            //mailMessage.
+            
+            await client.SendMailAsync(mailMessage);
+            //await client.SendMailAsync()
             Console.WriteLine("Message sent");
             /*ModbusService modservice = new ModbusService();
             /*var netConfig = gasbay.NetworkConfiguration;
