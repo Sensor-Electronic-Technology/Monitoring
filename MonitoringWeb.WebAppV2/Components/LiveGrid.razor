@@ -4,10 +4,11 @@
 @using System.Runtime.CompilerServices
 @inject ILogger<LiveGrid> logger
 @implements IAsyncDisposable
-<div>
+<div class="container">
+    <h4>@DeviceName</h4>
     <p role="status">TimeStamp: @this._monitorData?.TimeStamp.ToLocalTime().ToString()</p>
     <div class="row">
-        <h1>Analog Channels</h1>
+        <h6>Analog Channels</h6>
         @if (this._monitorData == null) {
             <p><em>Loading...</em></p>
         } else {
@@ -24,12 +25,13 @@
         }
     </div>
     <div class="row">
-        <br/>
-        <h1>Discrete Channels</h1>
+        <h6>Discrete Channels</h6>
         @if (this._monitorData == null) {
             <p><em>Loading...</em></p>
         } else {
-            <DxGrid Data="@this._monitorData.discreteData" CssClass="my-class" ShowAllRows=true>
+            <DxGrid Data="@this._monitorData.discreteData" CssClass="my-class"
+                    ShowAllRows=true
+                    CustomizeElement="Grid_CustomizeElement">
                 <Columns>
                     <DxGridDataColumn FieldName="Item"/>
                     <DxGridDataColumn FieldName="State"/>
@@ -38,28 +40,31 @@
             </DxGrid>
         }
     </div>
-        <div class="row">
-            <br/>
-            <h1>Virtual Channels</h1>
-            @if (this._monitorData == null) {
-                <p><em>Loading...</em></p>
-            } else {
-                <DxGrid Data="@this._monitorData.virtualData"
-                        title="Virtual Channels"
-                        CssClass="my-class" ShowAllRows=true>
-                    <Columns>
-                        <DxGridDataColumn FieldName="Item"/>
-                        <DxGridDataColumn FieldName="State"/>
-                        <DxGridDataColumn FieldName="Value"/>
-                    </Columns>
-                </DxGrid>
-            }
-        </div>
+    <div class="row">
+        <h6>Virtual Channels</h6>
+        @if (this._monitorData == null) {
+            <p><em>Loading...</em></p>
+        } else {
+            <DxGrid Data="@this._monitorData.virtualData"
+                    title="Virtual Channels"
+                    CssClass="my-class"
+                    ShowAllRows=true
+                    CustomizeElement="Grid_CustomizeElement">
+                <Columns>
+                    <DxGridDataColumn FieldName="Item"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
     </div>
+</div>
 @code {
    // [Parameter]
     [Parameter]
     public string? Hub { get; set; }
+    [Parameter]
+    public string? DeviceName { get; set; }
     
     private HubConnection? _hubConnection;
     private MonitorData? _monitorData;
@@ -97,7 +102,6 @@
             e.CssClass = "alarm-item";
         }
     }
-
     public async ValueTask DisposeAsync() {
         if (this._hubConnection is not null) {
             await this._hubConnection.DisposeAsync();

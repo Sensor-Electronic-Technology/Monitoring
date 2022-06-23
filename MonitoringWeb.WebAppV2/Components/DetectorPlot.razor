@@ -1,0 +1,138 @@
+﻿@using MonitoringData.Infrastructure.Services.DataAccess
+@using System.Drawing
+@inject PlotDataService PlotService
+<div class="container-fluid">
+    <div class="row">
+        <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+            <DxFormLayoutGroup Caption="Plot Options" ColSpanMd="24">
+                <DxFormLayoutItem Caption="Hours +/-" ColSpanMd="12">
+                    <DxSpinEdit @bind-Value="DeltaHours"
+                                Increment="1M"
+                                MinValue="1M"
+                                MaxValue="12M"
+                                CssClass="cw-320"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="YAxis Max" ColSpanMd="12">
+                    <DxSpinEdit @bind-Value="YAxisStop"
+                                Increment="100M"
+                                MinValue="0M"
+                                MaxValue="1200M"
+                                CssClass="cw-320"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Aggregation Enabled">
+                    <DxCheckBox @bind-Checked="AggregateEnabled"/>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutItem Caption="Press To Fetch Plot" BeginRow="true" ColSpanMd="24">
+                <DxButton Click="@FetchAlertPlot"
+                          RenderStyle="ButtonRenderStyle.Primary"
+                          RenderStyleMode="ButtonRenderStyleMode.Contained"
+                          Text="Fetch Plot"/>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </div>
+    
+    <div class="row">
+        @if (this.PlotData == null) {
+            <p>@PlotMessage</p>
+        } else {
+            <DxChart Data="@PlotData"
+                     @ref="@Chart"
+                     Width="100%"
+                     Height="100%">
+                <DxChartLegend AllowToggleSeries="true"
+                               Orientation="Orientation.Horizontal"
+                               HorizontalAlignment="HorizontalAlignment.Center"
+                               VerticalAlignment="VerticalEdge.Top">
+                    <DxChartTitle Text="Detectors"> </DxChartTitle>
+                </DxChartLegend>
+                <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
+                                     ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
+                                     ValueField="@((AnalogReadingDto r) => (int)r.Value)">
+                    <SeriesTemplate Context="settings">
+                        <DxChartLineSeries Settings="@settings">
+                            <DxChartSeriesLabel Visible="false"/>
+                            <DxChartSeriesPoint Visible="true"/>
+                            <DxChartAggregationSettings Enabled="@AggregateEnabled"
+                                                        Method="ChartAggregationMethod.Max"/>
+                        </DxChartLineSeries>
+                    </SeriesTemplate>
+                </DxChartCommonSeries>
+                <DxChartArgumentAxis>
+                    <DxChartAxisRange StartValue="@this.StartDate.ToLocalTime()"
+                                      EndValue="@this.StopDate.ToLocalTime()"/>
+                </DxChartArgumentAxis>
+                <DxChartValueAxis>
+                    <DxChartAxisRange StartValue="@YAxisStart" EndValue="@YAxisStop"></DxChartAxisRange>
+                    <DxChartAxisTitle Text="PPM"/>
+                    <DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
+                        <DxChartConstantLineLabel Text="Soft-Warn"
+                                                  VerticalAlignment="VerticalAlignment.Center"
+                                                  Position="RelativePosition.Inside"/>
+                    </DxChartConstantLine>
+                    <DxChartConstantLine Value="500" Width="3" Color="Color.Yellow">
+                        <DxChartConstantLineLabel Text="Warning"
+                                                  VerticalAlignment="VerticalAlignment.Center"
+                                                  Position="RelativePosition.Inside"/>
+                    </DxChartConstantLine>
+                    <DxChartConstantLine Value="1000" Width="3" Color="Color.Red">
+                        <DxChartConstantLineLabel Text="Alarm"
+                                                  VerticalAlignment="VerticalAlignment.Center"
+                                                  Position="RelativePosition.Inside"/>
+                    </DxChartConstantLine>
+                </DxChartValueAxis>
+                <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
+                <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
+                                          ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
+                <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
+                    <div style="background-color: grey;">
+                        <div class="font-weight-bold">
+                            @(((DateTime)context.Point.Argument).ToString())
+                        </div>
+                        <div>
+                            @((context.Point.Value))
+                        </div>
+                    </div>
+                </DxChartTooltip>
+            </DxChart>
+        }
+    </div>
+</div>
+
+@code { 
+    [Parameter]
+    public object? SelectedAlert { get; set; }
+    
+    DxChartBase Chart;
+    IEnumerable<AnalogReadingDto>? PlotData { get; set; }
+    string PlotMessage { get; set; } = "Select Alert and press FetchPlot button to view plot";
+    DateTime StartDate { get; set; }
+    DateTime StopDate { get; set; }
+    Decimal DeltaHours { get; set; } = 3;
+    int YAxisStart { get; set; } = 0;
+    Decimal YAxisStop { get; set; } = 300;
+    bool NeedsRedraw = false;
+    bool AggregateEnabled { get; set; } = false;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (NeedsRedraw)
+            await this.Chart.RedrawAsync();
+        NeedsRedraw = false;
+    }
+    
+    private async void FetchAlertPlot() {
+        if (this.SelectedAlert is AlertDto alert) {
+            this.PlotMessage = $"Loading plot data for {alert.Name}, please wait...";
+            await InvokeAsync(StateHasChanged);
+            //this.AggregateEnabled = DeltaHours >= 6;
+            this.StartDate = alert.TimeStamp.AddHours(-(int)DeltaHours);
+            this.StopDate = alert.TimeStamp.AddHours((int)DeltaHours);
+            this.PlotData = await this.PlotService.GetData(alert.database,this.StartDate,this.StopDate);
+            if (this.PlotData == null) {
+                this.PlotMessage = $"Error: Could not load plot data for {alert.Name}";
+            }
+            this.NeedsRedraw = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

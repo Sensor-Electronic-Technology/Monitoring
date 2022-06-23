@@ -1,170 +1,36 @@
 ﻿@page "/"
-@using MonitoringData.Infrastructure.Services.DataAccess
-@using System.Drawing
-@inject LatestAlertService AlarmService
-@inject PlotDataService PlotService
+@using MonitoringWeb.WebAppV2.Components
+@using MonitoringWeb.WebAppV2.Data
+@using MonitoringSystem.Shared.Data
+@inject SettingsService SettingsService
 
-<h2 class="pb-2">Facility Monitoring Dashboard</h2>
-
-<h2>Latest Alerts, Timespan=7days</h2>
-    <div class="row" style="padding:1rem">
-        <div class="col" style="padding:.5rem">
-        <DxSpinEdit @bind-Value="DaysBack"
-                    Increment="1M"
-                    MinValue="1M"
-                    MaxValue="10M"
-                    CssClass="cw-320" />
-        </div>
-        <div class="col" style="padding:.5rem">
-            <DxButton Click="@FetchAlerts" RenderStyle="ButtonRenderStyle.Primary" 
-                      RenderStyleMode="ButtonRenderStyleMode.Contained"
-                      Text="Fetch Alerts" />
-        </div>
+<div class="container">
+    <div class="row">
+        <h3>Active alerts will go here</h3>
     </div>
-
-@if (this.Data == null) {
-    <h3>@Message</h3>
-} else {
-    <div style="padding:1rem">
-        <DxGrid Data="@Data"
-                ShowGroupPanel="true"
-                AutoExpandAllGroupRows="true"
-                SelectionMode="GridSelectionMode.Single"
-                AllowSelectRowByClick="true"
-                KeyFieldNames="@KeyFieldNames"
-                @bind-SelectedDataItem="SelectedAlert"
-                PageSize="10"
-                PagerPosition="GridPagerPosition.TopAndBottom"
-                PageSizeSelectorVisible="true"
-                PageSizeSelectorItems="@(new int[] { 5, 10, 20, 30 })"
-                PageSizeSelectorAllRowsItemVisible="true"
-                PagerSwitchToInputBoxButtonCount="10"
-                PagerVisibleNumericButtonCount="10">
-            <Columns>
-                <DxGridDataColumn FieldName="TimeStamp" DisplayFormat="G"/>
-                <DxGridDataColumn FieldName="Device" GroupIndex="0"  />
-                <DxGridDataColumn FieldName="Name"  GroupIndex="1" />
-                <DxGridDataColumn FieldName="State"  />
-                <DxGridDataColumn FieldName="Value"  />
-            </Columns>
-        </DxGrid>
-    </div>
-    <div class="row" style="padding:1rem">
-        <DxButton Click="@FetchAlertPlot" RenderStyle="ButtonRenderStyle.Primary" 
-                  RenderStyleMode="ButtonRenderStyleMode.Contained" 
-                  Text="Fetch Plot" />
-    </div>
-}
-<div class="row" style="padding: 1rem">
-    @if (this.PlotData == null) {
-        <p>@PlotMessage</p>
-    }
-    else
-    {
-        <DxChart Data="@PlotData"
-                 Width="100%"
-                 Height="100%">
-            <DxChartLegend AllowToggleSeries="true"
-                           Orientation="Orientation.Vertical"
-                           HorizontalAlignment="HorizontalAlignment.Right">
-                <DxChartTitle Text="Detectors"> </DxChartTitle>
-            </DxChartLegend>
-            <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
-                                 ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
-                                 ValueField="@((AnalogReadingDto r) => (int)r.Value)">
-                <SeriesTemplate Context="settings">
-                    <DxChartLineSeries Settings="@settings">
-                        <DxChartSeriesLabel Visible="false"/>
-                        <DxChartSeriesPoint Visible="true"/>
-                        <DxChartAggregationSettings Enabled="true"
-                                                    Method="ChartAggregationMethod.Max"/>
-                    </DxChartLineSeries>
-                </SeriesTemplate>
-            </DxChartCommonSeries>
-            <DxChartArgumentAxis>
-                <DxChartAxisRange StartValue="@this.StartDate.ToLocalTime()"
-                                  EndValue="@this.StopDate.ToLocalTime()"/>
-            </DxChartArgumentAxis>
-            <DxChartValueAxis>
-                <DxChartAxisRange StartValue="0" EndValue="1000"></DxChartAxisRange>
-                <DxChartAxisTitle Text="PPM"/>
-                <DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
-                    <DxChartConstantLineLabel Text="Soft-Warn"
-                                              VerticalAlignment="VerticalAlignment.Center"
-                                              Position="RelativePosition.Inside"/>
-                </DxChartConstantLine>
-                <DxChartConstantLine Value="500" Width="3" Color="Color.Yellow">
-                    <DxChartConstantLineLabel Text="Warning"
-                                              VerticalAlignment="VerticalAlignment.Center"
-                                              Position="RelativePosition.Inside"/>
-                </DxChartConstantLine>
-                <DxChartConstantLine Value="1000" Width="3" Color="Color.Red">
-                    <DxChartConstantLineLabel Text="Alarm"
-                                              VerticalAlignment="VerticalAlignment.Center"
-                                              Position="RelativePosition.Inside"/>
-                </DxChartConstantLine>
-            </DxChartValueAxis>
-            <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
-            <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
-                                      ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
-            <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
-                <div style="background-color: grey;">
-                    <div class="font-weight-bold">
-                        @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
+    <div class="row">
+        @if (this._devices == null) {
+            <h4>Loading Devices, Please Wait..</h4>
+        } else {
+            <div class="row profile-row" style="padding:1rem">
+                @foreach (var device in this._devices) {
+                    <div class="col-6 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+                        <LiveGrid Hub="@device.HubAddress" DeviceName="@device.DeviceName"></LiveGrid>
                     </div>
-                    <div>
-                        Value$=@((context.Point.Value))
-                    </div>
-                </div>
-            </DxChartTooltip>
-        </DxChart>
-    }
+                }
+            </div>
+        }
+    </div>
 </div>
 
-@code{
-    IEnumerable<AnalogReadingDto>? PlotData { get; set; }
-    IReadOnlyList<string> KeyFieldNames = new [] {
-        "alertId",
-        "TimeStamp",
-    };
-    DateTime StartDate { get; set; }
-    DateTime StopDate { get; set; }
-    string PlotMessage { get; set; } = "Select Alert and press FetchPlot button to view plot";
-    IEnumerable<AlertDto>? Data { get; set; }
-    Decimal DaysBack { get; set; } = 7;
-    object? SelectedAlert { get; set; }
-    string Message { get; set; } = "Data loading...";
-
+@code {
+    IEnumerable<ManagedDevice>? _devices;
     protected override async Task OnInitializedAsync() {
-        this.Data=await this.AlarmService.GetLatestAlarms((int)this.DaysBack);
-        if (this.Data == null) {
-            this.Message = $"No Alerts in last {this.DaysBack} days";
-        }
+        await this.SettingsService.Load();
+        this._devices = await this.SettingsService.GetDevices();
     }
-
-    public async void FetchAlerts() {
-        this.Data = null;
-        this.Message = "Fetching Data, Please Wait...";
+    
+    async Task Update() {
         await InvokeAsync(StateHasChanged);
-        this.Data=await this.AlarmService.GetLatestAlarms((int)this.DaysBack);
-        if (this.Data==null) {
-            this.Message = $"No Alerts in last {this.DaysBack} days";
-        }
-        await InvokeAsync(StateHasChanged);
-    }
-
-    public async void FetchAlertPlot() {
-        if (this.SelectedAlert is AlertDto alert) {
-            this.PlotData=null;
-            this.Message = $"Loading plot data for {alert.Name}, please wait...";
-            await InvokeAsync(StateHasChanged);
-            this.StartDate = alert.TimeStamp.AddDays(-1);
-            this.StopDate = alert.TimeStamp.AddDays(1);
-            this.PlotData = await this.PlotService.GetData(alert.database,this.StartDate.ToUniversalTime(),this.StopDate.ToUniversalTime());
-            if (this.PlotData == null) {
-                this.Message = $"Error: Could not load plot data for {alert.Name}";
-            }
-            await InvokeAsync(StateHasChanged);
-        }
     }
 }

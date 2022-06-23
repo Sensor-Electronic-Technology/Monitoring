@@ -1,0 +1,82 @@
+﻿@page "/alertsview"
+@using MonitoringData.Infrastructure.Services.DataAccess
+@using System.Drawing
+@using MonitoringWeb.WebAppV2.Components
+@inject LatestAlertService AlarmService
+<div class="container-fluid">
+    <div class="row" style="padding-bottom: .5rem">
+        <div class="col">
+            <DxSpinEdit @bind-Value="DaysBack"
+                        Increment="1M"
+                        MinValue="1M"
+                        MaxValue="10M"
+                        CssClass="cw-320"/>
+        </div>
+        <div class="col">
+            <DxButton Click="@FetchAlerts" RenderStyle="ButtonRenderStyle.Primary"
+                      RenderStyleMode="ButtonRenderStyleMode.Contained"
+                      Text="Fetch Alerts"/>
+        </div>
+    </div>
+    <div class="row">
+        @if (this.Data == null) {
+            <h3>@Message</h3>
+        } else {
+            <DxGrid Data="@Data"
+                    ShowGroupPanel="true"
+                    AutoExpandAllGroupRows="true"
+                    SelectionMode="GridSelectionMode.Single"
+                    AllowSelectRowByClick="true"
+                    KeyFieldNames="@KeyFieldNames"
+                    @bind-SelectedDataItem="SelectedAlert"
+                    PageSize="15"
+                    PagerPosition="GridPagerPosition.TopAndBottom"
+                    PageSizeSelectorVisible="true"
+                    PageSizeSelectorItems="@(new int[] { 5, 10, 15, 20 })"
+                    PageSizeSelectorAllRowsItemVisible="true"
+                    PagerSwitchToInputBoxButtonCount="10"
+                    PagerVisibleNumericButtonCount="10">
+                <Columns>
+                    <DxGridDataColumn FieldName="TimeStamp" DisplayFormat="G"/>
+                    <DxGridDataColumn FieldName="Device" GroupIndex="0"/>
+                    <DxGridDataColumn FieldName="Name" GroupIndex="1"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+    
+</div>
+    <DetectorPlot SelectedAlert="@this.SelectedAlert"/>
+
+@code{
+    IReadOnlyList<string> KeyFieldNames = new [] {
+        "alertId",
+        "TimeStamp",
+    };
+    DateTime StartDate { get; set; }
+    DateTime StopDate { get; set; }
+    IEnumerable<AlertDto>? Data { get; set; }
+    Decimal DaysBack { get; set; } = 3;
+    object? SelectedAlert { get; set; }
+    string Message { get; set; } = "Data loading...";
+
+    protected override async Task OnInitializedAsync() {
+        this.Data=await this.AlarmService.GetLatestAlarms((int)this.DaysBack);
+        if (this.Data == null) {
+            this.Message = $"No Alerts in last {this.DaysBack} days";
+        }
+    }
+
+    private async void FetchAlerts() {
+        this.Data = null;
+        this.Message = "Fetching Data, Please Wait...";
+        await InvokeAsync(StateHasChanged);
+        this.Data=await this.AlarmService.GetLatestAlarms((int)this.DaysBack);
+        if (this.Data==null) {
+            this.Message = $"No Alerts in last {this.DaysBack} days";
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}
