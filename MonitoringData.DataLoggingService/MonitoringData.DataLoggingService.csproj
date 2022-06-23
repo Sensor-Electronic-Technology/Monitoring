@@ -18,7 +18,10 @@
     <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Update="SettingFiles\epi1settings.json">
+    <Folder Include="SettingFiles" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="epi1settings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -87,6 +87,88 @@ namespace MonitoringSystem.ConsoleTesting {
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, false);
             //await AlertItemTypeUpdate("gasbay");
             Console.WriteLine("Done");*/
+            /*await UpdateChannelSensor(166, 6);
+            await UpdateChannelSensor(167, 6);
+            await UpdateChannelSensor(168, 8);
+            await UpdateChannelSensor(169, 8);
+            await UpdateChannelSensor(170, 7);
+            await UpdateChannelSensor(171, 7);*/
+            //await BuildSensorCollection();
+            await UpdateAnalogSensor();
+            /*var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("epi1_data");
+            var analogItems = await database.GetCollection<AnalogChannel>("analog_items").Find(_=>true).ToListAsync();
+            foreach (var item in analogItems) {
+                Console.WriteLine($"Name: {item.identifier} SensorId: {item.sensorId}");
+            }*/
+        }
+
+        static async Task UpdateAnalogSensor() {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("nh3_data");
+            var analogItems = database.GetCollection<AnalogChannel>("analog_items");
+            
+            var filter1 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("H2 PPM"));
+            var update1 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 1);
+            
+            var filter2 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("O2"));
+            var update2 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 2);
+            
+            var filter3 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("NH3"));
+            var update3 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 3);
+            
+            var filter4 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("N2"));
+            var update4 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 4);
+            
+            var filter5 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("H2 LEL"));
+            var update5 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 5);
+            
+            var filter6 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("Weight"));
+            var update6 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 6);
+            
+            var filter7 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("Temp."));
+            var update7 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 8);
+            
+            var filter8 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("Cycle"));
+            var update8 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 7);
+            
+            await analogItems.UpdateManyAsync(filter1, update1);
+            await analogItems.UpdateManyAsync(filter2, update2);
+            await analogItems.UpdateManyAsync(filter3, update3);
+            await analogItems.UpdateManyAsync(filter4, update4);
+            await analogItems.UpdateManyAsync(filter5, update5);
+            await analogItems.UpdateManyAsync(filter6, update6);
+            await analogItems.UpdateManyAsync(filter7, update7);
+            await analogItems.UpdateManyAsync(filter8, update8);
+            Console.WriteLine("Done, Check Database");
+        }
+
+        static async Task BuildSensorCollection() {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            var sensorCol = database.GetCollection<SensorType>("sensor_types");
+            using var context = new FacilityContext();
+            var sensors = await context.Sensors.Select(e=>new SensorType() {
+                _id = e.Id,
+                Name = e.Name,
+                Units=e.Units,
+                YAxisStart = e.YAxisMin,
+                YAxisStop = e.YAxitMax
+            }).ToListAsync();
+            await sensorCol.InsertManyAsync(sensors);
+            Console.WriteLine("Done,Check Database");
+        }
+
+        static async Task UpdateChannelSensor(int channelId,int sensorId) {
+            using var context = new FacilityContext();
+            var channel = await context.Channels.OfType<AnalogInput>().Include(e => e.Sensor)
+                .FirstOrDefaultAsync(e => e.Id == channelId);
+            var sensor = await context.Sensors.FirstOrDefaultAsync(e => e.Id == sensorId);
+            channel.Sensor = sensor;
+            context.Update(channel);
+            context.Update(sensor);
+            await context.SaveChangesAsync();
+            Console.WriteLine($"{channel.Identifier} updated with {sensor.Name}, check database");
         }
         
         static async Task BuildSettingsDB() { 
@@ -265,7 +347,8 @@ namespace MonitoringSystem.ConsoleTesting {
                 .Set(e => e.l3action, channel.l3action)
                 .Set(e => e.l1setpoint, channel.l1setpoint)
                 .Set(e => e.l2setpoint, channel.l2setpoint)
-                .Set(e => e.l3setpoint, channel.l3setpoint);
+                .Set(e => e.l3setpoint, channel.l3setpoint)
+                .Set(e => e.sensorId, channel.sensorId);
             return update;
         }
         

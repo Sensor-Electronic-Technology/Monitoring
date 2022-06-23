@@ -11,6 +11,8 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public double Offset { get; set; }
         public double Factor { get; set; }
         public string Units { get; set; }
+        public int YAxisMin { get; set; }
+        public int YAxitMax { get; set; }
         public ICollection<AnalogInput> AnalogInputs { get; set; } = new List<AnalogInput>();
     }
 }

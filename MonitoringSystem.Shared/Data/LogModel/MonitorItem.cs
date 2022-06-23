@@ -14,7 +14,7 @@ namespace MonitoringSystem.Shared.Data {
     }
 
     public class AnalogChannel : MonitorItem {
-        public int SensorTypeId { get; set; }
+        public int sensorId { get; set; }
         public float recordThreshold { get; set; }
         public int factor { get; set; }
         public int reg { get; set; }
