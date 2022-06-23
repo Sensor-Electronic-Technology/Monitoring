@@ -20,4 +20,6 @@ RUN dotnet publish "MonitoringData.DataLoggingService.csproj" -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+#RUN rm dbSettings.json
+COPY --from=publish /app/publish/nhsettings.json ./dbSettings.json
 ENTRYPOINT ["dotnet", "MonitoringData.DataLoggingService.dll"]

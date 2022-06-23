@@ -18,8 +18,8 @@
     <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Update="dbSettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Update="SettingFiles\epi1settings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 </Project>

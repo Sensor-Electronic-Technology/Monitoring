@@ -1,8 +1,8 @@
-{
+﻿{
   "MonitorDatabaseSettings": {
     "ConnectionString": "mongodb://172.20.3.41",
     "DatabaseName": "nh3_data",
-    "EmailSubject": "Nh3 Tanks",
+    "EmailSubject": "NH3 Tank",
     "HubName": "nhstreaming",
     "AlertItemCollection": "alert_items",
     "ActionItemCollection": "action_items",
@@ -20,7 +20,7 @@
     "MonitorDeviceCollection": "device_items"
   },
   "ServiceOptions": {
-    "ServiceType": "MonitorBox"
+    "ServiceType": "GenericModbus"
   },
   "MonitorEmailSettings": {
     "ConnectionString": "mongodb://172.20.3.41",

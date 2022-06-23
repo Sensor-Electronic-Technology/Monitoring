@@ -111,13 +111,13 @@ namespace MonitoringData.Infrastructure.Services {
                 if(CheckSave(now,this.lastRecord,(aret.Item2 || dret.Item2 || vret.Item2))) {
                     this.lastRecord = now;
                     if (aret.Item1 != null) {
-                        await this._dataService.InsertOneAsync(aret.Item1);
+                        //await this._dataService.InsertOneAsync(aret.Item1);
                     }
                     if (dret.Item1 != null) {
-                        await this._dataService.InsertOneAsync(dret.Item1);
+                        //await this._dataService.InsertOneAsync(dret.Item1);
                     }
                     if (vret.Item1 != null) {
-                        await this._dataService.InsertOneAsync(vret.Item1);
+                        //await this._dataService.InsertOneAsync(vret.Item1);
                     }
                 }
                 await this._alertService.ProcessAlerts(this._alerts,now);
