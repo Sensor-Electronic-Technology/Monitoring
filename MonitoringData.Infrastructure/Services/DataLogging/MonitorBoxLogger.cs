@@ -84,6 +84,10 @@ namespace MonitoringData.Infrastructure.Services {
                 MonitorData monitorData = new MonitorData();
                 monitorData.TimeStamp = now;
 
+                var activeAlerts=this._alerts.Where(e => 
+                    e.CurrentState != ActionType.Okay 
+                    || e.CurrentState != ActionType.Custom);
+                
                 monitorData.analogData = this._alerts
                     .Where(e => e.Enabled && e.ItemType == AlertItemType.Analog)
                     .Select(e => new ItemStatus() {

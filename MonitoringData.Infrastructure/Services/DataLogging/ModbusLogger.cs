@@ -21,6 +21,8 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
         private ModbusConfig _modbusConfig;
         private ChannelRegisterMapping _channelMapping;
         private IList<AlertRecord> _alerts;
+        private DateTime lastRecord;
+        private bool firstRecord;
 
         public ModbusLogger(IMonitorDataRepo dataService,
             ILogger<ModbusLogger> logger,
@@ -33,6 +35,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             this._alertService = alertService;
             this._logger = logger;
             this.loggingEnabled=true;
+            this.firstRecord = true;
         }
 
         public ModbusLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
@@ -96,7 +99,22 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     this.LogError($"AnalogChannel: {aItem.identifier} alert not found");
                 } 
             }
-            await this._dataService.InsertOneAsync(new AnalogReadings() {readings=readings.ToArray(),timestamp=now});
+            if (this.CheckSave(now, this.lastRecord)) {
+                this.lastRecord = now;
+                await this._dataService.InsertOneAsync(new AnalogReadings() {
+                    readings=readings.ToArray(),
+                    timestamp=now
+                });
+            }
+        }
+        
+        private bool CheckSave(DateTime now,DateTime last) {
+            if (this.firstRecord) {
+                this.firstRecord = false;
+                return true;
+            } else {
+                return ((now - last).TotalSeconds >= 60);
+            }
         }
 
         public async Task Load() {

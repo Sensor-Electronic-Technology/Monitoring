@@ -1,29 +1,35 @@
 ﻿@page "/plot"
 @using MonitoringData.Infrastructure.Services.DataAccess
 @using System.Drawing
+@using MonitoringSystem.Shared.Data
 @using MonitoringWeb.WebAppV2.Data
 @inject PlotDataService PlotService
 @inject SettingsService SettingsService
 
-<h3 align="center">H2 Plots</h3>
 <DxStackLayout Orientation="@Orientation.Vertical">
     <Items>
         <DxStackLayoutItem>
             <Template>
                 <div>
                    <DxFormLayout CssClass="w-100">
-                       <DxFormLayoutItem Caption="Device" ColSpanLg="12">
+                       <DxFormLayoutItem Caption="Device" ColSpanLg="6">
                            <DxComboBox Data="@this.DeviceLookup.Select(e=>e.Key).AsEnumerable()"
-                            @bind-Value="@SelectedDevice"
-                            CssClass="cw-480" />
+                                       @bind-Value="@SelectedDevice"
+                                       CssClass="cw-480" />
+                       </DxFormLayoutItem>
+                       <DxFormLayoutItem Caption="Detector Type" ColSpanLg="6">
+                           <DxComboBox Data="@this.SensorTypes"
+                                       TextFieldName="@nameof(SensorType.Name)"
+                                       @bind-Value="@SelectedSensor"
+                                       CssClass="cw-480" />
                        </DxFormLayoutItem>
                         <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
-                            <DxFormLayoutItem Caption="Start Date" ColSpanMd="12">
+                            <DxFormLayoutItem Caption="Start Date" >
                                 <DxDateEdit @bind-Date="@StartDate" TimeSectionVisible="true" CssClass="cw-320" />
                             </DxFormLayoutItem>
                         </DxFormLayoutGroup>
                         <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
-                            <DxFormLayoutItem Caption="Stop Date" ColSpanMd="12">
+                            <DxFormLayoutItem Caption="Stop Date" >
                                 <DxDateEdit @bind-Date="@StopDate" TimeSectionVisible="true" CssClass="cw-320" />
                             </DxFormLayoutItem>
                         </DxFormLayoutGroup>
@@ -46,8 +52,10 @@
                                  Width="100%"
                                  Height="100%">
                             <DxChartLegend AllowToggleSeries="true"
-                                           Orientation="Orientation.Vertical"
-                                           HorizontalAlignment="HorizontalAlignment.Right">
+                                           Orientation="Orientation.Horizontal"
+                                           VerticalAlignment="VerticalEdge.Top"
+                                           HorizontalAlignment="HorizontalAlignment.Center"
+                                           Position="RelativePosition.Outside">
                                 <DxChartTitle Text="Detectors"> </DxChartTitle>
                             </DxChartLegend>
                             <DxChartCommonSeries NameField="@((AnalogReadingDto r)=>r.Name)"
@@ -67,9 +75,9 @@
                                                   EndValue="@PlotStop" />
                             </DxChartArgumentAxis>
                             <DxChartValueAxis>
-                                <DxChartAxisRange StartValue="0" EndValue="1000"></DxChartAxisRange>
-                                <DxChartAxisTitle Text="PPM" />
-                                <DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
+                                <DxChartAxisRange StartValue="@this.SelectedSensor?.YAxisStart" EndValue="@this.SelectedSensor?.YAxisStop"></DxChartAxisRange>
+                                <DxChartAxisTitle Text="@this.SelectedSensor?.Units" />
+                                @*<DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
                                     <DxChartConstantLineLabel Text="Soft-Warn"
                                                               VerticalAlignment="VerticalAlignment.Center"
                                                               Position="RelativePosition.Inside" />
@@ -83,7 +91,7 @@
                                     <DxChartConstantLineLabel Text="Alarm"
                                                               VerticalAlignment="VerticalAlignment.Center"
                                                               Position="RelativePosition.Inside" />
-                                </DxChartConstantLine>
+                                </DxChartConstantLine>*@
                             </DxChartValueAxis>
                             <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
                             <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
@@ -94,7 +102,7 @@
                                         @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
                                     </div>
                                     <div>
-                                        Value$=@((context.Point.Value))
+                                        @((context.Point.Value))
                                     </div>
                                 </div>
                             </DxChartTooltip>
@@ -108,18 +116,21 @@
 
 @code {
     IEnumerable<AnalogReadingDto>? PlotData { get; set; }
+    IEnumerable<SensorType> SensorTypes { get; set; }
+    
     Dictionary<string, string> DeviceLookup { get; set; } = new Dictionary<string, string>();
     string? SelectedDevice { get; set; }
+    SensorType? SelectedSensor { get; set; }
     string? Message{ get; set; }
     DateTime StartDate { get; set; }
     DateTime StopDate { get; set; }
-
     DateTime PlotStart { get; set; }
     DateTime PlotStop { get; set; }
 
     protected override async Task OnInitializedAsync() {
         this.Message = "Select input parameters to view plot";
         var devices=await this.SettingsService.GetDevices();
+        this.SensorTypes = await this.SettingsService.GetSensors();
         foreach (var device in devices) {
             this.DeviceLookup.Add(device.DeviceName,device.DatabaseName);
         }
@@ -133,19 +144,22 @@
     }
 
     private async void Submit() {
-        if (SelectedDevice is not null) {
+        if (SelectedDevice!=null) {
             this.PlotData=null;
             this.Message = "Loading plot data, please wait...";
             await InvokeAsync(StateHasChanged);
             this.PlotStart = this.StartDate.ToLocalTime();
             this.PlotStop = this.StopDate.ToLocalTime();
-            var start=this.StartDate;
+            var start= this.StartDate;
             var stop = this.StopDate;
             if (this.SelectedDevice == "Combined"){
-                this.PlotData = await this.PlotService.GetData(this.DeviceLookup.Select(e=>e.Value).ToList(),
+                this.PlotData = await this.PlotService.GetData(this.DeviceLookup.Select(e=>e.Value)
+                    .ToList(),
                     start,stop);
             }else{
-                this.PlotData = await this.PlotService.GetData(this.DeviceLookup[this.SelectedDevice],start,stop);
+                this.PlotData = await this.PlotService.GetDataBySensor(this.DeviceLookup[this.SelectedDevice]
+                    ,start,stop,
+                    this.SelectedSensor._id);
             }
             await InvokeAsync(StateHasChanged);
         }

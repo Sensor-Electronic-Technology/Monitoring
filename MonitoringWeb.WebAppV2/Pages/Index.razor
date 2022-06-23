@@ -6,7 +6,21 @@
 
 <div class="container">
     <div class="row">
-        <h3>Active alerts will go here</h3>
+        @if (this.Data == null) {
+            <h3>@Message</h3>
+        } else {
+            <DxGrid Data="@Data"
+                    ShowGroupPanel="true"
+                    AutoExpandAllGroupRows="true">
+                <Columns>
+                    <DxGridDataColumn FieldName="TimeStamp" DisplayFormat="G"/>
+                    <DxGridDataColumn FieldName="Device" GroupIndex="0"/>
+                    <DxGridDataColumn FieldName="Name" />
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
     </div>
     <div class="row">
         @if (this._devices == null) {
@@ -28,6 +42,7 @@
     protected override async Task OnInitializedAsync() {
         await this.SettingsService.Load();
         this._devices = await this.SettingsService.GetDevices();
+        
     }
     
     async Task Update() {

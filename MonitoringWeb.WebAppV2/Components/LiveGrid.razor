@@ -2,7 +2,9 @@
 @using MonitoringSystem.Shared.SignalR
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Runtime.CompilerServices
+@using MonitoringWeb.WebAppV2.Data
 @inject ILogger<LiveGrid> logger
+@inject ActiveAlertService ActiveAlertService
 @implements IAsyncDisposable
 <div class="container">
     <h4>@DeviceName</h4>
@@ -80,6 +82,9 @@
         });*/
         this._hubConnection.On<MonitorData>("ShowCurrent",data => {
             this._monitorData = data;
+            this._monitorData.analogData.Where(e => e.State.Contains("Alarm") 
+                                                    || e.State.Contains("Warning") 
+                                                    || e.State.Contains("SoftWarn"));
             InvokeAsync(StateHasChanged);
         });
         this._hubConnection.HandshakeTimeout = new TimeSpan(0,0,3);
