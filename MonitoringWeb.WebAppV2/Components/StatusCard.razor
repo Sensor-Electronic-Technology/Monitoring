@@ -1,37 +1,72 @@
 ﻿@using MonitoringSystem.Shared.Data
-@*<DxFormLayout>
-    <DxFormLayoutItem ColSpanMd="12" ColSpanLg="12">
-        <Template>
-            <div class="text-center">
-                <img src="Images/@home.PhotoUrl" class="m-auto w-75" />
+@using MonitoringSystem.Shared.SignalR
+@using MonitoringWeb.WebAppV2.Data
+<div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+    <div class="container-md">
+        <h5>@DeviceStatus?.DeviceName</h5>
+        <div class="row">
+            @switch (DeviceStatus?.Status) {
+                case ActionType.Alarm: {
+                    <div class="bg-danger text-white justify-content-center">
+                        <h5>Alarm</h5>
+                    </div>
+                    break;
+                }
+                case ActionType.Warning: {
+                    <div class="bg-warning text-dark justify-content-center">
+                        <h5>Warning</h5>
+                    </div>
+                    break;
+                }
+                case ActionType.SoftWarn: {
+                    <div class="bg-warning text-white justify-content-center">
+                        <h5>Soft-Warn</h5>
+                    </div>
+                    break;
+                }
+                case ActionType.Okay: {
+                    <div class="bg-success text-white justify-content-center">
+                        <h5>Okay</h5>
+                    </div>
+                    break;
+                }
+                case ActionType.Maintenance: {
+                    <div class="bg-info text-white justify-content-center">
+                        <h5>Maintenance</h5>
+                    </div>
+                    break;
+                }
+                default: {
+                    <div class="bg-success text-white justify-content-center">
+                        <h2>Okay</h2>
+                    </div>
+                    break;
+                }
+            }
+        </div>
+    </div>
+    @if (this.DeviceStatus.ActiveAlerts!=null) {
+        <div class="container-md">
+            <div class="row justify-content-center">
+                <h3>Active Alerts</h3>
             </div>
-        </Template>
-    </DxFormLayoutItem>
-    <DxFormLayoutItem ColSpanMd="12" ColSpanLg="12">
-        <Template>
-            <p>
-                <span class="text-muted">Size: </span> @home.HouseSize ft2
-            </p>
-            <p>
-                <span class="text-muted">Year: </span>  @home.YearBuilt
-            </p>
-             <p style="overflow: hidden;white-space:nowrap;text-overflow:ellipsis;" title=@home.Address >
-                <span  class="text-muted">Address: </span> @home.Address 
-            </p>
-            <div class="text-muted">
-                @home.Features.Substring(0, 50)
-                <a href="#" class="target-container" @onclick="@(() => ShowDetails(home.Features))">...More details</a>
+            <div class="row">
+                <DxGrid Data="@DeviceStatus.ActiveAlerts" ShowAllRows=true>
+                    <Columns>
+                        <DxGridDataColumn FieldName="Item"/>
+                        <DxGridDataColumn FieldName="State"/>
+                        <DxGridDataColumn FieldName="Value"/>
+                    </Columns>
+                </DxGrid>
             </div>
-        </Template>
-    </DxFormLayoutItem>
-    <DxFormLayoutItem ColSpanMd="12">
-        <Template>
-            <h5 class="text-center price">@string.Format("{0:C}", home.Price)</h5>
-        </Template>
-    </DxFormLayoutItem>
-</DxFormLayout>*@
+        </div>
+    }
+</div>
+
 
 @code {
-    
+
+    [Parameter]
+    public DeviceStatus DeviceStatus { get; set; } = new DeviceStatus() { DeviceName = "Loading", Status = ActionType.Okay };
 
 }

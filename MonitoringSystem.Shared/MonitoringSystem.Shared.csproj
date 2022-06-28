@@ -15,4 +15,10 @@
     <PackageReference Include="MongoDB.Driver" Version="2.15.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="NModbus4">
+      <HintPath>..\Assembiles\NModbus4.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

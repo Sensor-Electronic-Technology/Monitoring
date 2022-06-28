@@ -3,16 +3,15 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using MonitoringData.Infrastructure.Events;
 using MonitoringSystem.Shared.Data;
-using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringSystem.Shared.SignalR;
-using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Services;
 
 namespace MonitoringData.Infrastructure.Services {
     public class MonitorBoxLogger : IDataLogger , IConsumer<ReloadConsumer> {
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
-        private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
+        //private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
         private IAlertService _alertService;
         private readonly ILogger _logger;
 
@@ -28,7 +27,7 @@ namespace MonitoringData.Infrastructure.Services {
         private TimeSpan recordInterval;
         private bool firstRecord;
 
-        public MonitorBoxLogger(IMonitorDataRepo dataService,
+        /*public MonitorBoxLogger(IMonitorDataRepo dataService,
             ILogger<MonitorBoxLogger> logger, 
             IAlertService alertService,
             IModbusService modbusService,
@@ -39,6 +38,18 @@ namespace MonitoringData.Infrastructure.Services {
             this._logger = logger;
             this._modbusService = modbusService;
             this._monitorHub = monitorHub;
+            this.loggingEnabled = true;
+            this.firstRecord = true;
+        }*/
+        
+        public MonitorBoxLogger(IMonitorDataRepo dataService,
+            ILogger<MonitorBoxLogger> logger, 
+            IAlertService alertService,
+            IModbusService modbusService) {
+            this._dataService = dataService;
+            this._alertService = alertService;
+            this._logger = logger;
+            this._modbusService = modbusService;
             this.loggingEnabled = true;
             this.firstRecord = true;
         }
@@ -81,7 +92,7 @@ namespace MonitoringData.Infrastructure.Services {
                 var aret=await this.ProcessAnalogReadings(analogRaw, now);
                 var dret=await this.ProcessDiscreteReadings(discreteRaw, now);
                 var vret=await this.ProcessVirtualReadings(virtualRaw, now);
-                MonitorData monitorData = new MonitorData();
+                /*MonitorData monitorData = new MonitorData();
                 monitorData.TimeStamp = now;
 
                 var activeAlerts=this._alerts.Where(e => 
@@ -110,22 +121,22 @@ namespace MonitoringData.Infrastructure.Services {
                     Item = e.DisplayName,
                     State = e.CurrentState.ToString(),
                     Value = e.ChannelReading.ToString()
-                }).ToList();
+                }).ToList();*/
 
                 if(CheckSave(now,this.lastRecord,(aret.Item2 || dret.Item2 || vret.Item2))) {
                     this.lastRecord = now;
                     if (aret.Item1 != null) {
-                        await this._dataService.InsertOneAsync(aret.Item1);
+                        //await this._dataService.InsertOneAsync(aret.Item1);
                     }
                     if (dret.Item1 != null) {
-                        await this._dataService.InsertOneAsync(dret.Item1);
+                        //await this._dataService.InsertOneAsync(dret.Item1);
                     }
                     if (vret.Item1 != null) {
-                        await this._dataService.InsertOneAsync(vret.Item1);
+                        //await this._dataService.InsertOneAsync(vret.Item1);
                     }
                 }
                 await this._alertService.ProcessAlerts(this._alerts,now);
-                await this._monitorHub.Clients.All.ShowCurrent(monitorData);
+                //await this._monitorHub.Clients.All.ShowCurrent(monitorData);
             } else {
                 this._logger.LogError("Modbus read failed");
             }

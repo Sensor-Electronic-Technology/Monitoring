@@ -1,9 +1,11 @@
 ﻿using ConsoleTables;
+using Microsoft.AspNetCore.SignalR;
 using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MonitoringSystem.Shared.SignalR;
 
 namespace MonitoringData.Infrastructure.Services {
 
@@ -18,15 +20,17 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly MonitorDatabaseSettings _settings;
         private readonly IEmailService _emailService;
         private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
+        private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
 
 
         public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,
             IOptions<MonitorDatabaseSettings> options,
+            IHubContext<MonitorHub,IMonitorHub> monitorHub,
             IEmailService emailService) {
             this._alertRepo = alertRepo;
             this._logger = logger;
-            //this._emailService = new ExchangeEmailService();
             this._emailService = emailService;
+            this._monitorHub = monitorHub;
             this._settings = options.Value;
         }
 
@@ -80,22 +84,64 @@ namespace MonitoringData.Infrastructure.Services {
                     messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
             }
+            
+            MonitorData monitorData = new MonitorData();
+            monitorData.TimeStamp = now;
+            
+            monitorData.analogData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Analog)
+                .Select(e => new ItemStatus() {
+                    Item = e.DisplayName,
+                    State = e.CurrentState.ToString(),
+                    Value = e.ChannelReading.ToString()
+                }).ToList();
+
+            monitorData.discreteData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Discrete)
+                .Select(e => new ItemStatus() {
+                    Item = e.DisplayName,
+                    State = e.CurrentState.ToString(),
+                    Value = e.ChannelReading.ToString()
+                }).ToList();
+
+            monitorData.virtualData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Virtual)
+                .Select(e => new ItemStatus() {
+                    Item = e.DisplayName,
+                    State = e.CurrentState.ToString(),
+                    Value = e.ChannelReading.ToString()
+                }).ToList();
 
             if (this._activeAlerts.Count > 0) {
+                monitorData.activeAlerts = new List<ItemStatus>();
+                if (this._activeAlerts.FirstOrDefault(e => e.CurrentState == ActionType.Alarm)!=null) {
+                    monitorData.DeviceState = ActionType.Alarm;
+                }else if (this._activeAlerts.FirstOrDefault(e => e.CurrentState == ActionType.Warning) != null) {
+                    monitorData.DeviceState = ActionType.Warning;
+                } else if (this._activeAlerts.FirstOrDefault(e => e.CurrentState == ActionType.SoftWarn) != null) {
+                    monitorData.DeviceState = ActionType.SoftWarn;
+                }
                 foreach (var alert in this._activeAlerts) {
+                    monitorData.activeAlerts.Add(new ItemStatus() {
+                        Item=alert.DisplayName,
+                        State=alert.CurrentState.ToString(),
+                        Value = alert.ChannelReading.ToString()
+                    });
                     activeTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
-                    await this._emailService.SendMessageAsync(this._settings.EmailSubject+" Alerts", messageBuilder.FinishMessage());
+                    //await this._emailService.SendMessageAsync(this._settings.EmailSubject+" Alerts", 
+                    //    messageBuilder.FinishMessage());
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         itemid = e.AlertId,
                         reading = e.ChannelReading,
                         state = e.CurrentState
                     });
-                    await this._alertRepo.LogAlerts(new AlertReadings() { readings = alertReadings.ToArray(), timestamp = now });
+                    //1await this._alertRepo.LogAlerts(new AlertReadings() { readings = alertReadings.ToArray(), timestamp = now });
                 }
+            } else {
+                monitorData.DeviceState = alerts.FirstOrDefault(e => e.CurrentState == ActionType.Maintenance)!=null ? 
+                    ActionType.Maintenance : ActionType.Okay;
             }
+            await this._monitorHub.Clients.All.ShowCurrent(monitorData);
             Console.Clear();
             Console.WriteLine("New Alerts:");
             Console.WriteLine(newAlertTable.ToMinimalString());
@@ -165,12 +211,10 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 yield return alert;
             }
-        }   
-
+        }
         private bool CheckBypassReset(AlertRecord alert,DateTime now) {
             return (now - alert.TimeBypassed).Minutes >= alert.BypassResetTime;
         }
-
         public async Task Initialize() {
             await this._alertRepo.Load();
         }

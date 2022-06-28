@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using MonitoringData.Infrastructure.Events;
 using MonitoringSystem.Shared.Data;
-using MonitoringData.Infrastructure.Services.AlertServices;
+using MonitoringSystem.Shared.Services;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringSystem.Shared.SignalR;
 using MonitoringData.Infrastructure.Utilities;

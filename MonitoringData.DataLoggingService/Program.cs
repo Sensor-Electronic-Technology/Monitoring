@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Components.Web;
 using MongoDB.Driver;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataLogging;
+using MonitoringSystem.Shared.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 //EndpointConvention.Map<EmailContract>(new Uri("rabbitmq://172.20.3.28:5672/email_processing"));

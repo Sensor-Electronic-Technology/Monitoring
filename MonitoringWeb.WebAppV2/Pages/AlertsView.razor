@@ -1,8 +1,11 @@
 ﻿@page "/alertsview"
 @using MonitoringData.Infrastructure.Services.DataAccess
 @using System.Drawing
+@using Microsoft.AspNetCore.Components
+@using MonitoringSystem.Shared.Data
 @using MonitoringWeb.WebAppV2.Components
 @inject LatestAlertService AlarmService
+
 <div class="container-fluid">
     <div class="row" style="padding-bottom: .5rem">
         <div class="col">

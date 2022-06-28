@@ -2,7 +2,6 @@
 using MongoDB.Driver;
 using MonitoringConfig.Infrastructure.Data.Model;
 using MonitoringSystem.Shared.Data;
-using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services;
 using System;
 using System.Linq;
@@ -11,14 +10,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Threading;
-using Microsoft.Extensions.Caching.Memory;
 using MonitoringData.Infrastructure.Services.DataAccess;
-using MonitoringData.Infrastructure.Services.AlertServices;
 using System.Diagnostics;
 using MonitoringData.Infrastructure.Services.DataLogging;
-using MailKit.Net.Smtp;
-using MimeKit;
-using MongoDB.Driver.Encryption;
+using MonitoringSystem.Shared.Services;
 
 namespace MonitoringSystem.ConsoleTesting {
     public record class Test {
@@ -72,21 +67,21 @@ namespace MonitoringSystem.ConsoleTesting {
 
             //await client.SendMailAsync()
             //Console.WriteLine("Message sent");
-            /*ModbusService modservice = new ModbusService();
+            ModbusService modservice = new ModbusService();
             /*var netConfig = gasbay.NetworkConfiguration;
-            var modbusConfig = netConfig.ModbusConfig;#1#
+            var modbusConfig = netConfig.ModbusConfig;*/
             Console.WriteLine("Starting test");
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 1, true);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 1, true);
-            await Task.Delay(5000);
+            await Task.Delay(10000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 1, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 1, false);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, false);
             //await AlertItemTypeUpdate("gasbay");
-            Console.WriteLine("Done");*/
+            Console.WriteLine("Done");
             /*await UpdateChannelSensor(166, 6);
             await UpdateChannelSensor(167, 6);
             await UpdateChannelSensor(168, 8);
@@ -94,7 +89,7 @@ namespace MonitoringSystem.ConsoleTesting {
             await UpdateChannelSensor(170, 7);
             await UpdateChannelSensor(171, 7);*/
             //await BuildSensorCollection();
-            await UpdateAnalogSensor();
+            //await UpdateAnalogSensor();
             /*var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("epi1_data");
             var analogItems = await database.GetCollection<AnalogChannel>("analog_items").Find(_=>true).ToListAsync();
@@ -105,10 +100,10 @@ namespace MonitoringSystem.ConsoleTesting {
 
         static async Task UpdateAnalogSensor() {
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("nh3_data");
+            var database = client.GetDatabase("epi1_data");
             var analogItems = database.GetCollection<AnalogChannel>("analog_items");
             
-            var filter1 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("H2 PPM"));
+            var filter1 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("H2"));
             var update1 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 1);
             
             var filter2 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("O2"));
@@ -132,6 +127,9 @@ namespace MonitoringSystem.ConsoleTesting {
             var filter8 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("Cycle"));
             var update8 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 7);
             
+            var filter9 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("Analog"));
+            var update9 = Builders<AnalogChannel>.Update.Set(e => e.sensorId, 0);
+            
             await analogItems.UpdateManyAsync(filter1, update1);
             await analogItems.UpdateManyAsync(filter2, update2);
             await analogItems.UpdateManyAsync(filter3, update3);
@@ -140,6 +138,7 @@ namespace MonitoringSystem.ConsoleTesting {
             await analogItems.UpdateManyAsync(filter6, update6);
             await analogItems.UpdateManyAsync(filter7, update7);
             await analogItems.UpdateManyAsync(filter8, update8);
+            await analogItems.UpdateManyAsync(filter9, update9);
             Console.WriteLine("Done, Check Database");
         }
 

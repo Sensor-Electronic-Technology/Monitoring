@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Modbus.Device;
 using MonitoringSystem.Shared.Data;
 
-namespace MonitoringData.Infrastructure.Services {
+namespace MonitoringSystem.Shared.Services {
     public class ModbusResult {
         public bool[] DiscreteInputs { get; set; }
         public bool[] Coils { get; set; }
