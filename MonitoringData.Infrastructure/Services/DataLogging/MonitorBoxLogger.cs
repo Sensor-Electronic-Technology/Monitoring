@@ -26,21 +26,6 @@ namespace MonitoringData.Infrastructure.Services {
         private DateTime lastRecord;
         private TimeSpan recordInterval;
         private bool firstRecord;
-
-        /*public MonitorBoxLogger(IMonitorDataRepo dataService,
-            ILogger<MonitorBoxLogger> logger, 
-            IAlertService alertService,
-            IModbusService modbusService,
-            IHubContext<MonitorHub,IMonitorHub> monitorHub) {
-
-            this._dataService = dataService;
-            this._alertService = alertService;
-            this._logger = logger;
-            this._modbusService = modbusService;
-            this._monitorHub = monitorHub;
-            this.loggingEnabled = true;
-            this.firstRecord = true;
-        }*/
         
         public MonitorBoxLogger(IMonitorDataRepo dataService,
             ILogger<MonitorBoxLogger> logger, 
@@ -92,51 +77,20 @@ namespace MonitoringData.Infrastructure.Services {
                 var aret=await this.ProcessAnalogReadings(analogRaw, now);
                 var dret=await this.ProcessDiscreteReadings(discreteRaw, now);
                 var vret=await this.ProcessVirtualReadings(virtualRaw, now);
-                /*MonitorData monitorData = new MonitorData();
-                monitorData.TimeStamp = now;
-
-                var activeAlerts=this._alerts.Where(e => 
-                    e.CurrentState != ActionType.Okay 
-                    || e.CurrentState != ActionType.Custom);
                 
-                monitorData.analogData = this._alerts
-                    .Where(e => e.Enabled && e.ItemType == AlertItemType.Analog)
-                    .Select(e => new ItemStatus() {
-                        Item = e.DisplayName,
-                        State = e.CurrentState.ToString(),
-                        Value = e.ChannelReading.ToString()
-                    }).ToList();
-
-                monitorData.discreteData = this._alerts
-                    .Where(e => e.Enabled && e.ItemType == AlertItemType.Discrete)
-                    .Select(e => new ItemStatus() {
-                        Item = e.DisplayName,
-                        State = e.CurrentState.ToString(),
-                        Value = e.ChannelReading.ToString()
-                    }).ToList();
-
-                monitorData.virtualData = this._alerts
-                .Where(e => e.Enabled && e.ItemType == AlertItemType.Virtual)
-                .Select(e => new ItemStatus() {
-                    Item = e.DisplayName,
-                    State = e.CurrentState.ToString(),
-                    Value = e.ChannelReading.ToString()
-                }).ToList();*/
-
                 if(CheckSave(now,this.lastRecord,(aret.Item2 || dret.Item2 || vret.Item2))) {
                     this.lastRecord = now;
                     if (aret.Item1 != null) {
-                        //await this._dataService.InsertOneAsync(aret.Item1);
+                        await this._dataService.InsertOneAsync(aret.Item1);
                     }
                     if (dret.Item1 != null) {
-                        //await this._dataService.InsertOneAsync(dret.Item1);
+                        await this._dataService.InsertOneAsync(dret.Item1);
                     }
                     if (vret.Item1 != null) {
-                        //await this._dataService.InsertOneAsync(vret.Item1);
+                        await this._dataService.InsertOneAsync(vret.Item1);
                     }
                 }
                 await this._alertService.ProcessAlerts(this._alerts,now);
-                //await this._monitorHub.Clients.All.ShowCurrent(monitorData);
             } else {
                 this._logger.LogError("Modbus read failed");
             }

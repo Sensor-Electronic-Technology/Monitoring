@@ -128,14 +128,14 @@ namespace MonitoringData.Infrastructure.Services {
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
-                    //await this._emailService.SendMessageAsync(this._settings.EmailSubject+" Alerts", 
-                    //    messageBuilder.FinishMessage());
+                    await this._emailService.SendMessageAsync(this._settings.EmailSubject+" Alerts", 
+                        messageBuilder.FinishMessage());
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         itemid = e.AlertId,
                         reading = e.ChannelReading,
                         state = e.CurrentState
                     });
-                    //1await this._alertRepo.LogAlerts(new AlertReadings() { readings = alertReadings.ToArray(), timestamp = now });
+                    await this._alertRepo.LogAlerts(new AlertReadings() { readings = alertReadings.ToArray(), timestamp = now });
                 }
             } else {
                 monitorData.DeviceState = alerts.FirstOrDefault(e => e.CurrentState == ActionType.Maintenance)!=null ? 

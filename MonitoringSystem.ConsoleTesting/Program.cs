@@ -73,11 +73,13 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Starting test");
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 1, true);
+            await Task.Delay(5000);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 1, true);
             await Task.Delay(10000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 1, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
+            await Task.Delay(5000);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 1, false);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, false);
             //await AlertItemTypeUpdate("gasbay");

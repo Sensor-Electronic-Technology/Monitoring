@@ -66,7 +66,8 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         
                         }).ToList();
                     await this._alertService.ProcessAlerts(this._alerts,now);
-                    await this._monitorHub.Clients.All.ShowCurrent(monitorData);
+                    
+                    //await this._monitorHub.Clients.All.ShowCurrent(monitorData);
                 }
             } else {
                 this.LogError("Modbus read failed");
