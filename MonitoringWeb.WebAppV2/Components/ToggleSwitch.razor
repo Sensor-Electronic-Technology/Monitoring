@@ -1,0 +1,24 @@
+﻿<div class="custom-control custom-switch">
+    <input type="checkbox" class="custom-control-input" id="@SwitchId" @onclick="OnToggleClick">
+    <label class="custom-control-label" for="@SwitchId">@Label</label>
+</div>
+@code {
+    [Parameter] 
+    public EventCallback<bool> ToggleOnChanged { get; set; }
+    [Parameter]
+    public bool ToggleOn { get; set; } = false;
+    [Parameter]
+    public string Label { get; set; } = "Not Set";
+    [Parameter]
+    public string? SwitchId { get; set; }
+  
+    async Task OnToggleClick() => await Toggle();
+  
+    async Task Toggle(bool? value = null) {
+        var newValue = value ?? !ToggleOn;
+        if(ToggleOn != newValue) {
+            ToggleOn = newValue;
+            await ToggleOnChanged.InvokeAsync(ToggleOn);
+        }
+    }
+}

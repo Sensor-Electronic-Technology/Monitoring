@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.4" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
     <PackageReference Include="BlazorDownloadFileFast" Version="0.2.0" />
+    <PackageReference Include="Append.Blazor.Sidepanel" Version="6.2.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonitoringConfig.Infrastructure\MonitoringConfig.Infrastructure.csproj" />

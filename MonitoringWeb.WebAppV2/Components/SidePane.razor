@@ -1,0 +1,52 @@
+﻿@page "/sidepane"
+<div class="container bg-dark">
+    <div class="row">
+        <div class="row" style="padding: 1rem">
+            <ToggleSwitch Label="Maintenance" SwitchId="1" @bind-ToggleOn="@MaintOn"></ToggleSwitch>
+        </div>
+        <div class="row" style="padding: 1rem">
+            <ToggleSwitch Label="Warning" SwitchId="2" @bind-ToggleOn="@WarningOn"></ToggleSwitch>
+        </div>
+        <div class="row" style="padding: 1rem">
+            <ToggleSwitch Label="Alarm" SwitchId="3" @bind-ToggleOn="@AlarmOn"></ToggleSwitch>
+        </div>
+        <div class="row" style="padding: 1rem">
+            <ToggleSwitch Label="Reset Water" SwitchId="4" @bind-ToggleOn="@WaterResetOn"></ToggleSwitch>
+        </div>
+        <div class="row" style="padding: 1rem">
+            @if (this.MaintOn) {
+                <h4>Maintenance On</h4>
+            } else {
+                <h4>Maintenance Off</h4>
+            }
+        </div>
+        <div class="row" style="padding: 1rem">
+            @if (this.AlarmOn) {
+                <h4>Alarm On</h4>
+            } else {
+                <h4>Alarm Off</h4>
+            }
+        </div>
+        <div class="row" style="padding: 1rem">
+            @if (this.WarningOn) {
+                <h4>Warning On</h4>
+            } else {
+                <h4>Warning Off</h4>
+            }
+        </div>
+        <div class="row" style="padding: 1rem">
+            @if (this.WaterResetOn) {
+                <h4>Water Reset On</h4>
+            } else {
+                <h4>Water Reset Off</h4>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    bool MaintOn { get; set; }
+    bool WarningOn { get; set; }
+    bool AlarmOn { get; set; }
+    bool WaterResetOn { get; set; }
+}

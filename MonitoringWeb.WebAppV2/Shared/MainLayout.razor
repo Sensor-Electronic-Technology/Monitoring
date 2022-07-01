@@ -7,31 +7,30 @@
 <div class="page">
     <DxGridLayout CssClass="page-layout">
         <Rows>
-            @if(IsMobileLayout) {
+            @if (IsMobileLayout) {
                 <DxGridLayoutRow Areas="header" Height="auto"></DxGridLayoutRow>
                 <DxGridLayoutRow Areas="sidebar" Height="auto"></DxGridLayoutRow>
-                <DxGridLayoutRow Areas="content" />
-            }
-            else {
-                <DxGridLayoutRow Areas="header header" Height="auto" />
-                <DxGridLayoutRow Areas="@(IsSidebarExpanded ? "sidebar content" : "content content")" />
+                <DxGridLayoutRow Areas="content"/>
+            } else {
+                <DxGridLayoutRow Areas="header header" Height="auto"/>
+                <DxGridLayoutRow Areas="@(IsSidebarExpanded ? "sidebar content" : "content content")"/>
             }
         </Rows>
         <Columns>
-            @if(!IsMobileLayout) {
-                <DxGridLayoutColumn Width="auto" />
-                <DxGridLayoutColumn />
+            @if (!IsMobileLayout) {
+                <DxGridLayoutColumn Width="auto"/>
+                <DxGridLayoutColumn/>
             }
         </Columns>
         <Items>
             <DxGridLayoutItem Area="header" CssClass="layout-item">
                 <Template>
-                    <Header @bind-ToggleOn="@IsSidebarExpanded" />
+                    <Header @bind-ToggleOn="@IsSidebarExpanded"/>
                 </Template>
             </DxGridLayoutItem>
             <DxGridLayoutItem Area="sidebar" CssClass="layout-item">
                 <Template>
-                    <NavMenu StateCssClass="@NavMenuCssClass" />
+                    <NavMenu StateCssClass="@NavMenuCssClass"/>
                 </Template>
             </DxGridLayoutItem>
             <DxGridLayoutItem Area="content" CssClass="content px-4 layout-item">
@@ -41,7 +40,8 @@
             </DxGridLayoutItem>
         </Items>
     </DxGridLayout>
-    </div>
+    <Sidepanel></Sidepanel>
+</div>
 
 @code{
     string? NavMenuCssClass { get; set; }

@@ -1,3 +1,4 @@
+using Append.Blazor.Sidepanel;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -19,6 +20,7 @@ builder.Services.AddSingleton<LatestAlertService>();
 var connectionString = builder.Configuration.GetSection(nameof(MonitorWebsiteSettings)).Get<MonitorWebsiteSettings>().ConnectionString;
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
 builder.Services.AddSingleton<SettingsService>();
+builder.Services.AddSidepanel();
 builder.Services.AddDevExpressBlazorWasmMasks();
 
 builder.Services.Configure<DevExpress.Blazor.Configuration.GlobalOptions>(options => {
