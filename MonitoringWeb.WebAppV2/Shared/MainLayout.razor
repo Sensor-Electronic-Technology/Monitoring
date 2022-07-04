@@ -12,8 +12,17 @@
                 <DxGridLayoutRow Areas="sidebar" Height="auto"></DxGridLayoutRow>
                 <DxGridLayoutRow Areas="content"/>
             } else {
-                <DxGridLayoutRow Areas="header header" Height="auto"/>
-                <DxGridLayoutRow Areas="@(IsSidebarExpanded ? "sidebar content" : "content content")"/>
+                <DxGridLayoutRow Areas="header header header" Height="auto"/>
+                if (IsSidebarExpanded && !this.controlPaneVisible) {
+                    <DxGridLayoutRow Areas="sidebar content content" />
+                }else if (IsSidebarExpanded && this.controlPaneVisible) {
+                    <DxGridLayoutRow Areas="sidebar content lsidepane" />
+                }else if (!IsSidebarExpanded && this.controlPaneVisible) {
+                    <DxGridLayoutRow Areas="content content lsidepane" />
+                } else {
+                    <DxGridLayoutRow Areas="content content content" />
+                }
+                @*<DxGridLayoutRow Areas="@(IsSidebarExpanded ? "sidebar content lsidepane" : "content content lsidepane")"/>*@
             }
         </Rows>
         <Columns>
@@ -25,7 +34,7 @@
         <Items>
             <DxGridLayoutItem Area="header" CssClass="layout-item">
                 <Template>
-                    <Header @bind-ToggleOn="@IsSidebarExpanded"/>
+                    <Header @bind-ToggleOn="@IsSidebarExpanded" @bind-Active=@controlPaneVisible />
                 </Template>
             </DxGridLayoutItem>
             <DxGridLayoutItem Area="sidebar" CssClass="layout-item">
@@ -38,13 +47,20 @@
                     @Body
                 </Template>
             </DxGridLayoutItem>
+            <DxGridLayoutItem Area="lsidepane" CssClass="layout-item">
+                <Template>
+                    <div id="settingsbar"  class="@(controlPaneVisible ? "" : "hidden-settings-bar")">
+                        <ControlSidePane @bind-Visible=@controlPaneVisible />
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
         </Items>
     </DxGridLayout>
-    <Sidepanel></Sidepanel>
 </div>
 
 @code{
     string? NavMenuCssClass { get; set; }
+    bool controlPaneVisible;
     bool _isMobileLayout;
     bool IsMobileLayout {
         get => _isMobileLayout;
