@@ -4,11 +4,11 @@
         <TargetFramework>net6.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-MonitoringWeb.ControlService-F457B955-4E15-4E67-9878-01688A558558</UserSecretsId>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
-
     <ItemGroup>
-      <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
+        <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
     </ItemGroup>
 
 </Project>

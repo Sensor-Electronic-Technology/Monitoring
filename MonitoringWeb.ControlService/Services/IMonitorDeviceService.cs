@@ -1,23 +1,18 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using MonitoringData.ModbusControlService.Data;
 using MonitoringSystem.Shared.Data;
-namespace MonitoringData.ModbusControlService.Services;
+using MonitoringWeb.ControlService.Data;
+namespace MonitoringWeb.ControlService.Services;
 
-public class DeviceControlData {
-    public MonitorDevice MonitorDevice { get; set; }
-    public IEnumerable<VirtualChannel> VirtualChannels { get; set; }
-}
+
 
 public interface IMonitorDeviceService {
-    Task<MonitorDevice> LoadDevice(string identifier);
+    IList<ManagedDevice> AvailableDevices { get; }
+    Task Load();
 }
 
 public class MonitorDeviceService:IMonitorDeviceService {
-    private IMongoCollection<MonitorDevice> _deviceCollection;
-    private IMongoCollection<VirtualChannel> _channelCollection;
 
-    private MonitorControlSettings _settings;
     
     private MonitorDeviceService(IOptions<MonitorControlSettings> options) {
     
@@ -34,6 +29,11 @@ public class MonitorDeviceService:IMonitorDeviceService {
     }
 
     public Task<IEnumerable<VirtualChannel>> GetVirtualChannels() {
+        throw new NotImplementedException();
+    }
+
+    public IList<ManagedDevice> AvailableDevices { get; }
+    public Task Load() {
         throw new NotImplementedException();
     }
 }

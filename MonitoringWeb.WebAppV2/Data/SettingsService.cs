@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
+
 namespace MonitoringWeb.WebAppV2.Data;
 
 public class SettingsService {
@@ -31,7 +32,7 @@ public class SettingsService {
 
     public async Task Load() {
         this._devices=await this._deviceCollection.Find(_ => true).ToListAsync();
-        this._sensors = await this._sensorCollection.Find(_ => true).ToListAsync();
+        this._sensors=await this._sensorCollection.Find(_ => true).ToListAsync();
     }
 }
 

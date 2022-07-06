@@ -21,5 +21,5 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 #RUN rm dbSettings.json
-COPY --from=publish /app/publish/epi1settings.json ./dbSettings.json
+COPY --from=publish /app/publish/epi2settings.json ./dbSettings.json
 ENTRYPOINT ["dotnet", "MonitoringData.DataLoggingService.dll"]

@@ -20,6 +20,7 @@ public class ManagedDevice {
     public string DeviceName { get; set; }
     public string DeviceType { get; set; }
     public string HubAddress { get; set; }
+
 }
 public class EmailRecipient {
     public ObjectId _id { get; set; }
