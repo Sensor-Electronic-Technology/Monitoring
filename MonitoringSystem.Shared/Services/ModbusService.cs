@@ -19,10 +19,18 @@ namespace MonitoringSystem.Shared.Services {
         }
     }
 
+    public class CoilResult {
+        
+    }
+
     public interface IModbusService {
         Task<ModbusResult> Read(string ip, int port, ModbusConfig config);
-        Task WriteCoil(string ip, int port, int slaveId, int addr, bool value);
+
         Task WriteMultipleCoils(string ip, int port, int slaveId, int start, bool[] values);
+        Task ToggleCoil(string ip, int port, int slaveId, int addr);
+        Task<bool> ReadCoil(string ip, int port,int slaveId, int addr);
+        Task<bool[]> ReadCoils(string ip, int port, int slaveId, int addr, int length);
+        Task WriteCoil(string ip, int port, int slaveId, int addr, bool value);
     }
 
     public class ModbusService : IModbusService {
@@ -72,6 +80,30 @@ namespace MonitoringSystem.Shared.Services {
             }
         }
 
+        public async Task<bool> ReadCoil(string ip, int port,int slaveId, int addr) {
+            try {
+                using var client = new TcpClient(ip, port);
+                var modbus = ModbusIpMaster.CreateIp(client);
+                var value = await modbus.ReadCoilsAsync((byte)slaveId, (ushort)addr, 1);
+                return value[0];
+            } catch {
+                this.LogError("Exception reading coil in ModbusService.ReadCoil");
+                return false;
+            }
+        }
+        
+        public async Task<bool[]> ReadCoils(string ip, int port,int slaveId, int addr,int length) {
+            try {
+                using var client = new TcpClient(ip, port);
+                var modbus = ModbusIpMaster.CreateIp(client);
+                var value = await modbus.ReadCoilsAsync((byte)slaveId, (ushort)addr, (ushort)length);
+                return value;
+            } catch {
+                this.LogError("Exception reading coil in ModbusService.ReadCoil");
+                return  null;
+            }
+        }
+
         public async Task WriteCoil(string ip, int port, int slaveId, int addr, bool value) {
             try {
                 using var client = new TcpClient(ip, port);
@@ -79,6 +111,17 @@ namespace MonitoringSystem.Shared.Services {
                 await modbus.WriteSingleCoilAsync((byte)slaveId, (ushort)addr, value);
             } catch {
                 this.LogError("Exception writing to single coil in ModbusService.WriteCoil");
+            }
+        }
+
+        public async Task ToggleCoil(string ip, int port, int slaveId, int addr) {
+            try {
+                using var client = new TcpClient(ip, port);
+                var modbus = ModbusIpMaster.CreateIp(client);
+                var value = await modbus.ReadCoilsAsync((byte)slaveId, (ushort)addr, 1);
+                await modbus.WriteSingleCoilAsync((byte)slaveId, (ushort)addr, !value[0]);
+            } catch {
+                this.LogError("Exception reading coil in ModbusService.ReadCoil");
             }
         }
 

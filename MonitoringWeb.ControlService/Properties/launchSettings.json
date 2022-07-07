@@ -2,6 +2,7 @@
   "profiles": {
     "MonitoringWeb.ControlService": {
       "commandName": "Project",
+      "launchBrowser": true,
       "dotnetRunMessages": true,
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"

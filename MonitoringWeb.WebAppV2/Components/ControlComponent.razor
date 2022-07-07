@@ -1,0 +1,60 @@
+﻿@using MonitoringWeb.WebAppV2.Data
+@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringSystem.Shared.SignalR; 
+@inject SettingsService SettingsService
+@inject ILogger<ControlComponent> Logger
+@implements IAsyncDisposable
+
+@if (this.DeviceName == null) {
+    <h4>Device not set</h4>
+} else {
+    <DxFormLayout>
+    @foreach (var action in this._switchActions) {
+        <DxFormLayoutItem ColSpanXs="2">
+            <ToggleSwitch SwitchAction=@action></ToggleSwitch>
+        </DxFormLayoutItem>
+    }
+    </DxFormLayout>
+}
+@code {
+    [Parameter]
+    public string? DeviceName { get; set; }
+
+    private HubConnection? _connection;
+    private List<SwitchAction> _switchActions=new List<SwitchAction>();
+
+    protected override async Task OnInitializedAsync() {
+        this._connection=new HubConnectionBuilder()
+            .WithAutomaticReconnect()
+            .WithUrl("http://localhost:5000/hubs/controlhub")
+            .Build();
+        try {
+            await this._connection.StartAsync();
+            var remoteActions = await this._connection.
+                InvokeAsync<IEnumerable<RemoteAction>>("Initialize",this.DeviceName);
+            foreach (var ract in remoteActions) {
+                var switchAction = new SwitchAction {
+                    Name = ract.Name,
+                    State = ract.State,
+                    SwitchId = $"{this.DeviceName}_{ract.Name}",
+                    Toggle = async (string name) => {
+                        await this._connection.InvokeAsync("Toggle", this.DeviceName, name);
+                    }
+                };
+                this._switchActions.Add(switchAction);
+            }
+        } catch {
+            this.Logger.LogError("Hub Connection Failed");
+        }
+    }
+
+    /*protected override async Task OnParametersSetAsync() {
+
+    }*/
+
+    public async ValueTask DisposeAsync() {
+        if (this._connection is not null) {
+            await this._connection.DisposeAsync();
+        }
+    }
+}

@@ -84,6 +84,7 @@
             await InvokeAsync(StateHasChanged);
         });*/
         this._hubConnection.On<MonitorData>("ShowCurrent", this.OnShowCurrent);
+
         this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
         this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
 

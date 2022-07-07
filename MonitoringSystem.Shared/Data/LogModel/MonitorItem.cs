@@ -38,7 +38,7 @@ namespace MonitoringSystem.Shared.Data {
     }
 
     public class VirtualChannel : MonitorItem {
-
+        public int register { get; set; }
     }
 
     public class ActionItem : MonitorItem {

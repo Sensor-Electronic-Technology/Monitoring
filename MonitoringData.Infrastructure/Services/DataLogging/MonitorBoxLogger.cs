@@ -144,8 +144,7 @@ namespace MonitoringData.Infrastructure.Services {
                     new AnalogReadings() { 
                         readings = readings.ToArray(), 
                         timestamp = now 
-                    }, 
-                    record));       
+                    }, record));       
             } else {
                 this.LogError("Error: AnalogItems count doesn't match raw data count");
                 return Task.FromResult<Tuple<AnalogReadings, bool>>(new(null,false));

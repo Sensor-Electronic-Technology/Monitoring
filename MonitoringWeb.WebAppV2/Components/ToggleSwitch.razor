@@ -1,24 +1,36 @@
-﻿<div class="custom-control custom-switch">
-    <input type="checkbox" class="custom-control-input" id="@SwitchId" @onclick="OnToggleClick">
-    <label class="custom-control-label" for="@SwitchId">@Label</label>
-</div>
+﻿@using MonitoringWeb.WebAppV2.Data
+@if (this.SwitchAction == null) {
+    <p>SwitchAction Not Set</p>
+} else {
+    <div class="custom-control custom-switch">
+        <input type="checkbox" class="custom-control-input" id="@this.SwitchAction.SwitchId" @onclick="OnToggleClick">
+        <label class="custom-control-label" for="@this.SwitchAction.SwitchId">@this.SwitchAction.Name</label>
+    </div>
+}
+
 @code {
+    [Parameter]
+    public SwitchAction? SwitchAction { get; set; }
+    
     [Parameter] 
     public EventCallback<bool> ToggleOnChanged { get; set; }
-    [Parameter]
-    public bool ToggleOn { get; set; } = false;
-    [Parameter]
-    public string Label { get; set; } = "Not Set";
-    [Parameter]
-    public string? SwitchId { get; set; }
-  
+    
+    protected override async Task OnInitializedAsync() {
+
+    }
+
     async Task OnToggleClick() => await Toggle();
   
     async Task Toggle(bool? value = null) {
-        var newValue = value ?? !ToggleOn;
-        if(ToggleOn != newValue) {
-            ToggleOn = newValue;
-            await ToggleOnChanged.InvokeAsync(ToggleOn);
+        if (this.SwitchAction != null) {
+            var newValue = value ?? !this.SwitchAction.State;
+            if(this.SwitchAction.State != newValue) {
+                this.SwitchAction.State = newValue;
+                if (this.SwitchAction != null) {
+                    await this.SwitchAction.Toggle(this.SwitchAction.Name);
+                }
+                await ToggleOnChanged.InvokeAsync(this.SwitchAction.State);
+            }
         }
     }
 }

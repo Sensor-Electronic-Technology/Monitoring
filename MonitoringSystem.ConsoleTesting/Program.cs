@@ -64,9 +64,37 @@ namespace MonitoringSystem.ConsoleTesting {
             //mailMessage.IsBodyHtml = true;
             //mailMessage.
 
+            /*await UpdateVirtualItemRegister("epi1");
+            await UpdateVirtualItemRegister("epi2");
+            await UpdateVirtualItemRegister("gasbay");*/
+            
+            ModbusService modservice = new ModbusService();
+            /*var netConfig = gasbay.NetworkConfiguration;
+            var modbusConfig = netConfig.ModbusConfig;*/
+            Console.WriteLine("Starting test");
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 0, false);
 
             //await client.SendMailAsync()
             //Console.WriteLine("Message sent");
+
+            /*await UpdateChannelSensor(166, 6);
+            await UpdateChannelSensor(167, 6);
+            await UpdateChannelSensor(168, 8);
+            await UpdateChannelSensor(169, 8);
+            await UpdateChannelSensor(170, 7);
+            await UpdateChannelSensor(171, 7);*/
+            //await BuildSensorCollection();
+            //await UpdateAnalogSensor();
+            /*var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("epi1_data");
+            var analogItems = await database.GetCollection<AnalogChannel>("analog_items").Find(_=>true).ToListAsync();
+            foreach (var item in analogItems) {
+                Console.WriteLine($"Name: {item.identifier} SensorId: {item.sensorId}");
+            }*/
+        }
+
+        public static async Task ToggleRemote() {
             ModbusService modservice = new ModbusService();
             /*var netConfig = gasbay.NetworkConfiguration;
             var modbusConfig = netConfig.ModbusConfig;*/
@@ -84,21 +112,38 @@ namespace MonitoringSystem.ConsoleTesting {
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, false);
             //await AlertItemTypeUpdate("gasbay");
             Console.WriteLine("Done");
-            /*await UpdateChannelSensor(166, 6);
-            await UpdateChannelSensor(167, 6);
-            await UpdateChannelSensor(168, 8);
-            await UpdateChannelSensor(169, 8);
-            await UpdateChannelSensor(170, 7);
-            await UpdateChannelSensor(171, 7);*/
-            //await BuildSensorCollection();
-            //await UpdateAnalogSensor();
-            /*var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("epi1_data");
-            var analogItems = await database.GetCollection<AnalogChannel>("analog_items").Find(_=>true).ToListAsync();
-            foreach (var item in analogItems) {
-                Console.WriteLine($"Name: {item.identifier} SensorId: {item.sensorId}");
-            }*/
         }
+        
+         public static async Task UpdateVirtualItemRegister(string deviceName) {
+            using var context = new FacilityContext();
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var deviceDb = client.GetDatabase(deviceName+"_data");
+            var settingsDb = client.GetDatabase("monitor_settings");
+            var deviceCol = settingsDb.GetCollection<ManagedDevice>("monitor_devices");
+            var virtualItems = deviceDb.GetCollection<VirtualChannel>("virtual_items");
+            var virtualChannels = await context.Channels.OfType<VirtualInput>()
+                .AsNoTracking()
+                .Include(e => e.ModbusDevice)
+                .Where(e => e.ModbusDevice.Identifier == deviceName)
+                .ToListAsync();
+            var actionList = virtualChannels.Select(e => e.Identifier);
+            
+            foreach (var channel in virtualChannels) {
+                var update = Builders<VirtualChannel>.Update
+                    .Set(e => e.register, channel.ModbusAddress.Address);
+                await virtualItems.UpdateOneAsync(e => e._id == channel.Id, update);
+            }
+            Console.WriteLine("Check Database");
+        }
+
+         static async Task UpdateManagedDevices(string deviceName) {
+             using var context = new FacilityContext();
+             var client = new MongoClient("mongodb://172.20.3.41");
+             var database = client.GetDatabase("monitor_settings");
+             
+             
+             
+         }
 
         static async Task UpdateAnalogSensor() {
             var client = new MongoClient("mongodb://172.20.3.41");
