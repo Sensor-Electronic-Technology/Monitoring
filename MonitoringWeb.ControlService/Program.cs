@@ -11,6 +11,7 @@ builder.Services.AddSingleton<IModbusService, ModbusService>();
 builder.Services.AddSingleton<IMonitorDeviceService, MonitorDeviceService>();
 builder.Services.AddSingleton<MonitorControlHub>();
 builder.Services.AddHostedService<HubService>();
+
 var app = builder.Build();
 app.MapHub<MonitorControlHub>("/hubs/controlhub");
 await app.RunAsync();

@@ -15,11 +15,7 @@ namespace MonitoringData.Infrastructure.Services {
         private IAlertService _alertService;
         private readonly ILogger _logger;
 
-        private MonitorDevice _device;
-        private NetworkConfiguration _networkConfig;
-        private ModbusConfig _modbusConfig;
-        private ChannelRegisterMapping _channelMapping;
-
+        private ManagedDevice _device;
         private bool loggingEnabled = false;
         private IList<AlertRecord> _alerts;
 
@@ -51,20 +47,21 @@ namespace MonitoringData.Infrastructure.Services {
         }
 
         public async Task Read() {
-            var result = await this._modbusService.Read(this._networkConfig.IPAddress, this._networkConfig.Port, this._modbusConfig);
+            var result = await this._modbusService.Read(this._device.IpAddress, this._device.Port, 
+                this._device.ModbusConfiguration);
             if (result._success) {
-                var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._channelMapping.DiscreteStart,
-                    (this._channelMapping.DiscreteStop - this._channelMapping.DiscreteStart) + 1).ToArray();
-                var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._channelMapping.AnalogStart, 
-                    (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1).ToArray();
-                var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._channelMapping.AlertStart,
-                    (this._channelMapping.AlertStop - this._channelMapping.AlertStart) + 1).ToArray();
-                var virtualRaw = new ArraySegment<bool>(result.Coils, this._channelMapping.VirtualStart, 
-                    (this._channelMapping.VirtualStop - this._channelMapping.VirtualStart) + 1).ToArray();
+                var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._device.ChannelMapping.DiscreteStart,
+                    (this._device.ChannelMapping.DiscreteStop - this._device.ChannelMapping.DiscreteStart) + 1).ToArray();
+                var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._device.ChannelMapping.AnalogStart, 
+                    (this._device.ChannelMapping.AnalogStop - this._device.ChannelMapping.AnalogStart) + 1).ToArray();
+                var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._device.ChannelMapping.AlertStart,
+                    (this._device.ChannelMapping.AlertStop - this._device.ChannelMapping.AlertStart) + 1).ToArray();
+                var virtualRaw = new ArraySegment<bool>(result.Coils, this._device.ChannelMapping.VirtualStart, 
+                    (this._device.ChannelMapping.VirtualStop - this._device.ChannelMapping.VirtualStart) + 1).ToArray();
                 var now = DateTime.Now;
                 this._alerts = new List<AlertRecord>();
-                if (result.HoldingRegisters.Length > this._channelMapping.DeviceStart - 1) {
-                    var deviceRaw = this.ToDeviceState(result.HoldingRegisters[this._channelMapping.DeviceStart]);
+                if (result.HoldingRegisters.Length > this._device.ChannelMapping.DeviceStart - 1) {
+                    var deviceRaw = this.ToDeviceState(result.HoldingRegisters[this._device.ChannelMapping.DeviceStart]);
                     await this._dataService.InsertDeviceReadingAsync(new DeviceReading() {
                         itemid = 1,
                         timestamp = now,
@@ -99,10 +96,10 @@ namespace MonitoringData.Infrastructure.Services {
         public async Task Load() {
             await this._dataService.LoadAsync();
             await this._alertService.Initialize();
-            this._device = this._dataService.MonitorDevice;
-            this._networkConfig = this._device.NetworkConfiguration;
-            this._modbusConfig = this._networkConfig.ModbusConfig;
-            this._channelMapping = this._modbusConfig.ChannelMapping;
+            //this._device = this._dataService.MonitorDevice;
+            //this._networkConfig = this._device.NetworkConfiguration;
+            //this._modbusConfig = this._networkConfig.ModbusConfig;
+            //this._channelMapping = this._modbusConfig.ChannelMapping;
             this.recordInterval = new TimeSpan(0, 0, this._device.recordInterval);
         }
 

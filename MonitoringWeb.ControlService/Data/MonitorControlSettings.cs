@@ -1,8 +1,8 @@
-﻿namespace MonitoringWeb.ControlService.Data;
+﻿using MonitoringSystem.Shared.Data;
 
-public class MonitorControlSettings {
-    public string ConnectionString { get; set; } = null!;
-    public string DatabaseName { get; set; } = null!;
+namespace MonitoringWeb.ControlService.Data;
+
+public class MonitorControlSettings:MonitorSettings {
     public string ManagedDeviceCollection { get; set; }= null!;
     public string VirtualChannelCollection { get; set; }= null!;
 }

@@ -12,6 +12,7 @@ using System.IO;
 using System.Threading;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using System.Diagnostics;
+using MongoDB.Bson;
 using MonitoringData.Infrastructure.Services.DataLogging;
 using MonitoringSystem.Shared.Services;
 
@@ -24,6 +25,12 @@ namespace MonitoringSystem.ConsoleTesting {
         public string Name { get; set; }
         public DateTime TimeStamp { get; set; }
         public float Value { get; set; }
+    }
+
+    public class TestDict {
+        public ObjectId _id { get; set; }
+        public string Name { get; set; }
+        public Dictionary<string,int> TestFields { get; set; }
     }
 
     public class Program {
@@ -68,12 +75,12 @@ namespace MonitoringSystem.ConsoleTesting {
             await UpdateVirtualItemRegister("epi2");
             await UpdateVirtualItemRegister("gasbay");*/
             
-            ModbusService modservice = new ModbusService();
+            /*ModbusService modservice = new ModbusService();
             /*var netConfig = gasbay.NetworkConfiguration;
-            var modbusConfig = netConfig.ModbusConfig;*/
+            var modbusConfig = netConfig.ModbusConfig;#1#
             Console.WriteLine("Starting test");
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
-            await modservice.WriteCoil("172.20.5.201", 502, 1, 0, false);
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 0, false);*/
 
             //await client.SendMailAsync()
             //Console.WriteLine("Message sent");
@@ -92,6 +99,21 @@ namespace MonitoringSystem.ConsoleTesting {
             foreach (var item in analogItems) {
                 Console.WriteLine($"Name: {item.identifier} SensorId: {item.sensorId}");
             }*/
+
+            /*var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("test_dict");
+            /*TestDict test = new TestDict();
+            test.TestFields = new Dictionary<string, int>();
+            test.TestFields.Add("One",1);
+            test.TestFields.Add("Two",2);
+            test.Name = "test1";#1#
+            var col=database.GetCollection<TestDict>("test");
+            var ret=await col.Find(e => e.Name == "test1").FirstOrDefaultAsync();
+            Console.WriteLine($"One: {ret.TestFields["One"]}");
+            Console.WriteLine($"Two: {ret.TestFields["Two"]}");*/
+            Console.WriteLine(nameof(AnalogChannel));
+            Console.WriteLine("Done");
+            //await col.InsertOneAsync()
         }
 
         public static async Task ToggleRemote() {
