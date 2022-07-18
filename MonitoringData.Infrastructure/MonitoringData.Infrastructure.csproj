@@ -11,6 +11,7 @@
 		<PackageReference Include="MassTransit" Version="8.0.0" />
 		<PackageReference Include="MassTransit.RabbitMQ" Version="8.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.1.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
 		<PackageReference Include="MongoDB.Driver" Version="2.15.1" />
 	</ItemGroup>

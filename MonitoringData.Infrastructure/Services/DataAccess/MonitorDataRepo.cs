@@ -58,6 +58,8 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._database = this._client.GetDatabase(databaseSettings.Value.DatabaseName);
             this._logger = logger;
             
+            
+            
             this._analogReadings = this._database.GetCollection<AnalogReadings>(databaseSettings.Value.AnalogReadingCollection);
             this._discreteReadings = this._database.GetCollection<DiscreteReadings>(databaseSettings.Value.DiscreteReadingCollection);
             this._virtualReadings = this._database.GetCollection<VirtualReadings>(databaseSettings.Value.VirtualReadingCollection);

@@ -100,7 +100,7 @@ namespace MonitoringData.Infrastructure.Services {
             //this._networkConfig = this._device.NetworkConfiguration;
             //this._modbusConfig = this._networkConfig.ModbusConfig;
             //this._channelMapping = this._modbusConfig.ChannelMapping;
-            this.recordInterval = new TimeSpan(0, 0, this._device.recordInterval);
+            this.recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
         }
 
         private Task ProcessAlertReadings(ushort[] raw, DateTime now) {

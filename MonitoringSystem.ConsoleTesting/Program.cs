@@ -115,6 +115,8 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Done");
             //await col.InsertOneAsync()
         }
+        
+        
 
         public static async Task ToggleRemote() {
             ModbusService modservice = new ModbusService();
