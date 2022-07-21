@@ -1,7 +1,7 @@
 ﻿@using MonitoringWeb.WebAppV2.Data
 @using Microsoft.AspNetCore.SignalR.Client
-@using MonitoringSystem.Shared.SignalR; 
-@inject SettingsService SettingsService
+@using MonitoringSystem.Shared.Data
+@using MonitoringSystem.Shared.SignalR;
 @inject ILogger<ControlComponent> Logger
 @implements IAsyncDisposable
 
@@ -19,6 +19,9 @@
 @code {
     [Parameter]
     public string? DeviceName { get; set; }
+    
+    [Parameter]
+    public IEnumerable<RemoteAction>? RemoteActions { get; set; }
 
     private HubConnection? _connection;
     private List<SwitchAction> _switchActions=new List<SwitchAction>();
@@ -30,28 +33,28 @@
             .Build();
         try {
             await this._connection.StartAsync();
-            var remoteActions = await this._connection.
-                InvokeAsync<IEnumerable<RemoteAction>>("Initialize",this.DeviceName);
-            foreach (var ract in remoteActions) {
-                var switchAction = new SwitchAction {
-                    Name = ract.Name,
-                    State = ract.State,
-                    SwitchId = $"{this.DeviceName}_{ract.Name}",
-                    Toggle = async (string name) => {
-                        await this._connection.InvokeAsync("Toggle", this.DeviceName, name);
-                    }
-                };
-                this._switchActions.Add(switchAction);
+            var remoteActions = this.RemoteActions;
+            if (remoteActions != null) {
+                foreach (var ract in remoteActions) {
+                    var switchAction = new SwitchAction {
+                        Name = ract.Name,
+                        State = ract.State,
+                        SwitchId = $"{this.DeviceName}_{ract.Name}",
+                        Toggle = async (string name) => {
+                            await this._connection.InvokeAsync("Toggle", this.DeviceName, name);
+                        }
+                    };
+                    this._switchActions.Add(switchAction);
+                }
+            } else {
+                this.Logger.LogError("RemoteActions Failed to Load");
             }
+
         } catch {
             this.Logger.LogError("Hub Connection Failed");
         }
     }
-
-    /*protected override async Task OnParametersSetAsync() {
-
-    }*/
-
+    
     public async ValueTask DisposeAsync() {
         if (this._connection is not null) {
             await this._connection.DisposeAsync();

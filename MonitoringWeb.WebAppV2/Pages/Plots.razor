@@ -1,10 +1,9 @@
 ﻿@page "/plot"
 @using MonitoringData.Infrastructure.Services.DataAccess
-@using System.Drawing
 @using MonitoringSystem.Shared.Data
-@using MonitoringWeb.WebAppV2.Data
+@using MonitoringWeb.WebAppV2.Services
 @inject PlotDataService PlotService
-@inject SettingsService SettingsService
+@inject WebsiteConfigurationProvider ConfigurationProvider
 
 <DxStackLayout Orientation="@Orientation.Vertical">
     <Items>
@@ -129,8 +128,8 @@
 
     protected override async Task OnInitializedAsync() {
         this.Message = "Select input parameters to view plot";
-        var devices=await this.SettingsService.GetDevices();
-        this.SensorTypes = await this.SettingsService.GetSensors();
+        var devices= this.ConfigurationProvider.Devices;
+        this.SensorTypes = this.ConfigurationProvider.Sensors;
         foreach (var device in devices) {
             this.DeviceLookup.Add(device.DeviceName,device.DatabaseName);
         }

@@ -99,20 +99,22 @@ namespace MonitoringSystem.ConsoleTesting {
             foreach (var item in analogItems) {
                 Console.WriteLine($"Name: {item.identifier} SensorId: {item.sensorId}");
             }*/
-
+            //await BuildSettingsDB();
             /*var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("test_dict");
-            /*TestDict test = new TestDict();
-            test.TestFields = new Dictionary<string, int>();
-            test.TestFields.Add("One",1);
-            test.TestFields.Add("Two",2);
-            test.Name = "test1";#1#
-            var col=database.GetCollection<TestDict>("test");
-            var ret=await col.Find(e => e.Name == "test1").FirstOrDefaultAsync();
-            Console.WriteLine($"One: {ret.TestFields["One"]}");
-            Console.WriteLine($"Two: {ret.TestFields["Two"]}");*/
-            Console.WriteLine(nameof(AnalogChannel));
-            Console.WriteLine("Done");
+
+            var col=database.GetCollection<BsonDocument>("monitor_devices")
+                .Find(Builders<BsonDocument>.Filter.Eq("DeviceName","Epi1"))
+                .FirstOrDefault();
+            Console.WriteLine(col);*/
+            //var t = col.ToDictionary<string, string>();
+
+
+            //var ret=await col.Find(e => e.Name == "test1").FirstOrDefaultAsync();
+            //Console.WriteLine($"One: {ret.TestFields["One"]}");
+            //Console.WriteLine($"Two: {ret.TestFields["Two"]}");
+            Console.WriteLine(Environment.GetEnvironmentVariable("DEVICEID"));
+
             //await col.InsertOneAsync()
         }
         
@@ -244,10 +246,10 @@ namespace MonitoringSystem.ConsoleTesting {
         static async Task BuildSettingsDB() { 
             var context = new FacilityContext();
             
-            var devices = context.Devices.ToList();
+            var devices = context.Devices.OfType<ModbusDevice>().ToList();
 
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("monitor_settings");
+            var database = client.GetDatabase("test_dict");
             //await database.CreateCollectionAsync("monitor_devices");
             var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices");
 
@@ -258,6 +260,21 @@ namespace MonitoringSystem.ConsoleTesting {
                 dev.DeviceName = device.Identifier;
                 dev.DeviceType = device.GetType().Name;
                 dev.HubAddress = device.HubName;
+                dev.ChannelMapping = device.NetworkConfiguration.ModbusConfig.ChannelMapping;
+                dev.IpAddress = device.NetworkConfiguration.IPAddress;
+                dev.Port = device.NetworkConfiguration.Port;
+                dev.CollectionNames = new Dictionary<string, string>() {
+                    [nameof(AnalogChannel)]="analog_items",
+                    [nameof(DiscreteChannel)]="discrete_items",
+                    [nameof(VirtualChannel)]="virtual_items",
+                    [nameof(MonitorAlert)]="alert_items",
+                    [nameof(AnalogReadings)]="analog_readings",
+                    [nameof(DiscreteReadings)]="discrete_readings",
+                    [nameof(VirtualReadings)]="virtual_readings",
+                    [nameof(AlertReadings)]="alert_readings"
+                };
+                dev.ChannelMapping = device.NetworkConfiguration.ModbusConfig.ChannelMapping;
+                dev.ModbusConfiguration = device.NetworkConfiguration.ModbusConfig;
                 monitorDevices.Add(dev);
             }
 

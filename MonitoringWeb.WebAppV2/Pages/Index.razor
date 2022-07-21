@@ -1,11 +1,8 @@
 ﻿@page "/"
-@using MonitoringWeb.WebAppV2.Components
-@using MonitoringWeb.WebAppV2.Data
-@using MonitoringSystem.Shared.SignalR
 @using MonitoringWeb.WebAppV2.Data
 @using MonitoringSystem.Shared.Data
-@using Append.Blazor.Sidepanel
-@inject SettingsService SettingsService
+@using MonitoringWeb.WebAppV2.Services
+@inject WebsiteConfigurationProvider ConfigurationProvider
 
 <div class="row">
     @foreach (var status in this._statusList) {
@@ -30,14 +27,16 @@
     IEnumerable<ManagedDevice>? _devices;
     List<DeviceStatus> _statusList=new List<DeviceStatus>();
     protected override async Task OnInitializedAsync() {
-        await this.SettingsService.Load();
-        this._devices = await this.SettingsService.GetDevices();
-        foreach (var device in this._devices) {
-            this._statusList.Add(new DeviceStatus() {
-                DeviceName=device.DeviceName,
-                Status = ActionType.Alarm
-            });
-        }
+        await Task.Run(() => {
+            this._devices = this.ConfigurationProvider.Devices;
+            foreach (var device in this._devices) {
+                this._statusList.Add(new DeviceStatus() {
+                    DeviceName=device.DeviceName,
+                    Status = ActionType.Alarm
+                });
+            }
+        });
+
     }
     async Task OnAlertUpdate(DeviceStatus status) {
         var deviceStatus=this._statusList.FirstOrDefault(e => e.DeviceName == status.DeviceName);

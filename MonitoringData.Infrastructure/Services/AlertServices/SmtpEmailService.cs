@@ -4,24 +4,25 @@ using MonitoringSystem.Shared.Data;
 using MimeKit;
 using Microsoft.Extensions.Logging;
 using MailKit.Net.Smtp;
+using MassTransit.Configuration;
+using Microsoft.Extensions.Configuration;
+using MonitoringData.Infrastructure.Data;
 
 namespace MonitoringData.Infrastructure.Services.AlertServices;
 
 public class SmtpEmailService:IEmailService {
-    //private SmtpClient? _emailClient;
     private readonly ILogger<SmtpEmailService> _logger;
-    private IMongoCollection<EmailRecipient> _recipientCollection;
     private MailboxAddress _from;
     private readonly MonitorEmailSettings _settings;
+    private readonly DataLogConfigProvider _configProvider;
 
     private IEnumerable<MailboxAddress> _recipients;
     
-    public SmtpEmailService(IOptions<MonitorEmailSettings> options,ILogger<SmtpEmailService> logger) {
-        this._settings = options.Value;
+    public SmtpEmailService(DataLogConfigProvider configProvider,
+        IOptions<MonitorEmailSettings> settings,ILogger<SmtpEmailService> logger) {
+        this._configProvider = configProvider;
         this._logger = logger;
-        var client = new MongoClient(this._settings.ConnectionString);
-        var database = client.GetDatabase(this._settings.DatabaseName);
-        this._recipientCollection = database.GetCollection<EmailRecipient>(this._settings.EmailRecipientCollection);
+        this._settings = settings.Value;
         this._from = new MailboxAddress(this._settings.FromUser,this._settings.FromAddress);
     }
 
@@ -42,19 +43,13 @@ public class SmtpEmailService:IEmailService {
             this._logger.LogCritical("Error: Could not connect to smtp host");
         }
     }
-
+    
     public void SendMessage(string subject, string msg) {
         throw new NotImplementedException();
     }
-
-    public async Task<bool> Load() {
-        var recipients = await this._recipientCollection
-            .Find(_ => true)
-            .ToListAsync();
-        if (recipients != null) {
-            this._recipients = recipients.Select(e => new MailboxAddress(e.Username, e.Address));
-            return true;
-        }
-        return false;
+    
+    public Task Load() {
+        this._recipients = this._configProvider.EmailRecipients.Select(e => new MailboxAddress(e.Username, e.Address));
+        return Task.CompletedTask;
     }
 }

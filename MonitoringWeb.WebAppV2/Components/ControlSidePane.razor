@@ -1,6 +1,7 @@
 ﻿@using MonitoringWeb.WebAppV2.Data
 @using MonitoringSystem.Shared.Data
-@inject SettingsService SettingsService
+@using MonitoringWeb.WebAppV2.Services
+@inject WebsiteConfigurationProvider ConfigurationProvider
 
 @if (Visible) {
     if (this._devices == null) {
@@ -8,7 +9,7 @@
     } else {
         @foreach (var device in this._devices) {
             <div class="row" style="padding: 1rem">
-                <ControlComponent DeviceName=@device.DeviceName />
+                <ControlComponent DeviceName=@device.DeviceName RemoteActions=@device.RemoteActions.AsEnumerable() />
             </div>
         }
     }
@@ -20,7 +21,9 @@
 
     private IEnumerable<ManagedDevice> _devices;
 
-    protected override async Task OnInitializedAsync() {
-        this._devices = await this.SettingsService.GetDevices();
+    protected override Task OnInitializedAsync() {
+        //this._devices = await this.SettingsService.GetDevices();
+        this._devices = this.ConfigurationProvider.Devices;
+        return Task.CompletedTask;
     }
 }

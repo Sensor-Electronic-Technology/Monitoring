@@ -5,7 +5,10 @@
       "distributionName": ""
     },
     "Profile 1": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "environmentVariables": {
+        "DEVICEID": "epi1"
+      }
     }
   }
 }
