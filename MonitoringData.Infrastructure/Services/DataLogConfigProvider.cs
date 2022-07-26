@@ -29,6 +29,7 @@ public class DataLogConfigProvider:IMonitorConfigurationProvider {
     
     public async Task Load() {
         this._emailRecipients=await this._emailRecipientCollection.Find(_ => true).ToListAsync();
-        this._device = await this._deviceCollection.Find(e => e.DeviceName == this.DeviceName).FirstOrDefaultAsync();
+        this._device = await this._deviceCollection.Find(e => e.DeviceName.ToLower() == this.DeviceName.ToLower())
+            .FirstOrDefaultAsync();
     }
 }

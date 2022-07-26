@@ -17,9 +17,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
         private readonly ILogger _logger;
 
         private bool loggingEnabled = false;
-        private NetworkConfiguration _networkConfig;
-        private ModbusConfig _modbusConfig;
-        private ChannelRegisterMapping _channelMapping;
+        private ManagedDevice _device;
         private IList<AlertRecord> _alerts;
         private DateTime lastRecord;
         private bool firstRecord;
@@ -38,23 +36,26 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             this.firstRecord = true;
         }
 
-        public ModbusLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
+        /*public ModbusLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
             this._dataService = new MonitorDataService(connName, databaseName, collectionNames);
             this._alertService = new AlertService(connName, databaseName, collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
             this.loggingEnabled = false;
             this._modbusService = new ModbusService();
-        }
+        }*/
 
         public async Task Read() {
-            var result = await this._modbusService.Read(this._networkConfig.IPAddress, this._networkConfig.Port, this._modbusConfig);
+            var result = await this._modbusService.Read(this._device.IpAddress, this._device.Port, 
+                this._device.ModbusConfiguration);
             if (result._success) {
                 var now = DateTime.Now;
                 this._alerts = new List<AlertRecord>();
                 if (result.HoldingRegisters != null) {
-                    var analogRaw = new ArraySegment<ushort>(result.HoldingRegisters, 
+                    /*var analogRaw = new ArraySegment<ushort>(result.HoldingRegisters, 
                         this._channelMapping.AnalogStart, 
                         (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1)
-                        .ToArray();
+                        .ToArray();*/
+                    var analogRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._device.ChannelMapping.AnalogStart, 
+                        (this._device.ChannelMapping.AnalogStop - this._device.ChannelMapping.AnalogStart) + 1).ToArray();
                     await this.ProcessAnalogReadings(analogRaw, now);
                     MonitorData monitorData = new MonitorData();
                     monitorData.TimeStamp = now;
@@ -66,8 +67,6 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         
                         }).ToList();
                     await this._alertService.ProcessAlerts(this._alerts,now);
-                    
-                    //await this._monitorHub.Clients.All.ShowCurrent(monitorData);
                 }
             } else {
                 this.LogError("Modbus read failed");
@@ -121,9 +120,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
         public async Task Load() {
             await this._dataService.LoadAsync();
             await this._alertService.Initialize();
-            this._networkConfig = this._dataService.MonitorDevice.NetworkConfiguration;
-            this._modbusConfig = this._networkConfig.ModbusConfig;
-            this._channelMapping = this._modbusConfig.ChannelMapping;
+            this._device = this._dataService.ManagedDevice;
         }
 
         public async Task Consume(ConsumeContext<ReloadConsumer> context) {

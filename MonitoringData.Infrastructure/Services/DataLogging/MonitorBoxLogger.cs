@@ -35,7 +35,7 @@ namespace MonitoringData.Infrastructure.Services {
             this.firstRecord = true;
         }
 
-        public MonitorBoxLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
+        /*public MonitorBoxLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
             this._dataService = new MonitorDataService(connName, databaseName, collectionNames);
             this._alertService = new AlertService(connName, 
                 databaseName,
@@ -44,7 +44,7 @@ namespace MonitoringData.Infrastructure.Services {
             this.loggingEnabled = false;
             this._modbusService = new ModbusService();
             this.firstRecord = true;
-        }
+        }*/
 
         public async Task Read() {
             var result = await this._modbusService.Read(this._device.IpAddress, this._device.Port, 
@@ -60,7 +60,7 @@ namespace MonitoringData.Infrastructure.Services {
                     (this._device.ChannelMapping.VirtualStop - this._device.ChannelMapping.VirtualStart) + 1).ToArray();
                 var now = DateTime.Now;
                 this._alerts = new List<AlertRecord>();
-                if (result.HoldingRegisters.Length > this._device.ChannelMapping.DeviceStart - 1) {
+                /*if (result.HoldingRegisters.Length > this._device.ChannelMapping.DeviceStart - 1) {
                     var deviceRaw = this.ToDeviceState(result.HoldingRegisters[this._device.ChannelMapping.DeviceStart]);
                     await this._dataService.InsertDeviceReadingAsync(new DeviceReading() {
                         itemid = 1,
@@ -69,7 +69,7 @@ namespace MonitoringData.Infrastructure.Services {
                     });
                 } else {
                     this.LogError("Error: HoldingRegister count is < DeviceStart Address");
-                }
+                }*/
                 await this.ProcessAlertReadings(alertsRaw, now);
                 var aret=await this.ProcessAnalogReadings(analogRaw, now);
                 var dret=await this.ProcessDiscreteReadings(discreteRaw, now);
@@ -96,10 +96,7 @@ namespace MonitoringData.Infrastructure.Services {
         public async Task Load() {
             await this._dataService.LoadAsync();
             await this._alertService.Initialize();
-            //this._device = this._dataService.MonitorDevice;
-            //this._networkConfig = this._device.NetworkConfiguration;
-            //this._modbusConfig = this._networkConfig.ModbusConfig;
-            //this._channelMapping = this._modbusConfig.ChannelMapping;
+            this._device = this._dataService.ManagedDevice;
             this.recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
         }
 

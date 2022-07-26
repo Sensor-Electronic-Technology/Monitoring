@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Services;
 using MonitoringWeb.ControlService.Services;
 using MonitoringSystem.Shared.SignalR;

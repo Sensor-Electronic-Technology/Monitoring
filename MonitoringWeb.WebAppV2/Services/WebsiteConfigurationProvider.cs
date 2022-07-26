@@ -37,7 +37,6 @@ public class WebsiteConfigurationProvider:IMonitorConfigurationProvider {
         var device = this._devices.FirstOrDefault(e => e.DeviceName == deviceName);
         if (device == null)
             return null;
-
         return device.RemoteActions.AsEnumerable();
     }
 

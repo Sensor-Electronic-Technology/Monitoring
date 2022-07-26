@@ -33,7 +33,7 @@ public class ExchangeEmailService : IEmailService {
         message.Send();
     }
 
-    public Task<bool> Load() {
+    public Task Load() {
         throw new NotImplementedException();
     }
 

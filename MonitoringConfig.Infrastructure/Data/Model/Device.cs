@@ -15,6 +15,7 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public double SaveInterval { get; set; }
         public string DatabaseName { get; set; }
         public string HubName { get; set; }
+        public string HubAddress { get; set; }
         public ICollection<FacilityZone> Zones { get; set; } = new List<FacilityZone>();
     }
 

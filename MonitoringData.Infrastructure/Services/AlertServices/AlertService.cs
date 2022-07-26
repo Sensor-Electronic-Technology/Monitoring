@@ -17,21 +17,19 @@ namespace MonitoringData.Infrastructure.Services {
     public class AlertService : IAlertService {
         private readonly IAlertRepo _alertRepo;
         private readonly ILogger<AlertService> _logger;
-        private readonly MonitorDatabaseSettings _settings;
         private readonly IEmailService _emailService;
         private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
         private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
+        private string EmailSubject;
 
 
         public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,
-            IOptions<MonitorDatabaseSettings> options,
             IHubContext<MonitorHub,IMonitorHub> monitorHub,
             IEmailService emailService) {
             this._alertRepo = alertRepo;
             this._logger = logger;
             this._emailService = emailService;
             this._monitorHub = monitorHub;
-            this._settings = options.Value;
         }
 
         public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
@@ -41,7 +39,7 @@ namespace MonitoringData.Infrastructure.Services {
 
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
             IMessageBuilder messageBuilder = new MessageBuilder();
-            messageBuilder.StartMessage(this._settings.EmailSubject);
+            messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
             ConsoleTable statusTable = new ConsoleTable("Alert","Status","Reading");
             ConsoleTable newAlertTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable newStateTable = new ConsoleTable("Alert", "Status", "Reading");
@@ -128,7 +126,7 @@ namespace MonitoringData.Infrastructure.Services {
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
-                    await this._emailService.SendMessageAsync(this._settings.EmailSubject+" Alerts", 
+                    await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
                         messageBuilder.FinishMessage());
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         itemid = e.AlertId,

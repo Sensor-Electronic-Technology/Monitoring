@@ -7,11 +7,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MassTransit.Futures.Contracts;
 
 
 namespace MonitoringData.Infrastructure.Services.DataAccess {
     public interface IAlertRepo {
         IList<ActionItem> ActionItems { get; }
+        ManagedDevice ManagedDevice { get; }
         Task<MonitorAlert> GetAlert(int alertId);
         Task LogAlerts(AlertReadings alerts);
         Task UpdateAlert(int alertId, UpdateDefinition<MonitorAlert> update);
@@ -23,14 +25,18 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<MonitorAlert> _monitorAlerts;
         private IMongoCollection<AlertReadings> _alertReadings;
         private readonly MonitorDatabaseSettings _settings;
+        private readonly DataLogConfigProvider _configProvider;
+        private readonly ManagedDevice _device;
         public IList<ActionItem> ActionItems { get; private set; }
-        public AlertRepo(IOptions<MonitorDatabaseSettings> databaseSettings) {
-            var client = new MongoClient(databaseSettings.Value.ConnectionString);
-            var database = client.GetDatabase(databaseSettings.Value.DatabaseName);
-            this._settings = databaseSettings.Value;
-            this._actionItems = database.GetCollection<ActionItem>(this._settings.ActionItemCollection);
-            this._monitorAlerts = database.GetCollection<MonitorAlert>(this._settings.AlertItemCollection);
-            this._alertReadings = database.GetCollection<AlertReadings>(this._settings.AlertReadingCollection);
+        public ManagedDevice ManagedDevice => this._device;
+
+        public AlertRepo(IMongoClient client,DataLogConfigProvider configProvider) {
+            this._configProvider = configProvider;
+            this._device = configProvider.ManagedDevice;
+            var database = client.GetDatabase(this._device.DatabaseName);
+            this._actionItems = database.GetCollection<ActionItem>(this._device.CollectionNames[nameof(ActionItem)]);
+            this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
+            this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
         }
 
         public AlertRepo(string connectionName,string databaseName,string actionColName,string alertCollName,string alertReadCol) {

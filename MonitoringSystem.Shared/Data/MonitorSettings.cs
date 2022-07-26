@@ -12,6 +12,7 @@ public class ManagedDevice {
     public string DeviceName { get; set; }
     public string DeviceType { get; set; }
     public string HubAddress { get; set; }
+    public string HubName { get; set; }
     public int RecordInterval { get; set; }
     public Dictionary<string,string> CollectionNames { get; set; }
     public int[] SensorTypes { get; set; }
@@ -21,6 +22,15 @@ public class ManagedDevice {
     public ChannelRegisterMapping ChannelMapping { get; set; }
     public ModbusConfig ModbusConfiguration { get; set; }
 }
+
+public class ManagedDevice_v1 {
+    public ObjectId _id { get; set; }
+    public string DatabaseName { get; set; }
+    public string DeviceName { get; set; }
+    public string DeviceType { get; set; }
+    public string HubAddress { get; set; }
+}
+
 public class EmailRecipient {
     public ObjectId _id { get; set; }
     public string Username { get; set; }

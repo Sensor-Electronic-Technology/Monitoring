@@ -70,11 +70,10 @@ namespace MonitoringSystem.ConsoleTesting {
             //MailMessage mailMessage = new MailMessage(from.Address,"aelmendorf@s-et.com,rakesh@s-et.com,bmurdaugh@s-et.com,achapman@s-et.com","Test Smtp Alert Email",message);
             //mailMessage.IsBodyHtml = true;
             //mailMessage.
+            //await BuildSettingsDB();
+            //await UpdateVirtualItemRegister("epi1");
+            //await UpdateAnalogSensor();
 
-            /*await UpdateVirtualItemRegister("epi1");
-            await UpdateVirtualItemRegister("epi2");
-            await UpdateVirtualItemRegister("gasbay");*/
-            
             /*ModbusService modservice = new ModbusService();
             /*var netConfig = gasbay.NetworkConfiguration;
             var modbusConfig = netConfig.ModbusConfig;#1#
@@ -113,13 +112,60 @@ namespace MonitoringSystem.ConsoleTesting {
             //var ret=await col.Find(e => e.Name == "test1").FirstOrDefaultAsync();
             //Console.WriteLine($"One: {ret.TestFields["One"]}");
             //Console.WriteLine($"Two: {ret.TestFields["Two"]}");
-            Console.WriteLine(Environment.GetEnvironmentVariable("DEVICEID"));
+            //Console.WriteLine(Environment.GetEnvironmentVariable("DEVICEID"));
 
             //await col.InsertOneAsync()
-        }
-        
-        
 
+            /*var context = new FacilityContext();
+            var devices = await context.Devices.OfType<ModbusDevice>()
+                .ToListAsync();
+            
+            
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            var col = database.GetCollection<ManagedDevice>("monitor_devices_temp");
+
+            Console.WriteLine("Updating, Please Wait");
+            foreach (var device in devices) {
+                var channels = await context.Channels.Include(t => ((AnalogInput)t).Sensor)
+                    .Where(e=>e.ModbusDeviceId==device.Id)
+                    .ToListAsync();
+                var filter = Builders<ManagedDevice>.Filter.Eq(e => e.DeviceName,device.Identifier);
+                var remoteActions = channels.OfType<VirtualInput>().Select(e => 
+                    new RemoteAction() {
+                        Name = e.DisplayName,
+                        Register = e.ModbusAddress.Address,
+                        State = false
+                    }
+                );
+                var sensors = channels.OfType<AnalogInput>().Where(e => e.SensorId != null)
+                    .Select(e => e.SensorId.Value).Distinct();
+                var update = Builders<ManagedDevice>.Update.Set(e => e.RemoteActions, remoteActions.ToArray())
+                    .Set(e=>e.SensorTypes,sensors.ToArray())
+                    .Set(e=>e.RecordInterval,device.SaveInterval);
+                await col.FindOneAndUpdateAsync(filter, update);
+            }
+            Console.WriteLine("Check Database");*/
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            var devices = await database.GetCollection<ManagedDevice>("monitor_devices").Find(_=>true).ToListAsync();
+            Console.WriteLine("Devices");
+            foreach (var device in devices) {
+                Console.WriteLine($"DeviceName: {device.DeviceName} Database: {device.DatabaseName}");
+            }
+            
+            /*var context = new FacilityContext();
+            var devices = await context.Devices.ToListAsync();
+            foreach (var device in devices) {
+                device.HubAddress = device.HubName;
+                int first = device.HubAddress.IndexOf("/hubs/")+"/hubs/".Length;
+                device.HubName = device.HubAddress.Substring(first, device.HubAddress.Length - first);
+                context.Update(device);
+            }
+
+            await context.SaveChangesAsync();
+            Console.WriteLine("Check Database");*/
+        }
         public static async Task ToggleRemote() {
             ModbusService modservice = new ModbusService();
             /*var netConfig = gasbay.NetworkConfiguration;
@@ -143,7 +189,7 @@ namespace MonitoringSystem.ConsoleTesting {
          public static async Task UpdateVirtualItemRegister(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.41");
-            var deviceDb = client.GetDatabase(deviceName+"_data");
+            var deviceDb = client.GetDatabase(deviceName+"_data_temp");
             var settingsDb = client.GetDatabase("monitor_settings");
             var deviceCol = settingsDb.GetCollection<ManagedDevice>("monitor_devices");
             var virtualItems = deviceDb.GetCollection<VirtualChannel>("virtual_items");
@@ -166,14 +212,11 @@ namespace MonitoringSystem.ConsoleTesting {
              using var context = new FacilityContext();
              var client = new MongoClient("mongodb://172.20.3.41");
              var database = client.GetDatabase("monitor_settings");
-             
-             
-             
          }
 
         static async Task UpdateAnalogSensor() {
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("epi1_data");
+            var database = client.GetDatabase("epi1_data_temp");
             var analogItems = database.GetCollection<AnalogChannel>("analog_items");
             
             var filter1 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("H2"));
@@ -249,32 +292,33 @@ namespace MonitoringSystem.ConsoleTesting {
             var devices = context.Devices.OfType<ModbusDevice>().ToList();
 
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("test_dict");
-            //await database.CreateCollectionAsync("monitor_devices");
-            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices");
-
+            var database = client.GetDatabase("monitor_settings");
+            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices_temp");
             List<ManagedDevice> monitorDevices = new List<ManagedDevice>();
             foreach (var device in devices) {
                 ManagedDevice dev = new ManagedDevice();
-                dev.DatabaseName = device.DatabaseName;
+                dev.DatabaseName = device.DatabaseName+"_temp";
                 dev.DeviceName = device.Identifier;
                 dev.DeviceType = device.GetType().Name;
-                dev.HubAddress = device.HubName;
                 dev.ChannelMapping = device.NetworkConfiguration.ModbusConfig.ChannelMapping;
                 dev.IpAddress = device.NetworkConfiguration.IPAddress;
                 dev.Port = device.NetworkConfiguration.Port;
+                dev.ModbusConfiguration = device.NetworkConfiguration.ModbusConfig;
+                dev.HubAddress = device.HubAddress;
+                dev.HubName = device.HubName;
                 dev.CollectionNames = new Dictionary<string, string>() {
                     [nameof(AnalogChannel)]="analog_items",
                     [nameof(DiscreteChannel)]="discrete_items",
                     [nameof(VirtualChannel)]="virtual_items",
+                    [nameof(OutputItem)]="output_items",
+                    [nameof(ActionItem)]="action_items",
                     [nameof(MonitorAlert)]="alert_items",
                     [nameof(AnalogReadings)]="analog_readings",
                     [nameof(DiscreteReadings)]="discrete_readings",
                     [nameof(VirtualReadings)]="virtual_readings",
-                    [nameof(AlertReadings)]="alert_readings"
+                    [nameof(AlertReadings)]="alert_readings",
+                    [nameof(DeviceReading)]="device_readings"
                 };
-                dev.ChannelMapping = device.NetworkConfiguration.ModbusConfig.ChannelMapping;
-                dev.ModbusConfiguration = device.NetworkConfiguration.ModbusConfig;
                 monitorDevices.Add(dev);
             }
 
@@ -763,7 +807,7 @@ namespace MonitoringSystem.ConsoleTesting {
             collectionNames.Add(typeof(DeviceReading), "device_readings");
             collectionNames.Add(typeof(MonitorDevice), "device_items");
 
-            var repo = new MonitorDataService("mongodb://172.20.3.30","epi1_data_test", collectionNames);
+            /*var repo = new MonitorDataService("mongodb://172.20.3.30","epi1_data_test", collectionNames);
             var alertService = new AlertService("mongodb://172.20.3.30", "epi1_data_test", collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
             await repo.LoadAsync();
             await alertService.Initialize();
@@ -787,7 +831,7 @@ namespace MonitoringSystem.ConsoleTesting {
                     count = 0;
                 }
                 await Task.Delay(1000);
-            }
+            }*/
         }
 
         public static async Task RunDataLogger() {
@@ -1226,7 +1270,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             collectionNames.Add(typeof(DeviceReading), "device_readings");
             collectionNames.Add(typeof(MonitorDevice), "device_items");
-            this._dataLogger = new ModbusLogger("mongodb://172.20.3.41", "nh3_data",collectionNames);
+            /*this._dataLogger = new ModbusLogger("mongodb://172.20.3.41", "nh3_data",collectionNames);*/
         }
         public async Task StartAsync() {
             Console.WriteLine("Starting Logging Service");

@@ -5,12 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MonitoringSystem.Shared.Data {
-    public enum ServiceType {
-        GenericModbus,
-        MonitorBox,
-        API,
-        BacNet
-    }
+
     public class MonitorDatabaseSettings {
 
         public static string FileName = "dbSettings.json";

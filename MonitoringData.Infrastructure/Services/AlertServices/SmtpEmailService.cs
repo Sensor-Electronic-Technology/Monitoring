@@ -1,11 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
-using MongoDB.Driver;
-using MonitoringSystem.Shared.Data;
 using MimeKit;
 using Microsoft.Extensions.Logging;
 using MailKit.Net.Smtp;
-using MassTransit.Configuration;
-using Microsoft.Extensions.Configuration;
 using MonitoringData.Infrastructure.Data;
 
 namespace MonitoringData.Infrastructure.Services.AlertServices;

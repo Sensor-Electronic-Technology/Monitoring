@@ -30,7 +30,7 @@ public class AlertProducer {
         collectionNames.Add(typeof(DeviceReading), "device_readings");
         collectionNames.Add(typeof(MonitorDevice), "device_items");
 
-        var repo = new MonitorDataService("mongodb://172.20.3.41","epi2_data", collectionNames);
+        /*var repo = new MonitorDataService("mongodb://172.20.3.41","epi2_data", collectionNames);
         await repo.LoadAsync();
         var itemAlerts = repo.MonitorAlerts.Select(alert => new AlertRecord(alert, ActionType.Okay)).ToList();
         DateTime now = DateTime.Now;
@@ -63,13 +63,13 @@ public class AlertProducer {
                 });
                 if ("quit".Equals(value, StringComparison.OrdinalIgnoreCase)) {
                     break;
-                }*/
+                }#1#
                 await busControl.Send<EmailContract>(new {TimeStamp=now,Alerts=itemAlerts});
                 Console.WriteLine("Alert Sent");
                 await Task.Delay(1500);
             }
         } finally {
             await busControl.StopAsync();
-        }
+        }*/
     }
 }
