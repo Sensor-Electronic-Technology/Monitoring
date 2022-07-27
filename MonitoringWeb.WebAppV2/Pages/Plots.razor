@@ -4,78 +4,95 @@
 @inject PlotDataService PlotService
 @inject WebsiteConfigurationProvider ConfigurationProvider
 
-<DxStackLayout Orientation="@Orientation.Vertical">
-    <Items>
-        <DxStackLayoutItem>
-            <Template>
-                <div>
-                   <DxFormLayout CssClass="w-100">
-                       <DxFormLayoutItem Caption="Device" ColSpanLg="6">
-                           <DxComboBox Data="@this.DeviceLookup.Select(e=>e.Key).AsEnumerable()"
-                                       @bind-Value="@SelectedDevice"
-                                       CssClass="cw-480" />
-                       </DxFormLayoutItem>
-                       <DxFormLayoutItem Caption="Detector Type" ColSpanLg="6">
-                           <DxComboBox Data="@this.SensorTypes"
-                                       TextFieldName="@nameof(SensorType.Name)"
-                                       @bind-Value="@SelectedSensor"
-                                       CssClass="cw-480" />
-                       </DxFormLayoutItem>
-                        <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
-                            <DxFormLayoutItem Caption="Start Date" >
-                                <DxDateEdit @bind-Date="@StartDate" TimeSectionVisible="true" CssClass="cw-320" />
-                            </DxFormLayoutItem>
-                        </DxFormLayoutGroup>
-                        <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
-                            <DxFormLayoutItem Caption="Stop Date" >
-                                <DxDateEdit @bind-Date="@StopDate" TimeSectionVisible="true" CssClass="cw-320" />
-                            </DxFormLayoutItem>
-                        </DxFormLayoutGroup>
-                    </DxFormLayout>
-                </div>
-                <div style="padding:1rem">
-                    <DxButton Click="@Submit" RenderStyle="ButtonRenderStyle.Primary" 
-                        RenderStyleMode="ButtonRenderStyleMode.Contained" 
-                        Text="Fetch Plot" />
-                </div>
-            </Template>
-        </DxStackLayoutItem>
-        <DxStackLayoutItem Length="6fr">
-            <Template>
-                <div style="padding:1rem">
-                    @if (this.PlotData == null) {
-                        <h2 style="align-content:center">@Message</h2>
-                    } else {
-                      <DxChart Data="@PlotData"
-                                 Width="100%"
-                                 Height="100%">
-                            <DxChartLegend AllowToggleSeries="true"
-                                           Orientation="Orientation.Horizontal"
-                                           VerticalAlignment="VerticalEdge.Top"
-                                           HorizontalAlignment="HorizontalAlignment.Center"
-                                           Position="RelativePosition.Outside">
-                                <DxChartTitle Text="Detectors"> </DxChartTitle>
-                            </DxChartLegend>
-                            <DxChartCommonSeries NameField="@((AnalogReadingDto r)=>r.Name)"
-                                                 ArgumentField="@((AnalogReadingDto r)=>r.TimeStamp)"
-                                                 ValueField="@((AnalogReadingDto r)=>(int)r.Value)">
-                                <SeriesTemplate Context="settings">
-                                    <DxChartLineSeries Settings="@settings">
-                                        <DxChartSeriesLabel Visible="false" />
-                                        <DxChartSeriesPoint Visible="true"/>
-                                        <DxChartAggregationSettings Enabled="true"
-                                                                    Method="ChartAggregationMethod.Max"/>
-                                    </DxChartLineSeries>
-                                </SeriesTemplate>
-                            </DxChartCommonSeries>
-                            <DxChartArgumentAxis>
-                                <DxChartAxisRange StartValue="@PlotStart"
-                                                  EndValue="@PlotStop" />
-                            </DxChartArgumentAxis>
-                            <DxChartValueAxis>
-                                <DxChartAxisRange StartValue="@this.SelectedSensor?.YAxisStart" EndValue="@this.SelectedSensor?.YAxisStop"></DxChartAxisRange>
-                                <DxChartAxisTitle Text="@this.SelectedSensor?.Units" />
-                                @*<DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
+<div class="row">
+    <div class="row text-center" style="padding:1rem">
+        <DxButton
+             Click="() => IsOpen = !IsOpen"
+            SizeMode="SizeMode.Medium"
+            RenderStyleMode="ButtonRenderStyleMode.Contained"
+            RenderStyle="@ButtonRenderStyle.Info">Show Floorplan</DxButton>
+    </div>
+    <DxDropDown
+        @bind-IsOpen="@IsOpen"
+        CloseOnOutsideClick="true"
+        PositionMode="DropDownPositionMode.Center"
+        PositionTarget=".plot-container"
+        RestrictionMode="DropDownRestrictionMode.Page"
+        PreventCloseOnPositionTargetClick="false"
+        CloseMode="@DropDownCloseMode.Hide"
+        FitToRestriction="true">
+        <div class="custom-flyout-body">
+            <img src="images/Floorplan.PNG" />
+        </div>
+    </DxDropDown>
+</div >
+<div class="row plot-container" style="padding: 1rem">
+    <div class="row">
+        <DxFormLayout CssClass="w-100">
+            <DxFormLayoutItem Caption="Device" ColSpanLg="6">
+                <DxComboBox Data="@this.DeviceLookup.Select(e => e.Key).AsEnumerable()"
+                            @bind-Value="@SelectedDevice"
+                            CssClass="cw-480"/>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Detector Type" ColSpanLg="6">
+                <DxComboBox Data="@this.SensorTypes"
+                            TextFieldName="@nameof(SensorType.Name)"
+                            @bind-Value="@SelectedSensor"
+                            CssClass="cw-480"/>
+            </DxFormLayoutItem>
+            <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
+                <DxFormLayoutItem Caption="Start Date">
+                    <DxDateEdit @bind-Date="@StartDate" TimeSectionVisible="true" CssClass="cw-320"/>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
+                <DxFormLayoutItem Caption="Stop Date">
+                    <DxDateEdit @bind-Date="@StopDate" TimeSectionVisible="true" CssClass="cw-320"/>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+        </DxFormLayout>
+    </div>
+    <div class="row text-center" style="padding:1rem">
+        <DxButton Click="@Submit" RenderStyle="ButtonRenderStyle.Primary"
+                  RenderStyleMode="ButtonRenderStyleMode.Contained"
+                  SizeMode="SizeMode.Large"
+                  Text="Fetch Plot"/>
+    </div>
+</div>
+<div class="row" style="padding:1rem">
+    @if (this.PlotData == null) {
+        <h2 style="align-content:center">@Message</h2>
+    } else {
+        <DxChart Data="@PlotData"
+                 Width="100%"
+                 Height="100%">
+            <DxChartLegend AllowToggleSeries="true"
+                           Orientation="Orientation.Horizontal"
+                           VerticalAlignment="VerticalEdge.Top"
+                           HorizontalAlignment="HorizontalAlignment.Center"
+                           Position="RelativePosition.Outside">
+                <DxChartTitle Text="Detectors"> </DxChartTitle>
+            </DxChartLegend>
+            <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
+                                 ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
+                                 ValueField="@((AnalogReadingDto r) => (int)r.Value)">
+                <SeriesTemplate Context="settings">
+                    <DxChartLineSeries Settings="@settings">
+                        <DxChartSeriesLabel Visible="false"/>
+                        <DxChartSeriesPoint Visible="true"/>
+                        <DxChartAggregationSettings Enabled="true"
+                                                    Method="ChartAggregationMethod.Max"/>
+                    </DxChartLineSeries>
+                </SeriesTemplate>
+            </DxChartCommonSeries>
+            <DxChartArgumentAxis>
+                <DxChartAxisRange StartValue="@PlotStart"
+                                  EndValue="@PlotStop"/>
+            </DxChartArgumentAxis>
+            <DxChartValueAxis>
+                <DxChartAxisRange StartValue="@this.SelectedSensor?.YAxisStart" EndValue="@this.SelectedSensor?.YAxisStop"></DxChartAxisRange>
+                <DxChartAxisTitle Text="@this.SelectedSensor?.Units"/>
+                @*<DxChartConstantLine Value="100" Width="3" Color="Color.GreenYellow">
                                     <DxChartConstantLineLabel Text="Soft-Warn"
                                                               VerticalAlignment="VerticalAlignment.Center"
                                                               Position="RelativePosition.Inside" />
@@ -90,28 +107,23 @@
                                                               VerticalAlignment="VerticalAlignment.Center"
                                                               Position="RelativePosition.Inside" />
                                 </DxChartConstantLine>*@
-                            </DxChartValueAxis>
-                            <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
-                            <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
-                                                      ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
-                            <DxChartTooltip Enabled="true" Position="RelativePosition.Outside" >
-                                <div style="background-color: grey;">
-                                    <div class="font-weight-bold">
-                                        @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
-                                    </div>
-                                    <div>
-                                        @((context.Point.Value))
-                                    </div>
-                                </div>
-                            </DxChartTooltip>
-                        </DxChart>
-                    }
+            </DxChartValueAxis>
+            <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
+            <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
+                                      ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
+            <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
+                <div style="background-color: grey;">
+                    <div class="font-weight-bold">
+                        @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
+                    </div>
+                    <div>
+                        @((context.Point.Value))
+                    </div>
                 </div>
-            </Template>
-        </DxStackLayoutItem>
-    </Items>
-</DxStackLayout>
-
+            </DxChartTooltip>
+        </DxChart>
+    }
+</div>
 @code {
     IEnumerable<AnalogReadingDto>? PlotData { get; set; }
     IEnumerable<SensorType> SensorTypes { get; set; }
@@ -124,6 +136,7 @@
     DateTime StopDate { get; set; }
     DateTime PlotStart { get; set; }
     DateTime PlotStop { get; set; }
+    bool IsOpen { get; set; } = false;
 
     protected override async Task OnInitializedAsync() {
         this.Message = "Select input parameters to view plot";

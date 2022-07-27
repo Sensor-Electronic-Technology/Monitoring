@@ -2,28 +2,55 @@
 @using MonitoringWeb.WebAppV2.Data
 @using MonitoringSystem.Shared.Data
 @using MonitoringWeb.WebAppV2.Services
+@using DevExpress.Blazor.Internal
 @inject WebsiteConfigurationProvider ConfigurationProvider
 
 <div class="row">
-    @foreach (var status in this._statusList) {
-        <StatusCard DeviceStatus="@status"/>
-    }
-</div>
-<div class="row">
-    @if (this._devices == null) {
-        <h4>Loading Devices, Please Wait..</h4>
-    } else {
-        <div class="row profile-row" style="padding:1rem">
-            @foreach (var device in this._devices) {
-                <div class="col-6 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
-                    <LiveGrid Hub="@device.HubAddress" DeviceName="@device.DeviceName" OnAlert="@OnAlertUpdate"/>
-                </div>
-            }
+    <div class="row text-center" style="padding:1rem">
+        <DxButton
+             Click="() => IsOpen = !IsOpen"
+            SizeMode="SizeMode.Medium"
+            RenderStyleMode="ButtonRenderStyleMode.Contained"
+            RenderStyle="@ButtonRenderStyle.Info">Show Floorplan</DxButton>
+    </div>
+    <DxDropDown
+        @bind-IsOpen="@IsOpen"
+        CloseOnOutsideClick="true"
+        PositionMode="DropDownPositionMode.Center"
+        PositionTarget=".status-container"
+        RestrictionMode="DropDownRestrictionMode.Page"
+        PreventCloseOnPositionTargetClick="false"
+        CloseMode="@DropDownCloseMode.Hide"
+        FitToRestriction="true">
+        <div class="custom-flyout-body">
+            <img src="images/Floorplan.PNG" />
         </div>
-    }
+    </DxDropDown>
+</div >
+<div class="row status-container">
+    <div class="row">
+        @foreach (var status in this._statusList) {
+            <StatusCard DeviceStatus="@status"/>
+        }
+    </div>
+    <div class="row">
+        @if (this._devices == null) {
+            <h4>Loading Devices, Please Wait..</h4>
+        } else {
+            <div class="row profile-row" style="padding:1rem">
+                @foreach (var device in this._devices) {
+                    <div class="col-6 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+                        <LiveGrid Hub="@device.HubAddress" DeviceName="@device.DeviceName" OnAlert="@OnAlertUpdate"/>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 </div>
 
+
 @code {
+    bool IsOpen { get; set; } = false;
     IEnumerable<ManagedDevice>? _devices;
     List<DeviceStatus> _statusList=new List<DeviceStatus>();
     protected override async Task OnInitializedAsync() {
