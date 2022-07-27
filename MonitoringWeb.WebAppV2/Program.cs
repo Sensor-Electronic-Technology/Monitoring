@@ -1,17 +1,13 @@
-using MonitoringData.Infrastructure.Services.DataAccess;
 using MongoDB.Driver;
 using MonitoringWeb.WebAppV2.Data;
 using MonitoringWeb.WebAppV2.Services;
 
-
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddDevExpressBlazor();
 builder.Services.Configure<MonitorWebsiteSettings>(builder.Configuration.GetSection(nameof(MonitorWebsiteSettings)));
-builder.Services.AddSingleton<DataDownload>();
 builder.Services.AddSingleton<PlotDataService>();
 builder.Services.AddSingleton<LatestAlertService>();
 var connectionString = builder.Configuration.GetSection(nameof(MonitorWebsiteSettings))

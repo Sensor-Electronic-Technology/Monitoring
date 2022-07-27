@@ -24,7 +24,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<ActionItem> _actionItems;
         private IMongoCollection<MonitorAlert> _monitorAlerts;
         private IMongoCollection<AlertReadings> _alertReadings;
-        private readonly MonitorDatabaseSettings _settings;
         private readonly DataLogConfigProvider _configProvider;
         private readonly ManagedDevice _device;
         public IList<ActionItem> ActionItems { get; private set; }

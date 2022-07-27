@@ -1,6 +1,6 @@
-﻿@using MonitoringData.Infrastructure.Services.DataAccess
-@using System.Drawing
+﻿@using System.Drawing
 @using MonitoringSystem.Shared.Data
+@using MonitoringWeb.WebAppV2.Services
 @inject PlotDataService PlotService
 <div class="container-fluid">
     <div class="row">
@@ -125,7 +125,6 @@
         if (this.SelectedAlert is AlertDto alert) {
             this.PlotMessage = $"Loading plot data for {alert.Name}, please wait...";
             await InvokeAsync(StateHasChanged);
-            //this.AggregateEnabled = DeltaHours >= 6;
             this.StartDate = alert.TimeStamp.AddHours(-(int)DeltaHours);
             this.StopDate = alert.TimeStamp.AddHours((int)DeltaHours);
             this.PlotData = await this.PlotService.GetData(alert.database,this.StartDate,this.StopDate);

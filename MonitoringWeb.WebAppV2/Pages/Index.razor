@@ -36,8 +36,8 @@
                 });
             }
         });
-
     }
+    
     async Task OnAlertUpdate(DeviceStatus status) {
         var deviceStatus=this._statusList.FirstOrDefault(e => e.DeviceName == status.DeviceName);
         if (deviceStatus != null) {

@@ -1,14 +1,7 @@
-﻿using System.Text;
-using MongoDB.Driver;
+﻿using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 
-namespace MonitoringData.Infrastructure.Services.DataAccess {
-    public class AnalogReadingDto {
-        public string Name { get; set; }
-        public DateTime TimeStamp { get; set; }
-        public double Time { get; set; }
-        public double Value { get; set; }
-    }
+namespace MonitoringWeb.WebAppV2.Services; 
 
     public class PlotDataService
     {
@@ -121,4 +114,3 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             return analogReadings;
         }
     }
-}

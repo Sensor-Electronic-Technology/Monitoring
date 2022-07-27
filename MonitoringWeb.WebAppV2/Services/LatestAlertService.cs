@@ -1,11 +1,17 @@
-﻿using Microsoft.Extensions.Logging;
-using MongoDB.Driver;
+﻿using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 
-namespace MonitoringData.Infrastructure.Services.DataAccess {
+namespace MonitoringWeb.WebAppV2.Services; 
+
     public class LatestAlertService {
         private readonly ILogger<LatestAlertService> _logger;
-        private readonly MonitorDatabaseSettings _databaseSettings;
+        private readonly WebsiteConfigurationProvider _configurationProvider;
+        
+        public LatestAlertService(ILogger<LatestAlertService> logger,
+            WebsiteConfigurationProvider configurationProvider) {
+            this._configurationProvider = configurationProvider;
+            this._logger=logger;
+        }
 
         public async Task<IEnumerable<AlertDto>> GetLatestAlarms(int days) {
             var client = new MongoClient("mongodb://172.20.3.41");
@@ -102,4 +108,3 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
 
         }
     }
-}

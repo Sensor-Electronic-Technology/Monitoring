@@ -32,16 +32,18 @@ builder.Services.AddSingleton<IModbusService, ModbusService>();
 builder.Services.AddTransient<IAlertService, AlertService>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(settings.ConnectionString));
-switch (settings.ServiceType) {
-    case ServiceType.GenericModbus:
+var serviceType = Environment.GetEnvironmentVariable("SERVICE_TYPE");
+Console.WriteLine($"ServiceType: {serviceType}");
+switch (serviceType) {
+    case nameof(ServiceType.GenericModbus):
         builder.Services.AddSingleton<IDataLogger, ModbusLogger>();
         break;
-    case ServiceType.MonitorBox:
+    case nameof(ServiceType.MonitorBox):
         builder.Services.AddSingleton<IDataLogger, MonitorBoxLogger>();
         break;
-    case ServiceType.API:
+    case nameof(ServiceType.API):
         break;
-    case ServiceType.BacNet:
+    case nameof(ServiceType.BacNet):
         break;
 }
 builder.Services.AddHostedService<Worker>();
@@ -52,6 +54,7 @@ var app = builder.Build();
 var dataConfigProvider = app.Services.GetService<DataLogConfigProvider>();
 if (dataConfigProvider is not null) {
     var deviceName=Environment.GetEnvironmentVariable("DEVICEID");
+    // var deviceName = "nh3";
     if (deviceName is not null) {
         dataConfigProvider.DeviceName = deviceName;
         await dataConfigProvider.Load();

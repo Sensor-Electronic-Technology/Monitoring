@@ -146,13 +146,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 await col.FindOneAndUpdateAsync(filter, update);
             }
             Console.WriteLine("Check Database");*/
-            var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("monitor_settings");
-            var devices = await database.GetCollection<ManagedDevice>("monitor_devices").Find(_=>true).ToListAsync();
-            Console.WriteLine("Devices");
-            foreach (var device in devices) {
-                Console.WriteLine($"DeviceName: {device.DeviceName} Database: {device.DatabaseName}");
-            }
+
             
             /*var context = new FacilityContext();
             var devices = await context.Devices.ToListAsync();
@@ -165,6 +159,66 @@ namespace MonitoringSystem.ConsoleTesting {
 
             await context.SaveChangesAsync();
             Console.WriteLine("Check Database");*/
+
+            /*await UpdateVirtualItemRegister("epi1");
+            await UpdateVirtualItemRegister("epi2");
+            await UpdateVirtualItemRegister("gasbay");*/
+            //await UpdateAnalogSensor();
+            //await BuildSettingsDB();
+            Console.WriteLine(nameof(ServiceType.GenericModbus));
+        }
+        
+        static async Task BuildSettingsDB() { 
+            var context = new FacilityContext();
+            var devices = context.Devices.OfType<ModbusDevice>().ToList();
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices");
+            List<ManagedDevice> monitorDevices = new List<ManagedDevice>();
+            foreach (var device in devices) {
+                var channels = await context.Channels
+                    .Include(e => ((AnalogInput)e).Sensor)
+                    .Where(e=>e.ModbusDeviceId==device.Id)
+                    .ToListAsync();
+                var remoteActions = channels.OfType<VirtualInput>().Select(e => 
+                    new RemoteAction() {
+                        Name = e.DisplayName,
+                        Register = e.ModbusAddress.Address,
+                        State = false
+                    }
+                );
+                var sensors = channels.OfType<AnalogInput>().Where(e => e.SensorId != null)
+                    .Select(e => e.SensorId.Value).Distinct();
+                
+                ManagedDevice dev = new ManagedDevice();
+                dev.DatabaseName = device.DatabaseName+"_temp";
+                dev.DeviceName = device.Identifier;
+                dev.DeviceType = device.GetType().Name;
+                dev.ChannelMapping = device.NetworkConfiguration.ModbusConfig.ChannelMapping;
+                dev.IpAddress = device.NetworkConfiguration.IPAddress;
+                dev.Port = device.NetworkConfiguration.Port;
+                dev.ModbusConfiguration = device.NetworkConfiguration.ModbusConfig;
+                dev.HubAddress = device.HubAddress;
+                dev.HubName = device.HubName;
+                dev.SensorTypes = sensors.ToArray();
+                dev.RemoteActions = remoteActions.ToArray();
+                dev.CollectionNames = new Dictionary<string, string>() {
+                    [nameof(AnalogChannel)]="analog_items",
+                    [nameof(DiscreteChannel)]="discrete_items",
+                    [nameof(VirtualChannel)]="virtual_items",
+                    [nameof(OutputItem)]="output_items",
+                    [nameof(ActionItem)]="action_items",
+                    [nameof(MonitorAlert)]="alert_items",
+                    [nameof(AnalogReadings)]="analog_readings",
+                    [nameof(DiscreteReadings)]="discrete_readings",
+                    [nameof(VirtualReadings)]="virtual_readings",
+                    [nameof(AlertReadings)]="alert_readings",
+                    [nameof(DeviceReading)]="device_readings"
+                };
+                monitorDevices.Add(dev);
+            }
+            await monitorDevCollection.InsertManyAsync(monitorDevices);
+            Console.WriteLine("Check Database");
         }
         public static async Task ToggleRemote() {
             ModbusService modservice = new ModbusService();
@@ -189,34 +243,23 @@ namespace MonitoringSystem.ConsoleTesting {
          public static async Task UpdateVirtualItemRegister(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.41");
-            var deviceDb = client.GetDatabase(deviceName+"_data_temp");
-            var settingsDb = client.GetDatabase("monitor_settings");
-            var deviceCol = settingsDb.GetCollection<ManagedDevice>("monitor_devices");
+            var deviceDb = client.GetDatabase(deviceName+"_data");
             var virtualItems = deviceDb.GetCollection<VirtualChannel>("virtual_items");
             var virtualChannels = await context.Channels.OfType<VirtualInput>()
                 .AsNoTracking()
                 .Include(e => e.ModbusDevice)
                 .Where(e => e.ModbusDevice.Identifier == deviceName)
                 .ToListAsync();
-            var actionList = virtualChannels.Select(e => e.Identifier);
-            
             foreach (var channel in virtualChannels) {
                 var update = Builders<VirtualChannel>.Update
                     .Set(e => e.register, channel.ModbusAddress.Address);
                 await virtualItems.UpdateOneAsync(e => e._id == channel.Id, update);
             }
-            Console.WriteLine("Check Database");
+            Console.WriteLine($"Check {deviceName}_data");
         }
-
-         static async Task UpdateManagedDevices(string deviceName) {
-             using var context = new FacilityContext();
-             var client = new MongoClient("mongodb://172.20.3.41");
-             var database = client.GetDatabase("monitor_settings");
-         }
-
-        static async Task UpdateAnalogSensor() {
+         static async Task UpdateAnalogSensor() {
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("epi1_data_temp");
+            var database = client.GetDatabase("gasbay_data");
             var analogItems = database.GetCollection<AnalogChannel>("analog_items");
             
             var filter1 = Builders<AnalogChannel>.Filter.Where(e => e.identifier.Contains("H2"));
@@ -257,8 +300,7 @@ namespace MonitoringSystem.ConsoleTesting {
             await analogItems.UpdateManyAsync(filter9, update9);
             Console.WriteLine("Done, Check Database");
         }
-
-        static async Task BuildSensorCollection() {
+         static async Task BuildSensorCollection() {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("monitor_settings");
             var sensorCol = database.GetCollection<SensorType>("sensor_types");
@@ -273,8 +315,7 @@ namespace MonitoringSystem.ConsoleTesting {
             await sensorCol.InsertManyAsync(sensors);
             Console.WriteLine("Done,Check Database");
         }
-
-        static async Task UpdateChannelSensor(int channelId,int sensorId) {
+         static async Task UpdateChannelSensor(int channelId,int sensorId) {
             using var context = new FacilityContext();
             var channel = await context.Channels.OfType<AnalogInput>().Include(e => e.Sensor)
                 .FirstOrDefaultAsync(e => e.Id == channelId);
@@ -285,47 +326,7 @@ namespace MonitoringSystem.ConsoleTesting {
             await context.SaveChangesAsync();
             Console.WriteLine($"{channel.Identifier} updated with {sensor.Name}, check database");
         }
-        
-        static async Task BuildSettingsDB() { 
-            var context = new FacilityContext();
-            
-            var devices = context.Devices.OfType<ModbusDevice>().ToList();
 
-            var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("monitor_settings");
-            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices_temp");
-            List<ManagedDevice> monitorDevices = new List<ManagedDevice>();
-            foreach (var device in devices) {
-                ManagedDevice dev = new ManagedDevice();
-                dev.DatabaseName = device.DatabaseName+"_temp";
-                dev.DeviceName = device.Identifier;
-                dev.DeviceType = device.GetType().Name;
-                dev.ChannelMapping = device.NetworkConfiguration.ModbusConfig.ChannelMapping;
-                dev.IpAddress = device.NetworkConfiguration.IPAddress;
-                dev.Port = device.NetworkConfiguration.Port;
-                dev.ModbusConfiguration = device.NetworkConfiguration.ModbusConfig;
-                dev.HubAddress = device.HubAddress;
-                dev.HubName = device.HubName;
-                dev.CollectionNames = new Dictionary<string, string>() {
-                    [nameof(AnalogChannel)]="analog_items",
-                    [nameof(DiscreteChannel)]="discrete_items",
-                    [nameof(VirtualChannel)]="virtual_items",
-                    [nameof(OutputItem)]="output_items",
-                    [nameof(ActionItem)]="action_items",
-                    [nameof(MonitorAlert)]="alert_items",
-                    [nameof(AnalogReadings)]="analog_readings",
-                    [nameof(DiscreteReadings)]="discrete_readings",
-                    [nameof(VirtualReadings)]="virtual_readings",
-                    [nameof(AlertReadings)]="alert_readings",
-                    [nameof(DeviceReading)]="device_readings"
-                };
-                monitorDevices.Add(dev);
-            }
-
-            await monitorDevCollection.InsertManyAsync(monitorDevices);
-            Console.WriteLine("Check Database");
-            Console.ReadKey();
-        }
         
         static async Task BuildEmailSettingsCollection() { 
             var context = new FacilityContext();

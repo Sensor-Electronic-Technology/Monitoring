@@ -15,10 +15,14 @@
     <PackageReference Include="Append.Blazor.Sidepanel" Version="6.2.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
+  </ItemGroup>
+<!--  <ItemGroup>
     <ProjectReference Include="..\MonitoringConfig.Infrastructure\MonitoringConfig.Infrastructure.csproj" />
     <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
-  </ItemGroup>
+  </ItemGroup>-->
   <ItemGroup>
     <Folder Include="wwwroot\images\" />
   </ItemGroup>
+
 </Project>

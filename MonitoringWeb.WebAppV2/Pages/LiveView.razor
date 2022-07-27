@@ -2,7 +2,8 @@
 @using MonitoringWeb.WebAppV2.Components
 @using MonitoringWeb.WebAppV2.Data
 @using MonitoringSystem.Shared.Data
-@inject SettingsService SettingsService
+@using MonitoringWeb.WebAppV2.Services
+@inject WebsiteConfigurationProvider ConfigurationProvider
 
 @{
     RenderFragment<IEnumerable<ManagedDevice>> tabRender = (devices) => 
@@ -47,9 +48,9 @@
 
 @code {
     IEnumerable<ManagedDevice>? _devices;
-    protected override async Task OnInitializedAsync() {
-        await this.SettingsService.Load();
-        this._devices = await this.SettingsService.GetDevices();
+    protected override Task OnInitializedAsync() {
+        this._devices = this.ConfigurationProvider.Devices;
+        return Task.CompletedTask;
     }
 
     async Task Update() {
