@@ -59,12 +59,12 @@ namespace MonitoringData.Infrastructure.Services {
                                     activeAlert.CurrentState = alert.CurrentState;
                                     activeAlert.ChannelReading = alert.ChannelReading;
                                     activeAlert.AlertAction = alert.AlertAction;
+                                    newStateTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                                    messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                                    sendEmail = true;
                                 } else {
-                                    //Log Error
+                                    this._logger.LogError("Error: ActiveAlert not found in ChangeState");
                                 }
-                                newStateTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
-                                messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
-                                sendEmail = true;
                                 break;
                             }
                         case AlertAction.Start: {
@@ -128,6 +128,7 @@ namespace MonitoringData.Infrastructure.Services {
                 if (sendEmail) {
                     await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
                         messageBuilder.FinishMessage());
+                    this._logger.LogWarning("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         itemid = e.AlertId,
                         reading = e.ChannelReading,
@@ -140,7 +141,7 @@ namespace MonitoringData.Infrastructure.Services {
                     ActionType.Maintenance : ActionType.Okay;
             }
             await this._monitorHub.Clients.All.ShowCurrent(monitorData);
-            Console.Clear();
+            //Console.Clear();
             Console.WriteLine("New Alerts:");
             Console.WriteLine(newAlertTable.ToMinimalString());
             Console.WriteLine();
@@ -165,11 +166,19 @@ namespace MonitoringData.Infrastructure.Services {
                 switch (alert.CurrentState) {
                     case ActionType.Okay: {
                             if (activeAlert != null) {
-                                if ((now - activeAlert.LastAlert).TotalSeconds >= 60) {
+                                if (!activeAlert.Latched) {
+                                    activeAlert.Latched = true;
+                                    activeAlert.TimeLatched = now;
+                                    alert.AlertAction = AlertAction.Nothing;
+                                } else {
+                                    alert.AlertAction = ((now - activeAlert.TimeLatched).TotalSeconds >= 60)
+                                        ? AlertAction.Clear : AlertAction.Nothing;
+                                }
+                                /*if ((now - activeAlert.LastAlert).TotalSeconds >= 60) {
                                     alert.AlertAction = AlertAction.Clear;
                                 } else {
                                     alert.AlertAction = AlertAction.Nothing;
-                                }
+                                }*/
                             } else {
                                 alert.AlertAction = AlertAction.Nothing;
                             }
@@ -191,7 +200,7 @@ namespace MonitoringData.Infrastructure.Services {
                                             alert.AlertAction = AlertAction.Nothing;
                                         }
                                     } else {
-                                        //log error-ActionItem not found
+                                        this._logger.LogError("ActiveAlert not found in Alarm/Warning/SoftWarn");
                                         alert.AlertAction = AlertAction.Nothing;
                                     }
                                 }
