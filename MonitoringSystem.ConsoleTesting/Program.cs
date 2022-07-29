@@ -120,7 +120,6 @@ namespace MonitoringSystem.ConsoleTesting {
             var devices = await context.Devices.OfType<ModbusDevice>()
                 .ToListAsync();
             
-            
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("monitor_settings");
             var col = database.GetCollection<ManagedDevice>("monitor_devices_temp");
@@ -165,7 +164,18 @@ namespace MonitoringSystem.ConsoleTesting {
             await UpdateVirtualItemRegister("gasbay");*/
             //await UpdateAnalogSensor();
             //await BuildSettingsDB();
-            Console.WriteLine(nameof(ServiceType.GenericModbus));
+            //Console.WriteLine(nameof(ServiceType.GenericModbus));
+            /*await WriteOutDiscreteData("gasbay", new DateTime(2022, 7, 28, 0, 0, 0), DateTime.Now,
+                @"C:\MonitorFiles\gasbay_discrete.csv");*/
+            ModbusService modservice = new ModbusService();
+            /*var netConfig = gasbay.NetworkConfiguration;
+            var modbusConfig = netConfig.ModbusConfig;*/
+            Console.WriteLine("Starting test");
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 2, false);
+            //await Task.Delay(5000);
+            //await modservice.WriteCoil("172.20.5.42", 502, 1, 0, true);
+            Console.WriteLine("Check System");
         }
         
         static async Task BuildSettingsDB() { 
@@ -239,8 +249,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await AlertItemTypeUpdate("gasbay");
             Console.WriteLine("Done");
         }
-        
-         public static async Task UpdateVirtualItemRegister(string deviceName) {
+        public static async Task UpdateVirtualItemRegister(string deviceName) {
             using var context = new FacilityContext();
             var client = new MongoClient("mongodb://172.20.3.41");
             var deviceDb = client.GetDatabase(deviceName+"_data");
@@ -669,6 +678,38 @@ namespace MonitoringSystem.ConsoleTesting {
             File.WriteAllLines(fileName, lines);
             Console.WriteLine("Check File");
         }
+        
+        static async Task WriteOutDiscreteData(string deviceName, DateTime start, DateTime stop, string fileName) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase(deviceName + "_data");
+
+            var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items").Find(_ => true).ToList();
+            var discreteReadings = database.GetCollection<DiscreteReadings>("discrete_readings");
+            Console.WriteLine("Starting query");
+            var dReadings = await (await discreteReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+            var headers = discreteItems.Select(e => e.identifier).ToList();
+            StringBuilder hbuilder = new StringBuilder();
+            hbuilder.Append("timestamp,");
+            headers.ForEach((id) => {
+                hbuilder.Append($"{id},");
+            });
+            Console.WriteLine($"Query Completed.  Count: {dReadings.Count()}");
+            List<string> lines = new List<string>();
+            lines.Add(hbuilder.ToString());
+            foreach(var readings in dReadings) {
+                StringBuilder builder = new StringBuilder();
+                builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
+                foreach(var reading in readings.readings) {
+                    builder.Append($"{reading.value},");
+                }
+                lines.Add(builder.ToString());
+            }
+            Console.WriteLine("Writing Out Data");
+            await File.WriteAllLinesAsync(fileName, lines);
+            Console.WriteLine("Check File");
+        }
+
 
         static async Task WriteOutAlertsFile(string deviceName, DateTime start, DateTime stop, string fileName) {
             var client = new MongoClient("mongodb://172.20.3.41");

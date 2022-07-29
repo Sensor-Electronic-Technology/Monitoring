@@ -22,17 +22,6 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this._changeStatusBuilder = new StringBuilder();
             this._bodyBuilder = new StringBuilder();
             this.displayChanged = false;
-
-            /*this._bodyBuilder.AppendLine("<html xmlns:v=\"urn:schemas-microsoft-com:vml\" " +
-                                         "xmlns:o=\"urn:schemas-microsoft-com:office:office\"" +
-                                         " xmlns:w=\"urn:schemas-microsoft-com:office:word\" " +
-                                         "xmlns:m=\"http://schemas.microsoft.com/office/2004/12/omml\" " +
-                                         "xmlns=\"http://www.w3.org/TR/REC-html40\">");
-            this._bodyBuilder.AppendLine("<head>");
-            this._bodyBuilder.AppendLine("<meta http-equiv=\"Content-Type\" " +
-                                         "content=\"text/html; " +
-                                         "charset=ks_c_5601-1987\">");
-            this._bodyBuilder.AppendLine("<meta name=\"Generator\" content=\"Microsoft Word 15(filtered medium)\">");*/
             this._bodyBuilder.AppendLine("<html>");
             this._bodyBuilder.AppendLine("<head>");
             this._bodyBuilder.AppendLine("<style>");
@@ -132,7 +121,6 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this._changeStatusBuilder.AppendFormat("<td>{0}</td>", state).AppendLine();
             this._changeStatusBuilder.AppendFormat("<td>{0}</td>", value).AppendLine();
             this._changeStatusBuilder.AppendLine("</tr>");
-
         }
     }
 }
