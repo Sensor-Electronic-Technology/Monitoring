@@ -32,10 +32,11 @@
             <DxFormLayoutItem Caption="Device" ColSpanLg="6">
                 <DxComboBox Data="@this.DeviceLookup.Select(e => e.Key).AsEnumerable()"
                             @bind-Value="@SelectedDevice"
+                            SelectedItemChanged="@SelectedItemChanged"
                             CssClass="cw-480"/>
             </DxFormLayoutItem>
             <DxFormLayoutItem Caption="Detector Type" ColSpanLg="6">
-                <DxComboBox Data="@this.SensorTypes"
+                <DxComboBox Data="@this.DeviceLookup[SelectedDevice].Item2"
                             TextFieldName="@nameof(SensorType.Name)"
                             @bind-Value="@SelectedSensor"
                             CssClass="cw-480"/>
@@ -128,7 +129,8 @@
     IEnumerable<AnalogReadingDto>? PlotData { get; set; }
     IEnumerable<SensorType> SensorTypes { get; set; }
     
-    Dictionary<string, string> DeviceLookup { get; set; } = new Dictionary<string, string>();
+    //Dictionary<string, string> DeviceLookup { get; set; } = new Dictionary<string, string>();
+    Dictionary<string, Tuple<string, IEnumerable<SensorType>>> DeviceLookup { get; set; } = new Dictionary<string, Tuple<string, IEnumerable<SensorType>>>();
     string? SelectedDevice { get; set; }
     SensorType? SelectedSensor { get; set; }
     string? Message{ get; set; }
@@ -141,17 +143,18 @@
     protected override async Task OnInitializedAsync() {
         this.Message = "Select input parameters to view plot";
         var devices= this.ConfigurationProvider.Devices;
-        this.SensorTypes = this.ConfigurationProvider.Sensors;
-        foreach (var device in devices) {
-            this.DeviceLookup.Add(device.DeviceName,device.DatabaseName);
-        }
-        this.DeviceLookup.Add("Combined","combined");
+        this.DeviceLookup = this.ConfigurationProvider.DeviceLookup;
         DateTime now = DateTime.Now.ToLocalTime();
         this.StartDate=now;
         this.StopDate = now;
         this.PlotStart = now;
         this.PlotStop = now;
         this.SelectedDevice = this.DeviceLookup.First().Key;
+        this.SelectedSensor = this.DeviceLookup[this.SelectedDevice].Item2.First();
+    }
+
+    private async void SelectedItemChanged(string deviceName) {
+        this.SelectedSensor = this.DeviceLookup[deviceName].Item2.First();
     }
 
     private async void Submit() {
@@ -163,12 +166,8 @@
             this.PlotStop = this.StopDate.ToLocalTime();
             var start= this.StartDate;
             var stop = this.StopDate;
-            if (this.SelectedDevice == "Combined"){
-                this.PlotData = await this.PlotService.GetData(this.DeviceLookup.Select(e=>e.Value)
-                    .ToList(),
-                    start,stop);
-            }else{
-                this.PlotData = await this.PlotService.GetDataBySensor(this.DeviceLookup[this.SelectedDevice]
+            if (this.SelectedSensor != null) {
+                this.PlotData = await this.PlotService.GetDataBySensor(this.DeviceLookup[this.SelectedDevice].Item1
                     ,start,stop,
                     this.SelectedSensor._id);
             }

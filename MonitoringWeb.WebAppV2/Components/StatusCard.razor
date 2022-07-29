@@ -3,55 +3,58 @@
 @using MonitoringWeb.WebAppV2.Data
 <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
     <div class="container-md">
-        <h5>@DeviceStatus?.DeviceName</h5>
+        <div class="row text-center" style="padding: .5rem">
+            <h5>@this.DeviceName</h5>
+        </div>
         <div class="row">
             @switch (DeviceStatus?.Status) {
                 case ActionType.Alarm: {
-                    <div class="bg-danger text-white justify-content-center">
-                        <h5>Alarm</h5>
+                    <div class="bg-danger text-white text-center">
+                        <h5 style="padding: .05rem">Alarm</h5>
                     </div>
                     break;
                 }
                 case ActionType.Warning: {
-                    <div class="bg-warning text-dark justify-content-center">
-                        <h5>Warning</h5>
+                    <div class="bg-warning text-dark text-center" >
+                        <h5 style="padding: .05rem">Warning</h5>
                     </div>
                     break;
                 }
                 case ActionType.SoftWarn: {
-                    <div class="bg-warning text-white justify-content-center" style="justify-content: center">
-                        <h5>Soft-Warn</h5>
+                    <div class="bg-warning text-white text-center" >
+                        <h5 style="padding: .05rem">Soft-Warn</h5>
                     </div>
                     break;
                 }
                 case ActionType.Okay: {
-                    <div class="bg-success text-white justify-content-center">
-                        <h5>Okay</h5>
+                    <div class="bg-success text-white text-center" >
+                        <h5 style="padding: .05rem">Okay</h5>
                     </div>
                     break;
                 }
                 case ActionType.Maintenance: {
-                    <div class="bg-info text-white justify-content-center">
-                        <h5>Maintenance</h5>
+                    <div class="bg-info text-white text-center" >
+                        <h5 style="padding: .05rem">Maintenance</h5>
                     </div>
                     break;
                 }
                 default: {
-                    <div class="bg-success text-white justify-content-center">
-                        <h5>Okay</h5>
+                    <div class="bg-success text-white text-center">
+                        <h5 style="padding: .05rem">Okay</h5>
                     </div>
                     break;
                 }
             }
         </div>
     </div>
-    @if (this.DeviceStatus.ActiveAlerts!=null) {
+    @if (this.DeviceStatus?.ActiveAlerts!=null) {
         <div class="container-md" style="padding:1rem">
             <div class="row justify-content-center" style="padding:.5rem">
                 <h3>Active Alerts</h3>
             </div>
             <div class="row">
-                <DxGrid Data="@DeviceStatus.ActiveAlerts" ShowAllRows=true>
+                <DxGrid Data="@DeviceStatus.ActiveAlerts" 
+                        ShowAllRows=true>
                     <Columns>
                         <DxGridDataColumn FieldName="Item"/>
                         <DxGridDataColumn FieldName="State"/>
@@ -63,10 +66,13 @@
     }
 </div>
 
-
 @code {
-
     [Parameter]
-    public DeviceStatus DeviceStatus { get; set; } = new DeviceStatus() { DeviceName = "Loading", Status = ActionType.Okay };
+    public DeviceStatus DeviceStatus { get; set; } = new DeviceStatus() { 
+        DeviceName = "Loading", 
+        Status = ActionType.Okay 
+    };
+    
+    string DeviceName => char.ToUpper(this.DeviceStatus.DeviceName[0])+this.DeviceStatus.DeviceName.Substring(1);
 
 }

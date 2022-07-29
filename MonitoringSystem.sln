@@ -33,11 +33,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MonitoringWeb", "Monitoring
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MonitoringShared", "MonitoringShared", "{EF35596E-6A43-4981-8458-11B3C822DB91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringWeb.WebAppV2", "MonitoringWeb.WebAppV2\MonitoringWeb.WebAppV2.csproj", "{82D91F9A-B382-4B5C-B4F1-9B5A347685DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringWeb.WebAppV2", "MonitoringWeb.WebAppV2\MonitoringWeb.WebAppV2.csproj", "{82D91F9A-B382-4B5C-B4F1-9B5A347685DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringTesting.TestAlertService", "MonitoringTesting.TestAlertService\MonitoringTesting.TestAlertService.csproj", "{B39D89AE-CDD8-40BA-ADD3-30AE7ED203A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringTesting.TestAlertService", "MonitoringTesting.TestAlertService\MonitoringTesting.TestAlertService.csproj", "{B39D89AE-CDD8-40BA-ADD3-30AE7ED203A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringWeb.ControlService", "MonitoringWeb.ControlService\MonitoringWeb.ControlService.csproj", "{B0B30811-997D-49F2-B783-3D8FCDAE1E96}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringWeb.ControlService", "MonitoringWeb.ControlService\MonitoringWeb.ControlService.csproj", "{B0B30811-997D-49F2-B783-3D8FCDAE1E96}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringSystem.ConfigApi", "MonitoringSystem.ConfigApi\MonitoringSystem.ConfigApi.csproj", "{1131FAB9-01F8-4DC8-BBDC-4B494E5D4ADF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -77,6 +79,10 @@ Global
 		{B0B30811-997D-49F2-B783-3D8FCDAE1E96}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0B30811-997D-49F2-B783-3D8FCDAE1E96}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B0B30811-997D-49F2-B783-3D8FCDAE1E96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1131FAB9-01F8-4DC8-BBDC-4B494E5D4ADF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1131FAB9-01F8-4DC8-BBDC-4B494E5D4ADF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1131FAB9-01F8-4DC8-BBDC-4B494E5D4ADF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1131FAB9-01F8-4DC8-BBDC-4B494E5D4ADF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -90,6 +96,7 @@ Global
 		{82D91F9A-B382-4B5C-B4F1-9B5A347685DD} = {5B2E1BB3-86E5-4C0C-8B2F-7A74B15818E5}
 		{B39D89AE-CDD8-40BA-ADD3-30AE7ED203A0} = {199BA538-0A44-421B-8FC9-3A10F16EEE6B}
 		{B0B30811-997D-49F2-B783-3D8FCDAE1E96} = {5B2E1BB3-86E5-4C0C-8B2F-7A74B15818E5}
+		{1131FAB9-01F8-4DC8-BBDC-4B494E5D4ADF} = {4EAC5195-C134-4FD8-955B-0A3FC69DE50B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1E2B0F8D-F1CD-4933-8EB8-770DED0DB5FF}

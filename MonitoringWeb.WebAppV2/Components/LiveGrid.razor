@@ -5,61 +5,75 @@
 @using MonitoringWeb.WebAppV2.Data
 @inject ILogger<LiveGrid> logger
 @implements IAsyncDisposable
-<div class="container">
-    <h4>@DeviceName</h4>
-    <p role="status">TimeStamp: @this._monitorData?.TimeStamp.ToLocalTime().ToString()</p>
-    <div class="row">
-        <h6>Analog Channels</h6>
-        @if (this._monitorData == null) {
-            <p><em>Loading...</em></p>
-        } else {
-            <DxGrid Data="@this._monitorData.analogData"
-                    CssClass="my-class"
-                    ShowAllRows=true
-                    CustomizeElement="Grid_CustomizeElement">
-                <Columns>
-                    <DxGridDataColumn FieldName="Item"/>
-                    <DxGridDataColumn FieldName="State"/>
-                    <DxGridDataColumn FieldName="Value"/>
-                </Columns>
-            </DxGrid>
-        }
+@if (this._monitorData != null) {
+    <div class="container text-center">
+        <div class="row">
+            <div class="row text-center" style="padding:.05rem">
+                <h4>@(char.ToUpper(DeviceName[0])+DeviceName.Substring(1))</h4>
+            </div>
+            <div class="row text-center" style="padding:.05rem">
+                <p role="status">TimeStamp: @this._monitorData?.TimeStamp.ToLocalTime().ToString()</p>
+            </div>
+            @if (this._monitorData?.analogData != null) {
+                @if (this._monitorData.analogData.Any()) {
+                    <div class="row text-center" style="padding: .5rem">
+                        <h6>Analog Channels</h6>
+                    </div>
+                    <div class="row">
+                        <DxGrid Data="@this._monitorData.analogData"
+                                ShowAllRows=true>
+                            <Columns>
+                                <DxGridDataColumn FieldName="Item" Width="140px" />
+                                <DxGridDataColumn FieldName="State" />
+                                <DxGridDataColumn FieldName="Value" />
+                            </Columns>
+                        </DxGrid>
+                    </div>
+                    <h4>@Message</h4>
+                }
+            }
+            @if (this._monitorData?.discreteData != null) {
+                @if (this._monitorData.discreteData.Any()) {
+                    <div class="row text-center" style="padding: .5rem">
+                        <h6>Discrete Channels</h6>
+                    </div>
+                    <div class="row">
+                        <DxGrid Data="@this._monitorData.discreteData"
+                                ShowAllRows=true
+                                CustomizeElement="Grid_CustomizeElement">
+                            <Columns>
+                                <DxGridDataColumn FieldName="Item" Width="140px" />
+                                <DxGridDataColumn FieldName="State" />
+                                <DxGridDataColumn FieldName="Value" />
+                            </Columns>
+                        </DxGrid>
+                    </div>
+                }
+            }
+            @if (this._monitorData?.virtualData != null) {
+                @if (this._monitorData.virtualData.Any()) {
+                    <div class="row text-center" style="padding: .5rem">
+                        <h6>Virtual Channels</h6>
+                    </div>
+                    <div class="row">
+                        <DxGrid Data="@this._monitorData.virtualData"
+                                ShowAllRows=true
+                                CustomizeElement="Grid_CustomizeElement">
+                            <Columns >
+                                <DxGridDataColumn FieldName="Item" Width="140px" />
+                                <DxGridDataColumn FieldName="State" />
+                                <DxGridDataColumn FieldName="Value" />
+                            </Columns>
+                        </DxGrid>
+                    </div>
+                }
+            }
+        </div>
     </div>
-    <div class="row">
-        <h6>Discrete Channels</h6>
-        @if (this._monitorData == null) {
-            <p><em>Loading...</em></p>
-        } else {
-            <DxGrid Data="@this._monitorData.discreteData" CssClass="my-class"
-                    ShowAllRows=true
-                    CustomizeElement="Grid_CustomizeElement">
-                <Columns>
-                    <DxGridDataColumn FieldName="Item"/>
-                    <DxGridDataColumn FieldName="State"/>
-                    <DxGridDataColumn FieldName="Value"/>
-                </Columns>
-            </DxGrid>
-        }
-    </div>
-    <div class="row">
-        <h6>Virtual Channels</h6>
-        @if (this._monitorData == null) {
-            <p><em>Loading...</em></p>
-        } else {
-            <DxGrid Data="@this._monitorData.virtualData"
-                    title="Virtual Channels"
-                    CssClass="my-class"
-                    ShowAllRows=true
-                    CustomizeElement="Grid_CustomizeElement">
-                <Columns>
-                    <DxGridDataColumn FieldName="Item"/>
-                    <DxGridDataColumn FieldName="State"/>
-                    <DxGridDataColumn FieldName="Value"/>
-                </Columns>
-            </DxGrid>
-        }
-    </div>
-</div>
+} else {
+    <p><em>Loading....</em></p>
+}
+
 @code {
     // [Parameter]
     [Parameter]
@@ -70,6 +84,12 @@
 
     [Parameter]
     public EventCallback<DeviceStatus> OnAlert { get; set; }
+    
+    string Message { get; set; }
+    
+    void OnWidthChanged(string NewValue) {
+        Message = NewValue;
+    }
     
     private HubConnection? _hubConnection;
     private MonitorData? _monitorData;

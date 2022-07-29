@@ -8,7 +8,7 @@
 <div class="row">
     <div class="row text-center" style="padding:1rem">
         <DxButton
-             Click="() => IsOpen = !IsOpen"
+            Click="() => IsOpen = !IsOpen"
             SizeMode="SizeMode.Medium"
             RenderStyleMode="ButtonRenderStyleMode.Contained"
             RenderStyle="@ButtonRenderStyle.Info">Show Floorplan</DxButton>
@@ -39,7 +39,7 @@
         } else {
             <div class="row profile-row" style="padding:1rem">
                 @foreach (var device in this._devices) {
-                    <div class="col-6 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+                    <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
                         <LiveGrid Hub="@device.HubAddress" DeviceName="@device.DeviceName" OnAlert="@OnAlertUpdate"/>
                     </div>
                 }

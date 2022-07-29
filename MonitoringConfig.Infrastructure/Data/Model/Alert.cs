@@ -17,7 +17,7 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public ICollection<AnalogLevel> AlertLevels { get; set; }
 
     }
-
+    
     public class DiscreteAlert : Alert {
         public DiscreteLevel AlertLevel { get; set; }
     }
