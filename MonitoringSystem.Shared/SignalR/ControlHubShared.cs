@@ -1,3 +1,0 @@
-﻿namespace MonitoringSystem.Shared.SignalR; 
-
-

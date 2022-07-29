@@ -27,7 +27,7 @@
             if(this.SwitchAction.State != newValue) {
                 this.SwitchAction.State = newValue;
                 if (this.SwitchAction != null) {
-                    await this.SwitchAction.Toggle(this.SwitchAction.Name);
+                    await this.SwitchAction.Toggle(this.SwitchAction.DeviceName,this.SwitchAction.Name);
                 }
                 await ToggleOnChanged.InvokeAsync(this.SwitchAction.State);
             }

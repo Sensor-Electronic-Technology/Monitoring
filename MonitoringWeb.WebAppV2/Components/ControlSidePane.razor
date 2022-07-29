@@ -7,8 +7,8 @@
         <h4>Devices not set</h4>
     } else {
         @foreach (var device in this._devices) {
-            <div class="row" style="padding: 1rem">
-                <ControlComponent DeviceName=@device.DeviceName RemoteActions=@device.RemoteActions.AsEnumerable() />
+            <div class="row" style="padding: .5rem">
+                <ControlComponent Device=@device />
             </div>
         }
     }
@@ -18,10 +18,9 @@
     [Parameter] public bool Visible { get; set; }
     [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
 
-    private IEnumerable<ManagedDevice> _devices;
+    private IEnumerable<ManagedDevice>? _devices;
 
     protected override Task OnInitializedAsync() {
-        //this._devices = await this.SettingsService.GetDevices();
         this._devices = this.ConfigurationProvider.Devices;
         return Task.CompletedTask;
     }

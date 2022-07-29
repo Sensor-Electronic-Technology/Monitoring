@@ -9,57 +9,45 @@ namespace MonitoringWeb.ControlService.Hubs;
 public class MonitorControlHub : Hub<IModbusControlHub> {
     private readonly IModbusService _modbusService;
     private readonly IMonitorDeviceService _deviceService;
-    private IEnumerable<DeviceControlData> _devices;
+    private IEnumerable<ManagedDevice> _devices;
     public MonitorControlHub(IModbusService modbusService,IMonitorDeviceService deviceService) {
         this._modbusService = modbusService;
         this._deviceService = deviceService;
     }
+    
     public async Task StartAsync() {
         await this._deviceService.Load();
         this._devices = this._deviceService.AvailableDevices;
     }
-    public async Task<IEnumerable<RemoteAction>?> Initialize(string deviceName) {
-        var device = this._devices.FirstOrDefault(e => e.Device.DeviceName == deviceName);
+    
+    public async Task Initialize(string deviceName) {
+        var device = this._devices.FirstOrDefault(e => e.DeviceName == deviceName);
         if (device == null) {
-            return null;
+            await Clients.Caller.InitializeActions(Enumerable.Empty<RemoteAction>());
+            return;
         }
-        var ip = device.MonitorDevice.NetworkConfiguration.IPAddress;
-        var slaveId = device.MonitorDevice.NetworkConfiguration.ModbusConfig.SlaveAddress;
-        var registers = device.MonitorDevice.NetworkConfiguration.ModbusConfig.Coils;
-        var port = device.MonitorDevice.NetworkConfiguration.Port;
-
-        var coils = await this._modbusService.ReadCoils(ip, port, slaveId, 0, registers);
-        if (coils == null) {
-            return null;
+        foreach (var remoteAction in device.RemoteActions) {
+            var state=await this._modbusService.ReadCoil(device.IpAddress, device.Port, 1, remoteAction.Register);
+            remoteAction.State = state;
         }
-        List<RemoteAction> remoteActions = new List<RemoteAction>();
-        if (device.VirtualChannels.Count() == coils.Length) {
-            for (int i = 0; i < coils.Length; i++) {
-                remoteActions.Add(new RemoteAction() {
-                    Name=device.VirtualChannels[i].identifier,
-                    State = coils[i]
-                });
-            }
-        }
-        return remoteActions.AsEnumerable();
+        await Clients.Caller.InitializeActions(device.RemoteActions.AsEnumerable());
     }
-
+    
     public async Task Toggle(string deviceName,string actionName) {
-        var device = this._devices.FirstOrDefault(e => e.Device.DeviceName == deviceName);
+        var device = this._devices.FirstOrDefault(e => e.DeviceName == deviceName);
         if (device == null) {
             return;
         }
-        var ip = device.MonitorDevice.NetworkConfiguration.IPAddress;
-        var slaveId = device.MonitorDevice.NetworkConfiguration.ModbusConfig.SlaveAddress;
-        var port = device.MonitorDevice.NetworkConfiguration.Port;
-        var channel = device.VirtualChannels.FirstOrDefault(e => e.identifier == actionName);
-        if (channel == null) {
+        var remoteAction = device.RemoteActions.FirstOrDefault(e => e.Name == actionName);
+        if (remoteAction == null) {
             return;
         }
-        await this._modbusService.ToggleCoil(ip, port, slaveId, channel.register);
+        await this._modbusService.ToggleCoil(device.IpAddress, device.Port,1,remoteAction.Register);
     }
+    
+    
 
-    public async Task ToggleMaintenance(string deviceName) {
+    /*/*public async Task ToggleMaintenance(string deviceName) {
         var device = this._devices.FirstOrDefault(e => e.Device.DeviceName == deviceName);
         if (device != null) {
             var ip = device.MonitorDevice.NetworkConfiguration.IPAddress;
@@ -70,7 +58,7 @@ public class MonitorControlHub : Hub<IModbusControlHub> {
                 await this._modbusService.ToggleCoil(ip, port, slaveId, channel.register);
             }
         }
-    }
+    }#1#
 
     public async Task ToggleRemoteAlarm(string deviceName) {
         var device = this._devices.FirstOrDefault(e => e.Device.DeviceName == deviceName);
@@ -109,17 +97,5 @@ public class MonitorControlHub : Hub<IModbusControlHub> {
                 await this._modbusService.ToggleCoil(ip, port, slaveId, channel.register);
             }
         }
-    }
-
-    public async Task SetMaintenance(string deviceName,bool state) {
-        
-    }
-
-    public async Task SetRemoteAlarm(string deviceName,bool state) {
-        
-    }
-
-    public async Task SetRemoteWarning(string deviceName,bool state) {
-        
-    }
+    }*/
 }
