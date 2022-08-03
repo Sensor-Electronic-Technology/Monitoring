@@ -12,7 +12,13 @@ using System.IO;
 using System.Threading;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using System.Diagnostics;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 using MongoDB.Bson;
+using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataLogging;
 using MonitoringSystem.Shared.Services;
 
@@ -49,22 +55,6 @@ namespace MonitoringSystem.ConsoleTesting {
             var gasbay = await context.Devices.OfType<ModbusDevice>().FirstOrDefaultAsync(e => e.Identifier == "epi1");*/
 
 
-            /*SmtpClient client = new SmtpClient();
-            await client.ConnectAsync("192.168.0.123",25,false);
-            MimeMessage mailMessage = new MimeMessage();
-            BodyBuilder bodyBuilder = new BodyBuilder();
-            mailMessage.To.Add(new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com"));
-            mailMessage.From.Add(new MailboxAddress("Monitor Alerts","monitorAlerts@s-et.com"));
-
-            MessageBuilder builder = new MessageBuilder();
-            builder.StartMessage("A Test");
-            builder.AppendAlert("Alert 2","Alarm","50");
-            builder.AppendStatus("Alert 1","Okay","0");
-            builder.AppendStatus("Alert 2","Alarm","55");
-            
-            bodyBuilder.HtmlBody=builder.FinishMessage();
-            mailMessage.Body = bodyBuilder.ToMessageBody();
-            await client.SendAsync(mailMessage);*/
 
             //await emailService.SendMessageAsync("Test",message);
             //MailMessage mailMessage = new MailMessage(from.Address,"aelmendorf@s-et.com,rakesh@s-et.com,bmurdaugh@s-et.com,achapman@s-et.com","Test Smtp Alert Email",message);
@@ -167,15 +157,100 @@ namespace MonitoringSystem.ConsoleTesting {
             //Console.WriteLine(nameof(ServiceType.GenericModbus));
             /*await WriteOutDiscreteData("gasbay", new DateTime(2022, 7, 28, 0, 0, 0), DateTime.Now,
                 @"C:\MonitorFiles\gasbay_discrete.csv");*/
+
+            //await TestSmptEmail();
+            await RemoteAlertTesting();
+        }
+
+        static async Task RemoteAlertTesting() {
             ModbusService modservice = new ModbusService();
-            /*var netConfig = gasbay.NetworkConfiguration;
-            var modbusConfig = netConfig.ModbusConfig;*/
-            Console.WriteLine("Starting test");
+            Console.WriteLine("Epi1 Running");
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 0, true);
+            await Task.Delay(1000);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
+            
+            Console.WriteLine("Gasbay running");
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 2, true);
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 0, true);
+            await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.42", 502, 1, 2, false);
-            //await Task.Delay(5000);
-            //await modservice.WriteCoil("172.20.5.42", 502, 1, 0, true);
-            Console.WriteLine("Check System");
+
+            Console.WriteLine("Epi2 running");
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 2, true);
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 0, true);
+            await Task.Delay(1000);
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 0, false);
+            await modservice.WriteCoil("172.20.5.201", 502, 1, 2, false);
+            Console.WriteLine("Test Done");
+            
+            /*bool state = false;
+            for (int i = 0; i < 20; i++) {
+                state = !state;
+                await modservice.WriteCoil("172.20.5.42", 502, 1, 0, state);
+                Console.WriteLine($"{DateTime.Now.ToString()}: {state}");
+                await Task.Delay(1000);
+            }
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 2, false);*/
+            
+            //Console.WriteLine("Check System");
+        }
+
+        static async Task TestSmptEmail() {
+            SmtpClient client = new SmtpClient();
+            /*await client.ConnectAsync("smtp.gmail.com", 25, false);
+            //await client.AuthenticateAsync("seti.monitoring@gmail.com", "Today@seti!");*/
+            client.CheckCertificateRevocation = false;
+            client.ServerCertificateValidationCallback = MyServerCertificateValidationCallback;
+            await client.ConnectAsync("192.168.0.123",25,false);
+            
+            //await client.AuthenticateAsync("600076@seoulsemicon.com", "Drizzle3219753!");
+            MimeMessage mailMessage = new MimeMessage();
+            BodyBuilder bodyBuilder = new BodyBuilder();
+            mailMessage.To.Add(new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com"));
+            mailMessage.From.Add(new MailboxAddress("Monitor Alerts","monitoring@s-et.com"));
+
+            MessageBuilder builder = new MessageBuilder();
+            builder.StartMessage("A Test");
+            builder.AppendAlert("Alert 2","Alarm","50");
+            builder.AppendStatus("Alert 1","Okay","0");
+            builder.AppendStatus("Alert 2","Alarm","55");
+            
+            bodyBuilder.HtmlBody=builder.FinishMessage();
+            mailMessage.Body = bodyBuilder.ToMessageBody();
+            await client.SendAsync(mailMessage);
+            await client.DisconnectAsync(true);
+            Console.WriteLine("Check Mail");
+        }
+        
+        static bool MyServerCertificateValidationCallback (object sender, 
+            X509Certificate certificate, 
+            X509Chain chain, 
+            SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+                return true;
+
+            // Note: The following code casts to an X509Certificate2 because it's easier to get the
+            // values for comparison, but it's possible to get them from an X509Certificate as well.
+            if (certificate is X509Certificate2 certificate2) {
+                var cn = certificate2.GetNameInfo (X509NameType.SimpleName, false);
+                var fingerprint = certificate2.Thumbprint;
+                var serial = certificate2.SerialNumber;
+                var issuer = certificate2.Issuer;
+                Console.WriteLine($"Cert: {cn}");
+                Console.WriteLine($"Fingerprint: {fingerprint}");
+                Console.WriteLine($"Serial: {serial}");
+                Console.WriteLine($"Issuer: {issuer}");
+                return cn == "Exchange2016" && issuer == "CN=Exchange2016" &&
+                       serial == "3D2E6FBDF9CE1FAF46D9CC68B8D58BAB" &&
+                       fingerprint == "EC14ED8D2253824E6522D19EC815AD72CC767759";
+                //return true;
+            }
+            return false;
         }
         
         static async Task BuildSettingsDB() { 

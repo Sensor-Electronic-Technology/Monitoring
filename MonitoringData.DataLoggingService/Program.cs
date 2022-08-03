@@ -72,6 +72,5 @@ if (dataConfigProvider is not null) {
     throw new Exception("Error: Could not resolve DataLogConfig");
 }
 var hub = dataConfigProvider.ManagedDevice.HubName;
-Console.WriteLine($"HubName: {hub}");
 app.MapHub<MonitorHub>($"/hubs/{hub}");
 await app.RunAsync();

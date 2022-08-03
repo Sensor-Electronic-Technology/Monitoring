@@ -65,26 +65,24 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
             //this._deviceConfigurations = database.GetCollection<MonitorDevice>(this._device.CollectionNames[nameof(MonitorDevice)]);
         }
-        /*public MonitorDataService(string connectionString, string databaseName,Dictionary<Type,string> collectionNames) {
-            this._client = new MongoClient(connectionString);
-            this._database = this._client.GetDatabase(databaseName);
-            this._analogReadings = this._database.GetCollection<AnalogReadings>(collectionNames[typeof(AnalogReading)]);
-            this._discreteReadings = this._database.GetCollection<DiscreteReadings>(collectionNames[typeof(DiscreteReading)]);
-            this._virtualReadings = this._database.GetCollection<VirtualReadings>(collectionNames[typeof(VirtualReading)]);
-            //this._outputReadings = this._database.GetCollection<OutputReading>(collectionNames[typeof(OutputReading)]);
-            this._alertReadings = this._database.GetCollection<AlertReadings>(collectionNames[typeof(AlertReading)]);
-            //this._actionReadings = this._database.GetCollection<ActionReading>(collectionNames[typeof(ActionReading)]);
-            this._deviceReadings = this._database.GetCollection<DeviceReading>(collectionNames[typeof(DeviceReading)]);
-
-            this._analogItems = this._database.GetCollection<AnalogChannel>(collectionNames[typeof(AnalogChannel)]);
-            this._discreteItems = this._database.GetCollection<DiscreteChannel>(collectionNames[typeof(DiscreteChannel)]);
-            this._virtualItems = this._database.GetCollection<VirtualChannel>(collectionNames[typeof(VirtualChannel)]);
-            this._outputItems = this._database.GetCollection<OutputItem>(collectionNames[typeof(OutputItem)]);
-            this._monitorAlerts = this._database.GetCollection<MonitorAlert>(collectionNames[typeof(MonitorAlert)]);
-            this._actionItems = this._database.GetCollection<ActionItem>(collectionNames[typeof(ActionItem)]);
-            this._deviceConfigurations = this._database.GetCollection<MonitorDevice>(collectionNames[typeof(MonitorDevice)]);
+        /*public MonitorDataService(IMongoClient client,DataLogConfigProvider configProvider) {
+            this._configProvider = configProvider;
+            this._device = this._configProvider.ManagedDevice;
+            var database = client.GetDatabase(this._device.DatabaseName);
+            this._analogReadings = database.GetCollection<AnalogReadings>(this._device.CollectionNames[nameof(AnalogReadings)]);
+            this._discreteReadings = database.GetCollection<DiscreteReadings>(this._device.CollectionNames[nameof(DiscreteReadings)]);
+            this._virtualReadings = database.GetCollection<VirtualReadings>(this._device.CollectionNames[nameof(VirtualReadings)]);
+            this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
+            this._deviceReadings = database.GetCollection<DeviceReading>(this._device.CollectionNames[nameof(DeviceReading)]);
+            this._actionItems = database.GetCollection<ActionItem>(this._device.CollectionNames[nameof(ActionItem)]);
+            this._analogItems = database.GetCollection<AnalogChannel>(this._device.CollectionNames[nameof(AnalogChannel)]);
+            this._discreteItems = database.GetCollection<DiscreteChannel>(this._device.CollectionNames[nameof(DiscreteChannel)]);
+            this._virtualItems = database.GetCollection<VirtualChannel>(this._device.CollectionNames[nameof(VirtualChannel)]);
+            this._outputItems = database.GetCollection<OutputItem>(this._device.CollectionNames[nameof(OutputItem)]);
+            this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
+            //this._deviceConfigurations = database.GetCollection<MonitorDevice>(this._device.CollectionNames[nameof(MonitorDevice)]);
         }*/
-
+        
         public async Task InsertOneAsync(AlertReadings readings) {
             await this._alertReadings.InsertOneAsync(readings);
         }
