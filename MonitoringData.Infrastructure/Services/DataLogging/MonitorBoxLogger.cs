@@ -19,9 +19,13 @@ namespace MonitoringData.Infrastructure.Services {
         private bool loggingEnabled = false;
         private IList<AlertRecord> _alerts;
 
-        private DateTime lastRecord;
-        private TimeSpan recordInterval;
-        private bool firstRecord;
+        private DateTime _lastRecord;
+        private TimeSpan _recordInterval;
+        private bool _firstRecord;
+
+        private DateTime _boxOfflineTime;
+        private bool _offlineLatch = false;
+        private int _alertTime = 60;
         
         public MonitorBoxLogger(IMonitorDataRepo dataService,
             ILogger<MonitorBoxLogger> logger, 
@@ -32,24 +36,15 @@ namespace MonitoringData.Infrastructure.Services {
             this._logger = logger;
             this._modbusService = modbusService;
             this.loggingEnabled = true;
-            this.firstRecord = true;
+            this._firstRecord = true;
         }
-
-        /*public MonitorBoxLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
-            this._dataService = new MonitorDataService(connName, databaseName, collectionNames);
-            this._alertService = new AlertService(connName, 
-                databaseName,
-                collectionNames[typeof(ActionItem)],
-                collectionNames[typeof(MonitorAlert)]);
-            this.loggingEnabled = false;
-            this._modbusService = new ModbusService();
-            this.firstRecord = true;
-        }*/
-
+        
         public async Task Read() {
             var result = await this._modbusService.Read(this._device.IpAddress, this._device.Port, 
                 this._device.ModbusConfiguration);
+            var now = DateTime.Now;
             if (result._success) {
+                this._offlineLatch = false;
                 var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._device.ChannelMapping.DiscreteStart,
                     (this._device.ChannelMapping.DiscreteStop - this._device.ChannelMapping.DiscreteStart) + 1).ToArray();
                 var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._device.ChannelMapping.AnalogStart, 
@@ -58,25 +53,14 @@ namespace MonitoringData.Infrastructure.Services {
                     (this._device.ChannelMapping.AlertStop - this._device.ChannelMapping.AlertStart) + 1).ToArray();
                 var virtualRaw = new ArraySegment<bool>(result.Coils, this._device.ChannelMapping.VirtualStart, 
                     (this._device.ChannelMapping.VirtualStop - this._device.ChannelMapping.VirtualStart) + 1).ToArray();
-                var now = DateTime.Now;
                 this._alerts = new List<AlertRecord>();
-                /*if (result.HoldingRegisters.Length > this._device.ChannelMapping.DeviceStart - 1) {
-                    var deviceRaw = this.ToDeviceState(result.HoldingRegisters[this._device.ChannelMapping.DeviceStart]);
-                    await this._dataService.InsertDeviceReadingAsync(new DeviceReading() {
-                        itemid = 1,
-                        timestamp = now,
-                        value = deviceRaw
-                    });
-                } else {
-                    this.LogError("Error: HoldingRegister count is < DeviceStart Address");
-                }*/
                 await this.ProcessAlertReadings(alertsRaw, now);
                 var aret=await this.ProcessAnalogReadings(analogRaw, now);
                 var dret=await this.ProcessDiscreteReadings(discreteRaw, now);
                 var vret=await this.ProcessVirtualReadings(virtualRaw, now);
                 
-                if(CheckSave(now,this.lastRecord,(aret.Item2 || dret.Item2 || vret.Item2))) {
-                    this.lastRecord = now;
+                if(CheckSave(now,this._lastRecord,(aret.Item2 || dret.Item2 || vret.Item2))) {
+                    this._lastRecord = now;
                     if (aret.Item1 != null) {
                         await this._dataService.InsertOneAsync(aret.Item1);
                     }
@@ -89,6 +73,14 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 await this._alertService.ProcessAlerts(this._alerts,now);
             } else {
+                if (!this._offlineLatch) {
+                    this._offlineLatch = true;
+                    this._boxOfflineTime = now;
+                } else {
+                    if((now - this._boxOfflineTime).TotalSeconds >= this._alertTime) {
+                        await this._alertService.DeviceOfflineAlert();
+                    }
+                }
                 this._logger.LogError("Modbus read failed");
             }
         }
@@ -97,7 +89,7 @@ namespace MonitoringData.Infrastructure.Services {
             await this._dataService.LoadAsync();
             await this._alertService.Initialize();
             this._device = this._dataService.ManagedDevice;
-            this.recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
+            this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
         }
 
         private Task ProcessAlertReadings(ushort[] raw, DateTime now) {
@@ -207,11 +199,11 @@ namespace MonitoringData.Infrastructure.Services {
         }
 
         private bool CheckSave(DateTime now,DateTime last,bool thresholdMet) {
-            if (this.firstRecord) {
-                this.firstRecord = false;
+            if (this._firstRecord) {
+                this._firstRecord = false;
                 return true;
             } else {
-                return ((now - last).TotalSeconds >= this.recordInterval.TotalSeconds)
+                return ((now - last).TotalSeconds >= this._recordInterval.TotalSeconds)
                         || thresholdMet;
             }
         }

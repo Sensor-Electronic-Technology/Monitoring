@@ -56,9 +56,6 @@ public class SmtpEmailService:IEmailService {
     {
         if (sslPolicyErrors == SslPolicyErrors.None)
             return true;
-
-        // Note: The following code casts to an X509Certificate2 because it's easier to get the
-        // values for comparison, but it's possible to get them from an X509Certificate as well.
         if (certificate is X509Certificate2 certificate2) {
             var cn = certificate2.GetNameInfo (X509NameType.SimpleName, false);
             var fingerprint = certificate2.Thumbprint;

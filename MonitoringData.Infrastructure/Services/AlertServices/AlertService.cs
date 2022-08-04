@@ -11,6 +11,7 @@ namespace MonitoringData.Infrastructure.Services {
 
     public interface IAlertService {
         Task ProcessAlerts(IList<AlertRecord> items,DateTime now);
+        Task DeviceOfflineAlert();
         Task Initialize();
     }
 
@@ -35,15 +36,9 @@ namespace MonitoringData.Infrastructure.Services {
             this._alertRepo = new AlertRepo(connName, databaseName, actionCol, alertCol,"alert_readings");
             this._emailService = new ExchangeEmailService();
         }
-
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
             IMessageBuilder messageBuilder = new MessageBuilder();
             messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
-            ConsoleTable statusTable = new ConsoleTable("Alert","Status","Reading");
-            ConsoleTable newAlertTable = new ConsoleTable("Alert", "Status", "Reading");
-            ConsoleTable newStateTable = new ConsoleTable("Alert", "Status", "Reading");
-            ConsoleTable activeTable = new ConsoleTable("Alert", "Status", "Reading");
-            ConsoleTable resendTable = new ConsoleTable("Alert", "Status", "Reading");
             bool sendEmail = false;     
             foreach (var alert in this.Process(alerts)) {
                 if (alert.Enabled) {
@@ -58,7 +53,6 @@ namespace MonitoringData.Infrastructure.Services {
                                     activeAlert.CurrentState = alert.CurrentState;
                                     activeAlert.ChannelReading = alert.ChannelReading;
                                     activeAlert.AlertAction = alert.AlertAction;
-                                    newStateTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                                     messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                                     sendEmail = true;
                                 } else {
@@ -72,12 +66,10 @@ namespace MonitoringData.Infrastructure.Services {
                                 break;
                             }
                         case AlertAction.Resend: {
-                                resendTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
-                                sendEmail = true;
+                            sendEmail = true;
                                 break;
                             }
                     }
-                    statusTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                     messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
             }
@@ -121,7 +113,6 @@ namespace MonitoringData.Infrastructure.Services {
                         State=alert.CurrentState.ToString(),
                         Value = alert.ChannelReading.ToString()
                     });
-                    activeTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
@@ -140,22 +131,6 @@ namespace MonitoringData.Infrastructure.Services {
                     ActionType.Maintenance : ActionType.Okay;
             }
             await this._monitorHub.Clients.All.ShowCurrent(monitorData);
-            //Console.Clear();
-            /*Console.WriteLine("New Alerts:");
-            Console.WriteLine(newAlertTable.ToMinimalString());
-            Console.WriteLine();
-            Console.WriteLine("Active Alerts");
-            Console.WriteLine(activeTable.ToMinimalString());
-            Console.WriteLine();
-            Console.WriteLine("Resend Alerts");
-            Console.WriteLine(resendTable.ToMinimalString());
-            Console.WriteLine();
-            Console.WriteLine("ChangeState Alerts");
-            Console.WriteLine(newStateTable.ToMinimalString());
-            Console.WriteLine();
-            Console.WriteLine("Status");
-            Console.WriteLine(statusTable.ToMinimalString());
-            Console.WriteLine();*/
         }
         private IEnumerable<AlertRecord> Process(IList<AlertRecord> alertRecords) {
             var now = DateTime.Now;
@@ -216,6 +191,23 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 yield return alert;
             }
+        }
+
+        public async Task DeviceOfflineAlert() {
+            IMessageBuilder messageBuilder = new MessageBuilder();
+            messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
+            messageBuilder.AppendAlert(this._alertRepo.ManagedDevice.DeviceName, "Offline", "Offline");
+            MonitorData monitorData = new MonitorData();
+            monitorData.TimeStamp = DateTime.Now;
+            monitorData.DeviceState = ActionType.Alarm;
+            monitorData.activeAlerts.Add(new ItemStatus() {
+                Item=this._alertRepo.ManagedDevice.DeviceName,
+                State = "Offline",
+                Value="Offline"
+            });
+            await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
+                messageBuilder.FinishMessage());
+            await this._monitorHub.Clients.All.ShowCurrent(monitorData);
         }
         private bool CheckBypassReset(AlertRecord alert,DateTime now) {
             return (now - alert.TimeBypassed).Minutes >= alert.BypassResetTime;
