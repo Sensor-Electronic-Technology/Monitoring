@@ -95,24 +95,31 @@
     private MonitorData? _monitorData;
 
     protected override async Task OnInitializedAsync() {
-        this._hubConnection = new HubConnectionBuilder()
-            .WithAutomaticReconnect()
-            .WithUrl(this.Hub)
-            .Build();
-    /*this._hubConnection.On<MonitorData>("ShowCurrent",async (data) => {
-            this._monitorData = data;
-            await InvokeAsync(StateHasChanged);
-        });*/
-        this._hubConnection.On<MonitorData>("ShowCurrent", this.OnShowCurrent);
+        var hub = this.Hub;
+        if (hub != null) {
+            this._hubConnection = new HubConnectionBuilder()
+                .WithAutomaticReconnect(new TimeSpan[] {
+                    TimeSpan.FromSeconds(3),
+                    TimeSpan.FromSeconds(9),
+                    TimeSpan.FromSeconds(20),
+                    TimeSpan.FromSeconds(40),
+                    TimeSpan.FromSeconds(60),
+                    TimeSpan.FromSeconds(120),
+                    TimeSpan.FromSeconds(240)
+                })
+                .WithUrl(hub)
+                .Build();
+            this._hubConnection.On<MonitorData>("ShowCurrent", this.OnShowCurrent);
 
-        this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
-        this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+            this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+            this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
 
-        try {
-            await this._hubConnection.StartAsync();
-            this.logger.LogInformation(this.Hub + " Connected");
-        } catch {
-            this.logger.LogError(this.Hub + " hub connection failed");
+            try {
+                await this._hubConnection.StartAsync();
+                this.logger.LogInformation(hub + " Connected");
+            } catch {
+                this.logger.LogError(hub + " hub connection failed");
+            }
         }
     }
 

@@ -8,11 +8,10 @@ using MonitoringSystem.Shared.SignalR;
 using MonitoringSystem.Shared.Services;
 
 namespace MonitoringData.Infrastructure.Services {
-    public class MonitorBoxLogger : IDataLogger , IConsumer<ReloadConsumer> {
+    public class MonitorBoxLogger : IDataLogger {
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
-        //private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
-        private IAlertService _alertService;
+        private readonly IAlertService _alertService;
         private readonly ILogger _logger;
 
         private ManagedDevice _device;
@@ -25,7 +24,7 @@ namespace MonitoringData.Infrastructure.Services {
 
         private DateTime _boxOfflineTime;
         private bool _offlineLatch = false;
-        private int _alertTime = 60;
+        private readonly int _alertTime = 60;
         
         public MonitorBoxLogger(IMonitorDataRepo dataService,
             ILogger<MonitorBoxLogger> logger, 
@@ -43,7 +42,7 @@ namespace MonitoringData.Infrastructure.Services {
             var result = await this._modbusService.Read(this._device.IpAddress, this._device.Port, 
                 this._device.ModbusConfiguration);
             var now = DateTime.Now;
-            if (result._success) {
+            if (result.Success) {
                 this._offlineLatch = false;
                 var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._device.ChannelMapping.DiscreteStart,
                     (this._device.ChannelMapping.DiscreteStop - this._device.ChannelMapping.DiscreteStart) + 1).ToArray();
@@ -77,19 +76,13 @@ namespace MonitoringData.Infrastructure.Services {
                     this._offlineLatch = true;
                     this._boxOfflineTime = now;
                 } else {
-                    if((now - this._boxOfflineTime).TotalSeconds >= this._alertTime) {
+                    if((now - this._boxOfflineTime).TotalSeconds >= 60) {
                         await this._alertService.DeviceOfflineAlert();
+                        this._boxOfflineTime = now;
                     }
                 }
                 this._logger.LogError("Modbus read failed");
             }
-        }
-
-        public async Task Load() {
-            await this._dataService.LoadAsync();
-            await this._alertService.Initialize();
-            this._device = this._dataService.ManagedDevice;
-            this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
         }
 
         private Task ProcessAlertReadings(ushort[] raw, DateTime now) {
@@ -278,11 +271,26 @@ namespace MonitoringData.Infrastructure.Services {
             }
         }
 
-        public async Task Consume(ConsumeContext<ReloadConsumer> context) {
-            this.LogInformation("Reloading System");
-            await this.Load();
-            this.LogInformation("Reload Finshed");
+        public async Task Load() {
+            await this._dataService.LoadAsync();
+            await this._alertService.Load();
+            this._device = this._dataService.ManagedDevice;
+            this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
         }
+
+        public async Task Reload() {
+            await this._dataService.ReloadAsync();
+            await this._alertService.Reload();
+            this._device = this._dataService.ManagedDevice;
+            this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
+        }
+        
+        /*public async Task Consume(ConsumeContext<ReloadConsumer> context) {
+            this.LogInformation("Reloading System");
+            await this.Reload();
+            this.LogInformation($"Device Ip: {this._device.IpAddress}");
+            this.LogInformation("Reload Finished");
+        }*/
     }
 
 }

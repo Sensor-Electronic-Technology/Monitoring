@@ -18,6 +18,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         Task LogAlerts(AlertReadings alerts);
         Task UpdateAlert(int alertId, UpdateDefinition<MonitorAlert> update);
         Task Load();
+        Task Reload();
     }
 
     public class AlertRepo : IAlertRepo {
@@ -25,11 +26,13 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<MonitorAlert> _monitorAlerts;
         private IMongoCollection<AlertReadings> _alertReadings;
         private readonly DataLogConfigProvider _configProvider;
-        private readonly ManagedDevice _device;
+        private ManagedDevice _device;
+        private readonly IMongoClient _client;
         public IList<ActionItem> ActionItems { get; private set; }
         public ManagedDevice ManagedDevice => this._device;
 
         public AlertRepo(IMongoClient client,DataLogConfigProvider configProvider) {
+            this._client = client;
             this._configProvider = configProvider;
             this._device = configProvider.ManagedDevice;
             var database = client.GetDatabase(this._device.DatabaseName);
@@ -37,15 +40,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
             this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
         }
-
-        public AlertRepo(string connectionName,string databaseName,string actionColName,string alertCollName,string alertReadCol) {
-            var client = new MongoClient(connectionName);
-            var database = client.GetDatabase(databaseName);
-            this._actionItems = database.GetCollection<ActionItem>(actionColName);
-            this._monitorAlerts = database.GetCollection<MonitorAlert>(alertCollName);
-            this._alertReadings = database.GetCollection<AlertReadings>(alertReadCol);
-        }
-
+        
         public async Task LogAlerts(AlertReadings alerts) {
             await this._alertReadings.InsertOneAsync(alerts);
         }
@@ -59,6 +54,15 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         }
 
         public async Task Load() {
+            this.ActionItems = await this._actionItems.Find(_ => true).ToListAsync();
+        }
+
+        public async Task Reload() {
+            this._device = this._configProvider.ManagedDevice;
+            var database = this._client.GetDatabase(this._device.DatabaseName);
+            this._actionItems = database.GetCollection<ActionItem>(this._device.CollectionNames[nameof(ActionItem)]);
+            this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
+            this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
             this.ActionItems = await this._actionItems.Find(_ => true).ToListAsync();
         }
     }

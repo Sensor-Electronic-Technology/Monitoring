@@ -9,5 +9,6 @@ namespace MonitoringData.Infrastructure.Services {
     public interface IDataLogger {
         Task Read();
         Task Load();
+        Task Reload();
     }
 }

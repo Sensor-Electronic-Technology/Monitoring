@@ -9,23 +9,18 @@ namespace MonitoringSystem.Shared.Services {
         public bool[] Coils { get; set; }
         public ushort[] HoldingRegisters { get; set; }
         public ushort[] InputRegisters { get; set; }
-        public bool _success { get; set; }
+        public bool Success { get; set; }
         public ModbusResult(bool success) {
-            this._success = success;
+            this.Success = success;
         }
 
         public ModbusResult() {
-            this._success = false;
+            this.Success = false;
         }
     }
-
-    public class CoilResult {
-        
-    }
-
+    
     public interface IModbusService {
         Task<ModbusResult> Read(string ip, int port, ModbusConfig config);
-
         Task WriteMultipleCoils(string ip, int port, int slaveId, int start, bool[] values);
         Task ToggleCoil(string ip, int port, int slaveId, int addr);
         Task<bool> ReadCoil(string ip, int port,int slaveId, int addr);
@@ -48,27 +43,32 @@ namespace MonitoringSystem.Shared.Services {
         public async Task<ModbusResult> Read(string ip, int port, ModbusConfig config) {
             try {
                 using var client = new TcpClient(ip, port);
+                client.ReceiveTimeout = 2000;
                 var modbus = ModbusIpMaster.CreateIp(client);
+                
                 ModbusResult result = new ModbusResult();
-
                 if (config.DiscreteInputs != 0) {
-                    result.DiscreteInputs = await modbus.ReadInputsAsync((byte)config.SlaveAddress, 0, (ushort)config.DiscreteInputs);
-                    result._success = true;
+                    result.DiscreteInputs = await modbus.ReadInputsAsync((byte)config.SlaveAddress, 0, 
+                        (ushort)config.DiscreteInputs);
+                    result.Success = true;
                 }
 
                 if (config.HoldingRegisters != 0) {
-                    result.HoldingRegisters = await modbus.ReadHoldingRegistersAsync((byte)config.SlaveAddress, 0, (ushort)config.HoldingRegisters);
-                    result._success = true;
+                    result.HoldingRegisters = await modbus.ReadHoldingRegistersAsync((byte)config.SlaveAddress, 0, 
+                        (ushort)config.HoldingRegisters);
+                    result.Success = true;
                 }
 
                 if (config.InputRegisters != 0) {
-                    result.InputRegisters = await modbus.ReadInputRegistersAsync((byte)config.SlaveAddress, 0, (ushort)config.InputRegisters);
-                    result._success = true;
+                    result.InputRegisters = await modbus.ReadInputRegistersAsync((byte)config.SlaveAddress, 0, 
+                        (ushort)config.InputRegisters);
+                    result.Success = true;
                 }
 
                 if (config.Coils != 0) {
-                    result.Coils = await modbus.ReadCoilsAsync((byte)config.SlaveAddress, 0, (ushort)config.Coils);
-                    result._success = true;
+                    result.Coils = await modbus.ReadCoilsAsync((byte)config.SlaveAddress, 0, 
+                        (ushort)config.Coils);
+                    result.Success = true;
                 }
                 
                 client.Close();

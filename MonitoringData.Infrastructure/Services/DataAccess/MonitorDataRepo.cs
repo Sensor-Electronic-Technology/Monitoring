@@ -19,10 +19,12 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         Task InsertDeviceReadingAsync(DeviceReading reading);
         Task UpdateAlert(int alertId, UpdateDefinition<MonitorAlert> update);
         Task LoadAsync();
+        Task ReloadAsync();
     }
     public class MonitorDataService : IMonitorDataRepo {
         private readonly ILogger<MonitorDataService> _logger;
         private readonly DataLogConfigProvider _configProvider;
+        private readonly IMongoClient _client;
         private ManagedDevice _device;
 
         public ManagedDevice ManagedDevice { get=>this._device;}
@@ -48,10 +50,11 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<DeviceReading> _deviceReadings;
 
         public MonitorDataService(IMongoClient client,DataLogConfigProvider configProvider,ILogger<MonitorDataService> logger) {
+            this._client = client;
             this._configProvider = configProvider;
             this._device = this._configProvider.ManagedDevice;
-            var database = client.GetDatabase(this._device.DatabaseName);
             this._logger = logger;
+            var database = this._client.GetDatabase(this._device.DatabaseName);
             this._analogReadings = database.GetCollection<AnalogReadings>(this._device.CollectionNames[nameof(AnalogReadings)]);
             this._discreteReadings = database.GetCollection<DiscreteReadings>(this._device.CollectionNames[nameof(DiscreteReadings)]);
             this._virtualReadings = database.GetCollection<VirtualReadings>(this._device.CollectionNames[nameof(VirtualReadings)]);
@@ -65,23 +68,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
             //this._deviceConfigurations = database.GetCollection<MonitorDevice>(this._device.CollectionNames[nameof(MonitorDevice)]);
         }
-        /*public MonitorDataService(IMongoClient client,DataLogConfigProvider configProvider) {
-            this._configProvider = configProvider;
-            this._device = this._configProvider.ManagedDevice;
-            var database = client.GetDatabase(this._device.DatabaseName);
-            this._analogReadings = database.GetCollection<AnalogReadings>(this._device.CollectionNames[nameof(AnalogReadings)]);
-            this._discreteReadings = database.GetCollection<DiscreteReadings>(this._device.CollectionNames[nameof(DiscreteReadings)]);
-            this._virtualReadings = database.GetCollection<VirtualReadings>(this._device.CollectionNames[nameof(VirtualReadings)]);
-            this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
-            this._deviceReadings = database.GetCollection<DeviceReading>(this._device.CollectionNames[nameof(DeviceReading)]);
-            this._actionItems = database.GetCollection<ActionItem>(this._device.CollectionNames[nameof(ActionItem)]);
-            this._analogItems = database.GetCollection<AnalogChannel>(this._device.CollectionNames[nameof(AnalogChannel)]);
-            this._discreteItems = database.GetCollection<DiscreteChannel>(this._device.CollectionNames[nameof(DiscreteChannel)]);
-            this._virtualItems = database.GetCollection<VirtualChannel>(this._device.CollectionNames[nameof(VirtualChannel)]);
-            this._outputItems = database.GetCollection<OutputItem>(this._device.CollectionNames[nameof(OutputItem)]);
-            this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
-            //this._deviceConfigurations = database.GetCollection<MonitorDevice>(this._device.CollectionNames[nameof(MonitorDevice)]);
-        }*/
         
         public async Task InsertOneAsync(AlertReadings readings) {
             await this._alertReadings.InsertOneAsync(readings);
@@ -108,6 +94,29 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         }
 
         public async Task LoadAsync() {
+            this.AnalogItems = await (await this._analogItems.FindAsync(_ => true)).ToListAsync();
+            this.DiscreteItems = await (await this._discreteItems.FindAsync(_ => true)).ToListAsync();
+            this.OutputItems =await (await this._outputItems.FindAsync(_ => true)).ToListAsync();
+            this.VirtualItems = await (await this._virtualItems.FindAsync(_ => true)).ToListAsync();
+            this.ActionItems = await (await this._actionItems.FindAsync(_ => true)).ToListAsync();
+            this.MonitorAlerts = await (await this._monitorAlerts.FindAsync(_ => true)).ToListAsync();
+        }
+
+        public async Task ReloadAsync() {
+            await this._configProvider.Reload();
+            this._device = this._configProvider.ManagedDevice;
+            var database = this._client.GetDatabase(this._device.DatabaseName);
+            this._analogReadings = database.GetCollection<AnalogReadings>(this._device.CollectionNames[nameof(AnalogReadings)]);
+            this._discreteReadings = database.GetCollection<DiscreteReadings>(this._device.CollectionNames[nameof(DiscreteReadings)]);
+            this._virtualReadings = database.GetCollection<VirtualReadings>(this._device.CollectionNames[nameof(VirtualReadings)]);
+            this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
+            this._deviceReadings = database.GetCollection<DeviceReading>(this._device.CollectionNames[nameof(DeviceReading)]);
+            this._actionItems = database.GetCollection<ActionItem>(this._device.CollectionNames[nameof(ActionItem)]);
+            this._analogItems = database.GetCollection<AnalogChannel>(this._device.CollectionNames[nameof(AnalogChannel)]);
+            this._discreteItems = database.GetCollection<DiscreteChannel>(this._device.CollectionNames[nameof(DiscreteChannel)]);
+            this._virtualItems = database.GetCollection<VirtualChannel>(this._device.CollectionNames[nameof(VirtualChannel)]);
+            this._outputItems = database.GetCollection<OutputItem>(this._device.CollectionNames[nameof(OutputItem)]);
+            this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
             this.AnalogItems = await (await this._analogItems.FindAsync(_ => true)).ToListAsync();
             this.DiscreteItems = await (await this._discreteItems.FindAsync(_ => true)).ToListAsync();
             this.OutputItems =await (await this._outputItems.FindAsync(_ => true)).ToListAsync();

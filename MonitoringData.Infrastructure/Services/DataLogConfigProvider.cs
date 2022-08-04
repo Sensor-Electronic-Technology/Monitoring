@@ -8,10 +8,11 @@ using MonitoringSystem.Shared.Services;
 namespace MonitoringData.Infrastructure.Services; 
 
 public class DataLogConfigProvider:IMonitorConfigurationProvider {
-    private readonly IMongoCollection<ManagedDevice> _deviceCollection;
-    private readonly IMongoCollection<EmailRecipient> _emailRecipientCollection;
+    private IMongoCollection<ManagedDevice> _deviceCollection;
+    private IMongoCollection<EmailRecipient> _emailRecipientCollection;
     private readonly MonitorDataLogSettings _settings;
     private readonly MonitorEmailSettings _emailSettings;
+    private readonly IMongoClient _client;
     private ManagedDevice _device;
     private List<EmailRecipient> _emailRecipients;
     
@@ -24,29 +25,25 @@ public class DataLogConfigProvider:IMonitorConfigurationProvider {
     public DataLogConfigProvider(IMongoClient client,
         IOptions<MonitorDataLogSettings> settings,
         IOptions<MonitorEmailSettings> emailSettings) {
+        this._client = client;
         this._settings = settings.Value;
         this._emailSettings = emailSettings.Value;
-        var database = client.GetDatabase(this._settings.DatabaseName);
+        var database = this._client.GetDatabase(this._settings.DatabaseName);
         this._deviceCollection = database.GetCollection<ManagedDevice>(this._settings.ManagedDeviceCollection);
         this._emailRecipientCollection = database.GetCollection<EmailRecipient>(this._settings.EmailRecipientCollection);
     }
     
-    /*public DataLogConfigProvider(IMongoClient client,MonitorDataLogSettings settings,MonitorEmailSettings emailSettings) {
-        this._settings = settings;
-        this.MonitorEmailSettings = emailSettings;
-        var database = client.GetDatabase(this._settings.DatabaseName);
-        this._deviceCollection = database.GetCollection<ManagedDevice>(this._settings.ManagedDeviceCollection);
-        this._emailRecipientCollection = database.GetCollection<EmailRecipient>(this._settings.EmailRecipientCollection);
-    }*/
-    
     public async Task Load() {
         this._emailRecipients=await this._emailRecipientCollection.Find(_ => true).ToListAsync();
-        /*this._emailRecipients = new List<EmailRecipient>() {
-            new EmailRecipient() {
-                Address = "aelmendorf@s-et.com",
-                Username = "Andrew Elmendorf"
-            }
-        };*/
+        this._device = await this._deviceCollection.Find(e => e.DeviceName.ToLower() == this.DeviceName.ToLower())
+            .FirstOrDefaultAsync();
+    }
+    
+    public async Task Reload() {
+        var database = this._client.GetDatabase(this._settings.DatabaseName);
+        this._deviceCollection = database.GetCollection<ManagedDevice>(this._settings.ManagedDeviceCollection);
+        this._emailRecipientCollection = database.GetCollection<EmailRecipient>(this._settings.EmailRecipientCollection);
+        this._emailRecipients=await this._emailRecipientCollection.Find(_ => true).ToListAsync();
         this._device = await this._deviceCollection.Find(e => e.DeviceName.ToLower() == this.DeviceName.ToLower())
             .FirstOrDefaultAsync();
     }

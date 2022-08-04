@@ -1,32 +1,53 @@
+using MassTransit;
+using MonitoringData.Infrastructure.Events;
 using MonitoringData.Infrastructure.Services;
 
 namespace MonitoringData.DataLoggingService {
-    public class Worker : IHostedService, IDisposable {
+    public class Worker : IHostedService, IDisposable,IConsumer<ReloadConsumer>{
         private readonly ILogger<Worker> _logger;
         private readonly IDataLogger _dataLogger;
-
-        private Timer _timer;
+        private System.Timers.Timer _timer;
+        //private Timer _timer;
 
         public Worker(ILogger<Worker> logger,IDataLogger dataLogger) {
             _logger = logger;
             this._dataLogger = dataLogger;
+            this._timer = new(interval: 1000);
+            this._timer.Elapsed += async (sender, e) => {
+                await this.DataLogHandler();
+            };
         }
 
         public async Task StartAsync(CancellationToken cancellationToken) {
             await this._dataLogger.Load();
-            this._timer = new Timer(this.DataLogHandler, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+            this._timer.Start();
+            //this._timer = new Timer(this.DataLogHandler, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
         }
 
-        public async void DataLogHandler(object state) {
+        private async Task DataLogHandler() {
             await this._dataLogger.Read();
             this._logger.LogInformation("Logged Data");
         }
 
         public Task StopAsync(CancellationToken cancellationToken) {
-            this._logger.LogInformation("Logger Stopped");
+            this._timer.Stop();
             return Task.CompletedTask;
         }
 
-        public void Dispose() { }
+        public void Dispose() {
+            if (this._timer != null) {
+                this._timer.Dispose();
+            }
+        }
+        
+        public async Task Consume(ConsumeContext<ReloadConsumer> context) {
+            CancellationTokenSource source = new CancellationTokenSource();
+            this._logger.LogInformation("Stopping Service");
+            await this.StopAsync(source.Token);
+            this._logger.LogInformation("Reloading Configuration");
+            await this._dataLogger.Reload();
+            this._logger.LogInformation("Starting Service");
+            await this.StartAsync(source.Token);
+        }
     }
 }

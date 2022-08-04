@@ -1,10 +1,9 @@
-﻿using ConsoleTables;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.SignalR;
 using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using MonitoringSystem.Shared.SignalR;
 
 namespace MonitoringData.Infrastructure.Services {
@@ -12,14 +11,15 @@ namespace MonitoringData.Infrastructure.Services {
     public interface IAlertService {
         Task ProcessAlerts(IList<AlertRecord> items,DateTime now);
         Task DeviceOfflineAlert();
-        Task Initialize();
+        Task Load();
+        Task Reload();
     }
 
     public class AlertService : IAlertService {
         private readonly IAlertRepo _alertRepo;
         private readonly ILogger<AlertService> _logger;
         private readonly IEmailService _emailService;
-        private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
+        private readonly List<AlertRecord> _activeAlerts = new List<AlertRecord>();
         private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
 
 
@@ -30,11 +30,6 @@ namespace MonitoringData.Infrastructure.Services {
             this._logger = logger;
             this._emailService = emailService;
             this._monitorHub = monitorHub;
-        }
-
-        public AlertService(string connName,string databaseName,string actionCol, string alertCol) {
-            this._alertRepo = new AlertRepo(connName, databaseName, actionCol, alertCol,"alert_readings");
-            this._emailService = new ExchangeEmailService();
         }
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
             IMessageBuilder messageBuilder = new MessageBuilder();
@@ -53,7 +48,7 @@ namespace MonitoringData.Infrastructure.Services {
                                     activeAlert.CurrentState = alert.CurrentState;
                                     activeAlert.ChannelReading = alert.ChannelReading;
                                     activeAlert.AlertAction = alert.AlertAction;
-                                    messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                                    messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString(CultureInfo.InvariantCulture));
                                     sendEmail = true;
                                 } else {
                                     this._logger.LogError("Error: ActiveAlert not found in ChangeState");
@@ -70,33 +65,32 @@ namespace MonitoringData.Infrastructure.Services {
                                 break;
                             }
                     }
-                    messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                    messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), 
+                        alert.ChannelReading.ToString(CultureInfo.InvariantCulture));
                 }
             }
             
-            MonitorData monitorData = new MonitorData();
-            monitorData.TimeStamp = now;
-            
-            monitorData.analogData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Analog)
-                .Select(e => new ItemStatus() {
-                    Item = e.DisplayName,
-                    State = e.CurrentState.ToString(),
-                    Value = e.ChannelReading.ToString()
-                }).ToList();
-
-            monitorData.discreteData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Discrete)
-                .Select(e => new ItemStatus() {
-                    Item = e.DisplayName,
-                    State = e.CurrentState.ToString(),
-                    Value = e.ChannelReading.ToString()
-                }).ToList();
-
-            monitorData.virtualData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Virtual)
-                .Select(e => new ItemStatus() {
-                    Item = e.DisplayName,
-                    State = e.CurrentState.ToString(),
-                    Value = e.ChannelReading.ToString()
-                }).ToList();
+            MonitorData monitorData = new MonitorData {
+                TimeStamp = now,
+                analogData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Analog)
+                    .Select(e => new ItemStatus() {
+                        Item = e.DisplayName,
+                        State = e.CurrentState.ToString(),
+                        Value = e.ChannelReading.ToString(CultureInfo.InvariantCulture)
+                    }).ToList(),
+                discreteData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Discrete)
+                    .Select(e => new ItemStatus() {
+                        Item = e.DisplayName,
+                        State = e.CurrentState.ToString(),
+                        Value = e.ChannelReading.ToString(CultureInfo.InvariantCulture)
+                    }).ToList(),
+                virtualData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Virtual)
+                    .Select(e => new ItemStatus() {
+                        Item = e.DisplayName,
+                        State = e.CurrentState.ToString(),
+                        Value = e.ChannelReading.ToString(CultureInfo.InvariantCulture)
+                    }).ToList()
+            };
 
             if (this._activeAlerts.Count > 0) {
                 monitorData.activeAlerts = new List<ItemStatus>();
@@ -111,9 +105,10 @@ namespace MonitoringData.Infrastructure.Services {
                     monitorData.activeAlerts.Add(new ItemStatus() {
                         Item=alert.DisplayName,
                         State=alert.CurrentState.ToString(),
-                        Value = alert.ChannelReading.ToString()
+                        Value = alert.ChannelReading.ToString(CultureInfo.InvariantCulture)
                     });
-                    messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                    messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), 
+                        alert.ChannelReading.ToString(CultureInfo.InvariantCulture));
                 }
                 if (sendEmail) {
                     await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
@@ -124,7 +119,9 @@ namespace MonitoringData.Infrastructure.Services {
                         reading = e.ChannelReading,
                         state = e.CurrentState
                     });
-                    await this._alertRepo.LogAlerts(new AlertReadings() { readings = alertReadings.ToArray(), timestamp = now });
+                    await this._alertRepo.LogAlerts(new AlertReadings() {
+                        readings = alertReadings.ToArray(), timestamp = now
+                    });
                 }
             } else {
                 monitorData.DeviceState = alerts.FirstOrDefault(e => e.CurrentState == ActionType.Maintenance)!=null ? 
@@ -197,23 +194,32 @@ namespace MonitoringData.Infrastructure.Services {
             IMessageBuilder messageBuilder = new MessageBuilder();
             messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
             messageBuilder.AppendAlert(this._alertRepo.ManagedDevice.DeviceName, "Offline", "Offline");
-            MonitorData monitorData = new MonitorData();
-            monitorData.TimeStamp = DateTime.Now;
-            monitorData.DeviceState = ActionType.Alarm;
-            monitorData.activeAlerts.Add(new ItemStatus() {
-                Item=this._alertRepo.ManagedDevice.DeviceName,
-                State = "Offline",
-                Value="Offline"
-            });
+            MonitorData monitorData = new MonitorData {
+                TimeStamp = DateTime.Now,
+                DeviceState = ActionType.Alarm
+            };
+            monitorData.activeAlerts = new List<ItemStatus>() {
+                new ItemStatus() {
+                    Item=this._alertRepo.ManagedDevice.DeviceName,
+                    State = "Offline",
+                    Value="Offline"
+                }
+            };
             await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
                 messageBuilder.FinishMessage());
             await this._monitorHub.Clients.All.ShowCurrent(monitorData);
         }
+        
         private bool CheckBypassReset(AlertRecord alert,DateTime now) {
             return (now - alert.TimeBypassed).Minutes >= alert.BypassResetTime;
         }
-        public async Task Initialize() {
+        
+        public async Task Load() {
             await this._alertRepo.Load();
+        }
+        
+        public async Task Reload() {
+            await this._alertRepo.Reload();
         }
     }
 }

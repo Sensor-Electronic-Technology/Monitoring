@@ -22,14 +22,15 @@ builder.Services.Configure<MonitorEmailSettings>(builder.Configuration.GetSectio
 //var hub = builder.Configuration.GetSection(MonitorDatabaseSettings.SectionName).Get<MonitorDatabaseSettings>().HubName;
 var settings = builder.Configuration.GetSection(nameof(MonitorDataLogSettings)).Get<MonitorDataLogSettings>();
 builder.Services.AddMediator(cfg => {
-    cfg.AddConsumer<MonitorBoxLogger>();
+    //cfg.AddConsumer<MonitorBoxLogger>();
+    cfg.AddConsumer<Worker>();
 });
 
 builder.Services.AddSingleton<DataLogConfigProvider>();
 builder.Services.AddSingleton<IMonitorDataRepo, MonitorDataService>();
 builder.Services.AddSingleton<IAlertRepo, AlertRepo>();
 builder.Services.AddSingleton<IModbusService, ModbusService>();
-builder.Services.AddTransient<IAlertService, AlertService>();
+builder.Services.AddSingleton<IAlertService, AlertService>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(settings.ConnectionString));
 var serviceType = Environment.GetEnvironmentVariable("SERVICE_TYPE");
@@ -48,7 +49,8 @@ switch (serviceType) {
         break;
 }
 builder.Services.AddHostedService<Worker>();
-builder.Services.AddHostedService<MonitorDBChanges>();
+builder.Services.AddHostedService<MonitorReadingDatabase>();
+builder.Services.AddHostedService<MonitorConfigDatabase>();
 builder.Services.AddSignalR();
 var app = builder.Build();
 
@@ -73,4 +75,5 @@ if (dataConfigProvider is not null) {
 }
 var hub = dataConfigProvider.ManagedDevice.HubName;
 app.MapHub<MonitorHub>($"/hubs/{hub}");
+
 await app.RunAsync();

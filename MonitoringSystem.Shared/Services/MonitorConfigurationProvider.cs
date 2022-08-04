@@ -6,4 +6,5 @@ namespace MonitoringSystem.Shared.Services;
 
 public interface IMonitorConfigurationProvider {
     public Task Load();
+    public Task Reload();
 }

@@ -9,7 +9,7 @@ using MonitoringSystem.Shared.SignalR;
 using MonitoringData.Infrastructure.Utilities;
 
 namespace MonitoringData.Infrastructure.Services.DataLogging {
-    public class ModbusLogger : IDataLogger, IConsumer<ReloadConsumer> {
+    public class ModbusLogger : IDataLogger {
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
         private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
@@ -46,7 +46,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
         public async Task Read() {
             var result = await this._modbusService.Read(this._device.IpAddress, this._device.Port, 
                 this._device.ModbusConfiguration);
-            if (result._success) {
+            if (result.Success) {
                 var now = DateTime.Now;
                 this._alerts = new List<AlertRecord>();
                 if (result.HoldingRegisters != null) {
@@ -120,7 +120,13 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
 
         public async Task Load() {
             await this._dataService.LoadAsync();
-            await this._alertService.Initialize();
+            await this._alertService.Load();
+            this._device = this._dataService.ManagedDevice;
+        }
+
+        public async Task Reload() {
+            await this._dataService.ReloadAsync();
+            await this._alertService.Reload();
             this._device = this._dataService.ManagedDevice;
         }
 
