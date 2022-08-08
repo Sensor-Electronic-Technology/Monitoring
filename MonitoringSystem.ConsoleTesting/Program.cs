@@ -13,6 +13,7 @@ using System.Threading;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using System.Diagnostics;
 using System.Net.Security;
+using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using MailKit.Net.Smtp;
 using MailKit.Security;
@@ -159,8 +160,17 @@ namespace MonitoringSystem.ConsoleTesting {
                 @"C:\MonitorFiles\gasbay_discrete.csv");*/
 
             //await TestSmptEmail();
-            await RemoteAlertTesting();
+            //await RemoteAlertTesting();
+            ModbusService modservice = new ModbusService();
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            Console.WriteLine("Starting Test");
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 2, false);
+            stopwatch.Stop();
+            Console.WriteLine($"Done: {stopwatch.Elapsed}");
         }
+
+        
 
         static async Task RemoteAlertTesting() {
             ModbusService modservice = new ModbusService();
