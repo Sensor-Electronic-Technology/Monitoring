@@ -23,7 +23,8 @@ public class TestNewModel {
         //await CreateNewMongoDb("epi1");
         //await CreateFacilityActions();
         //await CreateNewMongoDb();
-        await CreateAnalog();
+        //await CreateAnalog();
+        //await CreateVirtual();
     }
 
     static async Task TestIdGeneration() {
@@ -242,7 +243,7 @@ public class TestNewModel {
         return sensorTypes.ToList();
     }
 
-     public static async Task CreateNewMongoDb() {
+     public static async Task CreateDiscreteChannels() {
         using var context = new FacilityContext();
         var client = new MongoClient("mongodb://172.20.3.41");
         var database = client.GetDatabase("epi1_data_dev");
@@ -256,10 +257,6 @@ public class TestNewModel {
         
         var discreteCollection = database.GetCollection<ModuleDiscreteChannel>("discrete_items");
         var alertCollection = database.GetCollection<ChannelAlert>("alert_items");
-        /*var analogCollection = database.GetCollection<ModuleAnalogChannel>("analog_items");
-        var virtualCollection = database.GetCollection<ModuleVirtualChannel>("virtual_items");
-        var outputCollection = database.GetCollection<ModuleOutputChannel>("output_items");*/
-        
         var actionCollection = database.GetCollection<MonitorAction>("action_items");
         var monitorActions = await actionCollection.Find(_ => true).ToListAsync();
 
@@ -270,17 +267,7 @@ public class TestNewModel {
                 .ThenInclude(e => e.FacilityAction)
             .Where(e => e.InputChannel is DiscreteInput && e.InputChannel.ModbusDevice.Identifier==device.Identifier)
             .ToListAsync();
-        
-        /*var discreteChannels = await context.Channels.OfType<DiscreteInput>()
-            .AsNoTracking()
-            .Include(e=>e.ModbusDevice)
-            .Include(e=>e.Alert)
-                .ThenInclude(e=>((DiscreteAlert)e).AlertLevel)
-                    .ThenInclude(e=>e.FacilityAction)
-            .Where(e => e.ModbusDevice.Identifier == device.Identifier)
-            .OrderBy(e=>e.SystemChannel)
-            .ToListAsync();*/
-        
+
         List<ModuleDiscreteChannel> moduleDiscreteChannels = new List<ModuleDiscreteChannel>();
         List<MonitorDiscreteAlert> alerts = new List<MonitorDiscreteAlert>();
         foreach (var oldAlert in oldAlerts ) {
@@ -319,71 +306,6 @@ public class TestNewModel {
         await discreteCollection.InsertManyAsync(moduleDiscreteChannels);
         await alertCollection.InsertManyAsync(alerts);
         Console.WriteLine("Check Database");
-
-
-        /*var analogChannels = await context.Channels.OfType<AnalogInput>()
-            .AsNoTracking()
-            .Include(e=>e.ModbusDevice)
-            .Where(e => e.ModbusDevice.Identifier == device.Identifier)
-            .OrderBy(e=>e.SystemChannel)
-            .ToListAsync();
-        
-        List<ModuleAnalogChannel> moduleAnalogChannels = new List<ModuleAnalogChannel>();
-        foreach (var channel in analogChannels) {
-            var analogChannel = new ModuleAnalogChannel() {
-                ChannelAddress = new ModuleAddress(channel.ChannelAddress.Channel, channel.ChannelAddress.ModuleSlot),
-                ChannelName = channel.Identifier,
-                SystemChannel = channel.SystemChannel,
-                Connected = channel.Connected,
-                Display = channel.Display,
-                DisplayName = channel.DisplayName,
-                ModbusAddress = channel.ModbusAddress
-            };
-            moduleAnalogChannels.Add(analogChannel);
-        }
-        
-        await database.CreateCollectionAsync("analog_readings",
-            new CreateCollectionOptions() {
-                TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
-            });
-
-        await database.CreateCollectionAsync("discrete_readings",
-            new CreateCollectionOptions() {
-                TimeSeriesOptions = new TimeSeriesOptions("timestamp",granularity: TimeSeriesGranularity.Seconds)
-            });
-
-        await database.CreateCollectionAsync("virtual_readings",
-            new CreateCollectionOptions() {
-                TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
-            });
-                
-        await database.CreateCollectionAsync("alert_readings",
-            new CreateCollectionOptions() {
-                TimeSeriesOptions = new TimeSeriesOptions("timestamp",granularity: TimeSeriesGranularity.Seconds)
-            });*/
-
-        /*device.ModbusActionMapping.Select(actionMap => new MonitorAction() {
-            Name = actionMap.FacilityAction.ActionName,
-            ActionType = actionMap.FacilityAction.ActionType,
-            EmailEnabled = actionMap.FacilityAction.EmailEnabled,
-            EmailPeriod = actionMap.FacilityAction.EmailPeriod,
-            ActionOutputs = actionMap.FacilityAction.ActionOutputs.Select(actionOutput=>new MonitorActionOutput() {
-                OnLevel = actionOutput.OnLevel,
-                OffLevel = actionOutput.OffLevel
-            }).ToList()
-        });*/
-
-
-        /*IMongoCollection<ModuleAnalogChannel> analogItems = database.GetCollection<ModuleAnalogChannel>("analog_items");
-        var analogChannels = await context.Channels.OfType<AnalogInput>()
-            .AsNoTracking()
-            .Include(e=>e.ModbusDevice)
-            .Where(e => e.ModbusDevice.Identifier == device.Identifier)
-            .OrderBy(e=>e.SystemChannel)
-            .Select(channel=>new ModuleAnalogChannel() { 
-                ChannelName =channel.Identifier,
-                DisplayName = channel.DisplayName
-            }).ToListAsync();*/
      }
      
      public static async Task CreateAnalog() {
@@ -453,6 +375,69 @@ public class TestNewModel {
         }
         
         await analogCollection.InsertManyAsync(moduleAnalogChannels);
+        await alertCollection.InsertManyAsync(alerts);
+        Console.WriteLine("Check Database");
+     }
+     
+     public static async Task CreateVirtual() {
+        using var context = new FacilityContext();
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase("epi1_data_dev");
+        var device = context.Devices.OfType<MonitoringBox>()
+            .AsNoTracking()
+            .Include(e=>e.ModbusActionMapping)
+            .ThenInclude(e=>e.FacilityAction)
+            .FirstOrDefault(e => e.Identifier == "epi1");
+        
+        Console.WriteLine("Creating Collections");
+        
+        var virtualCollection = database.GetCollection<ModuleVirtualChannel>("virtual_items");
+        var alertCollection = database.GetCollection<ChannelAlert>("alert_items");
+        var actionCollection = database.GetCollection<MonitorAction>("action_items");
+        var monitorActions = await actionCollection.Find(_ => true).ToListAsync();
+
+        var oldAlerts = await context.Alerts.OfType<DiscreteAlert>()
+            .Include(e => e.InputChannel)
+                .ThenInclude(e => e.ModbusDevice)
+            .Include(e => e.AlertLevel)
+                .ThenInclude(e => e.FacilityAction)
+            .Where(e => e.InputChannel is VirtualInput && e.InputChannel.ModbusDevice.Identifier==device.Identifier)
+            .ToListAsync();
+        
+        List<ModuleVirtualChannel> moduleVirtualChannels = new List<ModuleVirtualChannel>();
+        List<MonitorDiscreteAlert> alerts = new List<MonitorDiscreteAlert>();
+        foreach (var oldAlert in oldAlerts) {
+            var channel = oldAlert.InputChannel as VirtualInput;
+            var virtualChannel=new ModuleVirtualChannel() {
+                _id=ObjectId.GenerateNewId(),
+                ChannelName = channel.Identifier,
+                Display = channel.Display,
+                DisplayName = channel.DisplayName,
+                ModbusAddress = channel.ModbusAddress
+            };
+            
+            MonitorDiscreteAlert alert = new MonitorDiscreteAlert();
+            alert._id = ObjectId.GenerateNewId();
+            alert.Bypass = oldAlert.Bypass;
+            alert.Enabled = oldAlert.Enabled;
+            alert.ItemId = virtualChannel._id;
+            alert.Name = oldAlert.DisplayName;
+            alert.ModbusAddress = oldAlert.ModbusAddress;
+            alert.BypassResetTime = oldAlert.BypassResetTime;
+            if (oldAlert.AlertLevel != null) {
+                MonitorDiscretLevel level = new MonitorDiscretLevel();
+                level.TriggerOn = oldAlert.AlertLevel.TriggerOn;
+                level.Enabled = oldAlert.AlertLevel.Enabled;
+                level.FacilityActionId =
+                    monitorActions.FirstOrDefault(e => e.ActionType == oldAlert.AlertLevel.FacilityAction.ActionType)._id;
+                alert.AlertLevel = level;
+            }
+            virtualChannel.AlertId = alert._id;
+            moduleVirtualChannels.Add(virtualChannel);
+            alerts.Add(alert);
+        }
+        
+        await virtualCollection.InsertManyAsync(moduleVirtualChannels);
         await alertCollection.InsertManyAsync(alerts);
         Console.WriteLine("Check Database");
      }
