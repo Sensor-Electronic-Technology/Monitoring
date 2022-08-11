@@ -6,20 +6,17 @@ using System.Linq;
 using System.Threading;
 using ConsoleTables;
 using MonitoringData.Infrastructure.Services.DataAccess;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MonitoringData.Infrastructure.Data;
 using MonitoringData.Infrastructure.Services;
 using MonitoringData.Infrastructure.Services.AlertServices;
-using MonitoringSystem.Shared.Services;
 using MonitoringSystem.Shared.SignalR;
 
 namespace MonitoringSystem.ConsoleTesting {
     public class AlertDebugMain {
         static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
-            var client = new MongoClient("mongodb://172.20.3.41");
+            /*var client = new MongoClient("mongodb://172.20.3.41");
             var settings = new MonitorDataLogSettings();
             settings.ConnectionString = "mongodb://172.20.3.41";
             settings.DatabaseName = "monitor_settings";
@@ -29,7 +26,7 @@ namespace MonitoringSystem.ConsoleTesting {
             emailSettings.SmtpHost = "192.168.0.123";
             emailSettings.SmtpPort = 25;
             emailSettings.FromUser = "Alert Troubleshooting";
-            emailSettings.FromAddress = "monitoralerts@s-et.com";
+            emailSettings.FromAddress = "monitoralerts@s-et.com";*/
             /*var configProvider = new DataLogConfigProvider(new MongoClient("mongodb://172.20.3.41"), settings, emailSettings);
             configProvider.DeviceName = "gasbay";
             await configProvider.Load();
@@ -45,7 +42,7 @@ namespace MonitoringSystem.ConsoleTesting {
         }
     }
 
-    public class DataLogger {
+    /*public class DataLogger {
         private MonitorDataService _dataService;
         private DataLogConfigProvider _provider;
         private AlertProcessing _alertService;
@@ -64,7 +61,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 DateTime now=DateTime.Now;
                 if (alert._id == 125) {
                     /*var state = alert.CurrentState != ActionType.Alarm ? ActionType.Alarm : ActionType.Okay;
-                    alert.CurrentState = state;*/
+                    alert.CurrentState = state;#1#
                     if (first) {
                         alerts.Add(new AlertRecord(alert,ActionType.Alarm));
                     } else {
@@ -73,7 +70,7 @@ namespace MonitoringSystem.ConsoleTesting {
                             alerts.Add(new AlertRecord(alert,ActionType.Okay));
                         } else {
                             alerts.Add(new AlertRecord(alert,ActionType.Alarm));
-                        }*/
+                        }#1#
                     }
                 } else {
                     alerts.Add(new AlertRecord(alert,ActionType.Okay));
@@ -191,7 +188,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 }
                 if (sendEmail) {
                     /*await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
-                        messageBuilder.FinishMessage());*/
+                        messageBuilder.FinishMessage());#1#
                     Console.WriteLine("Sending Email");
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         itemid = e.AlertId,
@@ -208,19 +205,19 @@ namespace MonitoringSystem.ConsoleTesting {
             //Console.Clear();
             /*Console.WriteLine("New Alerts:");
             Console.WriteLine(newAlertTable.ToMinimalString());
-            Console.WriteLine();*/
+            Console.WriteLine();#1#
             Console.WriteLine("Active Alerts");
             Console.WriteLine(activeTable.ToMinimalString());
             Console.WriteLine();
             /*Console.WriteLine("Resend Alerts");
             Console.WriteLine(resendTable.ToMinimalString());
-            Console.WriteLine();*/
+            Console.WriteLine();#1#
             /*Console.WriteLine("ChangeState Alerts");
             Console.WriteLine(newStateTable.ToMinimalString());
             Console.WriteLine();
             Console.WriteLine("Status");
             Console.WriteLine(statusTable.ToMinimalString());
-            Console.WriteLine();*/
+            Console.WriteLine();#1#
         }
         private IEnumerable<AlertRecord> Process(IList<AlertRecord> alertRecords) {
             var now = DateTime.Now;
@@ -290,7 +287,7 @@ namespace MonitoringSystem.ConsoleTesting {
         public async Task Initialize() {
             await this._alertRepo.Load();
         }
-    }
+    }*/
 } 
 
 

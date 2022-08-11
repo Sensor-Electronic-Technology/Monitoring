@@ -41,7 +41,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<OutputItem> _outputItems;
         private IMongoCollection<VirtualChannel> _virtualItems;
         private IMongoCollection<ActionItem> _actionItems;
-        private IMongoCollection<MonitorDevice> _deviceConfigurations;
 
         private IMongoCollection<AnalogReadings> _analogReadings;
         private IMongoCollection<DiscreteReadings> _discreteReadings;
@@ -66,7 +65,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._virtualItems = database.GetCollection<VirtualChannel>(this._device.CollectionNames[nameof(VirtualChannel)]);
             this._outputItems = database.GetCollection<OutputItem>(this._device.CollectionNames[nameof(OutputItem)]);
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
-            //this._deviceConfigurations = database.GetCollection<MonitorDevice>(this._device.CollectionNames[nameof(MonitorDevice)]);
         }
         
         public async Task InsertOneAsync(AlertReadings readings) {

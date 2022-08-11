@@ -9,7 +9,7 @@ using MonitoringConfig.Infrastructure.Data.Model;
 
 #nullable disable
 
-namespace MonitoringConfig.Infrastructure.Migrations
+namespace MonitoringConfig.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(FacilityContext))]
     [Migration("20220726125444_Device_AddHubAddress")]

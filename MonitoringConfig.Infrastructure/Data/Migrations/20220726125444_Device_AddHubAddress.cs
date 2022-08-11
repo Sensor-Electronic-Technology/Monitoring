@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace MonitoringConfig.Infrastructure.Migrations
+namespace MonitoringConfig.Infrastructure.Data.Migrations
 {
     public partial class Device_AddHubAddress : Migration
     {

@@ -14,7 +14,6 @@ namespace MonitoringConfig.Infrastructure.Data.Model {
         public bool Enabled { get; set; }
         public int? FacilityActionId { get; set; }
         public FacilityAction FacilityAction { get; set; }
-        
     }
 
     public class AnalogLevel : AlertLevel {

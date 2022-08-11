@@ -12,7 +12,7 @@ namespace MonitoringSystem.ConsoleTesting;
 
 public class AlertProducer {
     public static async Task Main() {
-        Dictionary<Type, string> collectionNames = new Dictionary<Type, string>();
+        /*Dictionary<Type, string> collectionNames = new Dictionary<Type, string>();
         collectionNames.Add(typeof(MonitorAlert), "alert_items");
         collectionNames.Add(typeof(ActionItem), "action_items");
         collectionNames.Add(typeof(AnalogChannel), "analog_items");
@@ -28,7 +28,7 @@ public class AlertProducer {
         collectionNames.Add(typeof(ActionReading), "action_readings");
 
         collectionNames.Add(typeof(DeviceReading), "device_readings");
-        collectionNames.Add(typeof(MonitorDevice), "device_items");
+        collectionNames.Add(typeof(MonitorDevice), "device_items");*/
 
         /*var repo = new MonitorDataService("mongodb://172.20.3.41","epi2_data", collectionNames);
         await repo.LoadAsync();
