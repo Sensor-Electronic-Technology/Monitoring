@@ -7,8 +7,12 @@
   <ItemGroup>
     <PackageReference Include="DevExpress.Blazor" Version="21.2.7" />
     <PackageReference Include="DevExpress.Blazor.Server.WebAssembly" Version="21.2.7" />
+    <PackageReference Include="MongoDB.Driver" Version="2.15.1" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="wwwroot\images\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
