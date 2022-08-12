@@ -23,17 +23,17 @@
         CloseMode="@DropDownCloseMode.Hide"
         FitToRestriction="true">
         <div class="custom-flyout-body">
-            <img src="images/Floorplan.PNG" />
+            <img src="images/FloorplanUpdateResize.PNG" />
         </div>
     </DxDropDown>
 </div >
-<div class="row status-container">
+<div class="row">
     <div class="row">
         @foreach (var status in this._statusList) {
             <StatusCard DeviceStatus="@status"/>
         }
     </div>
-    <div class="row">
+    <div class="row status-container">
         @if (this._devices == null) {
             <h4>Loading Devices, Please Wait..</h4>
         } else {
