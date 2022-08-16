@@ -17,7 +17,9 @@
 	</ItemGroup>
 	
   <ItemGroup>
+    <ProjectReference Include="..\MonitoringConfig.Data\MonitoringConfig.Data.csproj" />
     <ProjectReference Include="..\MonitoringConfig.Infrastructure\MonitoringConfig.Infrastructure.csproj" />
+      <ProjectReference Include="..\MonitoringConfig.Infrastructure\MonitoringConfig.Data.csproj" />
     <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
   </ItemGroup>
 	

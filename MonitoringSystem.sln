@@ -43,6 +43,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonitoringSystem.ConfigApi"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringWeb.TestConfig", "MonitoringWeb.TestConfig\MonitoringWeb.TestConfig.csproj", "{81EA6151-B6BE-42FE-94B6-88535D671BA2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitoringConfig.Data", "MonitoringConfig.Data\MonitoringConfig.Data.csproj", "{9EC24032-A796-4012-812C-36B928441D7E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -89,6 +91,10 @@ Global
 		{81EA6151-B6BE-42FE-94B6-88535D671BA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81EA6151-B6BE-42FE-94B6-88535D671BA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81EA6151-B6BE-42FE-94B6-88535D671BA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9EC24032-A796-4012-812C-36B928441D7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EC24032-A796-4012-812C-36B928441D7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EC24032-A796-4012-812C-36B928441D7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EC24032-A796-4012-812C-36B928441D7E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -104,6 +110,7 @@ Global
 		{B0B30811-997D-49F2-B783-3D8FCDAE1E96} = {5B2E1BB3-86E5-4C0C-8B2F-7A74B15818E5}
 		{1131FAB9-01F8-4DC8-BBDC-4B494E5D4ADF} = {4EAC5195-C134-4FD8-955B-0A3FC69DE50B}
 		{81EA6151-B6BE-42FE-94B6-88535D671BA2} = {5B2E1BB3-86E5-4C0C-8B2F-7A74B15818E5}
+		{9EC24032-A796-4012-812C-36B928441D7E} = {4EAC5195-C134-4FD8-955B-0A3FC69DE50B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1E2B0F8D-F1CD-4933-8EB8-770DED0DB5FF}
