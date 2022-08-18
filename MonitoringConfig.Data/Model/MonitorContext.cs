@@ -9,7 +9,7 @@ public class MonitorContext:DbContext {
     public DbSet<Alert> Alerts { get; set; }
     public DbSet<AlertLevel> AlertLevels { get; set; }
     public DbSet<FacilityAction> FacilityActions { get; set; }
-    public DbSet<AlertLevelAction> AlertLevelActions { get; set; }
+    public DbSet<DeviceAction> DeviceActions { get; set; }
     public DbSet<ActionOutput> ActionOutputs { get; set; }
     public DbSet<Sensor> Sensors { get; set; }
     public DbSet<NetworkConfiguration> NetworkConfigurations { get; set; }
@@ -36,8 +36,20 @@ public class MonitorContext:DbContext {
         builder.Entity<DiscreteAlert>().HasBaseType<Alert>();
         builder.Entity<AnalogAlert>().HasBaseType<Alert>();
 
-        builder.Entity<DiscrteLevel>().HasBaseType<AlertLevel>();
+        builder.Entity<DiscreteLevel>().HasBaseType<AlertLevel>();
         builder.Entity<AnalogLevel>().HasBaseType<AlertLevel>();
+
+        builder.Entity<Device>().HasKey(e => e.Id);
+        builder.Entity<Channel>().HasKey(e => e.Id);
+        builder.Entity<FacilityAction>().HasKey(e=>e.Id);
+        builder.Entity<DeviceAction>().HasKey(e=>e.Id);
+        builder.Entity<ActionOutput>().HasKey(e => e.Id);
+        builder.Entity<Sensor>().HasKey(e=>e.Id);
+        builder.Entity<NetworkConfiguration>().HasKey(e => e.Id);
+        builder.Entity<ModbusConfiguration>().HasKey(e=>e.Id);
+        builder.Entity<ModbusChannelRegisterMap>().HasKey(e=>e.Id);
+        builder.Entity<Alert>().HasKey(e => e.Id);
+        builder.Entity<AlertLevel>().HasKey(e=>e.Id);
 
         builder.Entity<Channel>()
             .OwnsOne(e => e.ChannelAddress);
@@ -68,9 +80,14 @@ public class MonitorContext:DbContext {
             .HasOne(e => e.ChannelRegisterMap)
             .WithOne(e => e.ModbusDevice)
             .HasForeignKey<ModbusChannelRegisterMap>(e => e.ModbusDeviceId);
+
+        builder.Entity<MonitorBox>()
+            .HasMany(e => e.DeviceActions)
+            .WithOne(e => e.MonitorBox)
+            .HasForeignKey(e => e.MonitorBoxId);
         
         //Channel Configuration
-
+        
         builder.Entity<InputChannel>()
             .HasOne(e => e.Alert)
             .WithOne(e => e.InputChannel)
@@ -80,36 +97,43 @@ public class MonitorContext:DbContext {
             .HasOne(e => e.Sensor)
             .WithMany(e => e.AnalogInputs)
             .HasForeignKey(e => e.SensorId);
+
+        builder.Entity<DiscreteOutput>()
+            .HasMany(e => e.ActionOutputs)
+            .WithOne(e => e.DiscreteOutput)
+            .HasForeignKey(e => e.DiscreteOutputId);
         
         //Alert Configuration
-
+        
         builder.Entity<AnalogAlert>()
             .HasMany(e => e.AlertLevels)
-            .WithOne(e => e.AnalogAlert)
-            .HasForeignKey(e => e.AnalogAlertId)
+            .WithOne(e => e.Alert as AnalogAlert)
+            .HasForeignKey(e => e.AlertId)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.Entity<DiscreteAlert>()
             .HasOne(e => e.AlertLevel)
-            .WithOne(e => e.DiscreteAlert)
-            .HasForeignKey<DiscrteLevel>(e => e.DiscreteAlertId)
+            .WithOne(e => e.Alert as DiscreteAlert)
+            .HasForeignKey<DiscreteLevel>(e => e.AlertId)
             .OnDelete(DeleteBehavior.NoAction);
         
         //Action & AlertLevel Configuration
-        builder.Entity<FacilityAction>()
-            .HasMany(e => e.AlertLevelActions)
-            .WithOne(e => e.FacilityAction)
+        builder.Entity<DeviceAction>()
+            .HasMany(e => e.AlertLevels)
+            .WithOne(e => e.DeviceAction)
+            .HasForeignKey(e => e.DeviceActionId);
+
+        builder.Entity<DeviceAction>()
+            .HasOne(e => e.FacilityAction)
+            .WithMany(e => e.DeviceActions)
             .HasForeignKey(e => e.FacilityActionId);
 
-        builder.Entity<AlertLevel>()
-            .HasOne(e => e.AlertLevelAction)
-            .WithOne(e => e.AlertLevel)
-            .HasForeignKey<AlertLevelAction>(e => e.AlertLevelId);
-
-        builder.Entity<AlertLevelAction>()
+        builder.Entity<DeviceAction>()
             .HasMany(e => e.ActionOutputs)
-            .WithOne(e => e.AlertLevelAction)
-            .HasForeignKey(e => e.AlertLevelActionId);
+            .WithOne(e => e.DeviceAction)
+            .HasForeignKey(e => e.DeviceActionId)
+            .OnDelete(DeleteBehavior.NoAction);
+        
     }
     
 }

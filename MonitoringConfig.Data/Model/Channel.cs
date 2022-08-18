@@ -21,7 +21,9 @@ public class InputChannel:Channel {
     public Alert? Alert { get; set; }
 }
 
-public class OutputChannel :Channel { }
+public class OutputChannel : Channel {
+    public ICollection<ActionOutput> ActionOutputs { get; set; } = new List<ActionOutput>();
+}
 
 public class AnalogInput:InputChannel{
     public Guid SensorId { get; set; }

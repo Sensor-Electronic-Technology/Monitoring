@@ -159,7 +159,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 @"C:\MonitorFiles\gasbay_discrete.csv");*/
 
             //await TestSmptEmail();
-            await RemoteAlertTesting();
+            //await RemoteAlertTesting();
         }
 
         static async Task RemoteAlertTesting() {

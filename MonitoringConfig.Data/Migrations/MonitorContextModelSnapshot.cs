@@ -28,7 +28,7 @@ namespace MonitoringConfig.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AlertLevelActionId")
+                    b.Property<Guid>("DeviceActionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("DiscreteOutputId")
@@ -42,7 +42,7 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AlertLevelActionId");
+                    b.HasIndex("DeviceActionId");
 
                     b.HasIndex("DiscreteOutputId");
 
@@ -58,8 +58,8 @@ namespace MonitoringConfig.Data.Migrations
                     b.Property<bool>("Bypass")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("BypassResetTime")
-                        .HasColumnType("bit");
+                    b.Property<int>("BypassResetTime")
+                        .HasColumnType("int");
 
                     b.Property<string>("Discriminator")
                         .IsRequired()
@@ -91,11 +91,17 @@ namespace MonitoringConfig.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("AlertId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("Bypass")
                         .HasColumnType("bit");
 
                     b.Property<int>("BypassResetTime")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("DeviceActionId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Discriminator")
                         .IsRequired()
@@ -106,34 +112,11 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DeviceActionId");
+
                     b.ToTable("AlertLevels");
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("AlertLevel");
-                });
-
-            modelBuilder.Entity("MonitoringConfig.Data.Model.AlertLevelAction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AlertLevelId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("FacilityActionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AlertLevelId")
-                        .IsUnique();
-
-                    b.HasIndex("FacilityActionId");
-
-                    b.ToTable("AlertLevelActions");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.Channel", b =>
@@ -211,6 +194,33 @@ namespace MonitoringConfig.Data.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("Device");
                 });
 
+            modelBuilder.Entity("MonitoringConfig.Data.Model.DeviceAction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FacilityActionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("FirmwareId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("MonitorBoxId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FacilityActionId");
+
+                    b.HasIndex("MonitorBoxId");
+
+                    b.ToTable("DeviceActions");
+                });
+
             modelBuilder.Entity("MonitoringConfig.Data.Model.FacilityAction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -224,9 +234,6 @@ namespace MonitoringConfig.Data.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("EmailPeriod")
-                        .HasColumnType("int");
-
-                    b.Property<int>("FirmwareId")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
@@ -406,13 +413,10 @@ namespace MonitoringConfig.Data.Migrations
                 {
                     b.HasBaseType("MonitoringConfig.Data.Model.AlertLevel");
 
-                    b.Property<Guid>("AnalogAlertId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<double>("SetPoint")
                         .HasColumnType("float");
 
-                    b.HasIndex("AnalogAlertId");
+                    b.HasIndex("AlertId");
 
                     b.HasDiscriminator().HasValue("AnalogLevel");
                 });
@@ -424,21 +428,18 @@ namespace MonitoringConfig.Data.Migrations
                     b.HasDiscriminator().HasValue("DiscreteAlert");
                 });
 
-            modelBuilder.Entity("MonitoringConfig.Data.Model.DiscrteLevel", b =>
+            modelBuilder.Entity("MonitoringConfig.Data.Model.DiscreteLevel", b =>
                 {
                     b.HasBaseType("MonitoringConfig.Data.Model.AlertLevel");
-
-                    b.Property<Guid>("DiscreteAlertId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("TriggerOn")
                         .HasColumnType("int");
 
-                    b.HasIndex("DiscreteAlertId")
+                    b.HasIndex("AlertId")
                         .IsUnique()
-                        .HasFilter("[DiscreteAlertId] IS NOT NULL");
+                        .HasDatabaseName("IX_AlertLevels_AlertId1");
 
-                    b.HasDiscriminator().HasValue("DiscrteLevel");
+                    b.HasDiscriminator().HasValue("DiscreteLevel");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.InputChannel", b =>
@@ -507,19 +508,19 @@ namespace MonitoringConfig.Data.Migrations
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.ActionOutput", b =>
                 {
-                    b.HasOne("MonitoringConfig.Data.Model.AlertLevelAction", "AlertLevelAction")
+                    b.HasOne("MonitoringConfig.Data.Model.DeviceAction", "DeviceAction")
                         .WithMany("ActionOutputs")
-                        .HasForeignKey("AlertLevelActionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("DeviceActionId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("MonitoringConfig.Data.Model.DiscreteOutput", "DiscreteOutput")
-                        .WithMany()
+                        .WithMany("ActionOutputs")
                         .HasForeignKey("DiscreteOutputId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AlertLevelAction");
+                    b.Navigation("DeviceAction");
 
                     b.Navigation("DiscreteOutput");
                 });
@@ -559,23 +560,15 @@ namespace MonitoringConfig.Data.Migrations
                     b.Navigation("ModbusAddress");
                 });
 
-            modelBuilder.Entity("MonitoringConfig.Data.Model.AlertLevelAction", b =>
+            modelBuilder.Entity("MonitoringConfig.Data.Model.AlertLevel", b =>
                 {
-                    b.HasOne("MonitoringConfig.Data.Model.AlertLevel", "AlertLevel")
-                        .WithOne("AlertLevelAction")
-                        .HasForeignKey("MonitoringConfig.Data.Model.AlertLevelAction", "AlertLevelId")
+                    b.HasOne("MonitoringConfig.Data.Model.DeviceAction", "DeviceAction")
+                        .WithMany("AlertLevels")
+                        .HasForeignKey("DeviceActionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MonitoringConfig.Data.Model.FacilityAction", "FacilityAction")
-                        .WithMany("AlertLevelActions")
-                        .HasForeignKey("FacilityActionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AlertLevel");
-
-                    b.Navigation("FacilityAction");
+                    b.Navigation("DeviceAction");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.Channel", b =>
@@ -634,6 +627,25 @@ namespace MonitoringConfig.Data.Migrations
                     b.Navigation("ModbusDevice");
                 });
 
+            modelBuilder.Entity("MonitoringConfig.Data.Model.DeviceAction", b =>
+                {
+                    b.HasOne("MonitoringConfig.Data.Model.FacilityAction", "FacilityAction")
+                        .WithMany("DeviceActions")
+                        .HasForeignKey("FacilityActionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MonitoringConfig.Data.Model.MonitorBox", "MonitorBox")
+                        .WithMany("DeviceActions")
+                        .HasForeignKey("MonitorBoxId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FacilityAction");
+
+                    b.Navigation("MonitorBox");
+                });
+
             modelBuilder.Entity("MonitoringConfig.Data.Model.ModbusChannelRegisterMap", b =>
                 {
                     b.HasOne("MonitoringConfig.Data.Model.ModbusDevice", "ModbusDevice")
@@ -669,24 +681,25 @@ namespace MonitoringConfig.Data.Migrations
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.AnalogLevel", b =>
                 {
-                    b.HasOne("MonitoringConfig.Data.Model.AnalogAlert", "AnalogAlert")
+                    b.HasOne("MonitoringConfig.Data.Model.AnalogAlert", "Alert")
                         .WithMany("AlertLevels")
-                        .HasForeignKey("AnalogAlertId")
+                        .HasForeignKey("AlertId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("AnalogAlert");
+                    b.Navigation("Alert");
                 });
 
-            modelBuilder.Entity("MonitoringConfig.Data.Model.DiscrteLevel", b =>
+            modelBuilder.Entity("MonitoringConfig.Data.Model.DiscreteLevel", b =>
                 {
-                    b.HasOne("MonitoringConfig.Data.Model.DiscreteAlert", "DiscreteAlert")
+                    b.HasOne("MonitoringConfig.Data.Model.DiscreteAlert", "Alert")
                         .WithOne("AlertLevel")
-                        .HasForeignKey("MonitoringConfig.Data.Model.DiscrteLevel", "DiscreteAlertId")
+                        .HasForeignKey("MonitoringConfig.Data.Model.DiscreteLevel", "AlertId")
                         .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_AlertLevels_Alerts_AlertId1");
 
-                    b.Navigation("DiscreteAlert");
+                    b.Navigation("Alert");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.AnalogInput", b =>
@@ -700,19 +713,16 @@ namespace MonitoringConfig.Data.Migrations
                     b.Navigation("Sensor");
                 });
 
-            modelBuilder.Entity("MonitoringConfig.Data.Model.AlertLevel", b =>
-                {
-                    b.Navigation("AlertLevelAction");
-                });
-
-            modelBuilder.Entity("MonitoringConfig.Data.Model.AlertLevelAction", b =>
+            modelBuilder.Entity("MonitoringConfig.Data.Model.DeviceAction", b =>
                 {
                     b.Navigation("ActionOutputs");
+
+                    b.Navigation("AlertLevels");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.FacilityAction", b =>
                 {
-                    b.Navigation("AlertLevelActions");
+                    b.Navigation("DeviceActions");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.Sensor", b =>
@@ -744,6 +754,16 @@ namespace MonitoringConfig.Data.Migrations
                     b.Navigation("ModbusConfiguration");
 
                     b.Navigation("NetworkConfiguration");
+                });
+
+            modelBuilder.Entity("MonitoringConfig.Data.Model.DiscreteOutput", b =>
+                {
+                    b.Navigation("ActionOutputs");
+                });
+
+            modelBuilder.Entity("MonitoringConfig.Data.Model.MonitorBox", b =>
+                {
+                    b.Navigation("DeviceActions");
                 });
 #pragma warning restore 612, 618
         }

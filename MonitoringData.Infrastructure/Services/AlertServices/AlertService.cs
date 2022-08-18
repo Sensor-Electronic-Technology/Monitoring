@@ -165,6 +165,7 @@ namespace MonitoringData.Infrastructure.Services {
                                     if (actionItem != null) {
                                         if ((now - activeAlert.LastAlert).TotalMinutes >= actionItem.EmailPeriod) {
                                             alert.AlertAction = AlertAction.Resend;
+                                            activeAlert.LastAlert = now;
                                             alert.LastAlert = now;
                                         } else {
                                             alert.AlertAction = AlertAction.Nothing;

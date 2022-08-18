@@ -33,7 +33,6 @@ namespace MonitoringConfig.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FirmwareId = table.Column<int>(type: "int", nullable: false),
                     EmailEnabled = table.Column<bool>(type: "bit", nullable: false),
                     EmailPeriod = table.Column<int>(type: "int", nullable: false),
                     ActionType = table.Column<int>(type: "int", nullable: false)
@@ -44,7 +43,7 @@ namespace MonitoringConfig.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Sensor",
+                name: "Sensors",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -61,11 +60,11 @@ namespace MonitoringConfig.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Sensor", x => x.Id);
+                    table.PrimaryKey("PK_Sensors", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ModbusChannelRegisterMap",
+                name: "ModbusChannelRegisterMaps",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -85,9 +84,9 @@ namespace MonitoringConfig.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ModbusChannelRegisterMap", x => x.Id);
+                    table.PrimaryKey("PK_ModbusChannelRegisterMaps", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ModbusChannelRegisterMap_Devices_ModbusDeviceId",
+                        name: "FK_ModbusChannelRegisterMaps_Devices_ModbusDeviceId",
                         column: x => x.ModbusDeviceId,
                         principalTable: "Devices",
                         principalColumn: "Id",
@@ -95,7 +94,7 @@ namespace MonitoringConfig.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ModbusConfiguration",
+                name: "ModbusConfigurations",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -107,9 +106,9 @@ namespace MonitoringConfig.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ModbusConfiguration", x => x.Id);
+                    table.PrimaryKey("PK_ModbusConfigurations", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ModbusConfiguration_Devices_ModbusDeviceId",
+                        name: "FK_ModbusConfigurations_Devices_ModbusDeviceId",
                         column: x => x.ModbusDeviceId,
                         principalTable: "Devices",
                         principalColumn: "Id",
@@ -117,7 +116,7 @@ namespace MonitoringConfig.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "NetworkConfiguration",
+                name: "NetworkConfigurations",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -131,11 +130,38 @@ namespace MonitoringConfig.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_NetworkConfiguration", x => x.Id);
+                    table.PrimaryKey("PK_NetworkConfigurations", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_NetworkConfiguration_Devices_ModbusDeviceId",
+                        name: "FK_NetworkConfigurations_Devices_ModbusDeviceId",
                         column: x => x.ModbusDeviceId,
                         principalTable: "Devices",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DeviceActions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FirmwareId = table.Column<int>(type: "int", nullable: false),
+                    MonitorBoxId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FacilityActionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DeviceActions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DeviceActions_Devices_MonitorBoxId",
+                        column: x => x.MonitorBoxId,
+                        principalTable: "Devices",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_DeviceActions_FacilityActions_FacilityActionId",
+                        column: x => x.FacilityActionId,
+                        principalTable: "FacilityActions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -171,11 +197,37 @@ namespace MonitoringConfig.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Channels_Sensor_SensorId",
+                        name: "FK_Channels_Sensors_SensorId",
                         column: x => x.SensorId,
-                        principalTable: "Sensor",
+                        principalTable: "Sensors",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ActionOutputs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DiscreteOutputId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DeviceActionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OnLevel = table.Column<int>(type: "int", nullable: false),
+                    OffLevel = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActionOutputs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActionOutputs_Channels_DiscreteOutputId",
+                        column: x => x.DiscreteOutputId,
+                        principalTable: "Channels",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ActionOutputs_DeviceActions_DeviceActionId",
+                        column: x => x.DeviceActionId,
+                        principalTable: "DeviceActions",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -185,7 +237,7 @@ namespace MonitoringConfig.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Bypass = table.Column<bool>(type: "bit", nullable: false),
-                    BypassResetTime = table.Column<bool>(type: "bit", nullable: false),
+                    BypassResetTime = table.Column<int>(type: "int", nullable: false),
                     Enabled = table.Column<bool>(type: "bit", nullable: false),
                     ModbusAddress_Address = table.Column<int>(type: "int", nullable: true),
                     ModbusAddress_RegisterLength = table.Column<int>(type: "int", nullable: true),
@@ -205,91 +257,44 @@ namespace MonitoringConfig.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AlertLevel",
+                name: "AlertLevels",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Bypass = table.Column<bool>(type: "bit", nullable: false),
                     BypassResetTime = table.Column<int>(type: "int", nullable: false),
                     Enabled = table.Column<bool>(type: "bit", nullable: false),
+                    AlertId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DeviceActionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Discriminator = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SetPoint = table.Column<double>(type: "float", nullable: true),
-                    AnalogAlertId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    TriggerOn = table.Column<int>(type: "int", nullable: true),
-                    DiscreteAlertId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    TriggerOn = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AlertLevel", x => x.Id);
+                    table.PrimaryKey("PK_AlertLevels", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AlertLevel_Alerts_AnalogAlertId",
-                        column: x => x.AnalogAlertId,
+                        name: "FK_AlertLevels_Alerts_AlertId",
+                        column: x => x.AlertId,
                         principalTable: "Alerts",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_AlertLevel_Alerts_DiscreteAlertId",
-                        column: x => x.DiscreteAlertId,
+                        name: "FK_AlertLevels_Alerts_AlertId1",
+                        column: x => x.AlertId,
                         principalTable: "Alerts",
                         principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AlertLevelActions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AlertLevelId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FacilityActionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AlertLevelActions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AlertLevelActions_AlertLevel_AlertLevelId",
-                        column: x => x.AlertLevelId,
-                        principalTable: "AlertLevel",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_AlertLevelActions_FacilityActions_FacilityActionId",
-                        column: x => x.FacilityActionId,
-                        principalTable: "FacilityActions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ActionOutputs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DiscreteOutputId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AlertLevelActionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OnLevel = table.Column<int>(type: "int", nullable: false),
-                    OffLevel = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ActionOutputs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ActionOutputs_AlertLevelActions_AlertLevelActionId",
-                        column: x => x.AlertLevelActionId,
-                        principalTable: "AlertLevelActions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ActionOutputs_Channels_DiscreteOutputId",
-                        column: x => x.DiscreteOutputId,
-                        principalTable: "Channels",
+                        name: "FK_AlertLevels_DeviceActions_DeviceActionId",
+                        column: x => x.DeviceActionId,
+                        principalTable: "DeviceActions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActionOutputs_AlertLevelActionId",
+                name: "IX_ActionOutputs_DeviceActionId",
                 table: "ActionOutputs",
-                column: "AlertLevelActionId");
+                column: "DeviceActionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActionOutputs_DiscreteOutputId",
@@ -297,27 +302,20 @@ namespace MonitoringConfig.Data.Migrations
                 column: "DiscreteOutputId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AlertLevel_AnalogAlertId",
-                table: "AlertLevel",
-                column: "AnalogAlertId");
+                name: "IX_AlertLevels_AlertId",
+                table: "AlertLevels",
+                column: "AlertId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AlertLevel_DiscreteAlertId",
-                table: "AlertLevel",
-                column: "DiscreteAlertId",
-                unique: true,
-                filter: "[DiscreteAlertId] IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AlertLevelActions_AlertLevelId",
-                table: "AlertLevelActions",
-                column: "AlertLevelId",
+                name: "IX_AlertLevels_AlertId1",
+                table: "AlertLevels",
+                column: "AlertId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_AlertLevelActions_FacilityActionId",
-                table: "AlertLevelActions",
-                column: "FacilityActionId");
+                name: "IX_AlertLevels_DeviceActionId",
+                table: "AlertLevels",
+                column: "DeviceActionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Alerts_InputChannelId",
@@ -336,20 +334,30 @@ namespace MonitoringConfig.Data.Migrations
                 column: "SensorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ModbusChannelRegisterMap_ModbusDeviceId",
-                table: "ModbusChannelRegisterMap",
+                name: "IX_DeviceActions_FacilityActionId",
+                table: "DeviceActions",
+                column: "FacilityActionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeviceActions_MonitorBoxId",
+                table: "DeviceActions",
+                column: "MonitorBoxId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ModbusChannelRegisterMaps_ModbusDeviceId",
+                table: "ModbusChannelRegisterMaps",
                 column: "ModbusDeviceId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ModbusConfiguration_ModbusDeviceId",
-                table: "ModbusConfiguration",
+                name: "IX_ModbusConfigurations_ModbusDeviceId",
+                table: "ModbusConfigurations",
                 column: "ModbusDeviceId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_NetworkConfiguration_ModbusDeviceId",
-                table: "NetworkConfiguration",
+                name: "IX_NetworkConfigurations_ModbusDeviceId",
+                table: "NetworkConfigurations",
                 column: "ModbusDeviceId",
                 unique: true);
         }
@@ -360,34 +368,34 @@ namespace MonitoringConfig.Data.Migrations
                 name: "ActionOutputs");
 
             migrationBuilder.DropTable(
-                name: "ModbusChannelRegisterMap");
+                name: "AlertLevels");
 
             migrationBuilder.DropTable(
-                name: "ModbusConfiguration");
+                name: "ModbusChannelRegisterMaps");
 
             migrationBuilder.DropTable(
-                name: "NetworkConfiguration");
+                name: "ModbusConfigurations");
 
             migrationBuilder.DropTable(
-                name: "AlertLevelActions");
-
-            migrationBuilder.DropTable(
-                name: "AlertLevel");
-
-            migrationBuilder.DropTable(
-                name: "FacilityActions");
+                name: "NetworkConfigurations");
 
             migrationBuilder.DropTable(
                 name: "Alerts");
 
             migrationBuilder.DropTable(
+                name: "DeviceActions");
+
+            migrationBuilder.DropTable(
                 name: "Channels");
+
+            migrationBuilder.DropTable(
+                name: "FacilityActions");
 
             migrationBuilder.DropTable(
                 name: "Devices");
 
             migrationBuilder.DropTable(
-                name: "Sensor");
+                name: "Sensors");
         }
     }
 }

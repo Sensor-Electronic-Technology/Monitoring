@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-	<StartupObject>MonitoringSystem.ConsoleTesting.TestNewModel</StartupObject>
+	<StartupObject>MonitoringSystem.ConsoleTesting.FacilityParser</StartupObject>
   </PropertyGroup>
 
 	<ItemGroup>
@@ -19,7 +19,6 @@
   <ItemGroup>
     <ProjectReference Include="..\MonitoringConfig.Data\MonitoringConfig.Data.csproj" />
     <ProjectReference Include="..\MonitoringConfig.Infrastructure\MonitoringConfig.Infrastructure.csproj" />
-      <ProjectReference Include="..\MonitoringConfig.Infrastructure\MonitoringConfig.Data.csproj" />
     <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
   </ItemGroup>
 	
