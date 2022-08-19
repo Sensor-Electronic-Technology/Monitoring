@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MonitoringConfig.Data.Model;
 
@@ -11,9 +12,10 @@ using MonitoringConfig.Data.Model;
 namespace MonitoringConfig.Data.Migrations
 {
     [DbContext(typeof(MonitorContext))]
-    partial class MonitorContextModelSnapshot : ModelSnapshot
+    [Migration("20220818204830_RemoveAnalogSensorConstraint")]
+    partial class RemoveAnalogSensorConstraint
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -91,13 +93,16 @@ namespace MonitoringConfig.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("AlertId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("Bypass")
                         .HasColumnType("bit");
 
                     b.Property<int>("BypassResetTime")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("DeviceActionId")
+                    b.Property<Guid>("DeviceActionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Discriminator")
@@ -410,13 +415,10 @@ namespace MonitoringConfig.Data.Migrations
                 {
                     b.HasBaseType("MonitoringConfig.Data.Model.AlertLevel");
 
-                    b.Property<Guid>("AnalogAlertId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<double>("SetPoint")
                         .HasColumnType("float");
 
-                    b.HasIndex("AnalogAlertId");
+                    b.HasIndex("AlertId");
 
                     b.HasDiscriminator().HasValue("AnalogLevel");
                 });
@@ -432,15 +434,12 @@ namespace MonitoringConfig.Data.Migrations
                 {
                     b.HasBaseType("MonitoringConfig.Data.Model.AlertLevel");
 
-                    b.Property<Guid>("DiscreteAlertId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("TriggerOn")
                         .HasColumnType("int");
 
-                    b.HasIndex("DiscreteAlertId")
+                    b.HasIndex("AlertId")
                         .IsUnique()
-                        .HasFilter("[DiscreteAlertId] IS NOT NULL");
+                        .HasDatabaseName("IX_AlertLevels_AlertId1");
 
                     b.HasDiscriminator().HasValue("DiscreteLevel");
                 });
@@ -567,7 +566,9 @@ namespace MonitoringConfig.Data.Migrations
                 {
                     b.HasOne("MonitoringConfig.Data.Model.DeviceAction", "DeviceAction")
                         .WithMany("AlertLevels")
-                        .HasForeignKey("DeviceActionId");
+                        .HasForeignKey("DeviceActionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("DeviceAction");
                 });
@@ -682,24 +683,25 @@ namespace MonitoringConfig.Data.Migrations
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.AnalogLevel", b =>
                 {
-                    b.HasOne("MonitoringConfig.Data.Model.AnalogAlert", "AnalogAlert")
+                    b.HasOne("MonitoringConfig.Data.Model.AnalogAlert", "Alert")
                         .WithMany("AlertLevels")
-                        .HasForeignKey("AnalogAlertId")
+                        .HasForeignKey("AlertId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("AnalogAlert");
+                    b.Navigation("Alert");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.DiscreteLevel", b =>
                 {
-                    b.HasOne("MonitoringConfig.Data.Model.DiscreteAlert", "DiscreteAlert")
+                    b.HasOne("MonitoringConfig.Data.Model.DiscreteAlert", "Alert")
                         .WithOne("AlertLevel")
-                        .HasForeignKey("MonitoringConfig.Data.Model.DiscreteLevel", "DiscreteAlertId")
+                        .HasForeignKey("MonitoringConfig.Data.Model.DiscreteLevel", "AlertId")
                         .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_AlertLevels_Alerts_AlertId1");
 
-                    b.Navigation("DiscreteAlert");
+                    b.Navigation("Alert");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.AnalogInput", b =>

@@ -26,7 +26,7 @@ public class OutputChannel : Channel {
 }
 
 public class AnalogInput:InputChannel{
-    public Guid SensorId { get; set; }
+    public Guid? SensorId { get; set; }
     public Sensor? Sensor { get; set; }
 }
 

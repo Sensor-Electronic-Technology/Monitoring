@@ -4,6 +4,7 @@ using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MonitoringSystem.Shared.SignalR;
 
 namespace MonitoringData.Infrastructure.Services {
@@ -115,7 +116,7 @@ namespace MonitoringData.Infrastructure.Services {
                         messageBuilder.FinishMessage());
                     this._logger.LogInformation("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
-                        itemid = e.AlertId,
+                        itemid = ObjectId.Parse(e.AlertId),
                         reading = e.ChannelReading,
                         state = e.CurrentState
                     });

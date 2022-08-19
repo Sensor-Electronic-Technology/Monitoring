@@ -7,8 +7,8 @@
         Nothing
     }
     public class AlertRecord {
-        public int AlertId { get; set; }
-        public int ChannelId { get; set; }
+        public string AlertId { get; set; }
+        public string ChannelId { get; set; }
         public string DisplayName { get; set; }
         public ActionType CurrentState { get; set; }
         public AlertAction AlertAction { get; set; }
@@ -24,8 +24,8 @@
 
         public AlertRecord(MonitorAlert alert,ActionType reading) {
             this.CurrentState = reading;
-            this.AlertId = alert._id;
-            this.ChannelId = alert.channelId;
+            this.AlertId = alert._id.ToString();
+            this.ChannelId = alert.channelId.ToString();
             this.DisplayName = alert.displayName;
             this.CurrentState = reading;
             this.Enabled = alert.enabled;
@@ -37,8 +37,8 @@
 
         public AlertRecord(MonitorAlert alert, float reading, ActionType state) {
             this.CurrentState = state;
-            this.AlertId = alert._id;
-            this.ChannelId = alert.channelId;
+            this.AlertId = alert._id.ToString();
+            this.ChannelId = alert.channelId.ToString();
             this.DisplayName = alert.displayName;
             this.Enabled = alert.enabled;
             this.AlertAction = AlertAction.Nothing;
@@ -49,8 +49,8 @@
 
         public AlertRecord() {
             this.ChannelReading = 0.00f;
-            this.AlertId = -1;
-            this.ChannelId = -1;
+            this.AlertId = "-1";
+            this.ChannelId = "-1";
             this.DisplayName = "Not Set";
             this.CurrentState = ActionType.Okay;
             this.Enabled = false;

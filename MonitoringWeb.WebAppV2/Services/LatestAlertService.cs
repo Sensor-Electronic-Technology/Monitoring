@@ -30,11 +30,11 @@ namespace MonitoringWeb.WebAppV2.Services;
             foreach(var gasAlert in gasAlerts) {
                 var alerts=gasAlert.readings.Where(e => e.state != ActionType.Okay && e.state != ActionType.Custom);
                 foreach(var alert in alerts) {
-                    var item = gasAlertItems.FirstOrDefault(e => e._id == alert.itemid);
+                    var item = gasAlertItems.FirstOrDefault(e => e._id== alert.itemid);
                     if (item != null) {
                         var temp = new AlertDto() {
-                            channelId = item.channelId,
-                            alertId = alert.itemid,
+                            channelId = item.channelId.ToString(),
+                            alertId = alert.itemid.ToString(),
                             Device = "Gasbay",
                             database="gasbay_data",
                             Name =item.displayName,
@@ -60,8 +60,8 @@ namespace MonitoringWeb.WebAppV2.Services;
                     var item = e1AlertItems.FirstOrDefault(e => e._id == alert.itemid);
                     if (item != null) {
                         var temp = new AlertDto() {
-                            channelId = item.channelId,
-                            alertId = alert.itemid,
+                            channelId = item.channelId.ToString(),
+                            alertId = alert.itemid.ToString(),
                             Device = "Epi1",
                             database = "epi1_data",
                             Name = item.displayName,
@@ -87,8 +87,8 @@ namespace MonitoringWeb.WebAppV2.Services;
                     var item = e2AlertItems.FirstOrDefault(e => e._id == alert.itemid);
                     if (item != null) {
                         var temp = new AlertDto() {
-                            channelId = item.channelId,
-                            alertId = alert.itemid,
+                            channelId = item.channelId.ToString(),
+                            alertId = alert.itemid.ToString(),
                             Device = "Epi2",
                             database="epi2_data",
                             Name = item.displayName,

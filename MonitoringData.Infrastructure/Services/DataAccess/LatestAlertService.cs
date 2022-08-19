@@ -27,8 +27,8 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
                     var item = gasAlertItems.FirstOrDefault(e => e._id == alert.itemid);
                     if (item != null) {
                         var temp = new AlertDto() {
-                            channelId = item.channelId,
-                            alertId = alert.itemid,
+                            channelId = item.channelId.ToString(),
+                            alertId = alert.itemid.ToString(),
                             Device = "Gasbay",
                             database="gasbay_data",
                             Name =item.displayName,
@@ -54,8 +54,8 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
                     var item = e1AlertItems.FirstOrDefault(e => e._id == alert.itemid);
                     if (item != null) {
                         var temp = new AlertDto() {
-                            channelId = item.channelId,
-                            alertId = alert.itemid,
+                            channelId = item.channelId.ToString(),
+                            alertId = alert.itemid.ToString(),
                             Device = "Epi1",
                             database = "epi1_data",
                             Name = item.displayName,
@@ -81,8 +81,8 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
                     var item = e2AlertItems.FirstOrDefault(e => e._id == alert.itemid);
                     if (item != null) {
                         var temp = new AlertDto() {
-                            channelId = item.channelId,
-                            alertId = alert.itemid,
+                            channelId = item.channelId.ToString(),
+                            alertId = alert.itemid.ToString(),
                             Device = "Epi2",
                             database="epi2_data",
                             Name = item.displayName,

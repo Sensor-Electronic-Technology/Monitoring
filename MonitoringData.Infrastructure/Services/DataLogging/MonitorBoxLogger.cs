@@ -112,7 +112,7 @@ namespace MonitoringData.Infrastructure.Services {
                         record = true;
                     }
                     readings.Add(analogReading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.itemid);
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.itemid.ToString());
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = (float)analogReading.value;
                     } else {
@@ -143,7 +143,7 @@ namespace MonitoringData.Infrastructure.Services {
                         record = true;
                     }              
                     readings.Add(reading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid);
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid.ToString());
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = reading.value == true ? 1.00f : 0.00f;
                     } else {
@@ -173,7 +173,7 @@ namespace MonitoringData.Infrastructure.Services {
                     }
                     var alert = this._dataService.MonitorAlerts.FirstOrDefault(e => e._id == reading.itemid);
                     readings.Add(reading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid);
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid.ToString());
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = reading.value == true ? 1.00f : 0.00f;
                     } else {

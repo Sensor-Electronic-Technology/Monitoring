@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace MonitoringSystem.Shared.Data {
     public class MonitorItem {
-        public int _id { get; set; }
+        public ObjectId _id { get; set; }
         public string identifier { get; set; }
         public bool display { get; set; }
         public ObjectId deviceId { get; set; }
     }
 
     public class AnalogChannel : MonitorItem {
-        public int sensorId { get; set; }
+        public ObjectId sensorId { get; set; }
         public float recordThreshold { get; set; }
         public int factor { get; set; }
         public int reg { get; set; }

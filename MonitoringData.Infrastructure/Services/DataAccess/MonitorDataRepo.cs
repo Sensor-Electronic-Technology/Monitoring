@@ -17,7 +17,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         Task InsertOneAsync(DiscreteReadings readings);
         Task InsertOneAsync(VirtualReadings readings);
         Task InsertDeviceReadingAsync(DeviceReading reading);
-        Task UpdateAlert(int alertId, UpdateDefinition<MonitorAlert> update);
         Task LoadAsync();
         Task ReloadAsync();
     }
@@ -85,10 +84,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
 
         public async Task InsertDeviceReadingAsync(DeviceReading reading) {
             await this._deviceReadings.InsertOneAsync(reading);
-        }
-
-        public async Task UpdateAlert(int alertId,UpdateDefinition<MonitorAlert> update) {
-            await this._monitorAlerts.UpdateOneAsync(e => e._id == alertId, update);
         }
 
         public async Task LoadAsync() {

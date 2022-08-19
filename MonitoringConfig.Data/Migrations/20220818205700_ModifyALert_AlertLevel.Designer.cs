@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MonitoringConfig.Data.Model;
 
@@ -11,9 +12,10 @@ using MonitoringConfig.Data.Model;
 namespace MonitoringConfig.Data.Migrations
 {
     [DbContext(typeof(MonitorContext))]
-    partial class MonitorContextModelSnapshot : ModelSnapshot
+    [Migration("20220818205700_ModifyALert_AlertLevel")]
+    partial class ModifyALert_AlertLevel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,7 +99,7 @@ namespace MonitoringConfig.Data.Migrations
                     b.Property<int>("BypassResetTime")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("DeviceActionId")
+                    b.Property<Guid>("DeviceActionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Discriminator")
@@ -567,7 +569,9 @@ namespace MonitoringConfig.Data.Migrations
                 {
                     b.HasOne("MonitoringConfig.Data.Model.DeviceAction", "DeviceAction")
                         .WithMany("AlertLevels")
-                        .HasForeignKey("DeviceActionId");
+                        .HasForeignKey("DeviceActionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("DeviceAction");
                 });

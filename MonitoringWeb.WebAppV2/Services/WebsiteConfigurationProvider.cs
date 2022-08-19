@@ -31,10 +31,6 @@ public class WebsiteConfigurationProvider:IMonitorConfigurationProvider {
         return this._loaded ? this._devices.FirstOrDefault(e => e.DeviceName == key)! : null!;
     }
 
-    public SensorType GetSensor(int key) {
-        return this._loaded ? this._sensors.FirstOrDefault(e => e._id == key)! : null!;
-    }
-
     public IEnumerable<RemoteAction> GetRemoteActions(string deviceName) {
         if (!this._loaded)
             return null;

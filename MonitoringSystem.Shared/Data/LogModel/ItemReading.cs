@@ -3,7 +3,7 @@
 
 namespace MonitoringSystem.Shared.Data {
     public class ItemReading {
-        public int itemid { get; set; }
+        public ObjectId itemid { get; set; }
     }
 
     public class AnalogReading : ItemReading {

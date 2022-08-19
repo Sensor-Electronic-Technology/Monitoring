@@ -5,13 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
-using MonitoringConfig.Infrastructure.Data;
-using MonitoringConfig.Infrastructure.Data.Model;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data;
 
 namespace MonitoringSystem.ConsoleTesting {
-    public class TestingNH {
+    /*public class TestingNH {
         public static async Task Main(string[] args) {
             await CreateNH3Channels();
         }
@@ -171,5 +169,5 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.ReadKey();
         }
 
-    }
+    }*/
 }

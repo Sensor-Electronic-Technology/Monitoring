@@ -14,9 +14,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
     public interface IAlertRepo {
         IList<ActionItem> ActionItems { get; }
         ManagedDevice ManagedDevice { get; }
-        Task<MonitorAlert> GetAlert(int alertId);
         Task LogAlerts(AlertReadings alerts);
-        Task UpdateAlert(int alertId, UpdateDefinition<MonitorAlert> update);
         Task Load();
         Task Reload();
     }
@@ -43,14 +41,6 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         
         public async Task LogAlerts(AlertReadings alerts) {
             await this._alertReadings.InsertOneAsync(alerts);
-        }
-
-        public async Task<MonitorAlert> GetAlert(int alertId) {
-            return await this._monitorAlerts.Find(e => e._id == alertId).FirstOrDefaultAsync();
-        }
-
-        public async Task UpdateAlert(int alertId,UpdateDefinition<MonitorAlert> update) {
-            await this._monitorAlerts.FindOneAndUpdateAsync(e => e._id == alertId, update);
         }
 
         public async Task Load() {

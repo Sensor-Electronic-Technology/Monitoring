@@ -2,7 +2,7 @@
 namespace MonitoringSystem.Shared.Data;
 
 public class SensorType {
-    public int _id { get; set; }
+    public ObjectId _id { get; set; }
     public string Name { get; set; }
     public string Units { get; set; }
     public double Slope { get; set; }

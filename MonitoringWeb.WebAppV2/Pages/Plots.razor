@@ -169,7 +169,7 @@
             if (this.SelectedSensor != null) {
                 this.PlotData = await this.PlotService.GetDataBySensor(this.DeviceLookup[this.SelectedDevice].Item1
                     ,start,stop,
-                    this.SelectedSensor._id);
+                    this.SelectedSensor._id.ToString());
             }
             await InvokeAsync(StateHasChanged);
         }

@@ -6,13 +6,26 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using MongoDB.Driver;
+using MonitoringSystem.DiscreteInputJson;
+using MonitoringSystem.Shared.Data;
+using Newtonsoft.Json;
+using ActionType = MonitoringConfig.Data.Model.ActionType;
+using DiscreteState = MonitoringConfig.Data.Model.DiscreteState;
+using JsonSerializer = System.Text.Json.JsonSerializer;
+using ModbusAddress = MonitoringConfig.Data.Model.ModbusAddress;
+using ModbusRegister = MonitoringConfig.Data.Model.ModbusRegister;
+using NetworkConfiguration = MonitoringConfig.Data.Model.NetworkConfiguration;
 
 namespace MonitoringSystem.ConsoleTesting {
+
+    
     public class FacilityParser {
 
-        public static string boxId = "gasbay";
+        public static string boxId = "Epi2";
         public static string boxAnalogPath = $@"C:\MonitorFiles\{boxId}\ANALOG.TXT";
         public static string boxActionPath = $@"C:\MonitorFiles\{boxId}\ACTIONS.TXT";
         public static string boxDiscretePath = $@"C:\MonitorFiles\{boxId}\DIGITAL.TXT";
@@ -22,29 +35,132 @@ namespace MonitoringSystem.ConsoleTesting {
 
         static void Main(string[] args) {
             //CreateModbusDevice();
-            //CreateFacilityActions();
-            //CreateOutputs();
+            /*CreateFacilityActions();
+            CreateSensors();*/
+            /*CreateOutputs();
             CreateDeviceActions();
+            CreateAnalogInputs();
+            CreateDiscreteInputs();
+            CreateVirtualInputs();*/
+            CreateDiscreteJson();
+            
         }
 
-        /*public static void CreateAnalogInputs() {
+        public static void UpdateMongoDiscrete() {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("epi2_data_temp");
+            var discreteCollection = database.GetCollection<DiscreteChannel>("discrete_items");
+            var alertCollection=database.GetCollection<MonitorAlert>("alert_items");
+            using var context = new MonitorContext();
+
+            var discreteInputs = context.Channels.OfType<DiscreteInput>()
+                .Include(e => e.Alert)
+                    .ThenInclude(e => ((DiscreteAlert)e).AlertLevel)
+                        .ThenInclude(e => e.DeviceAction)
+                            .ThenInclude(e=>e.FacilityAction)
+                .Include(e => e.ModbusDevice)
+                .Where(e => e.ModbusDevice.Name == boxId);
+            
+            foreach (var input in discreteInputs) {
+                
+            }
+        }
+
+        public static void CreateDiscreteJson() {
+            using var context = new MonitorContext();
+
+            var discreteInputs = context.Channels.OfType<DiscreteInput>()
+                .Include(e => e.Alert)
+                    .ThenInclude(e => ((DiscreteAlert)e).AlertLevel)
+                        .ThenInclude(e => e.DeviceAction)
+                            .ThenInclude(e=>e.FacilityAction)
+                .Include(e => e.ModbusDevice)
+                .Where(e => e.ModbusDevice.Name == boxId);
+
+            discreteInputs.OrderBy(e => e.SystemChannel);
+            List<DiscreteJsonChannel> channels = new List<DiscreteJsonChannel>();
+            foreach (var input in discreteInputs) {
+                DiscreteJsonChannel channel = new DiscreteJsonChannel();
+                channel.Input = input.SystemChannel;
+                var alert = input.Alert as DiscreteAlert;
+                channel.Address = new Address() {
+                    Channel = input.ChannelAddress.Channel, Slot = input.ChannelAddress.ModuleSlot
+                };
+                channel.MRA = new Mra() {
+                    Register = input.ModbusAddress.Address, Type = (int)input.ModbusAddress.RegisterType
+                };
+                channel.MRI = new Mra() {
+                    Register = alert.ModbusAddress.Address, Type = (int)alert.ModbusAddress.RegisterType
+                };
+                channel.Alert = new JsonAlert();
+                channel.Alert.TriggerOn = (int)alert.AlertLevel.TriggerOn;
+                if (alert.AlertLevel.DeviceAction != null) {
+                    channel.Alert.Action = alert.AlertLevel.DeviceAction.FirmwareId;
+                    channel.Alert.ActionType = (int)alert.AlertLevel.DeviceAction.FacilityAction.ActionType;
+                    
+                } else {
+                    channel.Alert.Action = -1;
+                    channel.Alert.ActionType = -1; 
+                }
+                channel.Alert.Enabled = alert.Enabled == true ? 1 : 0;
+                channel.Connected = input.Connected==true ? 1:0;
+                channels.Add(channel);
+            }
+
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.WriteIndented = true;
+            options.IncludeFields = true;
+            var value=JsonSerializer.Serialize(channels,options);
+            File.WriteAllText(@"C:\MonitorFiles\Epi2\DIGITAL_V2.TXT",value);
+            Console.WriteLine(value);
+            
+        }
+        
+        public static void CreateSensors() {
+            using var context = new MonitorContext();
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            var collection = database.GetCollection<MonitoringSystem.Shared.Data.SensorTypeDev>("sensors_dev");
+
+            var sensors=collection.Find(_ => true).ToList().Select(e => new Sensor() {
+                Name = e.Name,
+                Slope = e.Slope,
+                Offset=e.Offset,
+                YAxisMin = e.YAxisStart,
+                YAxitMax = e.YAxisStop,
+                Units = e.Units
+            });
+
+            context.AddRange(sensors);
+            var ret=context.SaveChanges();
+            if (ret > 1) {
+                Console.WriteLine("Check Database");
+            } else {
+                Console.WriteLine("Error: Save failed");
+            }
+        }
+
+        public static void CreateAnalogInputs() {
             Console.WriteLine("Creating EpiLab1 AnalogInputs");
             var context = new MonitorContext();
             var monitoringBox = context.Devices.OfType<MonitorBox>()
                 .Include(e => e.Channels)
                 .AsTracking()
                 .FirstOrDefault(e => e.Name == boxId);
-
-            var facilityActions = context.FacilityActions
-                .Include(e => e.DeviceActions)
-                    .ThenInclude(e => e.ActionOutputs)
-                .Include(e => e.DeviceActions)
+            
+            var deviceActions = context.DeviceActions
+                .Include(e => e.AlertLevels)
+                .Include(e => e.FacilityAction)
+                .Include(e => e.MonitorBox)
                 .AsTracking()
+                .Where(e => e.MonitorBox.Name == boxId)
                 .ToList();
 
-            if (monitoringBox != null && facilityActions.Count > 0) {
+            var sensors = context.Sensors.ToList();
+
+            if (monitoringBox != null && deviceActions.Count > 0) {
                 Console.WriteLine("Found Monitoring Box: {0}", monitoringBox.Name);
-                var dInputs = ParseAnalogInputs(facilityActions, monitoringBox);
+                var dInputs = ParseAnalogInputs(deviceActions, monitoringBox,sensors);
                 context.AddRange(dInputs);
                 var ret = context.SaveChanges();
                 if (ret > 0) {
@@ -55,8 +171,8 @@ namespace MonitoringSystem.ConsoleTesting {
             } else {
                 Console.WriteLine("Error: Could not find monitoring box");
             }
-        }*/
-        /*public static void CreateDiscreteInputs() {
+        }
+        public static void CreateDiscreteInputs() {
             Console.WriteLine("Creating EpiLab2 DiscreteInputs");
             var context = new MonitorContext();
             var monitoringBox = context.Devices.OfType<MonitorBox>()
@@ -64,11 +180,11 @@ namespace MonitoringSystem.ConsoleTesting {
                 .AsTracking()
                 .FirstOrDefault(e => e.Name == boxId);
 
-            var actions = context.FacilityActions.AsTracking().ToList();
+            var deviceActions = context.DeviceActions.AsTracking().ToList();
 
             if (monitoringBox != null) {
                 Console.WriteLine("Found Monitoring Box: {0}", monitoringBox.Name);
-                var dInputs = ParseDiscreteInputs(monitoringBox, actions);
+                var dInputs = ParseDiscreteInputs(monitoringBox, deviceActions);
                 context.AddRange(dInputs);
                 var ret = context.SaveChanges();
                 if (ret > 0) {
@@ -80,8 +196,8 @@ namespace MonitoringSystem.ConsoleTesting {
             } else {
                 Console.WriteLine("Error: Could not find monitoring box");
             }
-        }*/
-        /*public static void CreateVirtualInputs() {
+        }
+        public static void CreateVirtualInputs() {
             Console.WriteLine("Creating EpiLab2 VirtualInputs");
             var context = new MonitorContext();
             var monitoringBox = context.Devices.OfType<MonitorBox>()
@@ -89,7 +205,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 .AsTracking()
                 .FirstOrDefault(e => e.Name == boxId);
 
-            var actions = context.FacilityActions.AsTracking().ToList();
+            var actions = context.DeviceActions.AsTracking().ToList();
 
             if (monitoringBox != null) {
                 Console.WriteLine("Found Monitoring Box: {0}", monitoringBox.Name);
@@ -105,7 +221,7 @@ namespace MonitoringSystem.ConsoleTesting {
             } else {
                 Console.WriteLine("Error: Could not find monitoring box");
             }
-        }*/
+        }
         public static void CreateOutputs() {
             Console.WriteLine("Creating gasbay Outputs");
             var context = new MonitorContext();
@@ -223,7 +339,7 @@ namespace MonitoringSystem.ConsoleTesting {
             okayAction.EmailPeriod = 0;
             
             var softWarnAction = new FacilityAction();
-            softWarnAction.Name = "Alarm";
+            softWarnAction.Name = "SoftWarn";
             softWarnAction.ActionType = ActionType.SoftWarn;
             softWarnAction.EmailEnabled = true;
             softWarnAction.EmailPeriod = 180;
@@ -273,8 +389,9 @@ namespace MonitoringSystem.ConsoleTesting {
             List<DiscreteInput> inputs = new List<DiscreteInput>();
             foreach (var elem in channelArray) {
                 DiscreteInput input = new DiscreteInput();
+                input.Identifier = elem["Name"].Value<string>();
                 input.SystemChannel = elem["Input"].Value<int>();
-                input.Identifier = "Discrete " + input.SystemChannel;
+                input.Identifier = input.Identifier;
                 input.DisplayName = input.Identifier;
                 input.ChannelAddress = new ChannelAddress();
                 input.ChannelAddress.Channel = elem["Address"]["Channel"].Value<int>();
@@ -289,7 +406,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 input.ModbusDevice = modbusDevice;
                 input.ModbusDeviceId = modbusDevice.Id;
                 DiscreteAlert alert = new DiscreteAlert();
-
+                alert.Name = input.Identifier+" Alert";
                 alert.ModbusAddress = new ModbusAddress();
                 alert.ModbusAddress.Address = elem["MRA"]["Register"].Value<int>();
                 alert.ModbusAddress.RegisterType = (ModbusRegister)elem["MRA"]["Type"].Value<int>();
@@ -299,14 +416,17 @@ namespace MonitoringSystem.ConsoleTesting {
                 DiscreteLevel level = new DiscreteLevel();
                 level.TriggerOn = elem["Alert"]["TriggerOn"].Value<int>() == 1 ? DiscreteState.High : DiscreteState.Low;
                 int actionId = elem["Alert"]["Action"].Value<int>() + 1;
-                if (actionId >= 1) {
-                    // = actionId;
+                var deviceAction=actions.FirstOrDefault(e => e.FirmwareId == actionId);
+                if (deviceAction!=null) {
+                    level.DeviceAction = deviceAction;
+                    level.DeviceActionId = deviceAction.Id;
                 }
-                alert.Bypass = elem["Alert"]["Bypass"].Value<bool>();
+
+                alert.Bypass = false;
                 alert.Enabled = elem["Alert"]["Enabled"].Value<bool>();
                 level.Bypass = alert.Bypass;
                 level.BypassResetTime = 24;
-
+                alert.AlertLevel = level;
                 input.Alert = alert;
                 inputs.Add(input);
             }
@@ -328,7 +448,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 DeviceAction deviceAction = new DeviceAction();
                 var actionId = p["ActionId"].Value<int>() + 1;
                 deviceAction.FirmwareId = actionId;
-                
+                deviceAction.Name = p["Name"].Value<string>();
                 ChannelAddress addr1 = new ChannelAddress() {
                     Channel = p["O1"]["Address"]["Channel"].Value<int>(),
                     ModuleSlot = p["O1"]["Address"]["Slot"].Value<int>()
@@ -387,69 +507,9 @@ namespace MonitoringSystem.ConsoleTesting {
                 return null;
             }
         }
-
-        //public static FacilityAction CreateFacilityAction(JToken p, IList<DiscreteOutput> outputs,MonitoringBox box) {
-        //    FacilityAction action = new FacilityAction();
-        //    action.Id = p["ActionId"].Value<int>() + 1;
-        //    action.ActionName = ToActionType(p["ActionType"].Value<int>()).ToString();
-        //    action.ActionOutputs = new List<ActionOutput>();
-
-        //    ChannelAddress addr1 = new ChannelAddress() {
-        //        Channel = p["O1"]["Address"]["Channel"].Value<int>(),
-        //        ModuleSlot = p["O1"]["Address"]["Slot"].Value<int>()
-        //    };
-        //    ChannelAddress addr2 = new ChannelAddress() {
-        //        Channel = p["O2"]["Address"]["Channel"].Value<int>(),
-        //        ModuleSlot = p["O2"]["Address"]["Slot"].Value<int>()
-        //    };
-        //    ChannelAddress addr3 = new ChannelAddress() {
-        //        Channel = p["O3"]["Address"]["Channel"].Value<int>(),
-        //        ModuleSlot = p["O3"]["Address"]["Slot"].Value<int>()
-        //    };
-
-        //    var out1 = outputs.FirstOrDefault(e => e.ChannelAddress.Channel == addr1.Channel && e.ChannelAddress.ModuleSlot == addr1.ModuleSlot);
-        //    var out2 = outputs.FirstOrDefault(e => e.ChannelAddress.Channel == addr2.Channel && e.ChannelAddress.ModuleSlot == addr2.ModuleSlot);
-        //    var out3 = outputs.FirstOrDefault(e => e.ChannelAddress.Channel == addr3.Channel && e.ChannelAddress.ModuleSlot == addr3.ModuleSlot);
-
-        //    ActionOutput aout1 = new ActionOutput() {
-        //        Output = out1,
-        //        OnLevel = p["O1"]["OnLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-        //        OffLevel = p["O1"]["OffLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-        //    };
-        //    ActionOutput aout2 = new ActionOutput() {
-        //        Output = out2,
-        //        OnLevel = p["O2"]["OnLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-        //        OffLevel = p["O2"]["OffLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-        //    };
-        //    ActionOutput aout3 = new ActionOutput() {
-        //        Output = out3,
-        //        OnLevel = p["O3"]["OnLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-        //        OffLevel = p["O3"]["OffLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-        //    };
-        //    action.ActionOutputs.Add(aout1);
-        //    action.ActionOutputs.Add(aout2);
-        //    action.ActionOutputs.Add(aout3);
-        //    action.ActionType = ToActionType(p["ActionType"].Value<int>());
-        //    ModbusActionMap actionMap = new ModbusActionMap();
-        //    actionMap.FacilityAction = action;
-        //    actionMap.MonitoringBox = box;
-        //    actionMap.ModbusAddress = new ModbusAddress();
-        //    actionMap.ModbusAddress.Address = p["Register"].Value<int>();
-        //    actionMap.ModbusAddress.RegisterType = (ModbusRegister)p["Type"].Value<int>();
-        //    actionMap.ModbusAddress.RegisterLength = 1;
-        //    //action.ModbusActionMap = actionMap;
-
-        //    return action;
-        //}
-        static IList<AnalogInput> ParseAnalogInputs(IList<DeviceAction> actions, ModbusDevice modDevice) {
-            using var context = new MonitorContext();
-            var sensor = context.Sensors.FirstOrDefault(e => e.Name == "H2 Detector-PPM");
-            if (sensor != null) {
-                Console.WriteLine("Sensor Found!");
-                Console.WriteLine("Name: {0} Slope: {1} Offset: {2}", sensor.Name, sensor.Slope, sensor.Offset);
-            }
+        static IList<AnalogInput> ParseAnalogInputs(IList<DeviceAction> actions, ModbusDevice modDevice,IList<Sensor> sensors) {
             var aInputs = JArray.Parse(File.ReadAllText(boxAnalogPath));
-            IList<AnalogInput> analogInputs = aInputs.Select(p => CreateAnalogInput(p, actions, modDevice, sensor)).ToList();
+            IList<AnalogInput> analogInputs = aInputs.Select(p => CreateAnalogInput(p, actions, modDevice, sensors)).ToList();
             Console.WriteLine("AnalogInputs: ");
             int count = 0;
             foreach (var aInput in analogInputs) {
@@ -458,24 +518,23 @@ namespace MonitoringSystem.ConsoleTesting {
                 } else {
                     Console.WriteLine("Input: {0} Addr: {1} Slot: {2} Sensor: No Sensor ", count, aInput.ChannelAddress.Channel, aInput.ChannelAddress.ModuleSlot);
                 }
-
-                /*count++;
+                count++;
                 var alert = aInput.Alert as AnalogAlert;
                 foreach (var level in alert.AlertLevels) {
-                    if (level.FacilityAction != null) {
-                        Console.WriteLine(" ActionId: {0} ActionType {1}", level.FacilityActionId, level.FacilityAction.ActionType);
+                    if (level.DeviceAction != null) {
+                        Console.WriteLine(" ActionId: {0} ActionType {1}", level.DeviceActionId, level.DeviceAction.FacilityAction.ActionType);
                     } else {
                         Console.WriteLine("Alert Bypassed: {0}", alert.Bypass);
                     }
-                }*/
+                }
             }
             return analogInputs;
         }
-        static AnalogInput CreateAnalogInput(JToken token, IList<DeviceAction> actions, ModbusDevice modDevice, Sensor sensor) {
+        static AnalogInput CreateAnalogInput(JToken token, IList<DeviceAction> actions, ModbusDevice modDevice, IList<Sensor> sensors) {
             AnalogInput aInput = new AnalogInput();
+            aInput.DisplayName=token["Name"].Value<string>();
+            aInput.Identifier = aInput.DisplayName;
             aInput.SystemChannel = token["Input"].Value<int>();
-            aInput.Identifier = "Analog " + aInput.SystemChannel;
-            aInput.DisplayName = aInput.Identifier;
             aInput.ChannelAddress = new ChannelAddress();
             aInput.ChannelAddress.Channel = token["Address"]["Channel"].Value<int>();
             aInput.ChannelAddress.ModuleSlot = token["Address"]["Slot"].Value<int>();
@@ -486,8 +545,11 @@ namespace MonitoringSystem.ConsoleTesting {
             aInput.ModbusAddress.RegisterLength = 1;
 
             aInput.Connected = token["Connected"].Value<bool>();
+
             aInput.ModbusDevice = modDevice;
+            aInput.ModbusDeviceId = modDevice.Id;
             AnalogAlert alert = new AnalogAlert();
+            alert.Name = aInput.Identifier + " Alert";
             alert.ModbusAddress = new ModbusAddress();
             alert.ModbusAddress.Address = token["MRA"]["Register"].Value<int>();
             alert.ModbusAddress.RegisterType = (ModbusRegister)token["MRA"]["Type"].Value<int>();
@@ -498,53 +560,52 @@ namespace MonitoringSystem.ConsoleTesting {
             int a2 = token["A2"]["Action"].Value<int>() + 1;
             int a3 = token["A3"]["Action"].Value<int>() + 1;
 
-            /*FacilityAction action1 = actions.FirstOrDefault(e => e.Id == a1);
-            FacilityAction action2 = actions.FirstOrDefault(e => e.Id == a2);
-            FacilityAction action3 = actions.FirstOrDefault(e => e.Id == a3);*/
-
+            DeviceAction action1 = actions.FirstOrDefault(e => e.FirmwareId == a1);
+            DeviceAction action2 = actions.FirstOrDefault(e => e.FirmwareId == a2);
+            DeviceAction action3 = actions.FirstOrDefault(e => e.FirmwareId== a3);
+            
             AnalogLevel level1 = new AnalogLevel() {
                 SetPoint = token["A1"]["Setpoint"].Value<int>(),
-                Bypass = token["A1"]["Bypass"].Value<bool>(),
                 Enabled = token["A1"]["Enabled"].Value<bool>(),
                 BypassResetTime = 24
             };
-            /*if (action1 != null) {
-                level1.FacilityActionId = action1.Id;
-                level1.FacilityAction = action1;
-            }*/
+            if (action1 != null) {
+                level1.DeviceActionId = action1.Id;
+                level1.DeviceAction = action1;
+            }
 
             AnalogLevel level2 = new AnalogLevel() {
                 SetPoint = token["A2"]["Setpoint"].Value<int>(),
-                Bypass = token["A2"]["Bypass"].Value<bool>(),
                 Enabled = token["A2"]["Enabled"].Value<bool>(),
                 BypassResetTime = 24
             };
-            /*if (action2 != null) {
-                level2.FacilityActionId = action2.Id;
-                level2.FacilityAction = action2;
-            }*/
+            if (action2 != null) {
+                level2.DeviceActionId = action2.Id;
+                level2.DeviceAction = action2;
+            }
 
             AnalogLevel level3 = new AnalogLevel() {
                 SetPoint = token["A3"]["Setpoint"].Value<int>(),
-                Bypass = token["A3"]["Bypass"].Value<bool>(),
                 Enabled = token["A3"]["Enabled"].Value<bool>(),
                 BypassResetTime = 24
             };
 
-            /*if (action3 != null) {
-                level3.FacilityActionId = action3.Id;
-                level3.FacilityAction = action3;
-            }*/
+            if (action3 != null) {
+                level3.DeviceActionId = action3.Id;
+                level3.DeviceAction = action3;
+            }
 
             alert.AlertLevels.Add(level1);
             alert.AlertLevels.Add(level2);
             alert.AlertLevels.Add(level3);
             alert.Bypass = false;
             aInput.Alert = alert;
-
+            float slope = token["Slope"].Value<float>();
+            var sensor = sensors.FirstOrDefault(e => Math.Abs(e.Slope - slope) < .01);
             if (sensor != null) {
                 if (aInput.Connected) {
                     aInput.SensorId = sensor.Id;
+                    aInput.Sensor = sensor;
                 }
             }
             return aInput;
@@ -568,8 +629,8 @@ namespace MonitoringSystem.ConsoleTesting {
                 Bypass = false,
                 Display = false,
                 Connected = p["Connected"].Value<bool>(),
-                Identifier = "Output " + p["Output"].Value<int>().ToString(),
-                DisplayName = "Output " + p["Output"].Value<int>().ToString(),
+                Identifier = p["Name"].Value<string>(),
+                DisplayName = p["Name"].Value<string>(),
                 StartState = p["Start State"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High
             }).ToList();
             Console.WriteLine("DiscreteOutputs: ");
@@ -582,14 +643,16 @@ namespace MonitoringSystem.ConsoleTesting {
             var vInputs = JArray.Parse(File.ReadAllText(boxVirtualPath));
             IList<VirtualInput> virtualInputs = vInputs.Select(e => CreateVirtualChannel(e, modbusDevice, actions)).ToList();
             foreach (var input in virtualInputs) {
-                //Console.WriteLine("VirtualInput: {0} ActionId: {1}", input.SystemChannel, (input.Alert as DiscreteAlert).AlertLevel.FacilityActionId);
+                Console.WriteLine("VirtualInput: {0} ActionId: {1}", input.SystemChannel, (input.Alert as DiscreteAlert).AlertLevel.DeviceActionId);
             }
             return virtualInputs;
         }
         public static VirtualInput CreateVirtualChannel(JToken token, ModbusDevice modbusDevice, IList<DeviceAction> actions) {
             VirtualInput vInput = new VirtualInput();
+            vInput.DisplayName = token["Name"].Value<string>();
+            vInput.Identifier = vInput.DisplayName;
             vInput.SystemChannel = token["Input"].Value<int>();
-            vInput.Identifier = "Virtual " + vInput.SystemChannel;
+
             vInput.ChannelAddress = new ChannelAddress();
             vInput.ChannelAddress.Channel = 0;
             vInput.ChannelAddress.ModuleSlot = 0;
@@ -604,6 +667,7 @@ namespace MonitoringSystem.ConsoleTesting {
             vInput.ModbusDevice = modbusDevice;
             vInput.ModbusDeviceId = modbusDevice.Id;
             DiscreteAlert alert = new DiscreteAlert();
+            alert.Name = vInput.Identifier;
             alert.ModbusAddress = new ModbusAddress() {
                 Address = token["MRA"]["Register"].Value<int>(),
                 RegisterType = (ModbusRegister)token["MRA"]["Type"].Value<int>(),
@@ -614,15 +678,18 @@ namespace MonitoringSystem.ConsoleTesting {
 
             level.TriggerOn = token["Alert"]["TriggerOn"].Value<int>() == 1 ? DiscreteState.High : DiscreteState.Low;
             int actionId = token["Alert"]["Action"].Value<int>() + 1;
-            if (actionId >= 1) {
-                //level.FacilityActionId = actionId;
+            var deviceAction = actions.FirstOrDefault(e => e.FirmwareId == actionId);
+            if (deviceAction!=null) {
+                level.DeviceAction = deviceAction;
+                level.DeviceActionId = deviceAction.Id;
             }
-            level.Bypass = token["Alert"]["Bypass"].Value<bool>();
+
+            level.Bypass = false;
             level.Enabled = token["Alert"]["Enabled"].Value<bool>();
             alert.Bypass = level.Bypass;
             alert.Enabled = level.Enabled;
             level.BypassResetTime = 24;
-            //alert.BypassResetTime = level.BypassResetTime;
+            alert.BypassResetTime = level.BypassResetTime;
             alert.AlertLevel = level;
             vInput.Alert = alert;
             return vInput;
