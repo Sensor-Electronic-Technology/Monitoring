@@ -2,6 +2,7 @@
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringWeb.ControlService.Data;
 namespace MonitoringWeb.ControlService.Services;
 

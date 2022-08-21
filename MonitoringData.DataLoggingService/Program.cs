@@ -3,7 +3,6 @@ using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MassTransit;
-using MonitoringSystem.Shared.Contracts;
 using MonitoringSystem.Shared.SignalR;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -11,6 +10,7 @@ using MongoDB.Driver;
 using MonitoringData.Infrastructure.Data;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataLogging;
+using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.Services;
 
 var builder = WebApplication.CreateBuilder(args);

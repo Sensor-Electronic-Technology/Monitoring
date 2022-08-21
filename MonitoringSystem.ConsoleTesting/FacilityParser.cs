@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 using MongoDB.Driver;
 using MonitoringSystem.DiscreteInputJson;
 using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.LogModel;
+using MonitoringSystem.Shared.Data.SettingsModel;
 using Newtonsoft.Json;
-using ActionType = MonitoringConfig.Data.Model.ActionType;
-using DiscreteState = MonitoringConfig.Data.Model.DiscreteState;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using ModbusAddress = MonitoringConfig.Data.Model.ModbusAddress;
 using ModbusRegister = MonitoringConfig.Data.Model.ModbusRegister;
@@ -49,7 +49,7 @@ namespace MonitoringSystem.ConsoleTesting {
         public static void UpdateMongoDiscrete() {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("epi2_data_temp");
-            var discreteCollection = database.GetCollection<DiscreteChannel>("discrete_items");
+            var discreteCollection = database.GetCollection<DiscreteItem>("discrete_items");
             var alertCollection=database.GetCollection<MonitorAlert>("alert_items");
             using var context = new MonitorContext();
 
@@ -120,7 +120,7 @@ namespace MonitoringSystem.ConsoleTesting {
             using var context = new MonitorContext();
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("monitor_settings");
-            var collection = database.GetCollection<MonitoringSystem.Shared.Data.SensorTypeDev>("sensors_dev");
+            var collection = database.GetCollection<SensorTypeDev>("sensors_dev");
 
             var sensors=collection.Find(_ => true).ToList().Select(e => new Sensor() {
                 Name = e.Name,
@@ -271,7 +271,7 @@ namespace MonitoringSystem.ConsoleTesting {
         public static void CreateModbusDevice() {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("monitor_settings");
-            var collection = database.GetCollection<MonitoringSystem.Shared.Data.ManagedDevice>("monitor_devices");
+            var collection = database.GetCollection<ManagedDevice>("monitor_devices");
             var monitorDevice = collection.Find(e => e.DeviceName == boxId).FirstOrDefault();
             if (monitorDevice != null) {
                 using var context = new MonitorContext();

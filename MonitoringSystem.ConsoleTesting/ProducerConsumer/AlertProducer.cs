@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MonitoringData.Infrastructure.Services.DataAccess;
-using MonitoringSystem.Shared.Contracts;
 using MonitoringSystem.Shared.Data;
 
 namespace MonitoringSystem.ConsoleTesting; 

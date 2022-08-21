@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MassTransit.Futures.Contracts;
+using MonitoringSystem.Shared.Data.LogModel;
+using MonitoringSystem.Shared.Data.SettingsModel;
 
 
 namespace MonitoringData.Infrastructure.Services.DataAccess {

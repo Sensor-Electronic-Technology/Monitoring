@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MassTransit;
-using MonitoringData.Infrastructure.Services;
 using MonitoringData.Infrastructure.Services.AlertServices;
-using MonitoringSystem.Shared.Contracts;
 using Microsoft.AspNetCore.SignalR.Client;
 using ConsoleTables;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.SignalR;
-
+public interface EmailContract {
+    DateTime TimeStamp { get; set; }
+   // IList<AlertRecord> Alerts { get; set; }
+}
 namespace MonitoringSystem.ConsoleTesting {
     public class TestAlertConsumer {
 

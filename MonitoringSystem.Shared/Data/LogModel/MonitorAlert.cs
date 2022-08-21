@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
 
-namespace MonitoringSystem.Shared.Data {
+namespace MonitoringSystem.Shared.Data.LogModel {
     public class MonitorAlert {
         public ObjectId _id { get; set; }
-        public string displayName { get; set; }
-        public ObjectId channelId { get; set; }
-        public AlertItemType itemType { get; set; }
-        public bool enabled { get; set; }
-        public bool bypassed { get; set; }
-        public int bypassResetTime { get; set; }
-        public bool latched { get; set; }
-        public ActionType CurrentState { get; set; }
+        public string AlertId { get; set; }
+        public string DisplayName { get; set; }
+        public ObjectId MonitorBoxItemId { get; set; }
+        public AlertItemType AlertItemType { get; set; }
+        public bool Enabled { get; set; }
+        public bool Bypassed { get; set; }
+        public int BypassResetTime { get; set; }
         public MonitorAlert Clone() {
             return (MonitorAlert)this.MemberwiseClone();
         }

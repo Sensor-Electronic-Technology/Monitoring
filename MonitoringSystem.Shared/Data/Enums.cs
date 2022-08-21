@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace MonitoringSystem.Shared.Data {
     public enum DiscreteState {
         High = 1, Low = 0
@@ -37,10 +32,4 @@ namespace MonitoringSystem.Shared.Data {
         Discrete,
         Virtual
     }
-
-    public enum AlertTriggerType {
-        Firmware,
-        Software
-    }
-
 }

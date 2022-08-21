@@ -5,6 +5,8 @@ using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using MonitoringData.Infrastructure.Data;
+using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.SignalR;
 
 namespace MonitoringData.Infrastructure.Services {
@@ -116,9 +118,9 @@ namespace MonitoringData.Infrastructure.Services {
                         messageBuilder.FinishMessage());
                     this._logger.LogInformation("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
-                        itemid = ObjectId.Parse(e.AlertId),
-                        reading = e.ChannelReading,
-                        state = e.CurrentState
+                        MonitorItemId = ObjectId.Parse(e.AlertId),
+                        Reading = e.ChannelReading,
+                        AlertState = e.CurrentState
                     });
                     await this._alertRepo.LogAlerts(new AlertReadings() {
                         readings = alertReadings.ToArray(), timestamp = now
@@ -134,7 +136,7 @@ namespace MonitoringData.Infrastructure.Services {
             var now = DateTime.Now;
             foreach (var alert in alertRecords) {
                 var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
-                var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.actionType == alert.CurrentState);
+                var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.ActionType == alert.CurrentState);
                 switch (alert.CurrentState) {
                     case ActionType.Okay: {
                             if (activeAlert != null) {
@@ -222,6 +224,7 @@ namespace MonitoringData.Infrastructure.Services {
         
         public async Task Reload() {
             await this._alertRepo.Reload();
+            this._activeAlerts.Clear();
         }
     }
 }

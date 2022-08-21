@@ -26,4 +26,8 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.8" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
+    </ItemGroup>
+
 </Project>

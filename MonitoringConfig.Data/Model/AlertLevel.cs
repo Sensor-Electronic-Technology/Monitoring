@@ -1,4 +1,6 @@
-﻿namespace MonitoringConfig.Data.Model; 
+﻿using MonitoringSystem.Shared.Data;
+
+namespace MonitoringConfig.Data.Model; 
 
 public abstract class AlertLevel {
     public Guid Id { get; set; }

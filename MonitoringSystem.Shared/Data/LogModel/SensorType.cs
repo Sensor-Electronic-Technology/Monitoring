@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
-namespace MonitoringSystem.Shared.Data;
+
+namespace MonitoringSystem.Shared.Data.LogModel;
 
 public class SensorType {
     public ObjectId _id { get; set; }

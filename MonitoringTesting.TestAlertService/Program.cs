@@ -2,7 +2,6 @@
 using ConsoleTables;
 using MassTransit;
 using MonitoringData.Infrastructure.Services.AlertServices;
-using MonitoringSystem.Shared.Contracts;
 namespace MonitoringTesting.TestAlertService;
 public class Program {
     static async Task Main(string[] args) {
@@ -15,9 +14,9 @@ public class Program {
                 host.Username("setiadmin");
                 host.Password("Sens0r20471#!");
             });
-            cfg.ReceiveEndpoint("email_processing", e => {
+            /*cfg.ReceiveEndpoint("email_processing", e => {
                 e.Consumer<EmailConsumer>();
-            });
+            });*/
         });
         var source = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await busControl.StartAsync(source.Token);
@@ -29,10 +28,10 @@ public class Program {
         }
     }
 }
-public class EmailConsumer : IConsumer<EmailContract> {
-    /*private readonly IEmailService _emailService;*/
+/*public class EmailConsumer : IConsumer<EmailContract> {
+    /*private readonly IEmailService _emailService;#1#
     public EmailConsumer() {
-        /*this._emailService = new EmailService();*/
+        /*this._emailService = new EmailService();#1#
     }
     public async Task Consume(ConsumeContext<EmailContract> context) {
         Console.Clear();
@@ -43,4 +42,4 @@ public class EmailConsumer : IConsumer<EmailContract> {
         Console.WriteLine(table.ToString());
         //await this._emailService.SendMessageAsync(context.Message.Subject, context.Message.Message);
     }
-}
+}*/

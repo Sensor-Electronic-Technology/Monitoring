@@ -1,17 +1,4 @@
-﻿namespace MonitoringConfig.Data.Model; 
-
-public enum ActionType {
-    Okay = 6,
-    Alarm = 5,
-    Warning = 4,
-    SoftWarn = 3,
-    Maintenance = 2,
-    Custom = 1
-}
-
-public enum DiscreteState {
-    High = 1, Low = 0
-}
+﻿namespace MonitoringConfig.Data.Model;
 
 public enum ModbusRegister {
     Holding = 1,

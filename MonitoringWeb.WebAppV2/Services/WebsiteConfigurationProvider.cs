@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.LogModel;
+using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.Services;
 using MonitoringWeb.WebAppV2.Data;
 

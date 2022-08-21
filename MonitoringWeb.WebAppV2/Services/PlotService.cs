@@ -1,31 +1,34 @@
 ﻿using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.LogModel;
+using MonitoringWeb.WebAppV2.Data;
+
 namespace MonitoringWeb.WebAppV2.Services;
 public class PlotDataService {
         private IMongoCollection<AnalogReadings> _analogReadings;
-        private IMongoCollection<AnalogChannel> _analogItems;
+        private IMongoCollection<AnalogItem> _analogItems;
 
         public async Task<IEnumerable<AnalogReadingDto>> GetData(string deviceData,DateTime start, DateTime stop) {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase(deviceData);
             this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
-            this._analogItems = database.GetCollection<AnalogChannel>("analog_items");
+            this._analogItems = database.GetCollection<AnalogItem>("analog_items");
             List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
-            var analogItems = await this._analogItems.Find(e => e.display && e.identifier.Contains("H2 PPM"))
+            var analogItems = await this._analogItems.Find(e => e.Display && e.Identifier.Contains("H2 PPM"))
                 .ToListAsync();
             using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
             while (await cursor.MoveNextAsync()){
                 var batch = cursor.Current;
                 foreach (var readings in batch){
                     foreach (var aItem in analogItems) {
-                        var reading =readings.readings.FirstOrDefault(e=>e.itemid==aItem._id);
+                        var reading =readings.readings.FirstOrDefault(e=>e.MonitorItemId==aItem._id);
                         
                         if (reading != null) {
                             
                             var aReading=new AnalogReadingDto(){
-                                Name=aItem.identifier,
+                                Name=aItem.Identifier,
                                 TimeStamp = readings.timestamp.ToLocalTime(),
-                                Value=reading.value
+                                Value=reading.Value
                             }; 
                             analogReadings.Add(aReading);
                         }
@@ -39,21 +42,21 @@ public class PlotDataService {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase(deviceData);
             this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
-            this._analogItems = database.GetCollection<AnalogChannel>("analog_items");
+            this._analogItems = database.GetCollection<AnalogItem>("analog_items");
             List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
-            var analogItems = await this._analogItems.Find(e => e.display && e.sensorId.ToString()==sensorId)
+            var analogItems = await this._analogItems.Find(e => e.Display && e.SensorId.ToString()==sensorId)
                 .ToListAsync();
             using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
             while (await cursor.MoveNextAsync()){
                 var batch = cursor.Current;
                 foreach (var readings in batch){
                     foreach (var aItem in analogItems) {
-                        var reading =readings.readings.FirstOrDefault(e=>e.itemid==aItem._id);
+                        var reading =readings.readings.FirstOrDefault(e=>e.MonitorItemId==aItem._id);
                         if (reading != null) {
                             var aReading=new AnalogReadingDto(){
-                                Name=aItem.identifier,
+                                Name=aItem.Identifier,
                                 TimeStamp = readings.timestamp.ToLocalTime(),
-                                Value=reading.value
+                                Value=reading.Value
                             }; 
                             analogReadings.Add(aReading);
                         }
@@ -67,9 +70,9 @@ public class PlotDataService {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase(deviceData);
             this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
-            this._analogItems = database.GetCollection<AnalogChannel>("analog_items");
+            this._analogItems = database.GetCollection<AnalogItem>("analog_items");
             List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
-            var analogItems = await this._analogItems.Find(e => e.display && e.identifier.Contains("H2 PPM"))
+            var analogItems = await this._analogItems.Find(e => e.Display && e.Identifier.Contains("H2 PPM"))
                 .ToListAsync();
             var readings = await this._analogReadings.Find(e => e.timestamp >= start && e.timestamp <= stop)
                 .ToListAsync();
@@ -77,13 +80,13 @@ public class PlotDataService {
             foreach (var reading in readings) {
                 var delta = (reading.timestamp - min).TotalHours;
                 foreach (var item in analogItems) {
-                    var aReading =reading.readings.FirstOrDefault(e=>e.itemid==item._id);
+                    var aReading =reading.readings.FirstOrDefault(e=>e.MonitorItemId==item._id);
                     if (aReading != null) {
                         analogReadings.Add(new AnalogReadingDto() {
                             Time = delta,
                             TimeStamp = reading.timestamp,
-                            Name=item.identifier,
-                            Value = aReading.value
+                            Name=item.Identifier,
+                            Value = aReading.Value
                         });
                     }
                 }

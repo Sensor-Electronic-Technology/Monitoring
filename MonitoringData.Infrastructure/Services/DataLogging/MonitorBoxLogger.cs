@@ -1,9 +1,12 @@
 ﻿using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using MonitoringData.Infrastructure.Data;
 using MonitoringData.Infrastructure.Events;
 using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
+using MonitoringSystem.Shared.Data.LogModel;
+using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.SignalR;
 using MonitoringSystem.Shared.Services;
 
@@ -89,11 +92,11 @@ namespace MonitoringData.Infrastructure.Services {
             List<AlertReading> alertReadings = new List<AlertReading>();
             for (int i = 0; i < raw.Length; i++) {
                 var alertReading = new AlertReading() {
-                    itemid = this._dataService.MonitorAlerts[i]._id,
-                    state = this.ToActionType(raw[i])
+                    MonitorItemId = this._dataService.MonitorAlerts[i]._id,
+                    AlertState = this.ToActionType(raw[i])
                 };
                 alertReadings.Add(alertReading);
-                this._alerts.Add(new AlertRecord(this._dataService.MonitorAlerts[i], alertReading.state));
+                this._alerts.Add(new AlertRecord(this._dataService.MonitorAlerts[i], alertReading.AlertState));
             }
             return Task.CompletedTask;
         }
@@ -105,16 +108,16 @@ namespace MonitoringData.Infrastructure.Services {
                 for (int i = 0; i < raw.Length; i++) {
                     var item = this._dataService.AnalogItems[i];
                     var analogReading = new AnalogReading() { 
-                        itemid = this._dataService.AnalogItems[i]._id, 
-                        value = (float)raw[i] / (float)this._dataService.AnalogItems[i].factor
+                        MonitorItemId = this._dataService.AnalogItems[i]._id, 
+                        Value = (float)raw[i] / (float)this._dataService.AnalogItems[i].Factor
                     };
-                    if (analogReading.value >= item.recordThreshold) {
+                    if (analogReading.Value >= item.RecordThreshold) {
                         record = true;
                     }
                     readings.Add(analogReading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.itemid.ToString());
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.MonitorItemId.ToString());
                     if (alertRecord != null) {
-                        alertRecord.ChannelReading = (float)analogReading.value;
+                        alertRecord.ChannelReading = (float)analogReading.Value;
                     } else {
                         this.LogError("Analog ItemAlert not found");
                     }
@@ -136,16 +139,16 @@ namespace MonitoringData.Infrastructure.Services {
                 List<DiscreteReading> readings = new List<DiscreteReading>();
                 for (int i = 0; i < raw.Length; i++) {
                     var reading = new DiscreteReading() {
-                        itemid = this._dataService.DiscreteItems[i]._id,
-                        value = raw[i]
+                        MonitorItemId = this._dataService.DiscreteItems[i]._id,
+                        Value = raw[i]
                     };
-                    if (reading.value) {
+                    if (reading.Value) {
                         record = true;
                     }              
                     readings.Add(reading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid.ToString());
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.MonitorItemId.ToString());
                     if (alertRecord != null) {
-                        alertRecord.ChannelReading = reading.value == true ? 1.00f : 0.00f;
+                        alertRecord.ChannelReading = reading.Value == true ? 1.00f : 0.00f;
                     } else {
                         this.LogError("Discrete ItemAlert not found");
                     }
@@ -165,17 +168,17 @@ namespace MonitoringData.Infrastructure.Services {
                 List<VirtualReading> readings = new List<VirtualReading>();
                 for (int i = 0; i < raw.Length; i++) {
                     var reading = new VirtualReading() {
-                        itemid = this._dataService.VirtualItems[i]._id,
-                        value = raw[i]
+                        MonitorItemId = this._dataService.VirtualItems[i]._id,
+                        Value = raw[i]
                     };
-                    if(reading.value) {
+                    if(reading.Value) {
                         record = true;
                     }
-                    var alert = this._dataService.MonitorAlerts.FirstOrDefault(e => e._id == reading.itemid);
+                    var alert = this._dataService.MonitorAlerts.FirstOrDefault(e => e._id == reading.MonitorItemId);
                     readings.Add(reading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.itemid.ToString());
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.MonitorItemId.ToString());
                     if (alertRecord != null) {
-                        alertRecord.ChannelReading = reading.value == true ? 1.00f : 0.00f;
+                        alertRecord.ChannelReading = reading.Value == true ? 1.00f : 0.00f;
                     } else {
                         this.LogError("Virual ItemAlert not found");
                     }
@@ -224,7 +227,7 @@ namespace MonitoringData.Infrastructure.Services {
                 Console.WriteLine(msg);
             }
         }
-
+        
         private ActionType ToActionType(ushort value) {
             switch (value) {
                 case 1: {
@@ -250,27 +253,6 @@ namespace MonitoringData.Infrastructure.Services {
                     }
             }
         }
-
-        private DeviceState ToDeviceState(ushort value) {
-            switch (value) {
-                case 0: {
-                        return DeviceState.OKAY;
-                    }
-                case 1: {
-                        return DeviceState.WARNING;
-                    }
-                case 2: {
-                        return DeviceState.ALARM;
-                    }
-                case 3: {
-                        return DeviceState.MAINTENANCE;
-                    }
-                default: {
-                        return DeviceState.OKAY;
-                    }
-            }
-        }
-
         public async Task Load() {
             await this._dataService.LoadAsync();
             await this._alertService.Load();

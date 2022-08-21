@@ -1,12 +1,15 @@
 ﻿using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using MonitoringData.Infrastructure.Data;
 using MonitoringData.Infrastructure.Events;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Services;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringSystem.Shared.SignalR;
 using MonitoringData.Infrastructure.Utilities;
+using MonitoringSystem.Shared.Data.LogModel;
+using MonitoringSystem.Shared.Data.SettingsModel;
 
 namespace MonitoringData.Infrastructure.Services.DataLogging {
     public class ModbusLogger : IDataLogger {
@@ -78,26 +81,26 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             List<AnalogReading> readings = new List<AnalogReading>();
             foreach(var aItem in this._dataService.AnalogItems) {
                 var reading = new AnalogReading();
-                reading.itemid = aItem._id;
-                if (aItem.reglen == 2) {
-                    reading.value = Converters.ToInt32(raw[aItem.reg], raw[aItem.reg + 1])/aItem.factor;
+                reading.MonitorItemId = aItem._id;
+                if (aItem.RegisterLength == 2) {
+                    reading.Value = Converters.ToInt32(raw[aItem.Register], raw[aItem.Register + 1])/aItem.Factor;
                 } else {
-                    reading.value = raw[aItem.reg]/aItem.factor;
+                    reading.Value = raw[aItem.Register]/aItem.Factor;
                 }             
                 readings.Add(reading);
-                var alert=this._dataService.MonitorAlerts.FirstOrDefault(e => e.channelId == aItem._id);
+                var alert=this._dataService.MonitorAlerts.FirstOrDefault(e => e.MonitorBoxItemId == aItem._id);
                 if (alert != null) {
                     ActionType state=ActionType.Okay;
-                    if ((int)reading.value <= aItem.l3setpoint) {
-                        state = aItem.l3action;
-                    } else if ((int)reading.value <= aItem.l2setpoint) {
-                        state = aItem.l2action;
-                    } else if ((int)reading.value <= aItem.l1setpoint) {
-                        state = aItem.l1action;
+                    if ((int)reading.Value <= aItem.Level3SetPoint) {
+                        state = aItem.Level3Action;
+                    } else if ((int)reading.Value <= aItem.Level2SetPoint) {
+                        state = aItem.Level2Action;
+                    } else if ((int)reading.Value <= aItem.Level1SetPoint) {
+                        state = aItem.Level1Action;
                     }
-                    this._alerts.Add(new AlertRecord(alert,(float)reading.value,state));
+                    this._alerts.Add(new AlertRecord(alert,(float)reading.Value,state));
                 } else {
-                    this.LogError($"AnalogChannel: {aItem.identifier} alert not found");
+                    this.LogError($"AnalogChannel: {aItem.Identifier} alert not found");
                 } 
             }
             if (this.CheckSave(now, this.lastRecord)) {
