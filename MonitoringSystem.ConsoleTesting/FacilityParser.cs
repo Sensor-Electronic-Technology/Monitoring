@@ -12,12 +12,11 @@ using System.Threading.Tasks;
 using MongoDB.Driver;
 using MonitoringSystem.DiscreteInputJson;
 using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
-using ModbusAddress = MonitoringConfig.Data.Model.ModbusAddress;
-using ModbusRegister = MonitoringConfig.Data.Model.ModbusRegister;
 using NetworkConfiguration = MonitoringConfig.Data.Model.NetworkConfiguration;
 
 namespace MonitoringSystem.ConsoleTesting {
@@ -381,7 +380,6 @@ namespace MonitoringSystem.ConsoleTesting {
                 RegisterLength = 1
             };
             netConfig.Port = 502;
-            netConfig.SlaveAddress = 1;
             return netConfig;
         }
         static IList<DiscreteInput> ParseDiscreteInputs(ModbusDevice modbusDevice, IList<DeviceAction> actions) {

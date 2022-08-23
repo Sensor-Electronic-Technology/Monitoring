@@ -9,7 +9,6 @@ public abstract class AlertLevel {
     public bool Enabled { get; set; }
     public Guid? DeviceActionId { get; set; }
     public DeviceAction? DeviceAction { get; set; }
-    //public AlertLevelAction? AlertLevelAction { get; set; }
 }
 
 public class AnalogLevel : AlertLevel {

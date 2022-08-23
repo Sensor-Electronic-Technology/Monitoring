@@ -1,4 +1,7 @@
-﻿namespace MonitoringConfig.Data.Model; 
+﻿using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.EntityDtos;
+
+namespace MonitoringConfig.Data.Model; 
 
 public class Alert {
     public Guid Id { get; set; }

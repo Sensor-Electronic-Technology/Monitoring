@@ -1,4 +1,6 @@
-﻿namespace MonitoringConfig.Data.Model;
+﻿using MonitoringSystem.Shared.Data;
+
+namespace MonitoringConfig.Data.Model;
 
 public class NetworkConfiguration {
     public Guid Id { get; set; }
@@ -7,7 +9,6 @@ public class NetworkConfiguration {
     public string? Mac { get; set; }
     public string? Gateway { get; set; }
     public int Port { get; set; }
-    public int SlaveAddress { get; set; }
     public Guid ModbusDeviceId { get; set; }
     public ModbusDevice? ModbusDevice { get; set; }
 }
@@ -18,6 +19,7 @@ public class ModbusConfiguration {
     public int InputRegisters { get; set; }
     public int HoldingRegisters { get; set; }
     public int Coils { get; set; }
+    public int SlaveAddress { get; set; }
     public Guid ModbusDeviceId { get; set; }
     public ModbusDevice? ModbusDevice { get; set; }
     

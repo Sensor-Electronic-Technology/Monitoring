@@ -2,7 +2,6 @@
 
 namespace MonitoringConfig.Data.Model;
 
-
 public class FacilityAction {
     public Guid Id { get; set; }
     public string? Name { get; set; }

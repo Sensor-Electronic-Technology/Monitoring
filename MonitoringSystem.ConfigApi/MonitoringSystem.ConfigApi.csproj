@@ -9,9 +9,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FastEndpoints" Version="4.4.0" />
+    <PackageReference Include="FastEndpoints.Swagger" Version="4.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="6.0.7" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MonitoringConfig.Data\MonitoringConfig.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Contracts\Requests\Insert" />
+    <Folder Include="Contracts\Responses\Insert" />
+    <Folder Include="Repositories" />
   </ItemGroup>
 
 </Project>

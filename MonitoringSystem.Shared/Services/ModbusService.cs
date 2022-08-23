@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Modbus.Device;
 using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.Shared.Services {
     public class ModbusResult {
@@ -20,7 +21,7 @@ namespace MonitoringSystem.Shared.Services {
     }
     
     public interface IModbusService {
-        Task<ModbusResult> Read(string ip, int port, ModbusConfigurationDto configurationDto);
+        Task<ModbusResult> Read(string ip, int port, ModbusConfigDto configurationDto);
         Task WriteMultipleCoils(string ip, int port, int slaveId, int start, bool[] values);
         Task ToggleCoil(string ip, int port, int slaveId, int addr);
         Task<bool> ReadCoil(string ip, int port,int slaveId, int addr);
@@ -40,7 +41,7 @@ namespace MonitoringSystem.Shared.Services {
             this.loggerEnabled = true;
         }
 
-        public async Task<ModbusResult> Read(string ip, int port, ModbusConfigurationDto configurationDto) {
+        public async Task<ModbusResult> Read(string ip, int port, ModbusConfigDto configurationDto) {
             try {
                 using var client = new TcpClient(ip, port);
                 client.ReceiveTimeout = 2000;

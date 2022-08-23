@@ -1,4 +1,5 @@
 ﻿using MongoDB.Bson;
+using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.Shared.Data.SettingsModel;
 
@@ -16,6 +17,6 @@ public class ManagedDevice {
     public RemoteAction[] RemoteActions { get; set; }
     public string IpAddress { get; set; }
     public int Port { get; set; }
-    public ChannelRegisterMapping ChannelMapping { get; set; }
-    public ModbusConfigurationDto ModbusConfiguration { get; set; }
+    public ChannelMappingConfigDto ChannelMapping { get; set; }
+    public ModbusConfigDto ModbusConfiguration { get; set; }
 }

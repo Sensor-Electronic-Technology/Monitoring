@@ -5,9 +5,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
-using System.Threading;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using MailKit.Net.Smtp;
@@ -21,9 +18,10 @@ using MonitoringSystem.Shared.Data.SettingsModel;
 
 namespace MonitoringSystem.ConsoleTesting {
     public class Program {
-        static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
+
         static async Task Main(string[] args) {
-            await CreateMongoDB("Epi1");
+            //await CreateMongoDB("Epi1");
+            await BuildSettingsDB();
         }
         static async Task RemoteAlertTesting() {
             ModbusService modservice = new ModbusService();
@@ -117,10 +115,12 @@ namespace MonitoringSystem.ConsoleTesting {
         
         static async Task BuildSettingsDB() { 
             var context = new MonitorContext();
-            var devices = context.Devices.OfType<ModbusDevice>().ToList();
+            var devices = context.Devices.OfType<ModbusDevice>()
+                .Include(e=>e.NetworkConfiguration)
+                .ToList();
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("monitor_settings");
-            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices");
+            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices_dev");
             List<ManagedDevice> monitorDevices = new List<ManagedDevice>();
             foreach (var device in devices) {
                 var channels = await context.Channels
@@ -137,32 +137,31 @@ namespace MonitoringSystem.ConsoleTesting {
                 var sensors = channels.OfType<AnalogInput>().Where(e => e.SensorId != null)
                     .Select(e => e.SensorId.Value).Distinct();
                 
-                /*ManagedDevice dev = new ManagedDevice();
-                dev.DatabaseName = device.+"_temp";
-                dev.DeviceName = device.Identifier;
+                ManagedDevice dev = new ManagedDevice();
+                dev.DatabaseName = device.Name.ToLower()+"_data_dev";
+                dev.DeviceName = device.Name;
                 dev.DeviceType = device.GetType().Name;
-                dev.ChannelMapping = device.NetworkConfiguration.ModbusConfig.ChannelMapping;
-                dev.IpAddress = device.NetworkConfiguration.IPAddress;
+                //dev.ChannelMapping=device.ModbusConfiguration;
+                dev.IpAddress = device.NetworkConfiguration.IpAddress;
                 dev.Port = device.NetworkConfiguration.Port;
-                dev.ModbusConfiguration = device.NetworkConfiguration.ModbusConfig;
+                //dev.ModbusConfiguration = device.NetworkConfiguration.ModbusConfig;
                 dev.HubAddress = device.HubAddress;
                 dev.HubName = device.HubName;
-                dev.SensorTypes = sensors.ToArray();
+                //dev.SensorTypes = sensors;
                 dev.RemoteActions = remoteActions.ToArray();
                 dev.CollectionNames = new Dictionary<string, string>() {
-                    [nameof(AnalogChannel)]="analog_items",
-                    [nameof(DiscreteChannel)]="discrete_items",
-                    [nameof(VirtualChannel)]="virtual_items",
+                    [nameof(AnalogItem)]="analog_items",
+                    [nameof(DiscreteItem)]="discrete_items",
+                    [nameof(VirtualItem)]="virtual_items",
                     [nameof(OutputItem)]="output_items",
                     [nameof(ActionItem)]="action_items",
                     [nameof(MonitorAlert)]="alert_items",
                     [nameof(AnalogReadings)]="analog_readings",
                     [nameof(DiscreteReadings)]="discrete_readings",
                     [nameof(VirtualReadings)]="virtual_readings",
-                    [nameof(AlertReadings)]="alert_readings",
-                    [nameof(DeviceReading)]="device_readings"
+                    [nameof(AlertReadings)]="alert_readings"
                 };
-                monitorDevices.Add(dev);*/
+                monitorDevices.Add(dev);
             }
             await monitorDevCollection.InsertManyAsync(monitorDevices);
             Console.WriteLine("Check Database");

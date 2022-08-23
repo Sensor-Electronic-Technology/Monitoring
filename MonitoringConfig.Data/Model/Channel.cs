@@ -1,4 +1,5 @@
 ﻿using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringConfig.Data.Model;
 
