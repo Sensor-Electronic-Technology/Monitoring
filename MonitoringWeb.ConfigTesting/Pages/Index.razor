@@ -1,0 +1,89 @@
+﻿@page "/"
+
+@using MonitoringSystem.Shared.Data.EntityDtos
+@using System.Net
+@using System.Net.Http.Json
+@using MonitoringWeb.ConfigTesting.Services
+@using Newtonsoft.Json
+@inject DataService DataService
+
+<DxGrid @ref="Grid"
+        Data="@ModbusDevcies"
+        SelectedDataItem="@this.SelectedDevice"
+        KeyFieldName="Id"
+        ValidationEnabled="false"
+        AllowSelectRowByClick="true"
+        SelectionMode="GridSelectionMode.Single"
+        EditModelSaving="Grid_EditModelSaving"
+        DataItemDeleting="Grid_DataItemDeleting"
+        SelectedDataItemChanged="@Callback"
+        PopupEditFormCssClass="pw-800"
+        EditMode="GridEditMode.EditForm">
+    <Columns>
+        <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+        <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.Id)" Visible="false"/>
+        <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.Name)"/>
+        <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.Database)"/>
+        <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.HubName)"/>
+        <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.HubAddress)"/>
+        <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.ReadInterval)"/>
+        <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.SaveInterval)"/>
+    </Columns>
+
+    <EditFormTemplate Context="EditFormContext">
+        @{
+            var device = (ModbusDeviceDto)EditFormContext.EditModel;
+        }
+        <DxFormLayout CssClass="w-100">
+            <DxFormLayoutItem Caption="Name:" ColSpanMd="6">
+                <DxTextBox @bind-Text="@device.Name" />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="HubName" ColSpanMd="6">
+                <DxTextBox @bind-Text="@device.HubName" />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="HubAddress" ColSpanMd="6">
+                <DxTextBox @bind-Text="@device.HubAddress" />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="ReadInterval" ColSpanMd="6">
+                <DxSpinEdit @bind-Value="@device.ReadInterval" />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="SaveInterval" ColSpanMd="6">
+                <DxSpinEdit @bind-Value="@device.SaveInterval" />
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </EditFormTemplate>
+</DxGrid>
+@if (this.SelectedDevice == null) {
+    <h4>Device Not Selected</h4>
+} else {
+    <h4>Selected Device: @((ModbusDeviceDto)this.SelectedDevice).Name</h4>
+    <ChannelsGrid ModbusDevice=@(this.SelectedDevice as ModbusDeviceDto) />
+}
+
+
+@code {
+    IEnumerable<ModbusDeviceDto> ModbusDevcies { get; set; }
+    object SelectedDevice { get; set; }
+    IGrid Grid { get; set; }
+    
+    protected override async Task OnInitializedAsync() {
+        this.ModbusDevcies = await this.DataService.GetAllDevices();
+        this.SelectedDevice = this.ModbusDevcies.First();
+    }
+    async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
+        await this.DataService.UpdateModbusDevice((ModbusDeviceDto)e.DataItem,(ModbusDeviceDto)e.EditModel);
+    }
+    async Task Grid_DataItemDeleting(GridDataItemDeletingEventArgs e) {
+        //await NwindDataService.RemoveEmployeeAsync((EditableEmployee)e.DataItem);
+        //await UpdateDataAsync();
+    }
+    async Task UpdateDataAsync() {
+        this.ModbusDevcies = await this.DataService.GetAllDevices();
+    }
+
+    private void Callback(object selected) {
+        this.SelectedDevice = (ModbusDeviceDto)selected;
+        InvokeAsync(StateHasChanged);
+    }
+
+}

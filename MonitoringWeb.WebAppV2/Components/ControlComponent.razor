@@ -31,9 +31,9 @@
             .WithAutomaticReconnect()
             .WithUrl("http://localhost:5000/hubs/controlhub")
             .Build();
-        this._connection.On("Initialize", async (IEnumerable<RemoteAction> remoteActions) => {
+        /*this._connection.On("Initialize", async (IEnumerable<RemoteAction> remoteActions) => {
             if (this.Device != null) {
-                this.Device.RemoteActions = remoteActions.ToArray();
+                this.Device.RemoteActions = remoteActions;
                 List<SwitchAction> switchActions = new List<SwitchAction>();
                 foreach (var ract in this.Device.RemoteActions) {
                     var switchAction = new SwitchAction {
@@ -52,7 +52,7 @@
             } else {
                 this.Logger.LogError("RemoteActions Failed to Load");
             }
-        });
+        });*/
         try {
             await this._connection.StartAsync();
             await this._connection.InvokeAsync("Initialize", this.Device?.DeviceName);

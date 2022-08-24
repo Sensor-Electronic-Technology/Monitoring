@@ -1,6 +1,9 @@
-﻿namespace MonitoringSystem.Shared.Data.EntityDtos; 
+﻿using MongoDB.Bson.Serialization.Attributes;
+
+namespace MonitoringSystem.Shared.Data.EntityDtos; 
 
 public class ModbusConfigDto {
+    [BsonIgnore]
     public Guid Id { get; set; }
     public int DiscreteInputs { get; set; }
     public int InputRegisters { get; set; }
@@ -10,6 +13,7 @@ public class ModbusConfigDto {
 }
 
 public class NetworkConfigDto {
+    [BsonIgnore]
     public Guid Id { get; set; }
     public string? IpAddress { get; set; }
     public string? Dns { get; set; }
@@ -19,6 +23,7 @@ public class NetworkConfigDto {
 }
 
 public class ChannelMappingConfigDto {
+    [BsonIgnore]
     public Guid Id { get; set; }
     public ModbusRegister AlertRegisterType { get; set; }
     public int AlertStart { get; set; } = 0;

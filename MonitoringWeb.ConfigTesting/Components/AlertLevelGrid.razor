@@ -1,0 +1,19 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+<h3>AlertLevelGrid</h3>
+<DxGrid Data=AlertLevels>
+    <Columns>
+        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.Id)"/>
+        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.SetPoint)"/>
+        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.Bypass)"/>
+        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.BypassResetTime)"/>
+        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.Enabled)"/>
+    </Columns>
+    <DetailRowTemplate>
+        <DeviceActionView DeviceAction=((AnalogLevelDto)context.DataItem).DeviceAction />
+    </DetailRowTemplate>
+</DxGrid>
+
+@code {
+    [Parameter]
+    public IEnumerable<AlertLevelDto> AlertLevels { get; set; }
+}

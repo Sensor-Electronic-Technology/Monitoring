@@ -17,7 +17,8 @@ if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
         // Creating the URI helper needs to wait until the JS Runtime is initialized, so defer it.
         var uriHelper = s.GetRequiredService<NavigationManager>();
         return new HttpClient {
-            BaseAddress = new Uri("https://localhost:7133")
+            BaseAddress = new Uri("https://localhost:7133"),
+            
         };
     });
 }

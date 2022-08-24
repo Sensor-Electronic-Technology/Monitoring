@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using MonitoringConfig.Data.Model;
 using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 using MonitoringSystem.ConfigApi.Mapping;
+using MonitoringSystem.Shared.Data.EntityDtos;
+
 namespace MonitoringSystem.ConfigApi.Endpoints;
 
 [HttpGet("devices"),AllowAnonymous]
-public class GetAllDevicesEndpoint:EndpointWithoutRequest<GetAllDevicesResponse> {
+public class GetAllDevicesEndpoint:EndpointWithoutRequest<List<ModbusDeviceDto>> {
     private readonly MonitorContext _context;
 
     public GetAllDevicesEndpoint(MonitorContext context) {
@@ -21,6 +23,6 @@ public class GetAllDevicesEndpoint:EndpointWithoutRequest<GetAllDevicesResponse>
             .Include(e=>e.ChannelRegisterMap)
             .ToListAsync(ct);
         var response = devices.ToDeviceResponse();
-        await SendOkAsync(response, ct);
+        await SendOkAsync(response.Devices.ToList(), ct);
     }
 }

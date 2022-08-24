@@ -8,7 +8,7 @@ using MonitoringSystem.ConfigApi.Mapping;
 
 namespace MonitoringSystem.ConfigApi.Endpoints;
 
-[HttpGet("channels/DeviceId"),AllowAnonymous]
+[HttpGet("channels/{id:guid}"),AllowAnonymous]
 public class GetDeviceChannelsEndpoint : Endpoint<GetDeviceChannelsRequest,GetDeviceChannelsResponse> {
     private readonly MonitorContext _context;
 
@@ -22,11 +22,37 @@ public class GetDeviceChannelsEndpoint : Endpoint<GetDeviceChannelsRequest,GetDe
             .Include(e => e.Alert)
                 .ThenInclude(e => ((AnalogAlert)e).AlertLevels)
                     .ThenInclude(e => e.DeviceAction)
-            .Where(e => e.ModbusDeviceId == req.DeviceId)
+            .Where(e => e.ModbusDeviceId == req.Id)
             .Select(e=>e.ToDto())
             .ToListAsync(ct);
 
-        var response = new GetDeviceChannelsResponse() { AnalogInputs = analogChannels.AsEnumerable() };
+        var discreteChannels = await this._context.Channels.OfType<DiscreteInput>()
+            .Include(e => e.Alert)
+            .ThenInclude(e => ((DiscreteAlert)e).AlertLevel)
+            .ThenInclude(e => e.DeviceAction)
+            .Where(e => e.ModbusDeviceId == req.Id)
+            .Select(e => e.ToDto())
+            .ToListAsync(ct);
+        
+        var virtualChannels = await this._context.Channels.OfType<VirtualInput>()
+            .Include(e => e.Alert)
+            .ThenInclude(e => ((DiscreteAlert)e).AlertLevel)
+            .ThenInclude(e => e.DeviceAction)
+            .Where(e => e.ModbusDeviceId == req.Id)
+            .Select(e => e.ToDto())
+            .ToListAsync(ct);
+
+        var outputs = await this._context.Channels.OfType<DiscreteOutput>()
+            .Where(e => e.ModbusDeviceId == req.Id)
+            .Select(e => e.ToDto())
+            .ToListAsync(ct);
+
+        var response = new GetDeviceChannelsResponse() {
+            AnalogInputs = analogChannels.AsEnumerable(),
+            DiscreteInputs = discreteChannels.AsEnumerable(),
+            VirtualInputs = virtualChannels.AsEnumerable(),
+            DiscreteOutputs = outputs
+        };
         await SendOkAsync(response, ct);
     }
 }

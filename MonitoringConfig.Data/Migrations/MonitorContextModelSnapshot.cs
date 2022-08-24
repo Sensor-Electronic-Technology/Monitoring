@@ -315,6 +315,9 @@ namespace MonitoringConfig.Data.Migrations
                     b.Property<Guid>("ModbusDeviceId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("SlaveAddress")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ModbusDeviceId")
@@ -345,9 +348,6 @@ namespace MonitoringConfig.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Port")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SlaveAddress")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -536,7 +536,7 @@ namespace MonitoringConfig.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("MonitoringConfig.Data.Model.ModbusAddress", "ModbusAddress", b1 =>
+                    b.OwnsOne("MonitoringSystem.Shared.Data.EntityDtos.ModbusAddress", "ModbusAddress", b1 =>
                         {
                             b1.Property<Guid>("AlertId")
                                 .HasColumnType("uniqueidentifier");
@@ -580,7 +580,7 @@ namespace MonitoringConfig.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("MonitoringConfig.Data.Model.ModbusAddress", "ModbusAddress", b1 =>
+                    b.OwnsOne("MonitoringSystem.Shared.Data.EntityDtos.ModbusAddress", "ModbusAddress", b1 =>
                         {
                             b1.Property<Guid>("ChannelId")
                                 .HasColumnType("uniqueidentifier");
@@ -602,7 +602,7 @@ namespace MonitoringConfig.Data.Migrations
                                 .HasForeignKey("ChannelId");
                         });
 
-                    b.OwnsOne("MonitoringConfig.Data.Model.ChannelAddress", "ChannelAddress", b1 =>
+                    b.OwnsOne("MonitoringSystem.Shared.Data.EntityDtos.ChannelAddress", "ChannelAddress", b1 =>
                         {
                             b1.Property<Guid>("ChannelId")
                                 .HasColumnType("uniqueidentifier");

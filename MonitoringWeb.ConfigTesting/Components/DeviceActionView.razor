@@ -1,0 +1,15 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+<h3>DeviceActionView</h3>
+        <DxFormLayout Data="@this.DeviceAction">
+            <DxFormLayoutItem Field="@nameof(DeviceActionDto.Name)" ColSpanSm="3">
+                <DxTextBox @bind-Text="@this.DeviceAction.Name"></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Field="@nameof(DeviceActionDto.FirmwareId)" ColSpanSm="3">
+                <DxSpinEdit @bind-Value="@this.DeviceAction.FirmwareId"></DxSpinEdit>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+
+@code {
+    [Parameter]
+    public DeviceActionDto DeviceAction { get; set; }
+}

@@ -4,8 +4,9 @@ namespace MonitoringSystem.Shared.Data.LogModel;
 
 public class SensorType {
     public ObjectId _id { get; set; }
-    public string Name { get; set; }
-    public string Units { get; set; }
+    public string? EntityId { get; set; }
+    public string? Name { get; set; }
+    public string? Units { get; set; }
     public double Slope { get; set; }
     public double Offset { get; set; }
     public int YAxisStart { get; set; }

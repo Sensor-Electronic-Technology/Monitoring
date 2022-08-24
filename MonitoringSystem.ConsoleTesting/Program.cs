@@ -12,6 +12,7 @@ using MimeKit;
 using MongoDB.Bson;
 using MonitoringConfig.Data.Model;
 using MonitoringData.Infrastructure.Services.AlertServices;
+using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Services;
 using MonitoringSystem.Shared.Data.SettingsModel;
@@ -21,7 +22,8 @@ namespace MonitoringSystem.ConsoleTesting {
 
         static async Task Main(string[] args) {
             //await CreateMongoDB("Epi1");
-            await BuildSettingsDB();
+            //await BuildSettingsDB();
+            await BuildEmailSettingsCollection();
         }
         static async Task RemoteAlertTesting() {
             ModbusService modservice = new ModbusService();
@@ -117,10 +119,26 @@ namespace MonitoringSystem.ConsoleTesting {
             var context = new MonitorContext();
             var devices = context.Devices.OfType<ModbusDevice>()
                 .Include(e=>e.NetworkConfiguration)
+                .Include(e=>e.ModbusConfiguration)
+                .Include(e=>e.ChannelRegisterMap)
                 .ToList();
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("monitor_settings");
-            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices_dev");
+            var database = client.GetDatabase("monitor_settings_dev");
+            var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices");
+            var sensorCollection = database.GetCollection<SensorType>("sensor_types");
+            var sensors=await context.Sensors.Select(e => new SensorType() {
+                Name=e.Name,
+                EntityId = e.Id.ToString(),
+                Offset=e.Offset,
+                Slope=e.Slope,
+                Units=e.Units,
+                YAxisStart=e.YAxisMin,
+                YAxisStop=e.YAxisMin
+            }).ToListAsync();
+            foreach(var sensor in sensors) {
+                sensor._id=ObjectId.GenerateNewId();
+            }
+            
             List<ManagedDevice> monitorDevices = new List<ManagedDevice>();
             foreach (var device in devices) {
                 var channels = await context.Channels
@@ -133,22 +151,49 @@ namespace MonitoringSystem.ConsoleTesting {
                         Register = e.ModbusAddress.Address,
                         State = false
                     }
-                );
-                var sensors = channels.OfType<AnalogInput>().Where(e => e.SensorId != null)
+                ).ToList();
+                var entitySensors = channels.OfType<AnalogInput>().Where(e => e.SensorId != null)
                     .Select(e => e.SensorId.Value).Distinct();
-                
+                Console.WriteLine($"Sensor Count: {entitySensors.Count()}");
                 ManagedDevice dev = new ManagedDevice();
+                dev.DeviceId = device.Id.ToString();
                 dev.DatabaseName = device.Name.ToLower()+"_data_dev";
                 dev.DeviceName = device.Name;
                 dev.DeviceType = device.GetType().Name;
-                //dev.ChannelMapping=device.ModbusConfiguration;
+                dev.ChannelMapping = new ChannelMappingConfigDto() {
+                    AlertRegisterType = device.ChannelRegisterMap.AlertRegisterType,
+                    AnalogRegisterType=device.ChannelRegisterMap.AnalogRegisterType,
+                    DiscreteRegisterType = device.ChannelRegisterMap.DiscreteRegisterType,
+                    VirtualRegisterType=device.ChannelRegisterMap.DiscreteRegisterType,
+                    AlertStart=device.ChannelRegisterMap.AlertStart,
+                    AlertStop=device.ChannelRegisterMap.AlertStart,
+                    AnalogStart=device.ChannelRegisterMap.AnalogStart,
+                    AnalogStop=device.ChannelRegisterMap.AnalogStop,
+                    DiscreteStart=device.ChannelRegisterMap.DiscreteStart,
+                    DiscreteStop=device.ChannelRegisterMap.DiscreteStop,
+                    VirtualStart=device.ChannelRegisterMap.VirtualStart,
+                    VirtualStop=device.ChannelRegisterMap.VirtualStop,
+                };
+                dev.ModbusConfiguration = new ModbusConfigDto() {
+                    HoldingRegisters = device.ModbusConfiguration.HoldingRegisters,
+                    DiscreteInputs = device.ModbusConfiguration.DiscreteInputs,
+                    Coils=device.ModbusConfiguration.Coils,
+                    InputRegisters = device.ModbusConfiguration.InputRegisters,
+                    SlaveAddress=device.ModbusConfiguration.SlaveAddress
+                };
                 dev.IpAddress = device.NetworkConfiguration.IpAddress;
                 dev.Port = device.NetworkConfiguration.Port;
-                //dev.ModbusConfiguration = device.NetworkConfiguration.ModbusConfig;
                 dev.HubAddress = device.HubAddress;
                 dev.HubName = device.HubName;
-                //dev.SensorTypes = sensors;
-                dev.RemoteActions = remoteActions.ToArray();
+                foreach (var sensorid in entitySensors) {
+                    var found=sensors.FirstOrDefault(e => e.EntityId.ToLower() == sensorid.ToString());
+                    Console.WriteLine($"SensorId: {sensorid.ToString()}");
+                    if (found is not null) {
+                        Console.WriteLine($"Found: {found.EntityId}");
+                        dev.SensorTypes.Add(found._id);
+                    }
+                }
+                dev.RemoteActions = remoteActions;
                 dev.CollectionNames = new Dictionary<string, string>() {
                     [nameof(AnalogItem)]="analog_items",
                     [nameof(DiscreteItem)]="discrete_items",
@@ -164,6 +209,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 monitorDevices.Add(dev);
             }
             await monitorDevCollection.InsertManyAsync(monitorDevices);
+            await sensorCollection.InsertManyAsync(sensors);
             Console.WriteLine("Check Database");
         }
         public static async Task ToggleRemote() {
@@ -202,7 +248,7 @@ namespace MonitoringSystem.ConsoleTesting {
         }*/
         static async Task BuildEmailSettingsCollection() {
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("monitor_settings");
+            var database = client.GetDatabase("monitor_settings_dev");
             //await database.CreateCollectionAsync("monitor_devices");
             var emailCollection = database.GetCollection<EmailRecipient>("email_recipients");
             List<EmailRecipient> recipients = new List<EmailRecipient>();
@@ -221,6 +267,15 @@ namespace MonitoringSystem.ConsoleTesting {
             recipients.Add(new EmailRecipient() {
                 Username = "Andy Chapman",
                 Address = "achapman@s-et.com"
+            });
+            recipients.Add(new EmailRecipient() {
+                Username = "Joe Dion",
+                Address = "jdion@s-et.com"
+            });
+
+            recipients.Add(new EmailRecipient() {
+                Username = "Lachab",
+                Address="mlachab@s-et.com"
             });
             await emailCollection.InsertManyAsync(recipients);
             Console.WriteLine("Check Database");

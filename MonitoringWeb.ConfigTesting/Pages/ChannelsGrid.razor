@@ -1,0 +1,139 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringWeb.ConfigTesting.Services
+@using MonitoringWeb.ConfigTesting.Components
+@inject DataService DataService
+
+<h6>Analog Channels</h6>
+<div class="row" style="padding: 1rem">
+    <DxGrid Data="@AnalogChannels"
+            KeyFieldName="Id"
+            ValidationEnabled="false"
+            EditModelSaving="Grid_EditModelSaving"
+            DataItemDeleting="Grid_DataItemDeleting"
+            PopupEditFormCssClass="pw-800"
+            EditMode="GridEditMode.EditForm">
+        <Columns>
+            <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+            <DxGridDataColumn FieldName="@nameof(AnalogInputDto.Id)" />
+            <DxGridDataColumn FieldName="@nameof(AnalogInputDto.Identifier)"/>
+            <DxGridDataColumn FieldName="@nameof(AnalogInputDto.DisplayName)"/>
+            <DxGridDataColumn FieldName="@nameof(AnalogInputDto.Connected)"/>
+            <DxGridDataColumn FieldName="@nameof(AnalogInputDto.Display)"/>
+        </Columns>
+        <DetailRowTemplate>
+            <AlertLevelGrid AlertLevels=((AnalogInputDto)context.DataItem).Alert.AnalogLevels />
+        </DetailRowTemplate>
+          @*<EditFormTemplate Context="EditFormContext">
+                @{
+                    var device = (ModbusDeviceDto)EditFormContext.EditModel;
+                }
+                <DxFormLayout CssClass="w-100">
+                    <DxFormLayoutItem Caption="Name:" ColSpanMd="6">
+                        <DxTextBox @bind-Text="@device.Name" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="HubName" ColSpanMd="6">
+                        <DxTextBox @bind-Text="@device.HubName" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="HubAddress" ColSpanMd="6">
+                        <DxTextBox @bind-Text="@device.HubAddress" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="ReadInterval" ColSpanMd="6">
+                        <DxSpinEdit @bind-Value="@device.ReadInterval" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="SaveInterval" ColSpanMd="6">
+                        <DxSpinEdit @bind-Value="@device.SaveInterval" />
+                    </DxFormLayoutItem>
+                </DxFormLayout>
+            </EditFormTemplate>*@
+    </DxGrid>
+</div>
+
+<h6>Disrete Channels</h6>
+<div class="row" style="padding: 1rem">
+        <DxGrid Data="@DiscreteChannels"
+                KeyFieldName="Id"
+                ValidationEnabled="false"
+                EditModelSaving="Grid_EditModelSaving"
+                DataItemDeleting="Grid_DataItemDeleting"
+                PopupEditFormCssClass="pw-800"
+                EditMode="GridEditMode.EditForm">
+            <Columns>
+                <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+                <DxGridDataColumn FieldName="@nameof(DiscreteInputDto.Id)" />
+                <DxGridDataColumn FieldName="@nameof(DiscreteInputDto.Identifier)"/>
+                <DxGridDataColumn FieldName="@nameof(DiscreteInputDto.DisplayName)"/>
+                <DxGridDataColumn FieldName="@nameof(DiscreteInputDto.Connected)"/>
+                <DxGridDataColumn FieldName="@nameof(DiscreteInputDto.Display)"/>
+            </Columns>
+        </DxGrid>
+</div>
+
+<h6>Virtual Channels</h6>
+<div class="row" style="padding: 1rem">
+    <DxGrid Data="@VirtualInputs"
+            KeyFieldName="Id"
+            ValidationEnabled="false"
+            EditModelSaving="Grid_EditModelSaving"
+            DataItemDeleting="Grid_DataItemDeleting"
+            PopupEditFormCssClass="pw-800"
+            EditMode="GridEditMode.EditForm">
+        <Columns>
+            <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+            <DxGridDataColumn FieldName="@nameof(VirtualInputDto.Id)" />
+            <DxGridDataColumn FieldName="@nameof(VirtualInputDto.Identifier)"/>
+            <DxGridDataColumn FieldName="@nameof(VirtualInputDto.DisplayName)"/>
+            <DxGridDataColumn FieldName="@nameof(VirtualInputDto.Connected)"/>
+            <DxGridDataColumn FieldName="@nameof(VirtualInputDto.Display)"/>
+        </Columns>
+    </DxGrid>
+</div>
+
+
+<div class="row text-center" style="padding: 1rem">
+    <h6 >Output Channels</h6>
+    <DxGrid Data="@DiscreteOutputs"
+            KeyFieldName="Id"
+            ValidationEnabled="false"
+            EditModelSaving="Grid_EditModelSaving"
+            DataItemDeleting="Grid_DataItemDeleting"
+            PopupEditFormCssClass="pw-800"
+            EditMode="GridEditMode.EditForm">
+        <Columns>
+            <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+            <DxGridDataColumn FieldName="@nameof(DiscreteOutputDto.Id)"/>
+            <DxGridDataColumn FieldName="@nameof(DiscreteOutputDto.Identifier)"/>
+            <DxGridDataColumn FieldName="@nameof(DiscreteOutputDto.DisplayName)"/>
+            <DxGridDataColumn FieldName="@nameof(DiscreteOutputDto.Connected)"/>
+            <DxGridDataColumn FieldName="@nameof(DiscreteOutputDto.Display)"/>
+        </Columns>
+    </DxGrid>
+</div>
+
+@code {
+    [Parameter]
+    public ModbusDeviceDto? ModbusDevice { get; set; }
+    
+    IGrid Grid { get; set; }
+    IEnumerable<AnalogInputDto> AnalogChannels { get; set; }
+    IEnumerable<DiscreteInputDto> DiscreteChannels { get; set; }
+    IEnumerable<VirtualInputDto> VirtualInputs { get; set; }
+    IEnumerable<DiscreteOutputDto> DiscreteOutputs { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        var response= await this.DataService.GetDeviceChannels(this.ModbusDevice.Id);
+        this.AnalogChannels = response.AnalogInputs;
+        this.DiscreteChannels = response.DiscreteInputs;
+        this.VirtualInputs = response.VirtualInputs;
+        this.DiscreteOutputs = response.DiscreteOutputs;
+    }
+    async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
+        //await this.DataService.UpdateModbusDevice((ModbusDeviceDto)e.DataItem,(ModbusDeviceDto)e.EditModel);
+    }
+    async Task Grid_DataItemDeleting(GridDataItemDeletingEventArgs e) {
+    //await NwindDataService.RemoveEmployeeAsync((EditableEmployee)e.DataItem);
+    //await UpdateDataAsync();
+    }
+    async Task UpdateDataAsync() {
+        //this.ModbusDevcies = await this.DataService.GetAllDevices();
+    }
+}
