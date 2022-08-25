@@ -20,13 +20,13 @@ public abstract class ChannelDto {
 }
 
 public class AnalogInputDto:ChannelDto {
-    public Guid AlertId { get; set; }
+
     public Guid? SensorId { get; set; }
 }
 
 public class DiscreteInputDto:ChannelDto {
     //public DiscreteAlertDto? Alert { get; set; }
-    public Guid? AlertId { get; set; }
+
 }
 
 public class VirtualInputDto:ChannelDto {

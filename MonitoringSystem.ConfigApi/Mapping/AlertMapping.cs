@@ -12,8 +12,7 @@ public static class AlertMapping {
             RegisterLength = alert.ModbusAddress.RegisterLength,
             RegisterType=alert.ModbusAddress.RegisterType,
             Name = alert.Name,
-            InputChannelId = alert.InputChannelId,
-            AlertLevelIds = alert.AlertLevels.Select(e=>e.Id)
+            InputChannelId = alert.InputChannelId
         };
     }
     public static DiscreteAlertDto ToDto(this DiscreteAlert alert) {
@@ -28,9 +27,6 @@ public static class AlertMapping {
             Name = alert.Name,
             InputChannelId = alert.InputChannelId,
         };
-        if (alert.AlertLevel is not null) {
-            dto.DiscreteLevelId = alert.AlertLevel.Id;
-        }
         return dto;
     }
     public static AnalogLevelDto ToDto(this AnalogLevel level) {

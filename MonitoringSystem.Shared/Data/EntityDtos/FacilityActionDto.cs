@@ -10,8 +10,8 @@ public class FacilityActionDto {
 
 public class ActionOutputDto {
     public Guid Id { get; set; }
-    public DiscreteOutputDto? DiscreteOutput { get; set; }
-    /*public DeviceActionDto? DeviceActionDto { get; set; }*/
+    public Guid DiscreteOutputId { get; set; }
+    public Guid DeviceActionId { get; set; }
     public DiscreteState OnLevel { get; set; }
     public DiscreteState OffLevel { get; set; }
 }
@@ -20,6 +20,7 @@ public class DeviceActionDto {
     public Guid Id { get; set; }
     public string? Name { get; set; }
     public int FirmwareId { get; set; }
-    public FacilityActionDto? FacilityAction { get; set; }
-    public IEnumerable<ActionOutputDto> ActionOutputs { get; set; } = Enumerable.Empty<ActionOutputDto>();
+    public ActionType ActionType { get; set; }
+    public Guid FacilityActionId { get; set; }
+    public Guid MonitorBoxId { get; set; }
 }

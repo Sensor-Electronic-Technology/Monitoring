@@ -12,13 +12,9 @@ public class AlertDto {
     public Guid InputChannelId { get; set; }
 }
 
-public class AnalogAlertDto:AlertDto {
-    public IEnumerable<Guid> AlertLevelIds { get; set; }=Enumerable.Empty<Guid>();
-}
+public class AnalogAlertDto:AlertDto { }
 
-public class DiscreteAlertDto : AlertDto {
-    public Guid? DiscreteLevelId { get; set; }
-}
+public class DiscreteAlertDto : AlertDto { }
 
 public abstract class AlertLevelDto {
     public Guid Id { get; set; }

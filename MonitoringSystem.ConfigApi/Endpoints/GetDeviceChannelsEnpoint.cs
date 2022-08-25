@@ -17,13 +17,17 @@ public class GetAnalogChannelsEndpoint:Endpoint<GetDeviceChannelsRequest,GetAnal
     }
 
     public override async Task HandleAsync(GetDeviceChannelsRequest req, CancellationToken ct) {
-        var analogChannels = await this._context.Channels.OfType<AnalogInput>()
+        /*var analogChannels = await this._context.Channels.OfType<AnalogInput>()
             .Include(e => e.Sensor)
             .Include(e => e.Alert)
             .ThenInclude(e => ((AnalogAlert)e).AlertLevels)
             .ThenInclude(e => e.DeviceAction)
             .Where(e => e.ModbusDeviceId == req.Id)
             .Select(e => e.ToDto())
+            .ToListAsync(ct);*/
+        var analogChannels = await this._context.Channels.OfType<AnalogInput>()
+            .Where(e => e.ModbusDeviceId == req.Id)
+            .Select(e=>e.ToDto())
             .ToListAsync(ct);
         var response = new GetAnalogChannelsResponse() {
             AnalogInputs = analogChannels
@@ -41,10 +45,14 @@ public class GetDiscreteChannelsEndpoint:Endpoint<GetDeviceChannelsRequest,GetDi
     }
 
     public override async Task HandleAsync(GetDeviceChannelsRequest req, CancellationToken ct) {
-        var discreteChannels = await this._context.Channels.OfType<DiscreteInput>()
+        /*var discreteChannels = await this._context.Channels.OfType<DiscreteInput>()
             .Include(e => e.Alert)
             .ThenInclude(e => ((DiscreteAlert)e).AlertLevel)
             .ThenInclude(e => e.DeviceAction)
+            .Where(e => e.ModbusDeviceId == req.Id)
+            .Select(e => e.ToDto())
+            .ToListAsync(ct);*/
+        var discreteChannels = await this._context.Channels.OfType<DiscreteInput>()
             .Where(e => e.ModbusDeviceId == req.Id)
             .Select(e => e.ToDto())
             .ToListAsync(ct);
@@ -64,10 +72,14 @@ public class GetVirtualChannelsEndpoint:Endpoint<GetDeviceChannelsRequest,GetVir
     }
 
     public override async Task HandleAsync(GetDeviceChannelsRequest req, CancellationToken ct) {
-        var virtualChannels = await this._context.Channels.OfType<VirtualInput>()
+        /*var virtualChannels = await this._context.Channels.OfType<VirtualInput>()
             .Include(e => e.Alert)
             .ThenInclude(e => ((DiscreteAlert)e).AlertLevel)
             .ThenInclude(e => e.DeviceAction)
+            .Where(e => e.ModbusDeviceId == req.Id)
+            .Select(e => e.ToDto())
+            .ToListAsync(ct);*/
+        var virtualChannels = await this._context.Channels.OfType<VirtualInput>()
             .Where(e => e.ModbusDeviceId == req.Id)
             .Select(e => e.ToDto())
             .ToListAsync(ct);
@@ -87,12 +99,16 @@ public class GetOutputChannelsEndpoint:Endpoint<GetDeviceChannelsRequest,GetOutp
     }
 
     public override async Task HandleAsync(GetDeviceChannelsRequest req, CancellationToken ct) {
-        var outputs = await this._context.Channels.OfType<DiscreteOutput>()
+        /*var outputs = await this._context.Channels.OfType<DiscreteOutput>()
+            .Where(e => e.ModbusDeviceId == req.Id)
+            .Select(e => e.ToDto())
+            .ToListAsync(ct);*/
+        var outputChannels = await this._context.Channels.OfType<DiscreteOutput>()
             .Where(e => e.ModbusDeviceId == req.Id)
             .Select(e => e.ToDto())
             .ToListAsync(ct);
         var response = new GetOutputChannelsResponse() {
-            OutputChannels = outputs
+            OutputChannels = outputChannels
         };
         await SendOkAsync(response, ct);
     }

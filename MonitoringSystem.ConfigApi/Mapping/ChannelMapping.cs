@@ -6,7 +6,7 @@ namespace MonitoringSystem.ConfigApi.Mapping;
 public static class ChannelMapping {
 
     public static AnalogInputDto ToDto(this AnalogInput input) {
-        var dto=new AnalogInputDto() {
+        return new AnalogInputDto() {
             Id = input.Id,
             Identifier = input.Identifier,
             DisplayName = input.DisplayName,
@@ -22,10 +22,6 @@ public static class ChannelMapping {
             SensorId = input.SensorId,
             ModbusDeviceId = input.ModbusDeviceId
         };
-        if (input.Alert is AnalogAlert alert) {
-            dto.AlertId = alert.Id;
-        }
-        return dto;
     }
 
     public static AnalogInput ToEntity(this AnalogInputDto input) {
@@ -47,7 +43,7 @@ public static class ChannelMapping {
                 ModuleSlot=input.ModuleSlot
             },
             SensorId = input.SensorId,
-            ModbusDeviceId = input.ModbusDeviceId
+            ModbusDeviceId = input.ModbusDeviceId,
         };
 
         return entity;
@@ -69,9 +65,6 @@ public static class ChannelMapping {
             ModuleSlot=input.ChannelAddress.ModuleSlot,
             ModbusDeviceId = input.ModbusDeviceId
         };
-        if (input.Alert is DiscreteAlert alert) {
-            dto.AlertId = alert.Id;
-        }
         return dto;
     }
     
