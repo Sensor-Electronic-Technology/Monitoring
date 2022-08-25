@@ -22,8 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Contracts\Requests\Insert" />
-    <Folder Include="Contracts\Responses\Insert" />
     <Folder Include="Repositories" />
   </ItemGroup>
 

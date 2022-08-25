@@ -1,8 +1,6 @@
 ﻿using MonitoringConfig.Data.Model;
 using MonitoringSystem.Shared.Data.EntityDtos;
-
 namespace MonitoringSystem.ConfigApi.Mapping;
-
 public static class AlertMapping {
     public static AnalogAlertDto ToDto(this AnalogAlert alert) {
         return new AnalogAlertDto() {
@@ -10,53 +8,107 @@ public static class AlertMapping {
             Bypass = alert.Bypass,
             BypassResetTime = alert.BypassResetTime,
             Enabled = alert.Enabled,
-            ModbusAddress = alert.ModbusAddress,
+            Register = alert.ModbusAddress.Address,
+            RegisterLength = alert.ModbusAddress.RegisterLength,
+            RegisterType=alert.ModbusAddress.RegisterType,
             Name = alert.Name,
-            AnalogLevels = alert.AlertLevels.Select(e=>e.ToDto())
+            InputChannelId = alert.InputChannelId,
+            AlertLevelIds = alert.AlertLevels.Select(e=>e.Id)
         };
     }
-
     public static DiscreteAlertDto ToDto(this DiscreteAlert alert) {
         var dto=new DiscreteAlertDto() {
             Id = alert.Id,
             Bypass = alert.Bypass,
             BypassResetTime = alert.BypassResetTime,
             Enabled = alert.Enabled,
-            ModbusAddress = alert.ModbusAddress,
-            Name = alert.Name
+            Register = alert.ModbusAddress.Address,
+            RegisterLength = alert.ModbusAddress.RegisterLength,
+            RegisterType=alert.ModbusAddress.RegisterType,
+            Name = alert.Name,
+            InputChannelId = alert.InputChannelId,
         };
         if (alert.AlertLevel is not null) {
-            dto.DiscreteLevelDto = alert.AlertLevel.ToDto();
+            dto.DiscreteLevelId = alert.AlertLevel.Id;
         }
         return dto;
     }
-
     public static AnalogLevelDto ToDto(this AnalogLevel level) {
         var dto=new AnalogLevelDto() {
             Id=level.Id,
             Bypass=level.Bypass,
             BypassResetTime = level.BypassResetTime,
             Enabled=level.Enabled,
-            SetPoint = level.SetPoint
+            SetPoint = level.SetPoint,
+            DeviceActionId = level.DeviceActionId,
+            AnalogAlertId = level.AnalogAlertId
         };
-        if (level.DeviceAction is not null) {
-            dto.DeviceAction = level.DeviceAction.ToDto();
-        }
         return dto;
     }
-    
     public static DiscreteLevelDto ToDto(this DiscreteLevel level) {
         var dto=new DiscreteLevelDto() {
             Id=level.Id,
             Bypass=level.Bypass,
             BypassResetTime = level.BypassResetTime,
             Enabled=level.Enabled,
-            TriggerOn = level.TriggerOn
+            TriggerOn = level.TriggerOn,
+            DeviceActionId = level.DeviceActionId,
+            DiscreteAlertId = level.DiscreteAlertId
         };
-        if (level.DeviceAction is not null) {
-            dto.DeviceAction = level.DeviceAction.ToDto();
-        }
         return dto;
     }
-    
+    public static AnalogAlert ToEntity(this AnalogAlertDto alert) {
+        return new AnalogAlert() {
+            Id = alert.Id,
+            Bypass = alert.Bypass,
+            BypassResetTime = alert.BypassResetTime,
+            Enabled = alert.Enabled,
+            ModbusAddress=new ModbusAddress() {
+                Address=alert.Register,
+                RegisterLength=alert.RegisterLength,
+                RegisterType=alert.RegisterType
+            },
+            Name = alert.Name,
+            InputChannelId = alert.InputChannelId
+        };
+    }
+    public static DiscreteAlert ToEntity(this DiscreteAlertDto alert) {
+        return new DiscreteAlert() {
+            Id = alert.Id,
+            Bypass = alert.Bypass,
+            BypassResetTime = alert.BypassResetTime,
+            Enabled = alert.Enabled,
+            ModbusAddress=new ModbusAddress() {
+                Address=alert.Register,
+                RegisterLength=alert.RegisterLength,
+                RegisterType=alert.RegisterType
+            },
+            Name = alert.Name,
+            InputChannelId = alert.InputChannelId
+        };
+    }
+    public static AnalogLevel ToEntity(this AnalogLevelDto level) {
+        var entity=new AnalogLevel() {
+            Id=level.Id,
+            Bypass=level.Bypass,
+            BypassResetTime = level.BypassResetTime,
+            Enabled=level.Enabled,
+            SetPoint = level.SetPoint,
+            AnalogAlertId = level.AnalogAlertId,
+            DeviceActionId = level.DeviceActionId
+        };
+        return entity;
+    }
+    public static DiscreteLevel ToEntity(this DiscreteLevelDto level) {
+        var entity=new DiscreteLevel() {
+            Id=level.Id,
+            Bypass=level.Bypass,
+            BypassResetTime = level.BypassResetTime,
+            Enabled=level.Enabled,
+            TriggerOn = level.TriggerOn,
+            DeviceActionId = level.DeviceActionId,
+            DiscreteAlertId = level.DiscreteAlertId
+        };
+        return entity;
+    }
 }

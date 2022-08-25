@@ -14,18 +14,43 @@ public static class ChannelMapping {
             Connected = input.Connected,
             Bypass = input.Bypass,
             Display = input.Display,
-            ModbusAddress = input.ModbusAddress,
-            ChannelAddress = input.ChannelAddress
+            RegisterAddress = input.ModbusAddress.Address,
+            RegisterLength=input.ModbusAddress.RegisterLength,
+            RegisterType = input.ModbusAddress.RegisterType,
+            ChannelAddress=input.ChannelAddress.Channel,
+            ModuleSlot=input.ChannelAddress.ModuleSlot,
+            SensorId = input.SensorId,
+            ModbusDeviceId = input.ModbusDeviceId
         };
         if (input.Alert is AnalogAlert alert) {
-            dto.Alert = alert.ToDto();
+            dto.AlertId = alert.Id;
         }
-        
-        if (input.Sensor is not null) {
-            dto.Sensor = input.Sensor.ToDto();
-        }
-        
         return dto;
+    }
+
+    public static AnalogInput ToEntity(this AnalogInputDto input) {
+        var entity=new AnalogInput() {
+            Id = input.Id,
+            Identifier = input.Identifier,
+            DisplayName = input.DisplayName,
+            SystemChannel = input.SystemChannel,
+            Connected = input.Connected,
+            Bypass = input.Bypass,
+            Display = input.Display,
+            ModbusAddress = new ModbusAddress() {
+                Address=input.RegisterAddress,
+                RegisterLength=input.RegisterLength,
+                RegisterType=input.RegisterType
+            },
+            ChannelAddress=new ChannelAddress() {
+                Channel=input.ChannelAddress,
+                ModuleSlot=input.ModuleSlot
+            },
+            SensorId = input.SensorId,
+            ModbusDeviceId = input.ModbusDeviceId
+        };
+
+        return entity;
     }
     
     public static DiscreteInputDto ToDto(this DiscreteInput input) {
@@ -37,13 +62,40 @@ public static class ChannelMapping {
             Connected = input.Connected,
             Bypass = input.Bypass,
             Display = input.Display,
-            ModbusAddress = input.ModbusAddress,
-            ChannelAddress = input.ChannelAddress
+            RegisterAddress = input.ModbusAddress.Address,
+            RegisterLength=input.ModbusAddress.RegisterLength,
+            RegisterType = input.ModbusAddress.RegisterType,
+            ChannelAddress=input.ChannelAddress.Channel,
+            ModuleSlot=input.ChannelAddress.ModuleSlot,
+            ModbusDeviceId = input.ModbusDeviceId
         };
         if (input.Alert is DiscreteAlert alert) {
-            dto.Alert = alert.ToDto();
+            dto.AlertId = alert.Id;
         }
         return dto;
+    }
+    
+    public static DiscreteInput ToEntity(this DiscreteInputDto input) {
+        var entity=new DiscreteInput() {
+            Id = input.Id,
+            Identifier = input.Identifier,
+            DisplayName = input.DisplayName,
+            SystemChannel = input.SystemChannel,
+            Connected = input.Connected,
+            Bypass = input.Bypass,
+            Display = input.Display,
+            ModbusAddress = new ModbusAddress() {
+                Address=input.RegisterAddress,
+                RegisterLength=input.RegisterLength,
+                RegisterType=input.RegisterType
+            },
+            ChannelAddress=new ChannelAddress() {
+                Channel=input.ChannelAddress,
+                ModuleSlot=input.ModuleSlot
+            },
+            ModbusDeviceId = input.ModbusDeviceId
+        };
+        return entity;
     }
     
     public static DiscreteOutputDto ToDto(this DiscreteOutput input) {
@@ -55,10 +107,37 @@ public static class ChannelMapping {
             Connected = input.Connected,
             Bypass = input.Bypass,
             Display = input.Display,
-            ModbusAddress = input.ModbusAddress,
-            ChannelAddress = input.ChannelAddress,
-            StartState=input.StartState
+            RegisterAddress = input.ModbusAddress.Address,
+            RegisterLength=input.ModbusAddress.RegisterLength,
+            RegisterType = input.ModbusAddress.RegisterType,
+            ChannelAddress=input.ChannelAddress.Channel,
+            ModuleSlot=input.ChannelAddress.ModuleSlot,
+            StartState=input.StartState,
+            ModbusDeviceId = input.ModbusDeviceId
         };
+    }
+    
+    public static DiscreteOutput ToEntity(this DiscreteOutputDto input) {
+        var entity=new DiscreteOutput() {
+            Id = input.Id,
+            Identifier = input.Identifier,
+            DisplayName = input.DisplayName,
+            SystemChannel = input.SystemChannel,
+            Connected = input.Connected,
+            Bypass = input.Bypass,
+            Display = input.Display,
+            ModbusAddress = new ModbusAddress() {
+                Address=input.RegisterAddress,
+                RegisterLength=input.RegisterLength,
+                RegisterType=input.RegisterType
+            },
+            ChannelAddress=new ChannelAddress() {
+                Channel=input.ChannelAddress,
+                ModuleSlot=input.ModuleSlot
+            },
+            ModbusDeviceId = input.ModbusDeviceId
+        };
+        return entity;
     }
     
     public static VirtualInputDto ToDto(this VirtualInput input) {
@@ -70,15 +149,42 @@ public static class ChannelMapping {
             Connected = input.Connected,
             Bypass = input.Bypass,
             Display = input.Display,
-            ModbusAddress = input.ModbusAddress,
-            ChannelAddress = input.ChannelAddress
+            RegisterAddress = input.ModbusAddress.Address,
+            RegisterLength=input.ModbusAddress.RegisterLength,
+            RegisterType = input.ModbusAddress.RegisterType,
+            ChannelAddress=input.ChannelAddress.Channel,
+            ModuleSlot=input.ChannelAddress.ModuleSlot,
+            ModbusDeviceId = input.ModbusDeviceId
         };
         if (input.Alert is DiscreteAlert alert) {
-            dto.Alert = alert.ToDto();
+            dto.AlertId = alert.Id;
         }
         return dto;
     }
-
+    
+    public static VirtualInput ToEntity(this VirtualInputDto input) {
+        var entity=new VirtualInput() {
+            Id = input.Id,
+            Identifier = input.Identifier,
+            DisplayName = input.DisplayName,
+            SystemChannel = input.SystemChannel,
+            Connected = input.Connected,
+            Bypass = input.Bypass,
+            Display = input.Display,
+            ModbusAddress = new ModbusAddress() {
+                Address=input.RegisterAddress,
+                RegisterLength=input.RegisterLength,
+                RegisterType=input.RegisterType
+            },
+            ChannelAddress=new ChannelAddress() {
+                Channel=input.ChannelAddress,
+                ModuleSlot=input.ModuleSlot
+            },
+            ModbusDeviceId = input.ModbusDeviceId
+        };
+        return entity;
+    }
+    
     public static SensorDto ToDto(this Sensor sensor) {
         return new SensorDto() {
             Id = sensor.Id,
@@ -95,4 +201,19 @@ public static class ChannelMapping {
         };
     }
     
+    public static Sensor ToEntity(this SensorDto sensor) {
+        return new Sensor() {
+            Id = sensor.Id,
+            DisplayName = sensor.DisplayName,
+            Description = sensor.Description,
+            Factor = sensor.Factor,
+            Name = sensor.Name,
+            Offset = sensor.Offset,
+            Slope = sensor.Slope,
+            RecordThreshold = sensor.RecordThreshold,
+            Units = sensor.Units,
+            YAxitMax = sensor.YAxisMax,
+            YAxisMin = sensor.YAxisMin
+        };
+    }
 }

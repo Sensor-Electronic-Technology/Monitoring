@@ -16,11 +16,11 @@ public class DataService {
         return await this._client.GetFromJsonAsync<IEnumerable<ModbusDeviceDto>>("https://localhost:7133/devices");
     }
 
-    public async Task<GetDeviceChannelsResponse> GetDeviceChannels(Guid deviceId) {
+    /*public async Task<GetAnalo> GetDeviceChannels(Guid deviceId) {
         GetDeviceChannelsRequest request = new GetDeviceChannelsRequest() { Id = deviceId };
         var response=await this._client.GetFromJsonAsync<GetDeviceChannelsResponse>($"https://localhost:7133/channels/{request.Id}");
         return response;
-    }
+    }*/
 
     public async Task UpdateModbusDevice(ModbusDeviceDto device,ModbusDeviceDto updated) {
         device.Database = updated.Database;

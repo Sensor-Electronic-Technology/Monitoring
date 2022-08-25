@@ -9,21 +9,29 @@ public abstract class ChannelDto {
     public bool Connected { get; set; }
     public bool Bypass { get; set; }
     public bool Display { get; set; }
-    public ModbusAddress? ModbusAddress { get; set; }
-    public ChannelAddress? ChannelAddress { get; set; }
+    //public ModbusAddress? ModbusAddress { get; set; }
+    public int RegisterAddress { get; set; }
+    public int RegisterLength { get; set; }
+    public ModbusRegister RegisterType { get; set; }
+    //public ChannelAddress? ChannelAddress { get; set; }
+    public int ChannelAddress { get; set; }
+    public int ModuleSlot { get; set; }
+    public Guid ModbusDeviceId { get; set; }
 }
 
 public class AnalogInputDto:ChannelDto {
-    public AnalogAlertDto? Alert { get; set; }
-    public SensorDto? Sensor { get; set; }
+    public Guid AlertId { get; set; }
+    public Guid? SensorId { get; set; }
 }
 
 public class DiscreteInputDto:ChannelDto {
-    public DiscreteAlertDto? Alert { get; set; }
+    //public DiscreteAlertDto? Alert { get; set; }
+    public Guid? AlertId { get; set; }
 }
 
 public class VirtualInputDto:ChannelDto {
-    public DiscreteAlertDto? Alert { get; set; }
+    //public DiscreteAlertDto? Alert { get; set; }
+    public Guid AlertId { get; set; }
 }
 
 public class DiscreteOutputDto:ChannelDto {

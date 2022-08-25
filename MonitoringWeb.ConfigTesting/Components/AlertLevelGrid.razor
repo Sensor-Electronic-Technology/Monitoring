@@ -1,6 +1,6 @@
 ﻿@using MonitoringSystem.Shared.Data.EntityDtos
 <h3>AlertLevelGrid</h3>
-<DxGrid Data=AlertLevels>
+@*<DxGrid Data=AlertLevels>
     <Columns>
         <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.Id)"/>
         <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.SetPoint)"/>
@@ -11,7 +11,7 @@
     <DetailRowTemplate>
         <DeviceActionView DeviceAction=((AnalogLevelDto)context.DataItem).DeviceAction />
     </DetailRowTemplate>
-</DxGrid>
+</DxGrid>*@
 
 @code {
     [Parameter]

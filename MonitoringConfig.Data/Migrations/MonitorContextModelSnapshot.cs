@@ -46,7 +46,7 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasIndex("DiscreteOutputId");
 
-                    b.ToTable("ActionOutputs");
+                    b.ToTable("ActionOutputs", (string)null);
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.Alert", b =>
@@ -80,7 +80,7 @@ namespace MonitoringConfig.Data.Migrations
                     b.HasIndex("InputChannelId")
                         .IsUnique();
 
-                    b.ToTable("Alerts");
+                    b.ToTable("Alerts", (string)null);
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("Alert");
                 });
@@ -111,7 +111,7 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasIndex("DeviceActionId");
 
-                    b.ToTable("AlertLevels");
+                    b.ToTable("AlertLevels", (string)null);
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("AlertLevel");
                 });
@@ -151,7 +151,7 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasIndex("ModbusDeviceId");
 
-                    b.ToTable("Channels");
+                    b.ToTable("Channels", (string)null);
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("Channel");
                 });
@@ -186,7 +186,7 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Devices");
+                    b.ToTable("Devices", (string)null);
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("Device");
                 });
@@ -215,7 +215,7 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasIndex("MonitorBoxId");
 
-                    b.ToTable("DeviceActions");
+                    b.ToTable("DeviceActions", (string)null);
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.FacilityAction", b =>
@@ -238,7 +238,7 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FacilityActions");
+                    b.ToTable("FacilityActions", (string)null);
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.ModbusChannelRegisterMap", b =>
@@ -291,7 +291,7 @@ namespace MonitoringConfig.Data.Migrations
                     b.HasIndex("ModbusDeviceId")
                         .IsUnique();
 
-                    b.ToTable("ModbusChannelRegisterMaps");
+                    b.ToTable("ModbusChannelRegisterMaps", (string)null);
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.ModbusConfiguration", b =>
@@ -323,7 +323,7 @@ namespace MonitoringConfig.Data.Migrations
                     b.HasIndex("ModbusDeviceId")
                         .IsUnique();
 
-                    b.ToTable("ModbusConfigurations");
+                    b.ToTable("ModbusConfigurations", (string)null);
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.NetworkConfiguration", b =>
@@ -355,7 +355,7 @@ namespace MonitoringConfig.Data.Migrations
                     b.HasIndex("ModbusDeviceId")
                         .IsUnique();
 
-                    b.ToTable("NetworkConfigurations");
+                    b.ToTable("NetworkConfigurations", (string)null);
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.Sensor", b =>
@@ -396,7 +396,7 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Sensors");
+                    b.ToTable("Sensors", (string)null);
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.AnalogAlert", b =>
@@ -536,7 +536,7 @@ namespace MonitoringConfig.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("MonitoringSystem.Shared.Data.EntityDtos.ModbusAddress", "ModbusAddress", b1 =>
+                    b.OwnsOne("MonitoringConfig.Data.Model.Alert.ModbusAddress#MonitoringSystem.Shared.Data.EntityDtos.ModbusAddress", "ModbusAddress", b1 =>
                         {
                             b1.Property<Guid>("AlertId")
                                 .HasColumnType("uniqueidentifier");
@@ -552,7 +552,7 @@ namespace MonitoringConfig.Data.Migrations
 
                             b1.HasKey("AlertId");
 
-                            b1.ToTable("Alerts");
+                            b1.ToTable("Alerts", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("AlertId");
@@ -580,7 +580,26 @@ namespace MonitoringConfig.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("MonitoringSystem.Shared.Data.EntityDtos.ModbusAddress", "ModbusAddress", b1 =>
+                    b.OwnsOne("MonitoringConfig.Data.Model.Channel.ChannelAddress#MonitoringSystem.Shared.Data.EntityDtos.ChannelAddress", "ChannelAddress", b1 =>
+                        {
+                            b1.Property<Guid>("ChannelId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("Channel")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("ModuleSlot")
+                                .HasColumnType("int");
+
+                            b1.HasKey("ChannelId");
+
+                            b1.ToTable("Channels", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("ChannelId");
+                        });
+
+                    b.OwnsOne("MonitoringConfig.Data.Model.Channel.ModbusAddress#MonitoringSystem.Shared.Data.EntityDtos.ModbusAddress", "ModbusAddress", b1 =>
                         {
                             b1.Property<Guid>("ChannelId")
                                 .HasColumnType("uniqueidentifier");
@@ -596,26 +615,7 @@ namespace MonitoringConfig.Data.Migrations
 
                             b1.HasKey("ChannelId");
 
-                            b1.ToTable("Channels");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ChannelId");
-                        });
-
-                    b.OwnsOne("MonitoringSystem.Shared.Data.EntityDtos.ChannelAddress", "ChannelAddress", b1 =>
-                        {
-                            b1.Property<Guid>("ChannelId")
-                                .HasColumnType("uniqueidentifier");
-
-                            b1.Property<int>("Channel")
-                                .HasColumnType("int");
-
-                            b1.Property<int>("ModuleSlot")
-                                .HasColumnType("int");
-
-                            b1.HasKey("ChannelId");
-
-                            b1.ToTable("Channels");
+                            b1.ToTable("Channels", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("ChannelId");

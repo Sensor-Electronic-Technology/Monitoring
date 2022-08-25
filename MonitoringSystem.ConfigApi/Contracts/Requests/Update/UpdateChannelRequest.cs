@@ -2,25 +2,20 @@
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
 
-namespace MonitoringSystem.ConfigApi.Contracts.Requests.Update; 
-
-public abstract class UpdateChannelRequest {
-    public Guid ChannelId { get; set; }
-    public string? Identifier { get; set; }
-    public string? DisplayName { get; set; }
-    
-    public int SystemChannel { get; set; }
-    public bool Connected { get; set; }
-    public bool Bypass { get; set; }
-    public bool Display { get; set; }
-    public ModbusAddress? ModbusAddress { get; set; }
-    public ChannelAddress? ChannelAddress { get; set; }
-}
+namespace MonitoringSystem.ConfigApi.Contracts.Requests.Update;
 
 public class UpdateAnalogChannelRequest {
-    public Guid SensorId { get; set; }
+    public AnalogInputDto AnalogChannel { get; set; } = default!;
 }
 
-public class UpdateDiscreteChannelRequest { }
+public class UpdateDiscreteChannelRequest {
+    public DiscreteInputDto DiscreteChannel { get; set; } = default!;
+}
 
-public class UpdateVirtualChannelRequest { }
+public class UpdateVirtualChannelRequest {
+    public VirtualInputDto VirtualChannel { get; set; } = default!;
+}
+
+public class UpdateOutputChannelRequest {
+    public DiscreteOutputDto OutputChannel { get; set; } = default!;
+}

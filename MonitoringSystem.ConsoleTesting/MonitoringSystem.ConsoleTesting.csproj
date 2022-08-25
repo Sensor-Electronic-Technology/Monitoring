@@ -20,6 +20,7 @@
     <ProjectReference Include="..\MonitoringConfig.Data\MonitoringConfig.Data.csproj" />
     <ProjectReference Include="..\MonitoringData.DataApi\MonitoringData.DataApi.csproj" />
     <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
+    <ProjectReference Include="..\MonitoringSystem.ConfigApi\MonitoringSystem.ConfigApi.csproj" />
   </ItemGroup>
 	
   <ItemGroup>

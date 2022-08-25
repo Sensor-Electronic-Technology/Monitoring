@@ -11,6 +11,7 @@ using MailKit.Net.Smtp;
 using MimeKit;
 using MongoDB.Bson;
 using MonitoringConfig.Data.Model;
+using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
@@ -23,7 +24,27 @@ namespace MonitoringSystem.ConsoleTesting {
         static async Task Main(string[] args) {
             //await CreateMongoDB("Epi1");
             //await BuildSettingsDB();
-            await BuildEmailSettingsCollection();
+            //await BuildEmailSettingsCollection();
+            var context = new MonitorContext();
+            var level = await context.AlertLevels.OfType<AnalogLevel>()
+                .AsNoTracking()
+                .Include(e => e.AnalogAlert)
+                .Include(e => e.DeviceAction)
+                .FirstOrDefaultAsync(e => e.Id.ToString() == "86B0087A-7376-4FE7-B711-08DA81EB180E");
+
+            if (level != null) {
+                var dto = level.ToDto();
+                var temp = dto.ToEntity();
+                context.Update(temp);
+                var ret=await context.SaveChangesAsync();
+                if (ret > 0) {
+                    Console.WriteLine("Changes Saved, Checked Database");
+                } else {
+                    Console.WriteLine("Save Failed");
+                }
+            } else {
+                Console.WriteLine("Level not found");
+            }
         }
         static async Task RemoteAlertTesting() {
             ModbusService modservice = new ModbusService();

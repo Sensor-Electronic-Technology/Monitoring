@@ -21,7 +21,7 @@
             <DxGridDataColumn FieldName="@nameof(AnalogInputDto.Display)"/>
         </Columns>
         <DetailRowTemplate>
-            <AlertLevelGrid AlertLevels=((AnalogInputDto)context.DataItem).Alert.AnalogLevels />
+            @*<AlertLevelGrid AlertLevels=((AnalogInputDto)context.DataItem).Alert.AnalogLevels />*@
         </DetailRowTemplate>
           @*<EditFormTemplate Context="EditFormContext">
                 @{

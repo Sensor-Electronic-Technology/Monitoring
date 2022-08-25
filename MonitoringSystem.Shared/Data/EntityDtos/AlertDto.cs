@@ -6,15 +6,18 @@ public class AlertDto {
     public bool Bypass { get; set; }
     public int BypassResetTime { get; set; }
     public bool Enabled { get; set; }
-    public ModbusAddress? ModbusAddress { get; set; }
+    public int Register { get; set; }
+    public int RegisterLength { get; set; }
+    public ModbusRegister RegisterType { get; set; }
+    public Guid InputChannelId { get; set; }
 }
 
 public class AnalogAlertDto:AlertDto {
-    public IEnumerable<AnalogLevelDto> AnalogLevels { get; set; } = Enumerable.Empty<AnalogLevelDto>();
+    public IEnumerable<Guid> AlertLevelIds { get; set; }=Enumerable.Empty<Guid>();
 }
 
 public class DiscreteAlertDto : AlertDto {
-    public DiscreteLevelDto? DiscreteLevelDto { get; set; }
+    public Guid? DiscreteLevelId { get; set; }
 }
 
 public abstract class AlertLevelDto {
@@ -22,13 +25,15 @@ public abstract class AlertLevelDto {
     public bool Bypass { get; set; }
     public int BypassResetTime { get; set; }
     public bool Enabled { get; set; }
-    public DeviceActionDto? DeviceAction { get; set; }
+    public Guid? DeviceActionId { get; set; }
 }
 
 public class AnalogLevelDto : AlertLevelDto {
+    public Guid AnalogAlertId { get; set; }
     public double SetPoint { get; set; }
 }
 
 public class DiscreteLevelDto:AlertLevelDto {
+    public Guid DiscreteAlertId { get; set; }
     public DiscreteState TriggerOn { get; set; }
 }
