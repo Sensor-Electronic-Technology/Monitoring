@@ -1,6 +1,4 @@
-﻿using MonitoringConfig.Data.Model;
-using MonitoringSystem.Shared.Data;
-using MonitoringSystem.Shared.Data.EntityDtos;
+﻿using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.ConfigApi.Contracts.Requests.Update;
 

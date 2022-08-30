@@ -1,5 +1,6 @@
 ﻿using MonitoringConfig.Data.Model;
 using MonitoringSystem.Shared.Data.EntityDtos;
+
 namespace MonitoringSystem.ConfigApi.Mapping;
 public static class AlertMapping {
     public static AnalogAlertDto ToDto(this AnalogAlert alert) {

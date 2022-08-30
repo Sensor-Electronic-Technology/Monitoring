@@ -26,6 +26,8 @@ if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
     });
 }
 
+builder.Services.AddScoped<ApiClient>();
+
 builder.Services.AddScoped<DataService>();
 
 var app = builder.Build();

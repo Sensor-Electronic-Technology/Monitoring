@@ -5,7 +5,6 @@ using MonitoringConfig.Data.Model;
 using MonitoringSystem.ConfigApi.Contracts.Requests.Get;
 using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 using MonitoringSystem.ConfigApi.Mapping;
-using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.ConfigApi.Endpoints;
 

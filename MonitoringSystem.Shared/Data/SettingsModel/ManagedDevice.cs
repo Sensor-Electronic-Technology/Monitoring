@@ -1,6 +1,5 @@
 ﻿using MongoDB.Bson;
 using MonitoringSystem.Shared.Data.EntityDtos;
-using MonitoringSystem.Shared.Data.LogModel;
 
 namespace MonitoringSystem.Shared.Data.SettingsModel;
 

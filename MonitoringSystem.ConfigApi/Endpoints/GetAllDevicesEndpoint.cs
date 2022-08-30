@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MonitoringConfig.Data.Model;
-using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringSystem.Shared.Data.EntityDtos;
 

@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FastEndpoints" Version="4.4.0" />
-    <PackageReference Include="FastEndpoints.Swagger" Version="4.4.0" />
+    <PackageReference Include="FastEndpoints" Version="5.0.0" />
+    <PackageReference Include="FastEndpoints.Swagger" Version="5.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     <PackageReference Include="MongoDB.Driver" Version="2.15.1" />

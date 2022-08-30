@@ -1,7 +1,6 @@
-﻿@using MonitoringSystem.Shared.Data.EntityDtos
-@using MonitoringWeb.ConfigTesting.Services
+﻿@using MonitoringWeb.ConfigTesting.Services
 @using MonitoringWeb.ConfigTesting.Components
-@inject DataService DataService
+@inject ApiClient Client
 
 <h6>Analog Channels</h6>
 <div class="row" style="padding: 1rem">
@@ -120,11 +119,19 @@
     IEnumerable<DiscreteOutputDto> DiscreteOutputs { get; set; }
 
     protected override async Task OnInitializedAsync() {
-        var response= await this.DataService.GetDeviceChannels(this.ModbusDevice.Id);
-        this.AnalogChannels = response.AnalogInputs;
+        var analogChannels = await this.Client.GetAnalogChannelsEndpointAsync(new GetDeviceChannelsRequest(),this.ModbusDevice.Id.ToString());
+        var discreteChannels = await this.Client.GetDiscreteChannelsEndpointAsync(new GetDeviceChannelsRequest(),this.ModbusDevice.Id.ToString());
+        var virtualChannels = await this.Client.GetVirtualChannelsEndpointAsync(new GetDeviceChannelsRequest(),this.ModbusDevice.Id.ToString());
+        var outputChannels = await this.Client.GetOutputChannelsEndpointAsync(new GetDeviceChannelsRequest(),this.ModbusDevice.Id.ToString());
+        this.AnalogChannels = analogChannels.AnalogInputs;
+        this.DiscreteChannels = discreteChannels.DiscreteInputs;
+        this.VirtualInputs = virtualChannels.VirtualInputs;
+        this.DiscreteOutputs = outputChannels.OutputChannels;
+    //var response= await this.DataService.GetDeviceChannels(this.ModbusDevice.Id);
+    /*this.AnalogChannels = response.AnalogInputs;
         this.DiscreteChannels = response.DiscreteInputs;
         this.VirtualInputs = response.VirtualInputs;
-        this.DiscreteOutputs = response.DiscreteOutputs;
+        this.DiscreteOutputs = response.DiscreteOutputs;*/
     }
     async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
         //await this.DataService.UpdateModbusDevice((ModbusDeviceDto)e.DataItem,(ModbusDeviceDto)e.EditModel);

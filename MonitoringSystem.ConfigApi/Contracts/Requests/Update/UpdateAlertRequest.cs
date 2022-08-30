@@ -1,4 +1,4 @@
-﻿using MonitoringSystem.ConfigApi.Endpoints;
+﻿
 using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.ConfigApi.Contracts.Requests.Update; 

@@ -1,7 +1,6 @@
 ﻿using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Modbus.Device;
-using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.Shared.Services {

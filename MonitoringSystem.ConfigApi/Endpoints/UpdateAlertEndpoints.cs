@@ -2,9 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MonitoringConfig.Data.Model;
-using MonitoringSystem.ConfigApi.Contracts.Requests.Get;
 using MonitoringSystem.ConfigApi.Contracts.Requests.Update;
-using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 using MonitoringSystem.ConfigApi.Contracts.Responses.Update;
 using MonitoringSystem.ConfigApi.Mapping;
 
@@ -30,7 +28,7 @@ public class UpdateAnalogAlertEndpoint : Endpoint<UpdateAnalogAlertRequest, Upda
     }
 }
 
-[HttpPut("alerts/discrete/AnalogAlert"),AllowAnonymous]
+[HttpPut("alerts/discrete/DiscreteAlert"),AllowAnonymous]
 public class UpdateDiscreteAlertEndpoint : Endpoint<UpdateDiscreteAlertRequest, UpdateDiscreteAlertResponse> {
     private readonly MonitorContext _context;
 

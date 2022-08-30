@@ -2,7 +2,6 @@
 
 namespace MonitoringSystem.ConfigApi.Contracts.Requests.Update; 
 
-public class UpdateDeviceRequest {
-    public ModbusDeviceDto ModbusDevice { get; set; } = default!;
+public class UpdateActionOutputRequest {
+    public ActionOutputDto ActionOutput { get; set; }
 }
-

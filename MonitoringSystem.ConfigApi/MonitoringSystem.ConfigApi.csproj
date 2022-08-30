@@ -9,8 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FastEndpoints" Version="4.4.0" />
-    <PackageReference Include="FastEndpoints.Swagger" Version="4.4.0" />
+    <PackageReference Include="FastEndpoints" Version="5.0.0" />
+    <PackageReference Include="FastEndpoints.ClientGen" Version="5.0.0" />
+    <PackageReference Include="FastEndpoints.Swagger" Version="5.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="6.0.7" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
@@ -22,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Data" />
     <Folder Include="Repositories" />
   </ItemGroup>
 

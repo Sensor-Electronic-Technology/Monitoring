@@ -1,10 +1,5 @@
 ﻿@page "/"
-
-@using MonitoringSystem.Shared.Data.EntityDtos
-@using System.Net
-@using System.Net.Http.Json
 @using MonitoringWeb.ConfigTesting.Services
-@using Newtonsoft.Json
 @inject DataService DataService
 
 <DxGrid @ref="Grid"
@@ -57,6 +52,8 @@
     <h4>Device Not Selected</h4>
 } else {
     <h4>Selected Device: @((ModbusDeviceDto)this.SelectedDevice).Name</h4>
+                                                                
+                                                                
     <ChannelsGrid ModbusDevice=@(this.SelectedDevice as ModbusDeviceDto) />
 }
 

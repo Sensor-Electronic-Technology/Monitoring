@@ -149,9 +149,6 @@ public static class ChannelMapping {
             ModuleSlot=input.ChannelAddress.ModuleSlot,
             ModbusDeviceId = input.ModbusDeviceId
         };
-        if (input.Alert is DiscreteAlert alert) {
-            dto.AlertId = alert.Id;
-        }
         return dto;
     }
     
