@@ -1,4 +1,3 @@
-using MonitoringWeb.ConfigTesting.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MonitoringWeb.ConfigTesting.Services;
@@ -26,7 +25,7 @@ if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
     });
 }
 
-builder.Services.AddScoped<ApiClient>();
+builder.Services.AddScoped<ConfigApiClient>();
 
 builder.Services.AddScoped<DataService>();
 

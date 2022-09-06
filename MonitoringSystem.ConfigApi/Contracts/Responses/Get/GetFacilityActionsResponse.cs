@@ -7,7 +7,7 @@ public class GetFacilityActionsResponse {
 }
 
 public class GetDeviceActionsResponse {
-    public IEnumerable<DeviceActionDto> DeviceActions { get; set; } = Enumerable.Empty<DeviceActionDto>();
+    public IEnumerable<DeviceActionDto>? DeviceActions { get; set; } = Enumerable.Empty<DeviceActionDto>();
 }
 
 public class GetDeviceActionResponse {

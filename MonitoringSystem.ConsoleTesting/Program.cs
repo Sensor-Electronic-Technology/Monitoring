@@ -5,6 +5,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using MailKit.Net.Smtp;
@@ -13,6 +15,7 @@ using MongoDB.Bson;
 using MonitoringConfig.Data.Model;
 using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringData.Infrastructure.Services.AlertServices;
+using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Services;
@@ -25,6 +28,16 @@ namespace MonitoringSystem.ConsoleTesting {
             //await CreateMongoDB("Epi1");
             //await BuildSettingsDB();
             //await BuildEmailSettingsCollection();
+            HttpClient client = new HttpClient();
+            client.BaseAddress = new Uri("https://localhost:7133/");
+
+            var response = await client.GetFromJsonAsync<GetDeviceActionsResponse>($"actions/deviceactions/d0d8ae61-6982-429f-de8d-08da81eb1674");
+            foreach (var device in response.DeviceActions) {
+                Console.WriteLine($"Name: {device.Name}");
+            }
+        }
+
+        static async Task DtoTesting() {
             var context = new MonitorContext();
             var level = await context.AlertLevels.OfType<AnalogLevel>()
                 .AsNoTracking()

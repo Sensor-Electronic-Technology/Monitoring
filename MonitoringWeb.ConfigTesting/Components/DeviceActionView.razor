@@ -1,15 +1,28 @@
-﻿@using MonitoringSystem.Shared.Data.EntityDtos
-<h3>DeviceActionView</h3>
-        @*<DxFormLayout Data="@this.DeviceAction">
-            <DxFormLayoutItem Field="@nameof(DeviceActionDto.Name)" ColSpanSm="3">
-                <DxTextBox @bind-Text="@this.DeviceAction.Name"></DxTextBox>
-            </DxFormLayoutItem>
-            <DxFormLayoutItem Field="@nameof(DeviceActionDto.FirmwareId)" ColSpanSm="3">
-                <DxSpinEdit @bind-Value="@this.DeviceAction.FirmwareId"></DxSpinEdit>
-            </DxFormLayoutItem>
-        </DxFormLayout>*@
+﻿@using MonitoringWeb.ConfigTesting.Services
+@using MonitoringSystem.Shared.Data.EntityDtos
+@inject ConfigApiClient Client
+
+<DxGrid Data="@DeviceActions">
+    <Columns>
+        <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Name)"/>
+        <DxGridDataColumn FieldName="@nameof(DeviceActionDto.FirmwareId)"/>
+        <DxGridDataColumn FieldName="@nameof(DeviceActionDto.ActionType)"/>
+    </Columns>
+</DxGrid>
 
 @code {
     [Parameter]
-    public DeviceActionDto DeviceAction { get; set; }
+    public string? DeviceId { get; set; }
+
+    IEnumerable<DeviceActionDto> DeviceActions { get; set; } = Enumerable.Empty<DeviceActionDto>();
+
+    protected override async Task OnInitializedAsync() {
+        try {
+            this.DeviceActions = await this.Client.GetDeviceAction(this.DeviceId);
+            int count = this.DeviceActions.Count();
+        } catch {
+            
+        }
+
+    }
 }

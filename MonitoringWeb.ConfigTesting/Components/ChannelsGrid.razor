@@ -1,6 +1,6 @@
 ﻿@using MonitoringWeb.ConfigTesting.Services
-@using MonitoringWeb.ConfigTesting.Components
-@inject ApiClient Client
+@using MonitoringSystem.Shared.Data.EntityDtos
+@inject ConfigApiClient Client
 
 <h6>Analog Channels</h6>
 <div class="row" style="padding: 1rem">
@@ -19,31 +19,6 @@
             <DxGridDataColumn FieldName="@nameof(AnalogInputDto.Connected)"/>
             <DxGridDataColumn FieldName="@nameof(AnalogInputDto.Display)"/>
         </Columns>
-        <DetailRowTemplate>
-            @*<AlertLevelGrid AlertLevels=((AnalogInputDto)context.DataItem).Alert.AnalogLevels />*@
-        </DetailRowTemplate>
-          @*<EditFormTemplate Context="EditFormContext">
-                @{
-                    var device = (ModbusDeviceDto)EditFormContext.EditModel;
-                }
-                <DxFormLayout CssClass="w-100">
-                    <DxFormLayoutItem Caption="Name:" ColSpanMd="6">
-                        <DxTextBox @bind-Text="@device.Name" />
-                    </DxFormLayoutItem>
-                    <DxFormLayoutItem Caption="HubName" ColSpanMd="6">
-                        <DxTextBox @bind-Text="@device.HubName" />
-                    </DxFormLayoutItem>
-                    <DxFormLayoutItem Caption="HubAddress" ColSpanMd="6">
-                        <DxTextBox @bind-Text="@device.HubAddress" />
-                    </DxFormLayoutItem>
-                    <DxFormLayoutItem Caption="ReadInterval" ColSpanMd="6">
-                        <DxSpinEdit @bind-Value="@device.ReadInterval" />
-                    </DxFormLayoutItem>
-                    <DxFormLayoutItem Caption="SaveInterval" ColSpanMd="6">
-                        <DxSpinEdit @bind-Value="@device.SaveInterval" />
-                    </DxFormLayoutItem>
-                </DxFormLayout>
-            </EditFormTemplate>*@
     </DxGrid>
 </div>
 
@@ -119,14 +94,14 @@
     IEnumerable<DiscreteOutputDto> DiscreteOutputs { get; set; }
 
     protected override async Task OnInitializedAsync() {
-        var analogChannels = await this.Client.GetAnalogChannelsEndpointAsync(new GetDeviceChannelsRequest(),this.ModbusDevice.Id.ToString());
-        var discreteChannels = await this.Client.GetDiscreteChannelsEndpointAsync(new GetDeviceChannelsRequest(),this.ModbusDevice.Id.ToString());
-        var virtualChannels = await this.Client.GetVirtualChannelsEndpointAsync(new GetDeviceChannelsRequest(),this.ModbusDevice.Id.ToString());
-        var outputChannels = await this.Client.GetOutputChannelsEndpointAsync(new GetDeviceChannelsRequest(),this.ModbusDevice.Id.ToString());
-        this.AnalogChannels = analogChannels.AnalogInputs;
-        this.DiscreteChannels = discreteChannels.DiscreteInputs;
-        this.VirtualInputs = virtualChannels.VirtualInputs;
-        this.DiscreteOutputs = outputChannels.OutputChannels;
+        var analogChannels = await this.Client.GetAnalogChannels(this.ModbusDevice.Id.ToString());
+        var discreteChannels = await this.Client.GetDiscreteChannels(this.ModbusDevice.Id.ToString());
+        var virtualChannels = await this.Client.GetVirtualChannels(this.ModbusDevice.Id.ToString());
+        var outputChannels = await this.Client.GetOutputChannels(this.ModbusDevice.Id.ToString());
+        this.AnalogChannels = analogChannels;
+        this.DiscreteChannels = discreteChannels;
+        this.VirtualInputs = virtualChannels;
+        this.DiscreteOutputs = outputChannels;
     //var response= await this.DataService.GetDeviceChannels(this.ModbusDevice.Id);
     /*this.AnalogChannels = response.AnalogInputs;
         this.DiscreteChannels = response.DiscreteInputs;
