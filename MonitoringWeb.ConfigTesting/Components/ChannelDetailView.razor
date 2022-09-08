@@ -2,14 +2,14 @@
 @using MonitoringWeb.ConfigTesting.Services
 @inject ConfigApiClient Client
 <DxFormLayout>
-    <DxFormLayoutItem>
+    <DxFormLayoutItem Caption="Alert Name">
         @if (this.ChannelType == typeof(AnalogInputDto)) {
             <DxTextBox Text="@((Alert as AnalogAlertDto)?.Name)"></DxTextBox>
         }else if (this.ChannelType == typeof(DiscreteInputDto) || this.ChannelType == typeof(VirtualInputDto)) {
             <DxTextBox Text="@((Alert as DiscreteAlertDto)?.Name)"></DxTextBox>
         }
     </DxFormLayoutItem>
-    <DxFormLayoutItem Caption="Alert Levels">
+    @*<DxFormLayoutItem Caption="Alert Levels">
         <DxGrid Data="@this.AlertLevels">
             <Columns>
                 @if (this.ChannelType == typeof(AnalogInputDto)) {
@@ -27,20 +27,26 @@
                 }
             </Columns>
         </DxGrid>
-    </DxFormLayoutItem>
+    </DxFormLayoutItem>*@
 </DxFormLayout>
 
 @code {
     [Parameter]
-    public Type ChannelType { get; set; }
+    public Type? ChannelType { get; set; }
     
     [Parameter]
-    public ChannelDto Channel { get; set; }
+    public ChannelDto? Channel { get; set; }
     
     object Alert { get; set; }
     object AlertLevels { get; set; }
 
     protected override async Task OnInitializedAsync() {
-        
+        if (this.ChannelType != null && this.Channel != null) {
+            if (this.ChannelType == typeof(AnalogInputDto)) {
+                this.Alert = await this.Client.GetAnalogAlert(this.Channel.Id.ToString());
+            } else if(this.ChannelType==typeof(DiscreteInputDto) || this.ChannelType==typeof(VirtualInputDto)) {
+                this.Alert = await this.Client.GetDiscreteAlert(this.Channel.Id.ToString());
+            }
+        }
     }
 }

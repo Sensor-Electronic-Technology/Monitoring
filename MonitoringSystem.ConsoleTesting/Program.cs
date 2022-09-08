@@ -28,13 +28,16 @@ namespace MonitoringSystem.ConsoleTesting {
             //await CreateMongoDB("Epi1");
             //await BuildSettingsDB();
             //await BuildEmailSettingsCollection();
-            HttpClient client = new HttpClient();
+            /*HttpClient client = new HttpClient();
             client.BaseAddress = new Uri("https://localhost:7133/");
 
             var response = await client.GetFromJsonAsync<GetDeviceActionsResponse>($"actions/deviceactions/d0d8ae61-6982-429f-de8d-08da81eb1674");
             foreach (var device in response.DeviceActions) {
                 Console.WriteLine($"Name: {device.Name}");
-            }
+            }*/
+            ChannelDto channel = new AnalogInputDto();
+            Console.WriteLine(channel.GetType().Name);
+
         }
 
         static async Task DtoTesting() {

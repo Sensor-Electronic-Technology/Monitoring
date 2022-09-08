@@ -8,7 +8,7 @@ using MonitoringSystem.ConfigApi.Mapping;
 
 namespace MonitoringSystem.ConfigApi.Endpoints;
 
-[HttpGet("channels/analog/AnalogChannel"),AllowAnonymous]
+[HttpPut("channels/analog/AnalogChannel"),AllowAnonymous]
 public class UpdateAnalogChannelEndpoint : Endpoint<UpdateAnalogChannelRequest, UpdateAnalogChannelResponse> {
     private readonly MonitorContext _context;
 
@@ -27,7 +27,7 @@ public class UpdateAnalogChannelEndpoint : Endpoint<UpdateAnalogChannelRequest, 
         }
     }
 }
-[HttpGet("channels/discrete/DiscreteChannel"),AllowAnonymous]
+[HttpPut("channels/discrete/DiscreteChannel"),AllowAnonymous]
 public class UpdateDiscreteChannelEndpoint : Endpoint<UpdateDiscreteChannelRequest, UpdateDiscreteChannelResponse> {
     private readonly MonitorContext _context;
 
@@ -46,7 +46,7 @@ public class UpdateDiscreteChannelEndpoint : Endpoint<UpdateDiscreteChannelReque
         }
     }
 }
-[HttpGet("channels/virtual/VirtualChannel"),AllowAnonymous]
+[HttpPut("channels/virtual/VirtualChannel"),AllowAnonymous]
 public class UpdateVirtualChannelEndpoint : Endpoint<UpdateVirtualChannelRequest, UpdateVirtualChannelResponse> {
     private readonly MonitorContext _context;
 
@@ -65,7 +65,7 @@ public class UpdateVirtualChannelEndpoint : Endpoint<UpdateVirtualChannelRequest
         }
     }
 }
-[HttpGet("channels/output/OutputChannel"),AllowAnonymous]
+[HttpPut("channels/output/OutputChannel"),AllowAnonymous]
 public class UpdateOutputChannelEndpoint : Endpoint<UpdateOutputChannelRequest, UpdateOutputChannelResponse> {
     private readonly MonitorContext _context;
 

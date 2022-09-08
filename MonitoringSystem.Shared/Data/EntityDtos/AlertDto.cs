@@ -12,9 +12,12 @@ public class AlertDto {
     public Guid InputChannelId { get; set; }
 }
 
-public class AnalogAlertDto:AlertDto { }
+public class AnalogAlertDto : AlertDto {
+    
+}
 
-public class DiscreteAlertDto : AlertDto { }
+public class DiscreteAlertDto : AlertDto {
+}
 
 public abstract class AlertLevelDto {
     public Guid Id { get; set; }

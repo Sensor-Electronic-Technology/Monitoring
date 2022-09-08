@@ -1,0 +1,108 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringWeb.ConfigTesting.Services
+@implements IAsyncDisposable
+@inject ConfigApiClient Client
+@inject ILogger<ChannelGrid> Logger
+@inject SelectionChanged<ModbusDeviceDto> SelectionChanged
+
+<div class="row" style="padding: .5rem">
+    <h3>@this.Text</h3>
+</div>
+<div class="row" style="padding: .5rem">
+    <DxGrid Data="@this.Channels"
+            KeyFieldName="Id"
+            ValidationEnabled="false"
+            EditModelSaving="EditModelSaving"
+            PopupEditFormCssClass="pw-800"
+            EditMode="GridEditMode.EditForm">
+        <Columns>
+            <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+            <DxGridDataColumn FieldName="@nameof(ChannelDto.Id)" Visible="false" />
+            <DxGridDataColumn FieldName="@nameof(ChannelDto.Identifier)"/>
+            <DxGridDataColumn FieldName="@nameof(ChannelDto.DisplayName)"/>
+            <DxGridDataColumn FieldName="@nameof(ChannelDto.Connected)"/>
+            <DxGridDataColumn FieldName="@nameof(ChannelDto.Display)"/>
+        </Columns>
+        <DetailRowTemplate Context="DetailContext">
+            @{
+                var device = (ChannelDto)DetailContext.DataItem;
+            }
+            <ChannelDetailView Channel="@device" ChannelType="@device.GetType()" />
+        </DetailRowTemplate>
+        <EditFormTemplate Context="EditViewContext">
+            @{
+                var device = (ChannelDto)EditViewContext.EditModel;
+            }
+            <DxFormLayout>
+                <DxFormLayoutItem Caption="Identifier" ColSpanSm="6">
+                    <DxTextBox @bind-text="@device.Identifier"></DxTextBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Display Name" ColSpanSm="6">
+                    <DxTextBox @bind-text="@device.DisplayName"></DxTextBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Connected" ColSpanSm="6">
+                    <DxCheckBox @bind-Checked="@device.Connected"></DxCheckBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Display" ColSpanSm="6">
+                    <DxCheckBox @bind-Checked="@device.Display"></DxCheckBox>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditFormTemplate>
+    </DxGrid>
+</div>
+
+@code {
+    
+    [Parameter]
+    public string? DeviceId { get; set; }
+    
+    [Parameter]
+    public Type? ChannelType { get; set; }
+    
+    IEnumerable<ChannelDto> Channels { get; set; }
+    string? Text { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        this.SelectionChanged.OnChanged += this.SelectedDeviceChanged;
+        await this.Update();
+    }
+
+    async Task Update() {
+        if (this.ChannelType!=null && this.DeviceId!=null) {
+            if (this.ChannelType==typeof(AnalogInputDto)) {
+                this.Text = "Analog Inputs";
+                this.Channels = await this.Client.GetAnalogChannels(this.DeviceId);
+            }else if (this.ChannelType == typeof(DiscreteInputDto)) {
+                this.Text = "Discrete Inputs";
+                this.Channels = await this.Client.GetDiscreteChannels(this.DeviceId);
+            }else if (this.ChannelType == typeof(VirtualInputDto)) {
+                this.Text = "Virtual Inputs";
+                this.Channels = await this.Client.GetVirtualChannels(this.DeviceId);
+            }else if (this.ChannelType == typeof(DiscreteOutputDto)) {
+                this.Text = "Discrete Outputs";
+                this.Channels = await this.Client.GetOutputChannels(this.DeviceId);
+            } else {
+                this.Text = "Incompatible Channel Type"; 
+            }
+        } else {
+            this.Logger.LogError("Channel or ModbusDevice null");
+        }
+    }
+
+    async void SelectedDeviceChanged() {
+        this.DeviceId = this.SelectionChanged.SelectedItem.Id.ToString();
+        await this.Update();
+    }
+
+    async Task EditModelSaving(GridEditModelSavingEventArgs e) {
+        if (e.EditModel is ChannelDto channel) {
+            await this.Client.UpdateChannel(channel);
+            await this.Update();
+        }
+    }
+
+    public ValueTask DisposeAsync() {
+        this.SelectionChanged.OnChanged -= this.SelectedDeviceChanged;
+        return ValueTask.CompletedTask;
+    }
+}

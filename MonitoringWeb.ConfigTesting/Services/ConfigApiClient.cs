@@ -1,4 +1,4 @@
-﻿using MonitoringSystem.ConfigApi.Contracts.Requests.Get;
+﻿using MonitoringSystem.ConfigApi.Contracts.Requests.Update;
 using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 using MonitoringSystem.Shared.Data.EntityDtos;
 
@@ -24,6 +24,31 @@ public class ConfigApiClient {
         }
     }
 
+    public async Task UpdateChannel(ChannelDto channelDto) {
+        switch (channelDto) {
+            case AnalogInputDto analogInput: {
+                var request = new UpdateAnalogChannelRequest() { AnalogChannel = analogInput };
+                var response=await this._client.PutAsJsonAsync<UpdateAnalogChannelRequest>($"channels/analog/AnalogChannel",request);
+                break;
+            }
+            case DiscreteInputDto discreteInput: {
+                var request = new UpdateDiscreteChannelRequest() { DiscreteChannel = discreteInput };
+                await this._client.PutAsJsonAsync<UpdateDiscreteChannelRequest>($"channels/discrete/DiscreteChannel",request);
+                break;
+            }
+            case VirtualInputDto virtualInput: {
+                var request = new UpdateVirtualChannelRequest() { VirtualChannel = virtualInput };
+                await this._client.PutAsJsonAsync<UpdateVirtualChannelRequest>($"channels/virtual/VirtualChannel",request);
+                break;
+            }
+            case DiscreteOutputDto discreteOutput: {
+                var request = new UpdateOutputChannelRequest() { OutputChannel = discreteOutput };
+                await this._client.PutAsJsonAsync<UpdateOutputChannelRequest>($"channels/output/OutputChannel",request);
+                break;
+            }
+        }
+    }
+    
     public async Task<IEnumerable<AnalogInputDto>> GetAnalogChannels(string deviceId) {
         var response = await this._client.GetFromJsonAsync<GetAnalogChannelsResponse>($"channels/analog/{deviceId}");
         return response.AnalogInputs;
@@ -63,4 +88,6 @@ public class ConfigApiClient {
         var response = await this._client.GetFromJsonAsync<GetDiscreteLevelResponse>($"alerts/discrete/levels/{alertId}");
         return response.DiscreteLevel;
     }
+    
+    
 }

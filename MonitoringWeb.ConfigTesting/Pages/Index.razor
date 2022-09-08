@@ -3,6 +3,8 @@
 @using MonitoringWeb.ConfigTesting.Services
 @using MonitoringSystem.Shared.Data.EntityDtos
 @inject ConfigApiClient Client
+@inject SelectionChanged<ModbusDeviceDto> SelectionChanged
+
 <div class="row" style="padding: 1rem">
     <DxGrid @ref="Grid"
             Data="@ModbusDevices"
@@ -58,24 +60,20 @@
         } else {
             <DxTabs>
                 <DxTabPage Text="Channels">
-                    <div class="container">
-                        <ChannelsGrid ModbusDevice=@(this.SelectedDevice as ModbusDeviceDto) />
-                    </div>
+                    <ChannelsGrid ModbusDevice=@(this.SelectedDevice as ModbusDeviceDto) />
                 </DxTabPage>
                 <DxTabPage Text="DeviceActions">
-                    <div class="container">
-                        <DeviceActionView DeviceId=@((this.SelectedDevice as ModbusDeviceDto)?.Id.ToString() ?? " ") />
-                    </div>
+                    <DeviceActionView DeviceId=@((this.SelectedDevice as ModbusDeviceDto)?.Id.ToString() ?? " ") />
                 </DxTabPage>
             </DxTabs>
-            
         }
     </div>
 @code {
-    IEnumerable<ModbusDeviceDto> ModbusDevices { get; set; }=Enumerable.Empty<ModbusDeviceDto>();
+    IEnumerable<ModbusDeviceDto> ModbusDevices { get; set; }= Enumerable.Empty<ModbusDeviceDto>();
     IEnumerable<DeviceActionDto> DeviceActions { get; set; } = Enumerable.Empty<DeviceActionDto>();
     object SelectedDevice { get; set; }
     IGrid Grid { get; set; }
+
     
     protected override async Task OnInitializedAsync() {
         var  devices= await this.Client.GetModbusDevice();
@@ -94,9 +92,11 @@
         this.ModbusDevices = await this.Client.GetModbusDevice();
     }
 
-    private async void Callback(object selected) {
+    private void Callback(object selected) {
         this.SelectedDevice = (ModbusDeviceDto)selected;
-        await InvokeAsync(StateHasChanged);
+        this.SelectionChanged.SetItem((ModbusDeviceDto)this.SelectedDevice);
     }
+    
+    
 
 }

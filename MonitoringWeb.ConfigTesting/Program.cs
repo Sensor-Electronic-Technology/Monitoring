@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringWeb.ConfigTesting.Services;
 
 
@@ -26,8 +27,9 @@ if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
 }
 
 builder.Services.AddScoped<ConfigApiClient>();
-
 builder.Services.AddScoped<DataService>();
+builder.Services.AddSingleton<SelectionChanged<ModbusDeviceDto>>();
+builder.Services.AddSingleton<SelectionChanged<ChannelDto>>();
 
 var app = builder.Build();
 
