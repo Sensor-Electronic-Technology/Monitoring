@@ -10,7 +10,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
         void AppendAlert(string channelName, string state, string value);
         void AppendStatus(string channelName,string state ,string value);
         void AppendChanged(string channelName,string state, string value);
-        string FinishMessage();
+        string FinishMessage(string contentId);
     }
 
     public class MessageBuilder : IMessageBuilder {
@@ -78,7 +78,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this._statusBuilder.AppendLine("</tr>");
         }
 
-        public string FinishMessage() {
+        public string FinishMessage(string contentId) {
             this._alertBuilder.AppendLine("</table>");
             this._alertBuilder.AppendLine("<h2>----End Alerts----</h2>");
             this._statusBuilder.AppendLine("</table>");
@@ -91,6 +91,8 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             }
             this._bodyBuilder.Append(this._alertBuilder.ToString());
             this._bodyBuilder.Append(this._statusBuilder.ToString());
+            this._bodyBuilder.Append("<img src=\"cid:"
+                                     + contentId + "\"> ");
             this._bodyBuilder.AppendLine("</body>");
             this._bodyBuilder.AppendLine("</html>");
             //this._alertBuilder.Append(this._statusBuilder.ToString());

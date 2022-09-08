@@ -112,7 +112,7 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 if (sendEmail) {
                     await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
-                        messageBuilder.FinishMessage());
+                        messageBuilder);
                     this._logger.LogInformation("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         itemid = e.AlertId,
@@ -205,8 +205,8 @@ namespace MonitoringData.Infrastructure.Services {
                     Value="Offline"
                 }
             };
-            await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
-                messageBuilder.FinishMessage());
+            /*await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
+                messageBuilder.FinishMessage());*/
             await this._monitorHub.Clients.All.ShowCurrent(monitorData);
         }
         

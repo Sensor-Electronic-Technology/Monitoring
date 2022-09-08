@@ -13,6 +13,10 @@ public class ExchangeEmailService : IEmailService {
         this._exchange.Url = new Uri(@"https://email.seoulsemicon.com/EWS/Exchange.asmx");
     }
 
+    public Task SendMessageAsync(string subject, IMessageBuilder messageBuilder) {
+        throw new NotImplementedException();
+    }
+
     public void SendMessage(string subject,string msg) {
         EmailMessage message = new EmailMessage(this._exchange);
         var recp = new List<string>() {

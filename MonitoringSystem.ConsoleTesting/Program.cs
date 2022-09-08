@@ -12,16 +12,18 @@ using System.IO;
 using System.Threading;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using System.Diagnostics;
+using System.Net.Mail;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using MimeKit.Utils;
 using MongoDB.Bson;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataLogging;
 using MonitoringSystem.Shared.Services;
+using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace MonitoringSystem.ConsoleTesting {
     public record class Test {
@@ -159,15 +161,19 @@ namespace MonitoringSystem.ConsoleTesting {
             /*await WriteOutDiscreteData("gasbay", new DateTime(2022, 7, 28, 0, 0, 0), DateTime.Now,
                 @"C:\MonitorFiles\gasbay_discrete.csv");*/
 
-            //await TestSmptEmail();
+            await TestSmptEmail();
             //await RemoteAlertTesting();
-            ModbusService modservice = new ModbusService();
+            /*ModbusService modservice = new ModbusService();
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            Console.WriteLine("Starting Test");
+            Console.WriteLine("Gasbay running");
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 2, true);
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 0, true);
+            await Task.Delay(1000);
+            await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.42", 502, 1, 2, false);
             stopwatch.Stop();
-            Console.WriteLine($"Done: {stopwatch.Elapsed}");
+            Console.WriteLine($"Done: {stopwatch.Elapsed}");*/
         }
 
         
@@ -221,15 +227,33 @@ namespace MonitoringSystem.ConsoleTesting {
             MimeMessage mailMessage = new MimeMessage();
             BodyBuilder bodyBuilder = new BodyBuilder();
             mailMessage.To.Add(new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Rakesh","rakesh@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Mark","mgeppert@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Brandon","brobinson@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Norman","nculbertson@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Graci","ghill@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Dev","devendra@s-et.com"));
             mailMessage.From.Add(new MailboxAddress("Monitor Alerts","monitoring@s-et.com"));
-
+            mailMessage.Subject = "Test Alert Message";
+            
             MessageBuilder builder = new MessageBuilder();
-            builder.StartMessage("A Test");
+            builder.StartMessage("Test Alert Message");
             builder.AppendAlert("Alert 2","Alarm","50");
             builder.AppendStatus("Alert 1","Okay","0");
             builder.AppendStatus("Alert 2","Alarm","55");
-            
-            bodyBuilder.HtmlBody=builder.FinishMessage();
+            builder.AppendStatus("Alert 3","Okay","0");
+            builder.AppendStatus("Alert 4","Okay","0");
+            builder.AppendStatus("Alert 5","Okay","0");
+            builder.AppendStatus("Alert 6","Okay","0");
+            builder.AppendStatus("Alert 7","Okay","0");
+            builder.AppendStatus("Alert 8","Okay","0");
+            builder.AppendStatus("Alert 9","Okay","0");
+            builder.AppendStatus("Alert 10","Okay","0");
+
+
+            var bodyImage=bodyBuilder.LinkedResources.Add("C:\\FloorplanUpdateResize.PNG");
+            bodyImage.ContentId = MimeUtils.GenerateMessageId();
+            bodyBuilder.HtmlBody=builder.FinishMessage(bodyImage.ContentId);
             mailMessage.Body = bodyBuilder.ToMessageBody();
             await client.SendAsync(mailMessage);
             await client.DisconnectAsync(true);
@@ -243,9 +267,6 @@ namespace MonitoringSystem.ConsoleTesting {
         {
             if (sslPolicyErrors == SslPolicyErrors.None)
                 return true;
-
-            // Note: The following code casts to an X509Certificate2 because it's easier to get the
-            // values for comparison, but it's possible to get them from an X509Certificate as well.
             if (certificate is X509Certificate2 certificate2) {
                 var cn = certificate2.GetNameInfo (X509NameType.SimpleName, false);
                 var fingerprint = certificate2.Thumbprint;
@@ -255,12 +276,12 @@ namespace MonitoringSystem.ConsoleTesting {
                 Console.WriteLine($"Fingerprint: {fingerprint}");
                 Console.WriteLine($"Serial: {serial}");
                 Console.WriteLine($"Issuer: {issuer}");
-                return cn == "Exchange2016" && issuer == "CN=Exchange2016" &&
+                /*return cn == "Exchange2016" && issuer == "CN=Exchange2016" &&
                        serial == "3D2E6FBDF9CE1FAF46D9CC68B8D58BAB" &&
-                       fingerprint == "EC14ED8D2253824E6522D19EC815AD72CC767759";
-                //return true;
+                       fingerprint == "EC14ED8D2253824E6522D19EC815AD72CC767759";*/
+                return true;
             }
-            return false;
+            return true;
         }
         
         static async Task BuildSettingsDB() { 

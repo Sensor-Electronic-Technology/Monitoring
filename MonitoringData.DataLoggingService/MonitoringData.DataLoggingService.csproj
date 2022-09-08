@@ -17,4 +17,10 @@
     <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
     <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="FloorplanUpdateResize.PNG" />
+    <Content Include="FloorplanUpdateResize.PNG">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

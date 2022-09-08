@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using MimeKit;
 using Microsoft.Extensions.Logging;
 using MailKit.Net.Smtp;
+using MimeKit.Utils;
 using MonitoringData.Infrastructure.Data;
 
 namespace MonitoringData.Infrastructure.Services.AlertServices;
@@ -23,7 +24,7 @@ public class SmtpEmailService:IEmailService {
         this._settings = configProvider.MonitorEmailSettings;
         this._from = new MailboxAddress(this._settings.FromUser,this._settings.FromAddress);
     }
-    public async Task SendMessageAsync(string subject, string msg) {
+    public async Task SendMessageAsync(string subject, IMessageBuilder messageBuilder) {
         var client = new SmtpClient();
        try {
             client.CheckCertificateRevocation = false;
@@ -32,11 +33,13 @@ public class SmtpEmailService:IEmailService {
             var message =new MimeMessage();
             message.From.Add(this._from);
             message.To.AddRange(this._recipients);
-            BodyBuilder builder = new BodyBuilder() {
-                HtmlBody = msg
-            };
+            BodyBuilder builder = new BodyBuilder();
+            var bodyImage=builder.LinkedResources.Add("FloorplanUpdateResize.PNG");
+            bodyImage.ContentId = MimeUtils.GenerateMessageId();
+            builder.HtmlBody=messageBuilder.FinishMessage(bodyImage.ContentId);
             message.Body = builder.ToMessageBody();
             message.Subject = subject;
+            
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
         } catch(Exception e) {
@@ -65,9 +68,6 @@ public class SmtpEmailService:IEmailService {
             Console.WriteLine($"Fingerprint: {fingerprint}");
             Console.WriteLine($"Serial: {serial}");
             Console.WriteLine($"Issuer: {issuer}");
-            /*return cn == "Exchange2016" && issuer == "CN=Exchange2016" &&
-                   serial == "3D2E6FBDF9CE1FAF46D9CC68B8D58BAB" &&
-                   fingerprint == "EC14ED8D2253824E6522D19EC815AD72CC767759";*/
             return true;
         }
         return true;
