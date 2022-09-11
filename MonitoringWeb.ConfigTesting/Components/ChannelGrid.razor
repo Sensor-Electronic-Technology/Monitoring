@@ -1,8 +1,9 @@
 ﻿@using MonitoringSystem.Shared.Data.EntityDtos
 @using MonitoringWeb.ConfigTesting.Services
+@typeparam TItem
 @implements IAsyncDisposable
 @inject ConfigApiClient Client
-@inject ILogger<ChannelGrid> Logger
+@inject ILogger<ChannelGrid<TItem>> Logger
 @inject SelectionChanged<ModbusDeviceDto> SelectionChanged
 
 <div class="row" style="padding: .5rem">
@@ -27,7 +28,9 @@
             @{
                 var device = (ChannelDto)DetailContext.DataItem;
             }
-            <ChannelDetailView Channel="@device" ChannelType="@device.GetType()" />
+            @if (typeof(TItem) != typeof(DiscreteOutputDto)) {
+                <AlertEditView ChannelId="@device.Id.ToString()"></AlertEditView>
+            }
         </DetailRowTemplate>
         <EditFormTemplate Context="EditViewContext">
             @{
@@ -52,12 +55,8 @@
 </div>
 
 @code {
-    
     [Parameter]
     public string? DeviceId { get; set; }
-    
-    [Parameter]
-    public Type? ChannelType { get; set; }
     
     IEnumerable<ChannelDto> Channels { get; set; }
     string? Text { get; set; }
@@ -68,17 +67,17 @@
     }
 
     async Task Update() {
-        if (this.ChannelType!=null && this.DeviceId!=null) {
-            if (this.ChannelType==typeof(AnalogInputDto)) {
+        if (this.DeviceId!=null) {
+            if (typeof(TItem)==typeof(AnalogInputDto)) {
                 this.Text = "Analog Inputs";
                 this.Channels = await this.Client.GetAnalogChannels(this.DeviceId);
-            }else if (this.ChannelType == typeof(DiscreteInputDto)) {
+            }else if (typeof(TItem)== typeof(DiscreteInputDto)) {
                 this.Text = "Discrete Inputs";
                 this.Channels = await this.Client.GetDiscreteChannels(this.DeviceId);
-            }else if (this.ChannelType == typeof(VirtualInputDto)) {
+            }else if (typeof(TItem) == typeof(VirtualInputDto)) {
                 this.Text = "Virtual Inputs";
                 this.Channels = await this.Client.GetVirtualChannels(this.DeviceId);
-            }else if (this.ChannelType == typeof(DiscreteOutputDto)) {
+            }else if (typeof(TItem)== typeof(DiscreteOutputDto)) {
                 this.Text = "Discrete Outputs";
                 this.Channels = await this.Client.GetOutputChannels(this.DeviceId);
             } else {
@@ -90,8 +89,9 @@
     }
 
     async void SelectedDeviceChanged() {
-        this.DeviceId = this.SelectionChanged.SelectedItem.Id.ToString();
+        this.DeviceId = this.SelectionChanged?.SelectedItem?.Id.ToString();
         await this.Update();
+        await InvokeAsync(StateHasChanged);
     }
 
     async Task EditModelSaving(GridEditModelSavingEventArgs e) {

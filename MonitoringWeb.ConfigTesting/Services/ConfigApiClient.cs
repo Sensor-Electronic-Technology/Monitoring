@@ -11,8 +11,18 @@ public class ConfigApiClient {
         this._client = client;
     }
 
-    public async Task<IEnumerable<ModbusDeviceDto>?> GetModbusDevice() {
+    public async Task<IEnumerable<ModbusDeviceDto>?> GetModbusDevices() {
         return await this._client.GetFromJsonAsync<IEnumerable<ModbusDeviceDto>>("devices");
+    }
+
+    public async Task<IEnumerable<SensorDto>?> GetSensors() {
+        var response= await this._client.GetFromJsonAsync<GetAllSensorsResponse>("sensors");
+        return response?.Sensors;
+    }
+
+    public async Task<IEnumerable<FacilityActionDto>?> GetFacilityAction() {
+        var response = await this._client.GetFromJsonAsync<GetFacilityActionsResponse>("actions/facility");
+        return response?.FacilityActions;
     }
 
     public async Task<IEnumerable<DeviceActionDto>> GetDeviceAction(string id) {
@@ -69,23 +79,18 @@ public class ConfigApiClient {
         return response.OutputChannels;
     }
 
-    public async Task<AnalogAlertDto> GetAnalogAlert(string channelId) {
-        var response = await this._client.GetFromJsonAsync<GetAnalogAlertResponse>($"alerts/analog/{channelId}");
-        return response.AnalogAlert;
+    public async Task<AlertDto> GetAlert(string channelId) {
+        var response = await this._client.GetFromJsonAsync<GetAlertResponse>($"alerts/{channelId}");
+        return response.Alert;
     }
     
-    public async Task<DiscreteAlertDto> GetDiscreteAlert(string channelId) {
-        var response = await this._client.GetFromJsonAsync<GetDiscreteAlertResponse>($"alerts/discrete/{channelId}");
-        return response.DiscreteAlert;
-    }
-
     public async Task<IEnumerable<AnalogLevelDto>> GetAnalogAlertLevels(string alertId) {
-        var response = await this._client.GetFromJsonAsync<GetAnalogLevelsResponse>($"alerts/analog/levels/{alertId}");
+        var response = await this._client.GetFromJsonAsync<GetAnalogLevelsResponse>($"alerts/levels/analog/{alertId}");
         return response.AnalogLevels;
     }
     
     public async Task<DiscreteLevelDto> GetDiscreteAlertLevel(string alertId) {
-        var response = await this._client.GetFromJsonAsync<GetDiscreteLevelResponse>($"alerts/discrete/levels/{alertId}");
+        var response = await this._client.GetFromJsonAsync<GetDiscreteLevelResponse>($"alerts/levels/discrete/{alertId}");
         return response.DiscreteLevel;
     }
     

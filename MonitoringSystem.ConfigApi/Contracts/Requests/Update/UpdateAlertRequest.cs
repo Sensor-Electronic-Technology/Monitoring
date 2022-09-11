@@ -1,7 +1,11 @@
 ﻿
 using MonitoringSystem.Shared.Data.EntityDtos;
 
-namespace MonitoringSystem.ConfigApi.Contracts.Requests.Update; 
+namespace MonitoringSystem.ConfigApi.Contracts.Requests.Update;
+
+public class UpdateAlertRequest {
+    public AlertDto Alert { get; set; } = default!;
+}
 
 public class UpdateAnalogAlertRequest {
     public AnalogAlertDto AnalogAlert { get; set; } = default!;

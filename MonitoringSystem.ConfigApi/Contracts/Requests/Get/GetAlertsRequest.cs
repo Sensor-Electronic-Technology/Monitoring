@@ -1,5 +1,9 @@
 ﻿namespace MonitoringSystem.ConfigApi.Contracts.Requests.Get;
 
+public class GetAlertRequest {
+    public Guid InputChannelId { get; set; }
+}
+
 public class GetAnalogAlertRequest {
     public Guid AnalogChannelId { get; set; }
 }

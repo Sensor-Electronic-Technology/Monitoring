@@ -3,7 +3,21 @@ using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.ConfigApi.Mapping;
 public static class AlertMapping {
-    public static AnalogAlertDto ToDto(this AnalogAlert alert) {
+
+    public static AlertDto ToDto(this Alert alert) {
+        return new AlertDto() {
+            Id = alert.Id,
+            Bypass = alert.Bypass,
+            BypassResetTime = alert.BypassResetTime,
+            Enabled = alert.Enabled,
+            Register = alert.ModbusAddress.Address,
+            RegisterLength = alert.ModbusAddress.RegisterLength,
+            RegisterType=alert.ModbusAddress.RegisterType,
+            Name = alert.Name,
+            InputChannelId = alert.InputChannelId
+        };
+    }
+    /*public static AnalogAlertDto ToDto(this AnalogAlert alert) {
         return new AnalogAlertDto() {
             Id = alert.Id,
             Bypass = alert.Bypass,
@@ -29,7 +43,7 @@ public static class AlertMapping {
             InputChannelId = alert.InputChannelId,
         };
         return dto;
-    }
+    }*/
     public static AnalogLevelDto ToDto(this AnalogLevel level) {
         var dto=new AnalogLevelDto() {
             Id=level.Id,
@@ -54,7 +68,22 @@ public static class AlertMapping {
         };
         return dto;
     }
-    public static AnalogAlert ToEntity(this AnalogAlertDto alert) {
+    public static Alert ToEntity(this AlertDto alert) {
+        return new Alert() {
+            Id = alert.Id,
+            Bypass = alert.Bypass,
+            BypassResetTime = alert.BypassResetTime,
+            Enabled = alert.Enabled,
+            ModbusAddress=new ModbusAddress() {
+                Address=alert.Register,
+                RegisterLength=alert.RegisterLength,
+                RegisterType=alert.RegisterType
+            },
+            Name = alert.Name,
+            InputChannelId = alert.InputChannelId
+        };
+    }
+    /*public static AnalogAlert ToEntity(this AnalogAlertDto alert) {
         return new AnalogAlert() {
             Id = alert.Id,
             Bypass = alert.Bypass,
@@ -83,7 +112,7 @@ public static class AlertMapping {
             Name = alert.Name,
             InputChannelId = alert.InputChannelId
         };
-    }
+    }*/
     public static AnalogLevel ToEntity(this AnalogLevelDto level) {
         var entity=new AnalogLevel() {
             Id=level.Id,

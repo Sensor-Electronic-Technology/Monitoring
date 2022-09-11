@@ -8,7 +8,27 @@ using MonitoringSystem.ConfigApi.Mapping;
 
 namespace MonitoringSystem.ConfigApi.Endpoints;
 
-[HttpPut("alerts/analog/AnalogAlert"),AllowAnonymous]
+[HttpPut("alerts/Alert"),AllowAnonymous]
+public class UpdateAlertEndpoint : Endpoint<UpdateAlertRequest, UpdateAlertResponse> {
+    private readonly MonitorContext _context;
+
+    public UpdateAlertEndpoint(MonitorContext context) {
+        this._context = context;
+    }
+
+    public override async Task HandleAsync(UpdateAlertRequest req, CancellationToken ct) {
+        var alert = req.Alert.ToEntity();
+        this._context.Update(alert);
+        var ret = await this._context.SaveChangesAsync(ct);
+        if (ret > 0) {
+            await SendOkAsync(new UpdateAlertResponse() { Alert = alert.ToDto() },ct);
+        } else {
+            await SendErrorsAsync(400,ct);
+        }
+    }
+}
+
+/*[HttpPut("alerts/analog/AnalogAlert"),AllowAnonymous]
 public class UpdateAnalogAlertEndpoint : Endpoint<UpdateAnalogAlertRequest, UpdateAnalogAlertResponse> {
     private readonly MonitorContext _context;
 
@@ -46,9 +66,9 @@ public class UpdateDiscreteAlertEndpoint : Endpoint<UpdateDiscreteAlertRequest, 
             await SendErrorsAsync(400,ct);
         }
     }
-}
+}*/
 
-[HttpPut("alerts/analog/levels/AnalogLevel"),AllowAnonymous]
+[HttpPut("alerts/levels/analog/AnalogLevel"),AllowAnonymous]
 public class UpdateAnalogLevelEndpoint : Endpoint<UpdateAnalogLevelRequest, UpdateAnalogLevelResponse> {
     private readonly MonitorContext _context;
 
@@ -68,7 +88,7 @@ public class UpdateAnalogLevelEndpoint : Endpoint<UpdateAnalogLevelRequest, Upda
     }
 }
 
-[HttpPut("alerts/discrete/levels/DiscreteLevel"),AllowAnonymous]
+[HttpPut("alerts/levels/discrete/DiscreteLevel"),AllowAnonymous]
 public class UpdateDiscreteLevelEndpoint : Endpoint<UpdateDiscreteLevelRequest, UpdateDiscreteLevelResponse> {
     private readonly MonitorContext _context;
 

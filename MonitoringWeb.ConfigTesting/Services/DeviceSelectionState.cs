@@ -18,6 +18,7 @@ public class DeviceSelectionState {
 
 public class SelectionChanged<T> {
     public T? SelectedItem { get; private set; }
+
     public event Action? OnChanged;
 
     public void SetItem(T item) {

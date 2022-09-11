@@ -8,7 +8,27 @@ using MonitoringSystem.ConfigApi.Mapping;
 
 namespace MonitoringSystem.ConfigApi.Endpoints;
 
-[HttpGet("alerts/analog/{AnalogChannelId:guid}"),AllowAnonymous]
+[HttpGet("alerts/{InputChannelId:guid}"),AllowAnonymous]
+public class GetAlertEndpoint:Endpoint<GetAlertRequest,GetAlertResponse> {
+    private readonly MonitorContext _context;
+
+    public GetAlertEndpoint(MonitorContext context) {
+        this._context = context;
+    }
+
+    public override async Task HandleAsync(GetAlertRequest req, CancellationToken ct) {
+        var alert = await this._context.Alerts
+            .FirstOrDefaultAsync(e => e.InputChannelId == req.InputChannelId,ct);
+        if (alert is not null) {
+            var response = new GetAlertResponse() { Alert = alert.ToDto() };
+            await SendOkAsync(response, ct);
+        } else {
+            await SendNotFoundAsync(ct);
+        }
+    }
+}
+
+/*[HttpGet("alerts/analog/{AnalogChannelId:guid}"),AllowAnonymous]
 public class GetAnalogAlertEndpoint:Endpoint<GetAnalogAlertRequest,GetAnalogAlertResponse> {
     private readonly MonitorContext _context;
 
@@ -17,7 +37,7 @@ public class GetAnalogAlertEndpoint:Endpoint<GetAnalogAlertRequest,GetAnalogAler
     }
 
     public override async Task HandleAsync(GetAnalogAlertRequest req, CancellationToken ct) {
-        var alert = await this._context.Alerts.OfType<AnalogAlert>()
+        var alert = await this._context.Alerts
             .FirstOrDefaultAsync(e => e.InputChannelId == req.AnalogChannelId,ct);
         if (alert is not null) {
             var response = new GetAnalogAlertResponse() { AnalogAlert = alert.ToDto() };
@@ -46,9 +66,9 @@ public class GetDiscreteAlertEndpoint:Endpoint<GetDiscreteAlertRequest,GetDiscre
             await SendNotFoundAsync(ct);
         }
     }
-}
+}*/
 
-[HttpGet("alerts/analog/levels/{AnalogAlertId:guid}"),AllowAnonymous]
+[HttpGet("alerts/levels/analog/{AnalogAlertId:guid}"),AllowAnonymous]
 public class GetAnalogLevelsEndpoint:Endpoint<GetAnalogLevelsRequest,GetAnalogLevelsResponse> {
     private readonly MonitorContext _context;
 
@@ -70,7 +90,7 @@ public class GetAnalogLevelsEndpoint:Endpoint<GetAnalogLevelsRequest,GetAnalogLe
     }
 }
 
-[HttpGet("alerts/discrete/levels/{DiscreteAlertId:guid}"),AllowAnonymous]
+[HttpGet("alerts/levels/discrete/{DiscreteAlertId:guid}"),AllowAnonymous]
 public class GetDiscreteLevelEndpoint:Endpoint<GetDiscreteLevelRequest,GetDiscreteLevelResponse> {
     private readonly MonitorContext _context;
 

@@ -2,6 +2,10 @@
 
 namespace MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 
+public class GetAlertResponse {
+    public AlertDto Alert { get; set; } = default!;
+}
+
 public class GetAnalogAlertResponse {
     public AnalogAlertDto AnalogAlert { get; set; } = default!;
 }

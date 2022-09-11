@@ -1,0 +1,43 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringWeb.ConfigTesting.Services
+@inject ConfigApiClient Client
+
+<div class="cw-800">
+    @if (this.Alert == null) {
+        <p>Loading...</p>
+    } else {
+        <DxFormLayout>
+            <DxFormLayoutItem Caption="@nameof(AnalogAlertDto.Name)" ColSpanMd="4">
+                <DxTextBox @bind-Text="@this.Alert.Name"></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="@nameof(AnalogAlertDto.BypassResetTime)" ColSpanMd="4">
+                <DxSpinEdit @bind-Value="@this.Alert.BypassResetTime"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="@nameof(AnalogAlertDto.Enabled)" ColSpanMd="4">
+                <DxCheckBox @bind-Checked="@this.Alert.Enabled"></DxCheckBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="@nameof(AnalogAlertDto.Bypass)" ColSpanMd="4">
+                <DxCheckBox @bind-Checked="@this.Alert.Bypass"></DxCheckBox>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    }
+</div>
+
+
+
+@code {
+    [Parameter]
+    public string? ChannelId { get; set; }
+    
+    AlertDto Alert { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        this.Alert = await this.Client.GetAlert(this.ChannelId);
+    }
+
+
+    async Task OnSubmit() {
+        
+    }
+    
+}

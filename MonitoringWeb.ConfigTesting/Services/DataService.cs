@@ -13,7 +13,7 @@ public class DataService {
     }
 
     public async Task<IEnumerable<ModbusDeviceDto>> GetAllDevices() {
-        return await this._client.GetModbusDevice();
+        return await this._client.GetModbusDevices();
         //return await this._client.GetFromJsonAsync<IEnumerable<ModbusDeviceDto>>("https://localhost:7133/devices");
     }
     

@@ -1,39 +1,10 @@
 ﻿@using MonitoringWeb.ConfigTesting.Services
 @using MonitoringSystem.Shared.Data.EntityDtos
-@inject ConfigApiClient Client
 
 
-<div class="container">
-    @if (this.ModbusDevice == null) {
-        <p>Device Not Selected</p>
-    } else {
-        <div class="row" style="padding: 1rem">
-            <ChannelGrid DeviceId="@this.ModbusDevice.Id.ToString()"ChannelType="@typeof(AnalogInputDto)" />
-        </div>
-        <div class="row" style="padding: 1rem">
-            <ChannelGrid DeviceId="@this.ModbusDevice.Id.ToString()" ChannelType="@typeof(DiscreteInputDto)" />
-        </div>
-        <div class="row" style="padding: 1rem">
-            <ChannelGrid DeviceId="@this.ModbusDevice.Id.ToString()" ChannelType="@typeof(VirtualInputDto)" />
-        </div>
-        <div class="row" style="padding: 1rem">
-            <ChannelGrid DeviceId="@this.ModbusDevice.Id.ToString()" ChannelType="@typeof(DiscreteOutputDto)"/>
-        </div>
-    }
-</div>
 
 @code {
     [Parameter]
-    public ModbusDeviceDto? ModbusDevice { get; set; }
+    public string? ModbusDeviceId { get; set; }
     
-    protected override async Task OnInitializedAsync() {
-        //this.DeviceSelectionState.OnChange += OnSelectionChanged;
-    }
-    
-    
-
-    void OnSelectionChanged() {
-        //this.ModbusDevice = this.DeviceSelectionState.SelectedDevice;
-        InvokeAsync(StateHasChanged);
-    }
 }
