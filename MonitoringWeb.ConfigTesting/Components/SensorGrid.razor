@@ -27,7 +27,6 @@
         <DxGridDataColumn FieldName="@nameof(SensorDto.RecordThreshold)"/>
     </Columns>
     <EditFormTemplate Context="EditFormContext">
->
         @{
             var sensor = EditFormContext.EditModel as SensorDto;
         }
@@ -70,10 +69,10 @@
 </DxGrid>
 
 @code {
-    IEnumerable<SensorDto> Sensors { get; set; }
+    IEnumerable<SensorDto>? Sensors { get; set; }
 
-    protected override Task OnInitializedAsync() {
-        return base.OnInitializedAsync();
+    protected override async Task OnInitializedAsync() {
+        this.Sensors = await this.Client.GetSensors();
     }
 
     async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {

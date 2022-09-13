@@ -20,7 +20,7 @@ public class ConfigApiClient {
         return response?.Sensors;
     }
 
-    public async Task<IEnumerable<FacilityActionDto>?> GetFacilityAction() {
+    public async Task<IEnumerable<FacilityActionDto>?> GetFacilityActions() {
         var response = await this._client.GetFromJsonAsync<GetFacilityActionsResponse>("actions/facility");
         return response?.FacilityActions;
     }

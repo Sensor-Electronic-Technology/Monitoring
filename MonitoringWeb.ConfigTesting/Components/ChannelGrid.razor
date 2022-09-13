@@ -13,6 +13,7 @@
     <DxGrid Data="@this.Channels"
             KeyFieldName="Id"
             ValidationEnabled="false"
+            SelectedDataItem="@SelectedChannel"
             EditModelSaving="EditModelSaving"
             PopupEditFormCssClass="pw-800"
             EditMode="GridEditMode.EditForm">
@@ -29,11 +30,12 @@
                 var device = (ChannelDto)DetailContext.DataItem;
             }
             @if (typeof(TItem) != typeof(DiscreteOutputDto)) {
-                <AlertEditView ChannelId="@device.Id.ToString()"></AlertEditView>
+                <AlertEditView ChannelId="@device.Id.ToString()" />
             }
         </DetailRowTemplate>
         <EditFormTemplate Context="EditViewContext">
             @{
+                
                 var device = (ChannelDto)EditViewContext.EditModel;
             }
             <DxFormLayout>
@@ -49,17 +51,31 @@
                 <DxFormLayoutItem Caption="Display" ColSpanSm="6">
                     <DxCheckBox @bind-Checked="@device.Display"></DxCheckBox>
                 </DxFormLayoutItem>
+                @if (device is AnalogInputDto) {
+                    <DxFormLayoutItem Caption="Sensor">
+                        <DxComboBox Data="@this.Sensors" 
+                                    @bind-Value="((AnalogInputDto)device).SensorId"
+                                    TextFieldName="@nameof(SensorDto.Name)"
+                                    ValueFieldName="@nameof(SensorDto.Id)" />
+                    </DxFormLayoutItem>
+                }
             </DxFormLayout>
         </EditFormTemplate>
     </DxGrid>
+</div>
+<div class="row" style="padding: 1rem">
+    @*<AlertEditView ChannelId="@this.SelectedChannel?.Id.ToString()"></AlertEditView>*@
 </div>
 
 @code {
     [Parameter]
     public string? DeviceId { get; set; }
     
-    IEnumerable<ChannelDto> Channels { get; set; }
+    IEnumerable<ChannelDto>? Channels { get; set; }
+    IEnumerable<SensorDto>? Sensors { get; set; }
     string? Text { get; set; }
+    ChannelDto? SelectedChannel { get; set; }
+    
 
     protected override async Task OnInitializedAsync() {
         this.SelectionChanged.OnChanged += this.SelectedDeviceChanged;
@@ -67,6 +83,7 @@
     }
 
     async Task Update() {
+        this.Sensors = await this.Client.GetSensors();
         if (this.DeviceId!=null) {
             if (typeof(TItem)==typeof(AnalogInputDto)) {
                 this.Text = "Analog Inputs";

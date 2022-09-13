@@ -2,27 +2,60 @@
 @using MonitoringSystem.Shared.Data.EntityDtos
 @inject ConfigApiClient Client
 
-<DxGrid Data="@DeviceActions">
+<DxGrid Data="@DeviceActions"
+        KeyFieldName="Id"
+        ValidationEnabled="false"
+        AllowSelectRowByClick="true"
+        SelectionMode="GridSelectionMode.Single"
+        EditModelSaving="Grid_EditModelSaving"
+        DataItemDeleting="Grid_DataItemDeleting"
+        PopupEditFormCssClass="pw-800"
+        EditMode="GridEditMode.EditForm">
     <Columns>
+        <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+        <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Id)" Visible="false"/>
         <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Name)"/>
         <DxGridDataColumn FieldName="@nameof(DeviceActionDto.FirmwareId)"/>
         <DxGridDataColumn FieldName="@nameof(DeviceActionDto.ActionType)"/>
     </Columns>
+    <EditFormTemplate Context="EditFormContext">
+        @{
+            var deviceAction = EditFormContext.EditModel as DeviceActionDto;
+        }
+        <DxFormLayout>
+            <DxFormLayoutItem Caption="@nameof(DeviceActionDto.Name)">
+                <DxTextBox @bind-Text="deviceAction.Name"></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="@nameof(DeviceActionDto.FirmwareId)">
+                <DxSpinEdit @bind-Value="deviceAction.FirmwareId"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="FacilityAction">
+                <DxComboBox Data="@this.FacilityActions"
+                            TextFieldName="@nameof(FacilityActionDto.Name)"
+                            ValueFieldName="@nameof(FacilityActionDto.Id)"
+                            @bind-Value="deviceAction.FacilityActionId"/>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </EditFormTemplate>
 </DxGrid>
 
 @code {
     [Parameter]
     public string? DeviceId { get; set; }
 
-    IEnumerable<DeviceActionDto> DeviceActions { get; set; } = Enumerable.Empty<DeviceActionDto>();
+    IEnumerable<DeviceActionDto>? DeviceActions { get; set; }
+    IEnumerable<FacilityActionDto>? FacilityActions { get; set; }
 
     protected override async Task OnInitializedAsync() {
-        try {
-            this.DeviceActions = await this.Client.GetDeviceAction(this.DeviceId);
-            int count = this.DeviceActions.Count();
-        } catch {
-            
-        }
-
+        this.FacilityActions = await this.Client.GetFacilityActions();
+        this.DeviceActions = await this.Client.GetDeviceAction(this.DeviceId);
+    }
+    
+    async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
+    //await this.DataService.UpdateModbusDevice((ModbusDeviceDto)e.DataItem,(ModbusDeviceDto)e.EditModel);
+    }
+    async Task Grid_DataItemDeleting(GridDataItemDeletingEventArgs e) {
+    //await NwindDataService.RemoveEmployeeAsync((EditableEmployee)e.DataItem);
+    //await UpdateDataAsync();
     }
 }

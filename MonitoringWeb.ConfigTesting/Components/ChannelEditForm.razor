@@ -1,5 +1,24 @@
-﻿<h3>ChannelEditForm</h3>
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringWeb.ConfigTesting.Services
+@typeparam TItem
+@inject ConfigApiClient Client
+@inject ILogger<ChannelEditForm<TItem>> Logger
+@inject SelectionChanged<ModbusDeviceDto> SelectionChanged
+
+<EditForm Model="@Channel">
+    <DxFormLayout>
+        
+    </DxFormLayout>
+</EditForm>
+
+
 
 @code {
+    [Parameter]
+    public TItem? Channel { get; set; }
     
+    EventCallback<string> ChannelChanged { get; set; }
+    
+    
+
 }
