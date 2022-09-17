@@ -1,0 +1,18 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringWeb.ConfigTesting.Services
+
+@implements IAsyncDisposable
+@inject ConfigApiClient Client
+@inject SelectionChanged<ChannelDto> SelectionChanged
+
+
+
+@code {
+    
+    
+    
+    public ValueTask DisposeAsync() {
+        throw new NotImplementedException();
+    }
+
+}

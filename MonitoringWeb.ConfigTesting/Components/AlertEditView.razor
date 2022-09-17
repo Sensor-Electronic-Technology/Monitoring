@@ -1,12 +1,17 @@
 ﻿@using MonitoringSystem.Shared.Data.EntityDtos
 @using MonitoringWeb.ConfigTesting.Services
+@using MonitoringConfig.Data.Model
+@using MonitoringSystem.Shared.Data
+@typeparam TItem
+@implements IAsyncDisposable
 @inject ConfigApiClient Client
+@inject SelectionChanged<ChannelDto> SelectionChanged
 
-<div class="cw-800">
-    @if (this.Alert == null) {
+@if (this.Alert == null) {
         <p>Loading...</p>
-    } else {
-        <DxFormLayout>
+} else {
+    <DxFormLayout>
+        <DxFormLayoutGroup Caption="Alert">
             <DxFormLayoutItem Caption="@nameof(AnalogAlertDto.Name)" ColSpanMd="4">
                 <DxTextBox @bind-Text="@this.Alert.Name"></DxTextBox>
             </DxFormLayoutItem>
@@ -19,25 +24,132 @@
             <DxFormLayoutItem Caption="@nameof(AnalogAlertDto.Bypass)" ColSpanMd="4">
                 <DxCheckBox @bind-Checked="@this.Alert.Bypass"></DxCheckBox>
             </DxFormLayoutItem>
-        </DxFormLayout>
-    }
-</div>
-
-
+        </DxFormLayoutGroup>
+        @if(this.Alert is AnalogAlertDto) {
+            <DxFormLayoutGroup Caption="Alert Levels">
+                <DxGrid Data="@this.AnalogLevels"
+                        KeyFieldName="Id"
+                        ValidationEnabled="false"
+                        EditModelSaving="EditModelSaving"
+                        PopupEditFormCssClass="pw-800"
+                        EditMode="GridEditMode.EditForm">
+                    <Columns>
+                        <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+                        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.Id)" Visible="false" />
+                        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.SetPoint)"/>
+                        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.Enabled)"/>
+                        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.Bypass)"/>
+                        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.BypassResetTime)"/>
+                        <DxGridDataColumn FieldName="@nameof(AnalogLevelDto.ActionType)"/>
+                    </Columns>
+                    <EditFormTemplate Context="EditViewContext">
+                        @{
+                            var level = EditViewContext.EditModel as AnalogLevelDto;
+                        }
+                        <DxFormLayout>
+                            <DxFormLayoutItem Caption="@nameof(AnalogLevelDto.SetPoint)" ColSpanSm="6">
+                                <DxSpinEdit @bind-Value="@level.SetPoint" />
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@nameof(AnalogLevelDto.Enabled)" ColSpanSm="6">
+                                <DxCheckBox @bind-Checked="@level.Enabled" />
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@nameof(AnalogLevelDto.Bypass)" ColSpanSm="6">
+                                <DxCheckBox @bind-Checked="@level.Bypass" />
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@nameof(AnalogLevelDto.BypassResetTime)" ColSpanSm="6">
+                                <DxSpinEdit @bind-Value="@level.BypassResetTime" />
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="DeviceAction">
+                                <DxComboBox Data="@this.DeviceActions" 
+                                            @bind-Value="level.DeviceActionId"
+                                            TextFieldName="@nameof(DeviceActionDto.Name)"
+                                            ValueFieldName="@nameof(DeviceAction.Id)" />
+                            </DxFormLayoutItem>
+                        </DxFormLayout>
+                    </EditFormTemplate>
+                </DxGrid>
+                
+            </DxFormLayoutGroup>
+        } else {
+            <DxFormLayoutGroup Caption="DiscreteLevel">
+                <DxFormLayout>
+                    <DxFormLayoutItem Caption="@nameof(DiscreteLevelDto.TriggerOn)" ColSpanSm="6">
+                        <DxComboBox Data="@this.DiscreteStates" 
+                                    @bind-Value="@this.DiscreteLevel.TriggerOn" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="@nameof(DiscreteLevelDto.Enabled)" ColSpanSm="6">
+                        <DxCheckBox @bind-Checked="@this.DiscreteLevel.Enabled" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="@nameof(DiscreteLevelDto.Bypass)" ColSpanSm="6">
+                        <DxCheckBox @bind-Checked="@this.DiscreteLevel.Bypass" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="@nameof(DiscreteLevelDto.BypassResetTime)" ColSpanSm="6">
+                        <DxSpinEdit @bind-Value="@this.DiscreteLevel.BypassResetTime" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="DeviceAction">
+                        <DxComboBox Data="@this.DeviceActions" 
+                                    @bind-Value="this.DiscreteLevel.DeviceActionId"
+                                    TextFieldName="@nameof(DeviceActionDto.Name)"
+                                    ValueFieldName="@nameof(DeviceActionDto.Id)" />
+                    </DxFormLayoutItem>
+                </DxFormLayout>
+            </DxFormLayoutGroup>
+        }
+    </DxFormLayout>
+}
 
 @code {
     [Parameter]
     public string? ChannelId { get; set; }
     
-    AlertDto Alert { get; set; }
+    [Parameter]
+    public
+    
+    AlertDto? Alert { get; set; }
+    IEnumerable<AnalogLevelDto>? AnalogLevels { get; set; }
+    DiscreteLevelDto? DiscreteLevel { get; set; }
+    IEnumerable<DeviceActionDto>? DeviceActions { get; set; }
+    IEnumerable<DiscreteState>? DiscreteStates { get; set; }
+
 
     protected override async Task OnInitializedAsync() {
-        this.Alert = await this.Client.GetAlert(this.ChannelId);
+        this.SelectionChanged.OnChanged += this.SelectedChannelChangedHandler;
+        this.DiscreteStates = Enum.GetValues(typeof(DiscreteState))
+            .OfType<DiscreteState>()
+            .ToList();
+        await this.Update();
     }
 
+    private async Task Update() {
+        if (this.ChannelId != null) {
+            var deviceId = this.SelectionChanged.SelectedItem.ModbusDeviceId;
+            this.DeviceActions = await this.Client.GetDeviceAction(this.SelectionChanged.SelectedItem.ModbusDeviceId.ToString());
+            this.Alert = await this.Client.GetAlert(this.ChannelId);
+            if (typeof(TItem)==typeof(AnalogInputDto)) {
+                this.AnalogLevels = await this.Client.GetAnalogAlertLevels(this.Alert.Id.ToString());
+            } else {
+                this.DiscreteLevel = await this.Client.GetDiscreteAlertLevel(this.Alert.Id.ToString());
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
-    async Task OnSubmit() {
+    private async void SelectedChannelChangedHandler() {
+        this.ChannelId = this.SelectionChanged.SelectedItem?.Id.ToString();
+        await this.Update();
+    }
+
+    private async Task EditModelSaving(GridEditModelSavingEventArgs e) {
         
     }
     
+    async Task OnSubmit() {
+        
+    }
+
+    public ValueTask DisposeAsync() {
+        this.SelectionChanged.OnChanged -= this.SelectedChannelChangedHandler;
+        return ValueTask.CompletedTask;
+    }
+
 }

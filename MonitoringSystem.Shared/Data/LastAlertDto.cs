@@ -1,6 +1,6 @@
 ﻿namespace MonitoringSystem.Shared.Data; 
 
-public class AlertDto {
+public class LastAlertDto {
     public string alertId { get; set; }
     public string channelId { get; set; }
     public AlertItemType ItemType { get; set; }

@@ -78,6 +78,8 @@ public class GetAnalogLevelsEndpoint:Endpoint<GetAnalogLevelsRequest,GetAnalogLe
 
     public override async Task HandleAsync(GetAnalogLevelsRequest req, CancellationToken ct) {
         var levels = await this._context.AlertLevels.OfType<AnalogLevel>()
+            .Include(e=>e.DeviceAction)
+                .ThenInclude(e=>e.FacilityAction)
             .Where(e => e.AnalogAlertId == req.AnalogAlertId)
             .Select(e=>e.ToDto())
             .ToListAsync(ct);
@@ -100,6 +102,8 @@ public class GetDiscreteLevelEndpoint:Endpoint<GetDiscreteLevelRequest,GetDiscre
     
     public override async Task HandleAsync(GetDiscreteLevelRequest req, CancellationToken ct) {
         var level = await this._context.AlertLevels.OfType<DiscreteLevel>()
+            .Include(e=>e.DeviceAction)
+                .ThenInclude(e=>e.FacilityAction)
             .FirstOrDefaultAsync(e => e.DiscreteAlertId == req.DiscreteAlertId,ct);
         if (level is not null) {
             var response = new GetDiscreteLevelResponse() { DiscreteLevel = level.ToDto() };

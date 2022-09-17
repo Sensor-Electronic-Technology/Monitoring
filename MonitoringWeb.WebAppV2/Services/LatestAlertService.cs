@@ -1,7 +1,6 @@
 ﻿using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
-
 namespace MonitoringWeb.WebAppV2.Services; 
 
     public class LatestAlertService {
@@ -14,12 +13,12 @@ namespace MonitoringWeb.WebAppV2.Services;
             this._logger=logger;
         }
 
-        public async Task<IEnumerable<AlertDto>> GetLatestAlarms(int days) {
+        public async Task<IEnumerable<LastAlertDto>> GetLatestAlarms(int days) {
             var client = new MongoClient("mongodb://172.20.3.41");
             var e1Database = client.GetDatabase("epi1_data");
             var e2Database = client.GetDatabase("epi2_data");
             var gasDatabase = client.GetDatabase("gasbay_data");
-            List<AlertDto> alertDtos = new List<AlertDto>();
+            List<LastAlertDto> alertDtos = new List<LastAlertDto>();
 
             var gasAlertItems = await gasDatabase.GetCollection<MonitorAlert>("alert_items")
                 .Find(e=>e.Enabled)
@@ -33,7 +32,7 @@ namespace MonitoringWeb.WebAppV2.Services;
                 foreach(var alert in alerts) {
                     var item = gasAlertItems.FirstOrDefault(e => e._id== alert.MonitorItemId);
                     if (item != null) {
-                        var temp = new AlertDto() {
+                        var temp = new LastAlertDto() {
                             channelId = item.MonitorBoxItemId.ToString(),
                             alertId = alert.MonitorItemId.ToString(),
                             Device = "Gasbay",
@@ -60,7 +59,7 @@ namespace MonitoringWeb.WebAppV2.Services;
                 foreach (var alert in alerts) {
                     var item = e1AlertItems.FirstOrDefault(e => e._id == alert.MonitorItemId);
                     if (item != null) {
-                        var temp = new AlertDto() {
+                        var temp = new LastAlertDto() {
                             channelId = item.MonitorBoxItemId.ToString(),
                             alertId = alert.MonitorItemId.ToString(),
                             Device = "Epi1",
@@ -87,7 +86,7 @@ namespace MonitoringWeb.WebAppV2.Services;
                 foreach (var alert in alerts) {
                     var item = e2AlertItems.FirstOrDefault(e => e._id == alert.MonitorItemId);
                     if (item != null) {
-                        var temp = new AlertDto() {
+                        var temp = new LastAlertDto() {
                             channelId = item.MonitorBoxItemId.ToString(),
                             alertId = alert.MonitorItemId.ToString(),
                             Device = "Epi2",

@@ -125,7 +125,7 @@
     }
     
     private async void FetchAlertPlot() {
-        if (this.SelectedAlert is AlertDto alert) {
+        if (this.SelectedAlert is LastAlertDto alert) {
             this.PlotMessage = $"Loading plot data for {alert.Name}, please wait...";
             await InvokeAsync(StateHasChanged);
             this.StartDate = alert.TimeStamp.AddHours(-(int)DeltaHours);

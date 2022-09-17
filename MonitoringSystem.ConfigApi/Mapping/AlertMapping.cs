@@ -52,7 +52,8 @@ public static class AlertMapping {
             Enabled=level.Enabled,
             SetPoint = level.SetPoint,
             DeviceActionId = level.DeviceActionId,
-            AnalogAlertId = level.AnalogAlertId
+            AnalogAlertId = level.AnalogAlertId,
+            ActionType = level.DeviceAction.FacilityAction.ActionType
         };
         return dto;
     }
@@ -64,7 +65,8 @@ public static class AlertMapping {
             Enabled=level.Enabled,
             TriggerOn = level.TriggerOn,
             DeviceActionId = level.DeviceActionId,
-            DiscreteAlertId = level.DiscreteAlertId
+            DiscreteAlertId = level.DiscreteAlertId,
+            ActionType = level.DeviceAction.FacilityAction.ActionType
         };
         return dto;
     }

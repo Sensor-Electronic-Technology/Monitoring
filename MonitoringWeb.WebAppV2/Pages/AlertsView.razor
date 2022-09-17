@@ -80,7 +80,7 @@
     };
     DateTime StartDate { get; set; }
     DateTime StopDate { get; set; }
-    IEnumerable<AlertDto>? Data { get; set; }
+    IEnumerable<LastAlertDto>? Data { get; set; }
     Decimal DaysBack { get; set; } = 3;
     object? SelectedAlert { get; set; }
     string Message { get; set; } = "Data loading...";

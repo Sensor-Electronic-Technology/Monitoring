@@ -24,6 +24,7 @@ public abstract class AlertLevelDto {
     public bool Bypass { get; set; }
     public int BypassResetTime { get; set; }
     public bool Enabled { get; set; }
+    public ActionType ActionType { get; set; }
     public Guid? DeviceActionId { get; set; }
 }
 
