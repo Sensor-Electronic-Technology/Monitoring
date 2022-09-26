@@ -19,6 +19,29 @@ namespace MonitoringSystem.ConsoleTesting {
     public class AlertDebugMain {
         static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
+            List<AlertRecord> alerts = new List<AlertRecord>() {
+                new AlertRecord() {
+                    AlertId = 1,CurrentState = ActionType.Alarm, DisplayName = "Alert 1", Enabled = true, ChannelReading = 1
+                },
+                new AlertRecord() {
+                    AlertId = 2,CurrentState = ActionType.Okay, DisplayName = "Alert 2", Enabled = true, ChannelReading = 1
+                },
+                new AlertRecord() {
+                    AlertId = 3,CurrentState = ActionType.Okay, DisplayName = "Alert 3", Enabled = true, ChannelReading = 1
+                },
+                new AlertRecord() {
+                    AlertId = 4,CurrentState = ActionType.Okay, DisplayName = "Alert 4", Enabled = true, ChannelReading = 1
+                }
+            };
+
+            AlertProcessing alertService = new AlertProcessing();
+            while (true) {
+                await alertService.ProcessAlerts(alerts,DateTime.Now);
+                await Task.Delay(2000);
+            }
+        }
+
+        static async Task DebugAlertsFull() {
             var client = new MongoClient("mongodb://172.20.3.41");
             var settings = new MonitorDataLogSettings();
             settings.ConnectionString = "mongodb://172.20.3.41";
@@ -30,7 +53,7 @@ namespace MonitoringSystem.ConsoleTesting {
             emailSettings.SmtpPort = 25;
             emailSettings.FromUser = "Alert Troubleshooting";
             emailSettings.FromAddress = "monitoralerts@s-et.com";
-            /*var configProvider = new DataLogConfigProvider(new MongoClient("mongodb://172.20.3.41"), settings, emailSettings);
+            var configProvider = new DataLogConfigProvider(new MongoClient("mongodb://172.20.3.41"), settings, emailSettings);
             configProvider.DeviceName = "gasbay";
             await configProvider.Load();
             var alertService = new AlertProcessing(new MongoClient("mongodb://172.20.3.41"), configProvider);
@@ -41,7 +64,7 @@ namespace MonitoringSystem.ConsoleTesting {
             while (true) {
                 await dataLogger.Run(first);
                 first = false;
-            }*/
+            }
         }
     }
 
@@ -90,20 +113,24 @@ namespace MonitoringSystem.ConsoleTesting {
     }
 
     public class AlertProcessing {
-        private readonly IAlertRepo _alertRepo;
+        /*private readonly IAlertRepo _alertRepo;
 
-        private readonly IEmailService _emailService;
+        private readonly IEmailService _emailService;*/
         private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
         private string EmailSubject;
         
         public AlertProcessing(IMongoClient client,DataLogConfigProvider provider) {
-            this._alertRepo = new AlertRepo(client,provider);
+            //this._alertRepo = new AlertRepo(client,provider);
             //this._emailService = new SmtpEmailService(provider);
         }
 
+        public AlertProcessing() {
+            
+        }
+
         public async Task ProcessAlerts(IList<AlertRecord> alerts, DateTime now) {
-            IMessageBuilder messageBuilder = new MessageBuilder();
-            messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
+            //IMessageBuilder messageBuilder = new MessageBuilder();
+            //messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
             ConsoleTable statusTable = new ConsoleTable("Alert","Status","Reading");
             ConsoleTable newAlertTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable newStateTable = new ConsoleTable("Alert", "Status", "Reading");
@@ -124,7 +151,7 @@ namespace MonitoringSystem.ConsoleTesting {
                                     activeAlert.ChannelReading = alert.ChannelReading;
                                     activeAlert.AlertAction = alert.AlertAction;
                                     newStateTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
-                                    messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                                    //messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                                     sendEmail = true;
                                 } else {
                                     Console.WriteLine("Error: ActiveAlert not found in ChangeState");
@@ -143,7 +170,7 @@ namespace MonitoringSystem.ConsoleTesting {
                             }
                     }
                     statusTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
-                    messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                    //messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
             }
             
@@ -187,7 +214,7 @@ namespace MonitoringSystem.ConsoleTesting {
                         Value = alert.ChannelReading.ToString()
                     });
                     activeTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
-                    messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                    //messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
                 if (sendEmail) {
                     /*await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
@@ -226,7 +253,10 @@ namespace MonitoringSystem.ConsoleTesting {
             var now = DateTime.Now;
             foreach (var alert in alertRecords) {
                 var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
-                var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.actionType == alert.CurrentState);
+                //var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.actionType == alert.CurrentState);
+                ActionItem actionItem = new ActionItem() {
+                    actionType = ActionType.Alarm, EmailEnabled = true, display = true, EmailPeriod = 10
+                };
                 switch (alert.CurrentState) {
                     case ActionType.Okay: {
                             if (activeAlert != null) {
@@ -256,9 +286,10 @@ namespace MonitoringSystem.ConsoleTesting {
                                             activeAlert.Latched = false;
                                             activeAlert.TimeLatched = now;
                                         }
-                                        if ((now - activeAlert.LastAlert).TotalMinutes >= actionItem.EmailPeriod) {
+                                        if ((now - activeAlert.LastAlert).TotalSeconds >= 5) {
+                                            activeAlert.LastAlert = now;
                                             alert.AlertAction = AlertAction.Resend;
-                                            alert.LastAlert = now;
+                                            //alert.LastAlert = now;
                                         } else {
                                             alert.AlertAction = AlertAction.Nothing;
                                         }
@@ -288,7 +319,7 @@ namespace MonitoringSystem.ConsoleTesting {
         }
         
         public async Task Initialize() {
-            await this._alertRepo.Load();
+            //await this._alertRepo.Load();
         }
     }
 } 

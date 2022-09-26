@@ -32,6 +32,16 @@ public class DataLogConfigProvider:IMonitorConfigurationProvider {
         this._deviceCollection = database.GetCollection<ManagedDevice>(this._settings.ManagedDeviceCollection);
         this._emailRecipientCollection = database.GetCollection<EmailRecipient>(this._settings.EmailRecipientCollection);
     }
+
+    public DataLogConfigProvider(IMongoClient client, MonitorDataLogSettings settings,
+        MonitorEmailSettings emailSettings) {
+        this._client = client;
+        this._settings = settings;
+        this._emailSettings = emailSettings;
+        var database = this._client.GetDatabase(this._settings.DatabaseName);
+        this._deviceCollection = database.GetCollection<ManagedDevice>(this._settings.ManagedDeviceCollection);
+        this._emailRecipientCollection = database.GetCollection<EmailRecipient>(this._settings.EmailRecipientCollection);
+    }
     
     public async Task Load() {
         this._emailRecipients=await this._emailRecipientCollection.Find(_ => true).ToListAsync();

@@ -31,6 +31,7 @@ namespace MonitoringData.Infrastructure.Services {
             this._emailService = emailService;
             this._monitorHub = monitorHub;
         }
+        
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
             IMessageBuilder messageBuilder = new MessageBuilder();
             messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
@@ -48,7 +49,8 @@ namespace MonitoringData.Infrastructure.Services {
                                     activeAlert.CurrentState = alert.CurrentState;
                                     activeAlert.ChannelReading = alert.ChannelReading;
                                     activeAlert.AlertAction = alert.AlertAction;
-                                    messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString(CultureInfo.InvariantCulture));
+                                    messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), 
+                                        alert.ChannelReading.ToString(CultureInfo.InvariantCulture));
                                     sendEmail = true;
                                 } else {
                                     this._logger.LogError("Error: ActiveAlert not found in ChangeState");
@@ -61,7 +63,7 @@ namespace MonitoringData.Infrastructure.Services {
                                 break;
                             }
                         case AlertAction.Resend: {
-                            sendEmail = true;
+                                sendEmail = true;
                                 break;
                             }
                     }
@@ -163,9 +165,10 @@ namespace MonitoringData.Infrastructure.Services {
                                         activeAlert.TimeLatched = now;
                                     }
                                     if (actionItem != null) {
-                                        if ((now - activeAlert.LastAlert).TotalMinutes >= actionItem.EmailPeriod) {
+                                        var emailPeriod = actionItem.EmailPeriod<30  ? 30 : actionItem.EmailPeriod;
+                                        if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
+                                            activeAlert.LastAlert = now;
                                             alert.AlertAction = AlertAction.Resend;
-                                            alert.LastAlert = now;
                                         } else {
                                             alert.AlertAction = AlertAction.Nothing;
                                         }

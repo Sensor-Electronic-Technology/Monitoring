@@ -18,9 +18,14 @@
     <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="FloorplanUpdateResize.PNG" />
-    <Content Include="FloorplanUpdateResize.PNG">
+    <None Remove="FloorplanUpdateResize.png" />
+    <Content Include="FloorplanUpdateResize.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="GasDetectorMap.png" />
+    <Content Include="GasDetectorMap.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
 </Project>

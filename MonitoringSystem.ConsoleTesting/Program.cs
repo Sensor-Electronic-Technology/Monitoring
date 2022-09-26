@@ -161,8 +161,8 @@ namespace MonitoringSystem.ConsoleTesting {
             /*await WriteOutDiscreteData("gasbay", new DateTime(2022, 7, 28, 0, 0, 0), DateTime.Now,
                 @"C:\MonitorFiles\gasbay_discrete.csv");*/
 
-            await TestSmptEmail();
-            //await RemoteAlertTesting();
+            //await TestSmptEmail();
+            await RemoteAlertTesting();
             /*ModbusService modservice = new ModbusService();
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -180,12 +180,12 @@ namespace MonitoringSystem.ConsoleTesting {
 
         static async Task RemoteAlertTesting() {
             ModbusService modservice = new ModbusService();
-            Console.WriteLine("Epi1 Running");
+            /*Console.WriteLine("Epi1 Running");
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, true);
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
-            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
             
             Console.WriteLine("Gasbay running");
             await modservice.WriteCoil("172.20.5.42", 502, 1, 2, true);
@@ -194,13 +194,13 @@ namespace MonitoringSystem.ConsoleTesting {
             await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.42", 502, 1, 2, false);
 
-            Console.WriteLine("Epi2 running");
+            /*Console.WriteLine("Epi2 running");
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 0, true);
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, false);
-            Console.WriteLine("Test Done");
+            Console.WriteLine("Test Done");*/
             
             /*bool state = false;
             for (int i = 0; i < 20; i++) {

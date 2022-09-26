@@ -34,7 +34,7 @@ public class SmtpEmailService:IEmailService {
             message.From.Add(this._from);
             message.To.AddRange(this._recipients);
             BodyBuilder builder = new BodyBuilder();
-            var bodyImage=builder.LinkedResources.Add("FloorplanUpdateResize.PNG");
+            var bodyImage=builder.LinkedResources.Add("GasDetectorMap.png");
             bodyImage.ContentId = MimeUtils.GenerateMessageId();
             builder.HtmlBody=messageBuilder.FinishMessage(bodyImage.ContentId);
             message.Body = builder.ToMessageBody();
