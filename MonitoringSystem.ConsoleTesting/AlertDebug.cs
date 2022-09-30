@@ -19,25 +19,42 @@ namespace MonitoringSystem.ConsoleTesting {
     public class AlertDebugMain {
         static readonly CancellationTokenSource s_cts = new CancellationTokenSource();
         static async Task Main(string[] args) {
-            List<AlertRecord> alerts = new List<AlertRecord>() {
-                new AlertRecord() {
-                    AlertId = 1,CurrentState = ActionType.Alarm, DisplayName = "Alert 1", Enabled = true, ChannelReading = 1
-                },
-                new AlertRecord() {
-                    AlertId = 2,CurrentState = ActionType.Okay, DisplayName = "Alert 2", Enabled = true, ChannelReading = 1
-                },
-                new AlertRecord() {
-                    AlertId = 3,CurrentState = ActionType.Okay, DisplayName = "Alert 3", Enabled = true, ChannelReading = 1
-                },
-                new AlertRecord() {
-                    AlertId = 4,CurrentState = ActionType.Okay, DisplayName = "Alert 4", Enabled = true, ChannelReading = 1
-                }
-            };
-
             AlertProcessing alertService = new AlertProcessing();
+            ActionType actionType = ActionType.Okay;
+            bool firstRun = true;
+            DateTime last=DateTime.Now;
             while (true) {
+                var alert = new AlertRecord() {
+                    AlertId = 1,
+                    CurrentState = actionType,
+                    DisplayName = "Alert 1",
+                    Enabled = true,
+                    ChannelReading = 1
+                };
+                if (firstRun) {
+                    firstRun = false;
+                    alert.CurrentState = actionType;
+                } else {
+                    if ((DateTime.Now - last).TotalSeconds >= 5) {
+                        actionType = actionType == ActionType.Okay ? ActionType.Alarm : ActionType.Okay;
+                        alert.CurrentState = actionType;
+                        last=DateTime.Now;
+                    }
+                }
+                List<AlertRecord> alerts = new List<AlertRecord>() {
+                    new AlertRecord() {
+                        AlertId = 2,CurrentState = ActionType.Okay, DisplayName = "Alert 2", Enabled = true, ChannelReading = 1
+                    },
+                    new AlertRecord() {
+                        AlertId = 3,CurrentState = ActionType.Okay, DisplayName = "Alert 3", Enabled = true, ChannelReading = 1
+                    },
+                    new AlertRecord() {
+                        AlertId = 4,CurrentState = ActionType.Okay, DisplayName = "Alert 4", Enabled = true, ChannelReading = 1
+                    }
+                };
+                alerts.Add(alert);
                 await alertService.ProcessAlerts(alerts,DateTime.Now);
-                await Task.Delay(2000);
+                await Task.Delay(1000);
             }
         }
 
@@ -118,6 +135,7 @@ namespace MonitoringSystem.ConsoleTesting {
         private readonly IEmailService _emailService;*/
         private List<AlertRecord> _activeAlerts = new List<AlertRecord>();
         private string EmailSubject;
+        private int emailCount = 0;
         
         public AlertProcessing(IMongoClient client,DataLogConfigProvider provider) {
             //this._alertRepo = new AlertRepo(client,provider);
@@ -127,7 +145,7 @@ namespace MonitoringSystem.ConsoleTesting {
         public AlertProcessing() {
             
         }
-
+        
         public async Task ProcessAlerts(IList<AlertRecord> alerts, DateTime now) {
             //IMessageBuilder messageBuilder = new MessageBuilder();
             //messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
@@ -137,40 +155,69 @@ namespace MonitoringSystem.ConsoleTesting {
             ConsoleTable activeTable = new ConsoleTable("Alert", "Status", "Reading");
             ConsoleTable resendTable = new ConsoleTable("Alert", "Status", "Reading");
             bool sendEmail = false;
-            foreach (var alert in this.Process(alerts)) {
-                if (alert.Enabled) {
-                    switch (alert.AlertAction) {
-                        case AlertAction.Clear: {
-                                this._activeAlerts.RemoveAll(e=>e.AlertId==alert.AlertId);
-                                break;
-                            }
-                        case AlertAction.ChangeState: {
-                                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
-                                if (activeAlert != null) {
+            foreach (var alert in alerts) {
+                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
+                //var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.actionType == alert.CurrentState);
+                var actionItem = new ActionItem() {
+                    actionType = ActionType.Alarm,
+                    EmailEnabled = true,
+                    EmailPeriod = 20
+                };
+                switch (alert.CurrentState) {
+                    case ActionType.Okay: {
+                            if (activeAlert != null) {
+                                if (!activeAlert.Latched) {
+                                    activeAlert.Latched = true;
+                                    activeAlert.TimeLatched = now;
+                                } else {
+                                    if ((now - activeAlert.TimeLatched).TotalSeconds >= 3) {
+                                        this._activeAlerts.Remove(activeAlert);
+                                    }
+                                }
+                            }//else do nothing, there is no activeAlert
+                            break;
+                        }
+                    case ActionType.Alarm:
+                    case ActionType.Warning:
+                    case ActionType.SoftWarn: {
+                            if (activeAlert != null) {
+                                if (activeAlert.CurrentState != alert.CurrentState) {
                                     activeAlert.CurrentState = alert.CurrentState;
                                     activeAlert.ChannelReading = alert.ChannelReading;
                                     activeAlert.AlertAction = alert.AlertAction;
-                                    newStateTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
-                                    //messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                                    activeAlert.LastAlert = now;
                                     sendEmail = true;
                                 } else {
-                                    Console.WriteLine("Error: ActiveAlert not found in ChangeState");
+                                    if (activeAlert.Latched) {
+                                        activeAlert.Latched = false;
+                                        activeAlert.TimeLatched = now;
+                                    }
+                                    if (actionItem != null) {
+                                        var emailPeriod = actionItem.EmailPeriod<=0  ? 20 : actionItem.EmailPeriod;
+                                        if ((now - activeAlert.LastAlert).TotalSeconds >= emailPeriod) {
+                                            activeAlert.LastAlert = now;
+                                            activeAlert.ChannelReading = alert.ChannelReading;
+                                            sendEmail = true;
+                                        } else {
+                                            activeAlert.ChannelReading = alert.ChannelReading;
+                                        }
+                                    } else {
+                                        //this._logger.LogError("ActiveAlert not found in Alarm/Warning/SoftWarn");
+                                        //could not find actionItem,should never be here
+                                    }
                                 }
-                                break;
-                            }
-                        case AlertAction.Start: {
+                            } else {
+                                alert.LastAlert = now;
                                 this._activeAlerts.Add(alert.Clone());
                                 sendEmail = true;
-                                break;
                             }
-                        case AlertAction.Resend: {
-                                resendTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
-                                sendEmail = true;
-                                break;
-                            }
-                    }
-                    statusTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
-                    //messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+                            break;
+                        }
+                    case ActionType.Maintenance:
+                    case ActionType.Custom:
+                    default:
+                        //do nothing on maintenance,custom
+                        break;
                 }
             }
             
@@ -197,7 +244,10 @@ namespace MonitoringSystem.ConsoleTesting {
                     State = e.CurrentState.ToString(),
                     Value = e.ChannelReading.ToString()
                 }).ToList();
-
+            
+            foreach (var alert in alerts) {
+                statusTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
+            }
             if (this._activeAlerts.Count > 0) {
                 monitorData.activeAlerts = new List<ItemStatus>();
                 if (this._activeAlerts.FirstOrDefault(e => e.CurrentState == ActionType.Alarm)!=null) {
@@ -216,28 +266,34 @@ namespace MonitoringSystem.ConsoleTesting {
                     activeTable.AddRow(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                     //messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString());
                 }
+
                 if (sendEmail) {
-                    /*await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
-                        messageBuilder.FinishMessage());*/
-                    Console.WriteLine("Sending Email");
+                    this.emailCount++;
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         itemid = e.AlertId,
                         reading = e.ChannelReading,
                         state = e.CurrentState
                     });
-                    //await this._alertRepo.LogAlerts(new AlertReadings() { readings = alertReadings.ToArray(), timestamp = now });
                 }
             } else {
                 monitorData.DeviceState = alerts.FirstOrDefault(e => e.CurrentState == ActionType.Maintenance)!=null ? 
                     ActionType.Maintenance : ActionType.Okay;
             }
             //await this._monitorHub.Clients.All.ShowCurrent(monitorData);
-            //Console.Clear();
+            
             /*Console.WriteLine("New Alerts:");
             Console.WriteLine(newAlertTable.ToMinimalString());
             Console.WriteLine();*/
+            Console.Clear();
+            if (sendEmail) {
+                Console.WriteLine("Email Sent");
+            }
+            Console.WriteLine($"Email Count: {this.emailCount}");
             Console.WriteLine("Active Alerts");
             Console.WriteLine(activeTable.ToMinimalString());
+            Console.WriteLine();
+            Console.WriteLine("Status");
+            Console.WriteLine(statusTable.ToMinimalString());
             Console.WriteLine();
             /*Console.WriteLine("Resend Alerts");
             Console.WriteLine(resendTable.ToMinimalString());
@@ -289,7 +345,7 @@ namespace MonitoringSystem.ConsoleTesting {
                                         if ((now - activeAlert.LastAlert).TotalSeconds >= 5) {
                                             activeAlert.LastAlert = now;
                                             alert.AlertAction = AlertAction.Resend;
-                                            //alert.LastAlert = now;
+                                            alert.LastAlert = now;
                                         } else {
                                             alert.AlertAction = AlertAction.Nothing;
                                         }

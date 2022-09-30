@@ -1,6 +1,5 @@
 ﻿using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Options;
 using MimeKit;
 using Microsoft.Extensions.Logging;
 using MailKit.Net.Smtp;
@@ -11,11 +10,10 @@ namespace MonitoringData.Infrastructure.Services.AlertServices;
 
 public class SmtpEmailService:IEmailService {
     private readonly ILogger<SmtpEmailService> _logger;
-    private MailboxAddress _from;
+    private readonly MailboxAddress _from;
     private readonly MonitorEmailSettings _settings;
     private readonly DataLogConfigProvider _configProvider;
-
-    private IEnumerable<MailboxAddress> _recipients;
+    private IEnumerable<MailboxAddress>? _recipients;
     
     public SmtpEmailService(DataLogConfigProvider configProvider,
         ILogger<SmtpEmailService> logger) {
@@ -34,7 +32,7 @@ public class SmtpEmailService:IEmailService {
             message.From.Add(this._from);
             message.To.AddRange(this._recipients);
             BodyBuilder builder = new BodyBuilder();
-            var bodyImage=builder.LinkedResources.Add("GasDetectorMap.png");
+            var bodyImage=await builder.LinkedResources.AddAsync("GasDetectorMap.png");
             bodyImage.ContentId = MimeUtils.GenerateMessageId();
             builder.HtmlBody=messageBuilder.FinishMessage(bodyImage.ContentId);
             message.Body = builder.ToMessageBody();
@@ -44,7 +42,7 @@ public class SmtpEmailService:IEmailService {
             await client.DisconnectAsync(true);
         } catch(Exception e) {
            this._logger.LogCritical("Error: Could not connect to smtp host");
-           this._logger.LogCritical($"Message: {e.Message}");
+           this._logger.LogCritical("Message: {EMessage}", e.Message);
         }
     }
     
@@ -53,8 +51,8 @@ public class SmtpEmailService:IEmailService {
     }
     
     private bool CertValidationCallback (object sender, 
-        X509Certificate certificate, 
-        X509Chain chain, 
+        X509Certificate? certificate, 
+        X509Chain? chain, 
         SslPolicyErrors sslPolicyErrors)
     {
         if (sslPolicyErrors == SslPolicyErrors.None)
