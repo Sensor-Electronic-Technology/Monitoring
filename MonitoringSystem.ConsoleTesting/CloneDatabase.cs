@@ -72,7 +72,7 @@ public class CloneDatabase {
                 var discreteCollection = database.GetCollection<DiscreteItem>("discrete_items");
                 var virtualCollection = database.GetCollection<VirtualItem>("virtual_items");
                 var actionCollection = database.GetCollection<ActionItem>("action_items");
-               
+                
                 var virtualItems = new List<VirtualItem>();
                 var analogItems = new List<AnalogItem>();
                 var alertItems = new List<MonitorAlert>();
@@ -120,13 +120,13 @@ public class CloneDatabase {
                     analogItems.Add(analogItem);
                     alertItems.Add(new MonitorAlert() {
                         _id = ObjectId.GenerateNewId(),
-                        AlertId=input.Alert.Id.ToString(),
+                        EntityId=input.Alert.Id.ToString(),
                         AlertItemType = AlertItemType.Analog,
                         Bypassed = input.Alert.Bypass,
                         BypassResetTime = input.Alert.BypassResetTime,
                         DisplayName = input.Alert.Name,
                         Enabled = input.Alert.Enabled,
-                        MonitorBoxItemId = managedDevice._id
+                        ChannelId = analogItem._id
                     });
                 }
 
@@ -160,13 +160,13 @@ public class CloneDatabase {
                     discreteItems.Add(discreteItem);
                     alertItems.Add(new MonitorAlert() {
                         _id = ObjectId.GenerateNewId(),
-                        AlertId=input.Alert.Id.ToString(),
+                        EntityId=input.Alert.Id.ToString(),
                         AlertItemType = AlertItemType.Analog,
                         Bypassed = input.Alert.Bypass,
                         BypassResetTime = input.Alert.BypassResetTime,
                         DisplayName = input.Alert.Name,
                         Enabled = input.Alert.Enabled,
-                        MonitorBoxItemId = managedDevice._id
+                        ChannelId=discreteItem._id
                     });
                     
                 }
@@ -199,13 +199,13 @@ public class CloneDatabase {
                     virtualItems.Add(virtualItem);
                     alertItems.Add(new MonitorAlert() {
                         _id = ObjectId.GenerateNewId(),
-                        AlertId=input.Alert.Id.ToString(),
+                        EntityId=input.Alert.Id.ToString(),
                         AlertItemType = AlertItemType.Analog,
                         Bypassed = input.Alert.Bypass,
                         BypassResetTime = input.Alert.BypassResetTime,
                         DisplayName = input.Alert.Name,
                         Enabled = input.Alert.Enabled,
-                        MonitorBoxItemId = managedDevice._id
+                        ChannelId=virtualItem._id
                     });
                 }
                 

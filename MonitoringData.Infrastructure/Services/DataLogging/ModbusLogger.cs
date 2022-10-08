@@ -88,7 +88,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     reading.Value = raw[aItem.Register]/aItem.Factor;
                 }             
                 readings.Add(reading);
-                var alert=this._dataService.MonitorAlerts.FirstOrDefault(e => e.MonitorBoxItemId == aItem._id);
+                var alert=this._dataService.MonitorAlerts.FirstOrDefault(e => e.ChannelId == aItem._id);
                 if (alert != null) {
                     ActionType state=ActionType.Okay;
                     if ((int)reading.Value <= aItem.Level3SetPoint) {

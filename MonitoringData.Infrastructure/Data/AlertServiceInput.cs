@@ -29,7 +29,7 @@ public class AlertRecord {
     public AlertRecord(MonitorAlert alert,ActionType reading) {
         this.CurrentState = reading;
         this.AlertId = alert._id;
-        this.ChannelId = alert.MonitorBoxItemId;
+        this.ChannelId = alert.ChannelId;
         this.DisplayName = alert.DisplayName;
         this.CurrentState = reading;
         this.Enabled = alert.Enabled;
@@ -42,7 +42,7 @@ public class AlertRecord {
     public AlertRecord(MonitorAlert alert, float reading, ActionType state) {
         this.CurrentState = state;
         this.AlertId = alert._id;
-        this.ChannelId = alert.MonitorBoxItemId;
+        this.ChannelId = alert.ChannelId;
         this.DisplayName = alert.DisplayName;
         this.Enabled = alert.Enabled;
         this.AlertAction = AlertAction.Nothing;

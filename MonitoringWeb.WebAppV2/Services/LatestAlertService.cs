@@ -33,7 +33,7 @@ namespace MonitoringWeb.WebAppV2.Services;
                     var item = gasAlertItems.FirstOrDefault(e => e._id== alert.MonitorItemId);
                     if (item != null) {
                         var temp = new LastAlertDto() {
-                            channelId = item.MonitorBoxItemId.ToString(),
+                            channelId = item.ChannelId.ToString(),
                             alertId = alert.MonitorItemId.ToString(),
                             Device = "Gasbay",
                             database="gasbay_data",
@@ -60,7 +60,7 @@ namespace MonitoringWeb.WebAppV2.Services;
                     var item = e1AlertItems.FirstOrDefault(e => e._id == alert.MonitorItemId);
                     if (item != null) {
                         var temp = new LastAlertDto() {
-                            channelId = item.MonitorBoxItemId.ToString(),
+                            channelId = item.ChannelId.ToString(),
                             alertId = alert.MonitorItemId.ToString(),
                             Device = "Epi1",
                             database = "epi1_data",
@@ -87,7 +87,7 @@ namespace MonitoringWeb.WebAppV2.Services;
                     var item = e2AlertItems.FirstOrDefault(e => e._id == alert.MonitorItemId);
                     if (item != null) {
                         var temp = new LastAlertDto() {
-                            channelId = item.MonitorBoxItemId.ToString(),
+                            channelId = item.ChannelId.ToString(),
                             alertId = alert.MonitorItemId.ToString(),
                             Device = "Epi2",
                             database="epi2_data",
