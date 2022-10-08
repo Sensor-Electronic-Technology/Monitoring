@@ -36,7 +36,7 @@ public class OutputItem : MonitorChannel {
 
 }
 
-public class VirtualItem : MonitorChannel {
+public class VirtualItem : DiscreteItem {
     public int Register { get; set; }
 }
 

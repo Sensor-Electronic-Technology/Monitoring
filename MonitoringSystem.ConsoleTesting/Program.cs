@@ -98,6 +98,7 @@ namespace MonitoringSystem.ConsoleTesting {
             
             //Console.WriteLine("Check System");
         }
+        
         static async Task TestSmptEmail() {
             SmtpClient client = new SmtpClient();
             /*await client.ConnectAsync("smtp.gmail.com", 25, false);
@@ -118,7 +119,7 @@ namespace MonitoringSystem.ConsoleTesting {
             builder.AppendStatus("Alert 1","Okay","0");
             builder.AppendStatus("Alert 2","Alarm","55");
             
-            bodyBuilder.HtmlBody=builder.FinishMessage();
+            //bodyBuilder.HtmlBody=builder.FinishMessage();
             mailMessage.Body = bodyBuilder.ToMessageBody();
             await client.SendAsync(mailMessage);
             await client.DisconnectAsync(true);

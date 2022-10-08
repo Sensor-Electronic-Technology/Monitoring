@@ -13,9 +13,9 @@ public class FacilityAction {
 
 public class ActionOutput {
     public Guid Id { get; set; }
-    public Guid DiscreteOutputId { get; set; }
+    public Guid? DiscreteOutputId { get; set; }
     public DiscreteOutput? DiscreteOutput { get; set; }
-    public Guid DeviceActionId { get; set; }
+    public Guid? DeviceActionId { get; set; }
     public DeviceAction? DeviceAction { get; set; }
     
     public DiscreteState OnLevel { get; set; }

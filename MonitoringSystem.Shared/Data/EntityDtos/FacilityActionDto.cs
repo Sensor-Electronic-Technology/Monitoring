@@ -10,8 +10,8 @@ public class FacilityActionDto {
 
 public class ActionOutputDto {
     public Guid Id { get; set; }
-    public Guid DiscreteOutputId { get; set; }
-    public Guid DeviceActionId { get; set; }
+    public Guid? DiscreteOutputId { get; set; }
+    public Guid? DeviceActionId { get; set; }
     public DiscreteState OnLevel { get; set; }
     public DiscreteState OffLevel { get; set; }
 }

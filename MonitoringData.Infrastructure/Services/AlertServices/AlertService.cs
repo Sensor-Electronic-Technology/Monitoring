@@ -38,41 +38,70 @@ namespace MonitoringData.Infrastructure.Services {
             IMessageBuilder messageBuilder = new MessageBuilder();
             messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
             bool sendEmail = false;     
-            foreach (var alert in this.Process(alerts)) {
+            foreach (var alert in alerts) {
                 if (alert.Enabled) {
-                    switch (alert.AlertAction) {
-                        case AlertAction.Clear: {
-                                this._activeAlerts.RemoveAll(e=>e.AlertId==alert.AlertId);
+                    var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
+                    var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.ActionType == alert.CurrentState);
+                    switch (alert.CurrentState) {
+                        case ActionType.Okay: {
+                                if (activeAlert != null) {
+                                    if (!activeAlert.Latched) {
+                                        activeAlert.Latched = true;
+                                        activeAlert.TimeLatched = now;
+                                    } else {
+                                        if ((now - activeAlert.TimeLatched).TotalSeconds >= 60) {
+                                            this._activeAlerts.Remove(activeAlert);
+                                        }
+                                    }
+                                }//else do nothing, there is no activeAlert
                                 break;
                             }
-                        case AlertAction.ChangeState: {
-                                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
+                        case ActionType.Alarm:
+                        case ActionType.Warning:
+                        case ActionType.SoftWarn: {
                                 if (activeAlert != null) {
-                                    activeAlert.CurrentState = alert.CurrentState;
-                                    activeAlert.ChannelReading = alert.ChannelReading;
-                                    activeAlert.AlertAction = alert.AlertAction;
-                                    messageBuilder.AppendChanged(alert.DisplayName, alert.CurrentState.ToString(), alert.ChannelReading.ToString(CultureInfo.InvariantCulture));
-                                    sendEmail = true;
+                                    if (activeAlert.CurrentState != alert.CurrentState) {
+                                        activeAlert.CurrentState = alert.CurrentState;
+                                        activeAlert.ChannelReading = alert.ChannelReading;
+                                        activeAlert.AlertAction = alert.AlertAction;
+                                        activeAlert.LastAlert = now;
+                                        sendEmail = true;
+                                    } else {
+                                        if (activeAlert.Latched) {
+                                            activeAlert.Latched = false;
+                                            activeAlert.TimeLatched = now;
+                                        }
+                                        if (actionItem != null) {
+                                            var emailPeriod = actionItem.EmailPeriod<=0  ? 30 : actionItem.EmailPeriod;
+                                            if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
+                                                activeAlert.LastAlert = now;
+                                                activeAlert.ChannelReading = alert.ChannelReading;
+                                                sendEmail = true;
+                                            } else {
+                                                activeAlert.ChannelReading = alert.ChannelReading;
+                                            }
+                                        } else {
+                                            this._logger.LogError("ActiveAlert not found in Alarm/Warning/SoftWarn");
+                                            //could not find actionItem,should never be here
+                                        }
+                                    }
                                 } else {
-                                    this._logger.LogError("Error: ActiveAlert not found in ChangeState");
+                                    alert.LastAlert = now;
+                                    this._activeAlerts.Add(alert.Clone());
+                                    sendEmail = true;
                                 }
                                 break;
                             }
-                        case AlertAction.Start: {
-                                this._activeAlerts.Add(alert.Clone());
-                                sendEmail = true;
-                                break;
-                            }
-                        case AlertAction.Resend: {
-                            sendEmail = true;
-                                break;
-                            }
+                        case ActionType.Maintenance:
+                        case ActionType.Custom:
+                        default:
+                            //do nothing on maintenance,custom
+                            break;
                     }
                     messageBuilder.AppendStatus(alert.DisplayName, alert.CurrentState.ToString(), 
                         alert.ChannelReading.ToString(CultureInfo.InvariantCulture));
                 }
             }
-            
             MonitorData monitorData = new MonitorData {
                 TimeStamp = now,
                 analogData = alerts.Where(e => e.Enabled && e.ItemType == AlertItemType.Analog)
@@ -94,8 +123,8 @@ namespace MonitoringData.Infrastructure.Services {
                         Value = e.ChannelReading.ToString(CultureInfo.InvariantCulture)
                     }).ToList()
             };
-
-            if (this._activeAlerts.Count > 0) {
+            
+            if (this._activeAlerts.Any()) {
                 monitorData.activeAlerts = new List<ItemStatus>();
                 if (this._activeAlerts.FirstOrDefault(e => e.CurrentState == ActionType.Alarm)!=null) {
                     monitorData.DeviceState = ActionType.Alarm;
@@ -115,12 +144,12 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 if (sendEmail) {
                     await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
-                        messageBuilder.FinishMessage());
+                        messageBuilder);
                     this._logger.LogInformation("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
-                        MonitorItemId = ObjectId.Parse(e.AlertId),
-                        Reading = e.ChannelReading,
-                        AlertState = e.CurrentState
+                         //MonitorItemId= ObjectId.,
+                        //reading = e.ChannelReading,
+                        //state = e.CurrentState
                     });
                     await this._alertRepo.LogAlerts(new AlertReadings() {
                         readings = alertReadings.ToArray(), timestamp = now
@@ -132,68 +161,6 @@ namespace MonitoringData.Infrastructure.Services {
             }
             await this._monitorHub.Clients.All.ShowCurrent(monitorData);
         }
-        private IEnumerable<AlertRecord> Process(IList<AlertRecord> alertRecords) {
-            var now = DateTime.Now;
-            foreach (var alert in alertRecords) {
-                var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
-                var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.ActionType == alert.CurrentState);
-                switch (alert.CurrentState) {
-                    case ActionType.Okay: {
-                            if (activeAlert != null) {
-                                if (!activeAlert.Latched) {
-                                    activeAlert.Latched = true;
-                                    activeAlert.TimeLatched = now;
-                                    alert.AlertAction = AlertAction.Nothing;
-                                } else {
-                                    alert.AlertAction = ((now - activeAlert.TimeLatched).TotalSeconds >= 120)
-                                        ? AlertAction.Clear : AlertAction.Nothing;
-                                }
-                            } else {
-                                alert.AlertAction = AlertAction.Nothing;
-                            }
-                            break;
-                        }
-                    case ActionType.Alarm:
-                    case ActionType.Warning:
-                    case ActionType.SoftWarn: {
-                            if (activeAlert != null) {
-                                if (activeAlert.CurrentState != alert.CurrentState) {
-                                    alert.LastAlert = now;
-                                    alert.AlertAction = AlertAction.ChangeState;
-                                } else {
-                                    if (activeAlert.Latched) {
-                                        activeAlert.Latched = false;
-                                        activeAlert.TimeLatched = now;
-                                    }
-                                    if (actionItem != null) {
-                                        if ((now - activeAlert.LastAlert).TotalMinutes >= actionItem.EmailPeriod) {
-                                            alert.AlertAction = AlertAction.Resend;
-                                            activeAlert.LastAlert = now;
-                                            alert.LastAlert = now;
-                                        } else {
-                                            alert.AlertAction = AlertAction.Nothing;
-                                        }
-                                    } else {
-                                        this._logger.LogError("ActiveAlert not found in Alarm/Warning/SoftWarn");
-                                        alert.AlertAction = AlertAction.Nothing;
-                                    }
-                                }
-                            } else {
-                                alert.AlertAction = AlertAction.Start;
-                                alert.LastAlert = now;
-                            }
-                            break;
-                        }
-                    case ActionType.Maintenance:
-                    case ActionType.Custom:
-                    default:
-                        alert.AlertAction = AlertAction.Nothing;
-                        break;
-                }
-                yield return alert;
-            }
-        }
-
         public async Task DeviceOfflineAlert() {
             IMessageBuilder messageBuilder = new MessageBuilder();
             messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
@@ -210,7 +177,7 @@ namespace MonitoringData.Infrastructure.Services {
                 }
             };
             await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
-                messageBuilder.FinishMessage());
+                messageBuilder);
             await this._monitorHub.Clients.All.ShowCurrent(monitorData);
         }
         

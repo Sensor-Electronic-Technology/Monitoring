@@ -1,8 +1,6 @@
-﻿using MassTransit.Configuration;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MonitoringData.Infrastructure.Data;
-using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.Services;
 

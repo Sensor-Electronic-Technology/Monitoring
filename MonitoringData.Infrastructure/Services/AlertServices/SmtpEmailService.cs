@@ -1,9 +1,9 @@
 ﻿using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Options;
 using MimeKit;
 using Microsoft.Extensions.Logging;
 using MailKit.Net.Smtp;
+using MimeKit.Utils;
 using MonitoringData.Infrastructure.Data;
 
 namespace MonitoringData.Infrastructure.Services.AlertServices;
@@ -13,7 +13,6 @@ public class SmtpEmailService:IEmailService {
     private MailboxAddress _from;
     private readonly MonitorEmailSettings _settings;
     private readonly DataLogConfigProvider _configProvider;
-
     private IEnumerable<MailboxAddress> _recipients;
     
     public SmtpEmailService(DataLogConfigProvider configProvider,
@@ -23,30 +22,28 @@ public class SmtpEmailService:IEmailService {
         this._settings = configProvider.MonitorEmailSettings;
         this._from = new MailboxAddress(this._settings.FromUser,this._settings.FromAddress);
     }
-    public async Task SendMessageAsync(string subject, string msg) {
+    public async Task SendMessageAsync(string subject, IMessageBuilder messageBuilder) {
         var client = new SmtpClient();
-       try {
+        try {
             client.CheckCertificateRevocation = false;
             client.ServerCertificateValidationCallback = CertValidationCallback;
             await client.ConnectAsync(this._settings.SmtpHost, this._settings.SmtpPort,false);
             var message =new MimeMessage();
             message.From.Add(this._from);
             message.To.AddRange(this._recipients);
-            BodyBuilder builder = new BodyBuilder() {
-                HtmlBody = msg
-            };
+            BodyBuilder builder = new BodyBuilder();
+            var bodyImage=await builder.LinkedResources.AddAsync("GasDetectorMap.png");
+            bodyImage.ContentId = MimeUtils.GenerateMessageId();
+            builder.HtmlBody=messageBuilder.FinishMessage(bodyImage.ContentId);
             message.Body = builder.ToMessageBody();
             message.Subject = subject;
+            
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
         } catch(Exception e) {
-           this._logger.LogCritical("Error: Could not connect to smtp host");
-           this._logger.LogCritical($"Message: {e.Message}");
+            this._logger.LogCritical("Error: Could not connect to smtp host");
+            this._logger.LogCritical("Message: {EMessage}", e.Message);
         }
-    }
-    
-    public void SendMessage(string subject, string msg) {
-        throw new NotImplementedException();
     }
     
     private bool CertValidationCallback (object sender, 

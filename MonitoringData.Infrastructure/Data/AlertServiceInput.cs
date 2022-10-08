@@ -1,4 +1,5 @@
-﻿using MonitoringSystem.Shared.Data;
+﻿using MongoDB.Bson;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 
 namespace MonitoringData.Infrastructure.Data;
@@ -10,8 +11,8 @@ public enum AlertAction {
     Nothing
 }
 public class AlertRecord {
-    public string AlertId { get; set; }
-    public string ChannelId { get; set; }
+    public ObjectId AlertId { get; set; }
+    public ObjectId ChannelId { get; set; }
     public string DisplayName { get; set; }
     public ActionType CurrentState { get; set; }
     public AlertAction AlertAction { get; set; }
@@ -27,8 +28,8 @@ public class AlertRecord {
 
     public AlertRecord(MonitorAlert alert,ActionType reading) {
         this.CurrentState = reading;
-        this.AlertId = alert._id.ToString();
-        this.ChannelId = alert.MonitorBoxItemId.ToString();
+        this.AlertId = alert._id;
+        this.ChannelId = alert.MonitorBoxItemId;
         this.DisplayName = alert.DisplayName;
         this.CurrentState = reading;
         this.Enabled = alert.Enabled;
@@ -40,8 +41,8 @@ public class AlertRecord {
 
     public AlertRecord(MonitorAlert alert, float reading, ActionType state) {
         this.CurrentState = state;
-        this.AlertId = alert._id.ToString();
-        this.ChannelId = alert.MonitorBoxItemId.ToString();
+        this.AlertId = alert._id;
+        this.ChannelId = alert.MonitorBoxItemId;
         this.DisplayName = alert.DisplayName;
         this.Enabled = alert.Enabled;
         this.AlertAction = AlertAction.Nothing;
@@ -52,8 +53,8 @@ public class AlertRecord {
 
     public AlertRecord() {
         this.ChannelReading = 0.00f;
-        this.AlertId = "-1";
-        this.ChannelId = "-1";
+        this.AlertId=ObjectId.Empty;
+        this.ChannelId = ObjectId.Empty;
         this.DisplayName = "Not Set";
         this.CurrentState = ActionType.Okay;
         this.Enabled = false;

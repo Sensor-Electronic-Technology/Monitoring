@@ -1,13 +1,9 @@
-﻿using MassTransit;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MonitoringData.Infrastructure.Data;
-using MonitoringData.Infrastructure.Events;
 using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
-using MonitoringSystem.Shared.SignalR;
 using MonitoringSystem.Shared.Services;
 
 namespace MonitoringData.Infrastructure.Services {
@@ -115,7 +111,7 @@ namespace MonitoringData.Infrastructure.Services {
                         record = true;
                     }
                     readings.Add(analogReading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.MonitorItemId.ToString());
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.MonitorItemId);
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = (float)analogReading.Value;
                     } else {
@@ -146,7 +142,7 @@ namespace MonitoringData.Infrastructure.Services {
                         record = true;
                     }              
                     readings.Add(reading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.MonitorItemId.ToString());
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.MonitorItemId);
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = reading.Value == true ? 1.00f : 0.00f;
                     } else {
@@ -176,7 +172,7 @@ namespace MonitoringData.Infrastructure.Services {
                     }
                     var alert = this._dataService.MonitorAlerts.FirstOrDefault(e => e._id == reading.MonitorItemId);
                     readings.Add(reading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.MonitorItemId.ToString());
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.MonitorItemId);
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = reading.Value == true ? 1.00f : 0.00f;
                     } else {

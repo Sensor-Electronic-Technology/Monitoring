@@ -23,8 +23,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
     
     public class FacilityParser {
-
-        public static string boxId = "Epi2";
+        public static string boxId = "gasbay";
         public static string boxAnalogPath = $@"C:\MonitorFiles\{boxId}\ANALOG.TXT";
         public static string boxActionPath = $@"C:\MonitorFiles\{boxId}\ACTIONS.TXT";
         public static string boxDiscretePath = $@"C:\MonitorFiles\{boxId}\DIGITAL.TXT";
@@ -33,21 +32,22 @@ namespace MonitoringSystem.ConsoleTesting {
         public static string boxNetworkPath = $@"C:\MonitorFiles\{boxId}\NETWORK.TXT";
 
         static void Main(string[] args) {
-            //CreateModbusDevice();
-            /*CreateFacilityActions();
-            CreateSensors();*/
-            /*CreateOutputs();
+            CreateModbusDevice();
+            //CreateFacilityActions();
+            //CreateSensors();
+            CreateOutputs();
             CreateDeviceActions();
             CreateAnalogInputs();
             CreateDiscreteInputs();
-            CreateVirtualInputs();*/
-            CreateDiscreteJson();
-            
+            CreateVirtualInputs();
+            //CreateDiscreteJson();
         }
+        
+        
 
-        public static void UpdateMongoDiscrete() {
+        public static void UpdateMongoDiscrete(string name) {
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("epi2_data_temp");
+            var database = client.GetDatabase("name");
             var discreteCollection = database.GetCollection<DiscreteItem>("discrete_items");
             var alertCollection=database.GetCollection<MonitorAlert>("alert_items");
             using var context = new MonitorContext();
@@ -67,7 +67,6 @@ namespace MonitoringSystem.ConsoleTesting {
 
         public static void CreateDiscreteJson() {
             using var context = new MonitorContext();
-
             var discreteInputs = context.Channels.OfType<DiscreteInput>()
                 .Include(e => e.Alert)
                     .ThenInclude(e => ((DiscreteAlert)e).AlertLevel)
@@ -118,19 +117,27 @@ namespace MonitoringSystem.ConsoleTesting {
         public static void CreateSensors() {
             using var context = new MonitorContext();
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("monitor_settings");
-            var collection = database.GetCollection<SensorTypeDev>("sensors_dev");
+            var database = client.GetDatabase("monitor_settings_dev");
+            var collection = database.GetCollection<SensorType>("sensor_types");
 
-            var sensors=collection.Find(_ => true).ToList().Select(e => new Sensor() {
-                Name = e.Name,
-                Slope = e.Slope,
-                Offset=e.Offset,
-                YAxisMin = e.YAxisStart,
-                YAxitMax = e.YAxisStop,
-                Units = e.Units
-            });
-
-            context.AddRange(sensors);
+            var sensors = collection.Find(_ => true).ToList();
+            List<Sensor> entities = new List<Sensor>();
+            foreach (var sensor in sensors) {
+                var eSensor = new Sensor() {
+                    Id = Guid.NewGuid(),
+                    Name = sensor.Name,
+                    Slope = sensor.Slope,
+                    Offset=sensor.Offset,
+                    YAxisMin = sensor.YAxisStart,
+                    YAxitMax = sensor.YAxisStop,
+                    Units = sensor.Units
+                };
+                entities.Add(eSensor);
+                var filter = Builders<SensorType>.Filter.Eq(e => e._id, sensor._id);
+                var update=Builders<SensorType>.Update.Set(e => e.EntityId, eSensor.Id.ToString());
+                collection.UpdateOne(filter,update);
+            }
+            context.AddRange(entities);
             var ret=context.SaveChanges();
             if (ret > 1) {
                 Console.WriteLine("Check Database");
@@ -269,7 +276,7 @@ namespace MonitoringSystem.ConsoleTesting {
         
         public static void CreateModbusDevice() {
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("monitor_settings");
+            var database = client.GetDatabase("monitor_settings_dev");
             var collection = database.GetCollection<ManagedDevice>("monitor_devices");
             var monitorDevice = collection.Find(e => e.DeviceName == boxId).FirstOrDefault();
             if (monitorDevice != null) {
@@ -466,35 +473,32 @@ namespace MonitoringSystem.ConsoleTesting {
                 var out2 = outputs.FirstOrDefault(e => e.ChannelAddress.Channel == addr2.Channel && e.ChannelAddress.ModuleSlot == addr2.ModuleSlot);
                 var out3 = outputs.FirstOrDefault(e => e.ChannelAddress.Channel == addr3.Channel && e.ChannelAddress.ModuleSlot == addr3.ModuleSlot);
 
-                if (out1 != null) {
-                    ActionOutput aout1 = new ActionOutput() {
-                        DiscreteOutput = out1,
-                        DiscreteOutputId = out1.Id,
-                        OnLevel = p["O1"]["OnLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-                        OffLevel = p["O1"]["OffLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-                    };
-                    deviceAction.ActionOutputs.Add(aout1);
-                }
 
-                if (out2 != null) {
-                    ActionOutput aout2 = new ActionOutput() {
-                        DiscreteOutput = out2,
-                        DiscreteOutputId = out2.Id,
-                        OnLevel = p["O2"]["OnLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-                        OffLevel = p["O2"]["OffLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-                    };
-                    deviceAction.ActionOutputs.Add(aout2);
-                }
-
-                if (out3 != null) {
-                    ActionOutput aout3 = new ActionOutput() {
-                        DiscreteOutput = out3,
-                        DiscreteOutputId = out3.Id,
-                        OnLevel = p["O3"]["OnLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-                        OffLevel = p["O3"]["OffLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
-                    };
-                    deviceAction.ActionOutputs.Add(aout3);
-                }
+                ActionOutput aout1 = new ActionOutput() {
+                    DiscreteOutput = out1,
+                    DiscreteOutputId = out1?.Id,
+                    OnLevel = p["O1"]["OnLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
+                    OffLevel = p["O1"]["OffLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
+                };
+                
+                ActionOutput aout2 = new ActionOutput() {
+                    DiscreteOutput = out2,
+                    DiscreteOutputId = out2?.Id,
+                    OnLevel = p["O2"]["OnLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
+                    OffLevel = p["O2"]["OffLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
+                };
+                
+                ActionOutput aout3 = new ActionOutput() {
+                    DiscreteOutput = out3,
+                    DiscreteOutputId = out3?.Id,
+                    OnLevel = p["O3"]["OnLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
+                    OffLevel = p["O3"]["OffLevel"].Value<int>() == 0 ? DiscreteState.Low : DiscreteState.High,
+                };
+                
+                deviceAction.ActionOutputs.Add(aout1);
+                deviceAction.ActionOutputs.Add(aout2);
+                deviceAction.ActionOutputs.Add(aout3);
+                
                 deviceAction.FacilityAction = action;
                 deviceAction.FacilityActionId = action.Id;
 

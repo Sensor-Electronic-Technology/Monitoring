@@ -65,7 +65,7 @@ namespace MonitoringSystem.ConsoleTesting {
         private readonly IEmailService _emailService;
 
         public EmailConsumer() {
-            this._emailService = new ExchangeEmailService();
+            //this._emailService = new SmtpEmailService();
         }
 
         public async Task Consume(ConsumeContext<EmailContract> context) {

@@ -102,7 +102,8 @@ public class MonitorContext:DbContext {
         builder.Entity<DiscreteOutput>()
             .HasMany(e => e.ActionOutputs)
             .WithOne(e => e.DiscreteOutput)
-            .HasForeignKey(e => e.DiscreteOutputId);
+            .HasForeignKey(e => e.DiscreteOutputId)
+            .IsRequired(false);
         
         //Alert Configuration
         
