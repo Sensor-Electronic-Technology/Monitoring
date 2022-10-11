@@ -4,7 +4,6 @@ using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using Microsoft.Extensions.Logging;
-using MongoDB.Bson;
 using MonitoringData.Infrastructure.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.SignalR;
@@ -36,7 +35,7 @@ namespace MonitoringData.Infrastructure.Services {
         }
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
             IMessageBuilder messageBuilder = new MessageBuilder();
-            messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName);
+            messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName ?? "DeviceNameNotFound");
             bool sendEmail = false;     
             foreach (var alert in alerts) {
                 if (alert.Enabled) {
@@ -72,7 +71,7 @@ namespace MonitoringData.Infrastructure.Services {
                                             activeAlert.TimeLatched = now;
                                         }
                                         if (actionItem != null) {
-                                            var emailPeriod = actionItem.EmailPeriod<=0  ? 30 : actionItem.EmailPeriod;
+                                            var emailPeriod = actionItem.EmailPeriod<=0 ? 30 : actionItem.EmailPeriod;
                                             if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
                                                 activeAlert.LastAlert = now;
                                                 activeAlert.ChannelReading = alert.ChannelReading;
@@ -147,9 +146,9 @@ namespace MonitoringData.Infrastructure.Services {
                         messageBuilder);
                     this._logger.LogInformation("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
-                         //MonitorItemId= ObjectId.,
-                        //reading = e.ChannelReading,
-                        //state = e.CurrentState
+                        MonitorItemId = e.AlertId,
+                        AlertState = e.CurrentState,
+                        Reading = e.ChannelReading
                     });
                     await this._alertRepo.LogAlerts(new AlertReadings() {
                         readings = alertReadings.ToArray(), timestamp = now

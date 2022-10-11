@@ -15,7 +15,7 @@ namespace MonitoringSystem.ConsoleTesting;
 public class CloneDatabase {
 
     static async Task Main(string[] args) {
-        await CreateMongoDB("gasbay");
+        await CreateMongoDB("epi1");
     }
     
     
@@ -161,7 +161,7 @@ public class CloneDatabase {
                     alertItems.Add(new MonitorAlert() {
                         _id = ObjectId.GenerateNewId(),
                         EntityId=input.Alert.Id.ToString(),
-                        AlertItemType = AlertItemType.Analog,
+                        AlertItemType = AlertItemType.Discrete,
                         Bypassed = input.Alert.Bypass,
                         BypassResetTime = input.Alert.BypassResetTime,
                         DisplayName = input.Alert.Name,
@@ -200,7 +200,7 @@ public class CloneDatabase {
                     alertItems.Add(new MonitorAlert() {
                         _id = ObjectId.GenerateNewId(),
                         EntityId=input.Alert.Id.ToString(),
-                        AlertItemType = AlertItemType.Analog,
+                        AlertItemType = AlertItemType.Virtual,
                         Bypassed = input.Alert.Bypass,
                         BypassResetTime = input.Alert.BypassResetTime,
                         DisplayName = input.Alert.Name,

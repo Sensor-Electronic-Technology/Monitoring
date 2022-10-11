@@ -5,21 +5,24 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
+using MonitoringConfig.Data.Model;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.EntityDtos;
+using MonitoringSystem.Shared.Data.LogModel;
 
 namespace MonitoringSystem.ConsoleTesting {
-    /*public class TestingNH {
+    public class TestingNH {
         public static async Task Main(string[] args) {
             await CreateNH3Channels();
         }
 
         public static async Task CreateNH3Channels() {
-            var context = new FacilityContext();
-            var device = context.Devices.OfType<ModbusDevice>()
+            var context = new MonitorContext();
+            var device = context.Devices.OfType<MonitorBox>()
                 .Include(e => e.Channels)
                 .AsTracking()
-                .FirstOrDefault(e => e.Identifier == "nh3");
+                .FirstOrDefault(e => e.Name == "nh3");
 
             var actions = context.FacilityActions
                 .AsTracking()
@@ -31,7 +34,7 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Check Database");
         }
 
-        public static IList<AnalogInput> CreateChannels(ModbusDevice device,IList<FacilityAction> actions) {
+        public static IList<AnalogInput> CreateChannels(MonitorBox device,IList<FacilityAction> actions) {
             var soft = actions.FirstOrDefault(e => e.ActionType == ActionType.SoftWarn);
             var warn = actions.FirstOrDefault(e => e.ActionType == ActionType.Warning);
             var alrm = actions.FirstOrDefault(e => e.ActionType == ActionType.Alarm);
@@ -45,7 +48,7 @@ namespace MonitoringSystem.ConsoleTesting {
             return new List<AnalogInput>() { tank1, tank2, temp1, temp2, h1, h2 };
         }
 
-        public static AnalogInput CreateAnalogInput(ModbusDevice device,string id,int ch,
+        public static AnalogInput CreateAnalogInput(MonitorBox device,string id,int ch,
             FacilityAction soft,FacilityAction warn,FacilityAction alrm,
             string name, int reg,int regCount,bool enAlert,
             int setsoft,int setwarn,int setalrm) {
@@ -67,16 +70,23 @@ namespace MonitoringSystem.ConsoleTesting {
             AnalogAlert alert = new AnalogAlert();
             alert.AlertLevels = new List<AnalogLevel>();
             alert.InputChannel = input;
-            alert.DisplayName = input.DisplayName;
-            alert.AlertItemType = AlertItemType.Analog;
+            alert.Name = input.DisplayName;
             alert.Enabled = enAlert;
             alert.Bypass = false;
             alert.BypassResetTime = 24;
 
             var softwarn = new AnalogLevel();
             if (enAlert) {
-                softwarn.FacilityAction = soft;
-                softwarn.FacilityActionId = soft.Id;
+                var deviceAction = new DeviceAction() {
+                    Id = Guid.NewGuid(),
+                    FacilityAction = soft,
+                    FacilityActionId = soft.Id,
+                    MonitorBox=device,
+                    MonitorBoxId = device.Id,
+                    FirmwareId = 0
+                };
+                softwarn.DeviceAction = deviceAction;
+                softwarn.DeviceActionId = soft.Id;
             }
             softwarn.SetPoint = setsoft;
             softwarn.Bypass = false;
@@ -85,8 +95,16 @@ namespace MonitoringSystem.ConsoleTesting {
 
             var warning = new AnalogLevel();
             if (enAlert) {
-                warning.FacilityAction = warn;
-                warning.FacilityActionId = warn.Id;
+                var deviceAction = new DeviceAction() {
+                    Id = Guid.NewGuid(),
+                    FacilityAction = soft,
+                    FacilityActionId = soft.Id,
+                    MonitorBox=device,
+                    MonitorBoxId = device.Id,
+                    FirmwareId = 0
+                };
+                warning.DeviceAction = deviceAction;
+                warning.DeviceActionId = warn.Id;
             }
             warning.SetPoint = setwarn;
             warning.Bypass = false;
@@ -95,8 +113,16 @@ namespace MonitoringSystem.ConsoleTesting {
 
             var alarm = new AnalogLevel();
             if (enAlert) {
-                alarm.FacilityAction = alrm;
-                alarm.FacilityActionId = alrm.Id;
+                var deviceAction = new DeviceAction() {
+                    Id = Guid.NewGuid(),
+                    FacilityAction = alrm,
+                    FacilityActionId = alrm.Id,
+                    MonitorBox=device,
+                    MonitorBoxId = device.Id,
+                    FirmwareId = 0
+                };
+                alarm.DeviceAction = deviceAction;
+                alarm.DeviceActionId = alarm.Id;
             }
             alarm.SetPoint = setalrm;
             alarm.Bypass = false;
@@ -111,33 +137,32 @@ namespace MonitoringSystem.ConsoleTesting {
         }
 
         public static async Task CreateNHDevice() {
-            using var context = new FacilityContext();
+            using var context = new MonitorContext();
             var device = new ModbusDevice();
-            device.Identifier = "nh3";
-            device.DisplayName = "NH3 Tanks";
-            device.BypassAlarms = false;
+            device.Name = "nh3";
+            device.HubAddress = @"http:\\nhstream\hubs\nhstreaming";
+            device.HubName = "nhstreaming";
 
             var netConfig = new NetworkConfiguration();
-            netConfig.IPAddress = "172.21.100.29";
+            netConfig.IpAddress = "172.21.100.29";
             netConfig.Port = 502;
-            netConfig.DNS = "172.20.3.5";
-            netConfig.MAC = "";
+            netConfig.Dns = "172.20.3.5";
+            netConfig.Mac = "";
             netConfig.Gateway = "172.21.100.1";
 
-            var modbusConfig = new ModbusConfig();
+            var modbusConfig = new ModbusConfiguration();
             modbusConfig.SlaveAddress = 1;
             modbusConfig.Coils = 0;
             modbusConfig.HoldingRegisters = 70;
             modbusConfig.InputRegisters = 0;
             modbusConfig.DiscreteInputs = 0;
 
-            ChannelRegisterMapping channelMapping = new ChannelRegisterMapping();
+            ModbusChannelRegisterMap channelMapping = new ModbusChannelRegisterMap();
             channelMapping.AnalogRegisterType = ModbusRegister.Holding;
             channelMapping.AnalogStart = 0;
             channelMapping.AnalogStop = 69;
-
-            modbusConfig.ChannelMapping = channelMapping;
-            netConfig.ModbusConfig = modbusConfig;
+            device.ModbusConfiguration = modbusConfig;
+            device.ChannelRegisterMap = channelMapping;
             device.NetworkConfiguration = netConfig;
             await context.AddAsync(device);
             await context.SaveChangesAsync();
@@ -149,12 +174,11 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Testing MongoChange");
             var client = new MongoClient("mongodb://172.20.3.30");
             var database = client.GetDatabase("epi1_data_test");
-            var collection = database.GetCollection<AnalogChannel>("analog_items");
+            var collection = database.GetCollection<AnalogItem>("analog_items");
             var analogItems = await collection.Find(_ => true).ToListAsync();
-            var update = Builders<AnalogChannel>.Update
-                .Set(e => e.reg, 0)
-                .Set(e => e.reglen, 2);
-            //await collection.UpdateManyAsync(analogItems, update);
+            var update = Builders<AnalogItem>.Update
+                .Set(e => e.Register, 0)
+                .Set(e => e.RegisterLength, 2);
 
             foreach (var item in analogItems) {
                 await collection.UpdateOneAsync(e => e._id == item._id, update);
@@ -162,12 +186,12 @@ namespace MonitoringSystem.ConsoleTesting {
 
             analogItems = await collection.Find(_ => true).ToListAsync();
             foreach (var item in analogItems) {
-                Console.WriteLine($"Item: {item.identifier} Reg: {item.reg} RegLength: {item.reglen}");
+                Console.WriteLine($"Item: {item.Identifier} Reg: {item.Register} RegLength: {item.RegisterLength}");
             }
 
             Console.WriteLine("Completed,Press Any Key To Exit");
             Console.ReadKey();
         }
 
-    }*/
+    }
 }

@@ -23,8 +23,9 @@ using MonitoringSystem.Shared.Data.SettingsModel;
 
 namespace MonitoringSystem.ConsoleTesting {
     public class Program {
-
         static async Task Main(string[] args) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("epi1_data_dev");
             //await CreateMongoDB("Epi1");
             //await BuildSettingsDB();
             //await BuildEmailSettingsCollection();
