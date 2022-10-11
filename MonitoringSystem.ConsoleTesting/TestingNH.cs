@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 using MonitoringConfig.Data.Model;
-using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
@@ -14,7 +12,24 @@ using MonitoringSystem.Shared.Data.LogModel;
 namespace MonitoringSystem.ConsoleTesting {
     public class TestingNH {
         public static async Task Main(string[] args) {
-            await CreateNH3Channels();
+
+            //await CreateNHDevice();
+            //await CreateDeviceActions();
+            //await CreateNH3Channels();
+            await DeleteDevice();
+        }
+
+        public static async Task DeleteDevice() {
+            await using var context = new MonitorContext();
+            var nhDevice = context.Devices.OfType<ModbusDevice>().AsTracking().FirstOrDefault(e => e.Name == "nh3");
+            if (nhDevice != null) {
+                Console.WriteLine("Removing Device..");
+                context.Remove(nhDevice);
+                await context.SaveChangesAsync();
+                Console.WriteLine("Remove Done, Check Database..");
+            } else {
+                Console.WriteLine("Device not found");
+            }
         }
 
         public static async Task CreateNH3Channels() {
@@ -24,20 +39,18 @@ namespace MonitoringSystem.ConsoleTesting {
                 .AsTracking()
                 .FirstOrDefault(e => e.Name == "nh3");
 
-            var actions = context.FacilityActions
-                .AsTracking()
-                .ToList();
 
-            var inputs=CreateChannels(device, actions);
-            context.AddRange(inputs);
+
+           // var inputs=CreateChannels(device, actions);
+            //context.AddRange(inputs);
             await context.SaveChangesAsync();
             Console.WriteLine("Check Database");
         }
 
-        public static IList<AnalogInput> CreateChannels(MonitorBox device,IList<FacilityAction> actions) {
-            var soft = actions.FirstOrDefault(e => e.ActionType == ActionType.SoftWarn);
-            var warn = actions.FirstOrDefault(e => e.ActionType == ActionType.Warning);
-            var alrm = actions.FirstOrDefault(e => e.ActionType == ActionType.Alarm);
+        public static IList<AnalogInput> CreateChannels(MonitorBox device,List<DeviceAction> actions) {
+            var soft = actions.FirstOrDefault(e => e.FacilityAction is { ActionType: ActionType.SoftWarn });
+            var warn = actions.FirstOrDefault(e => e.FacilityAction is { ActionType: ActionType.Warning });
+            var alrm = actions.FirstOrDefault(e => e.FacilityAction is { ActionType: ActionType.Alarm });
 
             var tank1 = CreateAnalogInput(device, "Tank1", 1, soft, warn, alrm, "Tank1 Weight", 0, 2, true, 200, 150, 100);
             var tank2 = CreateAnalogInput(device, "Tank1", 1, soft, warn, alrm, "Tank2 Weight", 0, 2, true, 200, 150, 100);
@@ -48,8 +61,39 @@ namespace MonitoringSystem.ConsoleTesting {
             return new List<AnalogInput>() { tank1, tank2, temp1, temp2, h1, h2 };
         }
 
+        public static async Task CreateDeviceActions() {
+            Console.WriteLine("Creating DeviceActions, Please Wait...");
+            var context = new MonitorContext();
+            var device = context.Devices.OfType<MonitorBox>()
+                .Include(e => e.Channels)
+                .AsTracking()
+                .FirstOrDefault(e => e.Name == "nh3");
+
+            var facilityActions = context.FacilityActions
+                .AsTracking()
+                .ToList();
+            var deviceActions = new List<DeviceAction>();
+            foreach (var facilityAction in facilityActions) {
+                if (facilityAction.ActionType != ActionType.Custom &&
+                    facilityAction.ActionType != ActionType.Maintenance) {
+                    deviceActions.Add(new DeviceAction() {
+                        Id=Guid.NewGuid(),
+                        Name=facilityAction.Name,
+                        FacilityAction = facilityAction,
+                        FacilityActionId = facilityAction.Id,
+                        ModbusDevice = device,
+                        ModbusDeviceId = device.Id,
+                        FirmwareId = -1
+                    });
+                }
+            }
+            context.AddRange(deviceActions);
+            await context.SaveChangesAsync();
+            Console.WriteLine("DeviceActions Created, Checked Database");
+        }
+
         public static AnalogInput CreateAnalogInput(MonitorBox device,string id,int ch,
-            FacilityAction soft,FacilityAction warn,FacilityAction alrm,
+            DeviceAction soft,DeviceAction warn,DeviceAction alrm,
             string name, int reg,int regCount,bool enAlert,
             int setsoft,int setwarn,int setalrm) {
             AnalogInput input = new AnalogInput();
@@ -77,15 +121,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             var softwarn = new AnalogLevel();
             if (enAlert) {
-                var deviceAction = new DeviceAction() {
-                    Id = Guid.NewGuid(),
-                    FacilityAction = soft,
-                    FacilityActionId = soft.Id,
-                    MonitorBox=device,
-                    MonitorBoxId = device.Id,
-                    FirmwareId = 0
-                };
-                softwarn.DeviceAction = deviceAction;
+                softwarn.DeviceAction = soft;
                 softwarn.DeviceActionId = soft.Id;
             }
             softwarn.SetPoint = setsoft;
@@ -95,15 +131,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             var warning = new AnalogLevel();
             if (enAlert) {
-                var deviceAction = new DeviceAction() {
-                    Id = Guid.NewGuid(),
-                    FacilityAction = soft,
-                    FacilityActionId = soft.Id,
-                    MonitorBox=device,
-                    MonitorBoxId = device.Id,
-                    FirmwareId = 0
-                };
-                warning.DeviceAction = deviceAction;
+                warning.DeviceAction = warn;
                 warning.DeviceActionId = warn.Id;
             }
             warning.SetPoint = setwarn;
@@ -113,15 +141,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             var alarm = new AnalogLevel();
             if (enAlert) {
-                var deviceAction = new DeviceAction() {
-                    Id = Guid.NewGuid(),
-                    FacilityAction = alrm,
-                    FacilityActionId = alrm.Id,
-                    MonitorBox=device,
-                    MonitorBoxId = device.Id,
-                    FirmwareId = 0
-                };
-                alarm.DeviceAction = deviceAction;
+                alarm.DeviceAction = alrm;
                 alarm.DeviceActionId = alarm.Id;
             }
             alarm.SetPoint = setalrm;
@@ -137,8 +157,9 @@ namespace MonitoringSystem.ConsoleTesting {
         }
 
         public static async Task CreateNHDevice() {
+            Console.WriteLine("Creating Device,Please wait");
             using var context = new MonitorContext();
-            var device = new ModbusDevice();
+            var device = new MonitorBox();
             device.Name = "nh3";
             device.HubAddress = @"http:\\nhstream\hubs\nhstreaming";
             device.HubName = "nhstreaming";
@@ -167,7 +188,6 @@ namespace MonitoringSystem.ConsoleTesting {
             await context.AddAsync(device);
             await context.SaveChangesAsync();
             Console.WriteLine("Check Database");
-            Console.ReadKey();
         }
 
         public static async Task TestingMongoChanges() {

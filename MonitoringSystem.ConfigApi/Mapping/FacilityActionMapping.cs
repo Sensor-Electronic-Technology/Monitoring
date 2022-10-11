@@ -30,7 +30,7 @@ public static class FacilityActionMapping {
             Name=action.Name,
             FirmwareId = action.FirmwareId,
             FacilityActionId = action.FacilityActionId,
-            MonitorBoxId=action.MonitorBoxId,
+            MonitorBoxId=action.ModbusDeviceId,
             ActionType=action.FacilityAction.ActionType
         };
         return dto;
@@ -42,7 +42,7 @@ public static class FacilityActionMapping {
             Name=action.Name,
             FirmwareId = action.FirmwareId,
             FacilityActionId = action.FacilityActionId,
-            MonitorBoxId=action.MonitorBoxId
+            ModbusDeviceId=action.MonitorBoxId
         };
     }
     

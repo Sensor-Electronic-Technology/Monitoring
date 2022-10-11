@@ -37,7 +37,7 @@ public class GetAllDeviceActionsEndpoint : Endpoint<GetDeviceActionsRequest,GetD
     public override async Task HandleAsync(GetDeviceActionsRequest req,CancellationToken ct) {
         var deviceActions = await this._context.DeviceActions
             .Include(e=>e.FacilityAction)
-            .Where(e=>e.MonitorBoxId==req.DeviceId)
+            .Where(e=>e.ModbusDeviceId==req.DeviceId)
             .Select(e => e.ToDto())
             .ToListAsync(ct);
         

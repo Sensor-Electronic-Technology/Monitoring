@@ -14,11 +14,11 @@ public class ModbusDevice:Device {
     public NetworkConfiguration? NetworkConfiguration { get; set; }
     public ModbusConfiguration? ModbusConfiguration { get; set; }
     public ModbusChannelRegisterMap? ChannelRegisterMap { get; set; }
-
+    public ICollection<DeviceAction> DeviceActions { get; set; } = new List<DeviceAction>();
     public ICollection<Channel> Channels { get; set; } = new List<Channel>();
 }
 
 public class MonitorBox : ModbusDevice {
-    public ICollection<DeviceAction> DeviceActions { get; set; } = new List<DeviceAction>();
+
 }
 

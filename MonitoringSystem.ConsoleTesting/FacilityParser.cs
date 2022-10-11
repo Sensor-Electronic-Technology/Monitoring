@@ -157,9 +157,9 @@ namespace MonitoringSystem.ConsoleTesting {
             var deviceActions = context.DeviceActions
                 .Include(e => e.AlertLevels)
                 .Include(e => e.FacilityAction)
-                .Include(e => e.MonitorBox)
+                .Include(e => e.ModbusDevice)
                 .AsTracking()
-                .Where(e => e.MonitorBox.Name == boxId)
+                .Where(e => e.ModbusDevice.Name == boxId)
                 .ToList();
 
             var sensors = context.Sensors.ToList();
@@ -502,8 +502,8 @@ namespace MonitoringSystem.ConsoleTesting {
                 deviceAction.FacilityAction = action;
                 deviceAction.FacilityActionId = action.Id;
 
-                deviceAction.MonitorBox = box;
-                deviceAction.MonitorBoxId = box.Id;
+                deviceAction.ModbusDevice = box;
+                deviceAction.ModbusDeviceId = box.Id;
                 return deviceAction;
             } else {
                 return null;

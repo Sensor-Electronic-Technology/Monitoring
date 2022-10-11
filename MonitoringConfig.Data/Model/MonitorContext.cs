@@ -82,10 +82,10 @@ public class MonitorContext:DbContext {
             .WithOne(e => e.ModbusDevice)
             .HasForeignKey<ModbusChannelRegisterMap>(e => e.ModbusDeviceId);
 
-        builder.Entity<MonitorBox>()
+        builder.Entity<ModbusDevice>()
             .HasMany(e => e.DeviceActions)
-            .WithOne(e => e.MonitorBox)
-            .HasForeignKey(e => e.MonitorBoxId);
+            .WithOne(e => e.ModbusDevice)
+            .HasForeignKey(e => e.ModbusDeviceId);
         
         //Channel Configuration
         
