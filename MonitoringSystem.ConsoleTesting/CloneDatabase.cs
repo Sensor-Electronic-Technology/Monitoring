@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MonitoringConfig.Data.Model;
+using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
 
@@ -15,7 +17,8 @@ namespace MonitoringSystem.ConsoleTesting;
 public class CloneDatabase {
 
     static async Task Main(string[] args) {
-        await CreateMongoDB("epi1");
+        //await CreateManagedDevice("nh3");
+        await CreateMongoDB("nh3");
     }
     
     
@@ -29,13 +32,13 @@ public class CloneDatabase {
             var managedCollection = client.GetDatabase("monitor_settings_dev")
                 .GetCollection<ManagedDevice>("monitor_devices");
             
-            var device = context.Devices.OfType<MonitorBox>()
+            var device = context.Devices.OfType<ModbusDevice>()
                 .AsNoTracking()
                 .Include(e=>e.DeviceActions)
                 .ThenInclude(e=>e.FacilityAction)
                 .FirstOrDefault(e => e.Name == deviceName);
             
-            var managedDevice = await managedCollection.Find(e => e.DatabaseName == device.Database)
+            var managedDevice = await managedCollection.Find(e => e.DeviceName == device.Name)
                 .FirstOrDefaultAsync();
             
             if(device is not null) {
@@ -131,7 +134,7 @@ public class CloneDatabase {
                 }
 
                 
-                var discreteItems = new List<DiscreteItem>();
+                /*var discreteItems = new List<DiscreteItem>();
                 var discreteInputs = await context.Channels.OfType<DiscreteInput>()
                     .AsNoTracking()
                     .Include(e => e.ModbusDevice)
@@ -169,9 +172,9 @@ public class CloneDatabase {
                         ChannelId=discreteItem._id
                     });
                     
-                }
+                }*/
                 
-                var virtualInputs = await context.Channels.OfType<VirtualInput>()
+                /*var virtualInputs = await context.Channels.OfType<VirtualInput>()
                     .AsNoTracking()
                     .Include(e => e.ModbusDevice)
                     .Include(e => e.Alert)
@@ -207,7 +210,7 @@ public class CloneDatabase {
                         Enabled = input.Alert.Enabled,
                         ChannelId=virtualItem._id
                     });
-                }
+                }*/
                 
                 var actionItems = device.DeviceActions.Select(action => new ActionItem() {
                     _id=ObjectId.GenerateNewId(),
@@ -221,8 +224,8 @@ public class CloneDatabase {
                 }).ToList();
                 
                 await analogCollection.InsertManyAsync(analogItems);
-                await discreteCollection.InsertManyAsync(discreteItems);
-                await virtualCollection.InsertManyAsync(virtualItems);
+                /*await discreteCollection.InsertManyAsync(discreteItems);
+                await virtualCollection.InsertManyAsync(virtualItems);*/
                 await alertCollection.InsertManyAsync(alertItems);
                 await actionCollection.InsertManyAsync(actionItems);
                 
@@ -232,5 +235,65 @@ public class CloneDatabase {
             }
             Console.ReadKey();
         }
+
+    public static async Task CreateManagedDevice(string deviceName) {
+        var context = new MonitorContext();
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase("monitor_settings_dev");
+        var sensorCollection = database.GetCollection<SensorType>("sensor_types");
+        var managedCollection = database.GetCollection<ManagedDevice>("monitor_devices");
+        var tSensor = await sensorCollection.Find(e => e.Name == "NH3 Tank Temp.").FirstOrDefaultAsync();;
+        var dSensor =await  sensorCollection.Find(e => e.Name == "Duty Cycle").FirstOrDefaultAsync();;
+        var wSensor =await sensorCollection.Find(e => e.Name == "Weight").FirstOrDefaultAsync();
+        
+        var device = await context.Devices.OfType<ModbusDevice>()
+            .Include(e => e.NetworkConfiguration)
+            .Include(e => e.ModbusConfiguration)
+            .Include(e => e.ChannelRegisterMap)
+            .Include(e => e.Channels)
+                .ThenInclude(e=>((AnalogInput)e).Alert)
+                    .ThenInclude(e=>((AnalogAlert)e).AlertLevels)
+            .FirstOrDefaultAsync(e => e.Name == deviceName);
+        
+        if (device != null) {
+            var managedDevice = new ManagedDevice {
+                _id = ObjectId.GenerateNewId(),
+                DeviceId = device.Id.ToString(),
+                DatabaseName = device.Database,
+                HubName = device.HubName,
+                HubAddress = device.HubAddress,
+                DeviceType = nameof(ModbusDevice),
+                IpAddress = device.NetworkConfiguration.IpAddress,
+                Port = device.NetworkConfiguration.Port,
+                RecordInterval = device.ReadInterval,
+                SensorTypes = new List<ObjectId>() {
+                    tSensor._id,
+                    wSensor._id,
+                    dSensor._id
+                },
+                CollectionNames = new Dictionary<string, string>() {
+                    [nameof(AnalogItem)]="analog_items",
+                    [nameof(DiscreteItem)]="discrete_items",
+                    [nameof(VirtualItem)]="virtual_items",
+                    [nameof(OutputItem)]="output_items",
+                    [nameof(ActionItem)]="action_items",
+                    [nameof(MonitorAlert)]="alert_items",
+                    [nameof(AnalogReadings)]="analog_readings",
+                    [nameof(DiscreteReadings)]="discrete_readings",
+                    [nameof(VirtualReadings)]="virtual_readings",
+                    [nameof(AlertReadings)]="alert_readings"
+                }, //managedDevice.CollectionNames
+                ChannelMapping = device.ChannelRegisterMap?.ToDto(),
+                ModbusConfiguration = device.ModbusConfiguration?.ToDto()
+            };
+            await managedCollection.InsertOneAsync(managedDevice);
+            Console.WriteLine("Check Database");
+            /*managedDevice.ChannelMapping = new ChannelMappingConfigDto() {
+                AnalogRegisterType = device.ChannelRegisterMap.AnalogRegisterType,
+                AnalogStart = device.ChannelRegisterMap.AnalogStart,
+            };*/
+
+        }
+    }
 }
 

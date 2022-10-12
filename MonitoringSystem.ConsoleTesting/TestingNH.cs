@@ -15,8 +15,9 @@ namespace MonitoringSystem.ConsoleTesting {
 
             //await CreateNHDevice();
             //await CreateDeviceActions();
-            //await CreateNH3Channels();
-            await DeleteDevice();
+            await CreateNH3Channels();
+            //await DeleteDevice();
+            //await DeleteChannels();
         }
 
         public static async Task DeleteDevice() {
@@ -32,39 +33,57 @@ namespace MonitoringSystem.ConsoleTesting {
             }
         }
 
+        public static async Task DeleteChannels() {
+            await using var context = new MonitorContext();
+            var nhDevice = context.Devices.OfType<ModbusDevice>().FirstOrDefault(e => e.Name == "nh3");
+            var channels = context.Channels.OfType<AnalogInput>()
+                .Include(e=>e.Alert)
+                .ThenInclude(e=>((AnalogAlert)e).AlertLevels)
+                .Where(e => e.ModbusDeviceId == nhDevice.Id).ToList();
+            Console.WriteLine("Removing Device..");
+            context.RemoveRange(channels);
+            await context.SaveChangesAsync();
+            Console.WriteLine("Remove Done, Check Database..");
+        }
+
         public static async Task CreateNH3Channels() {
             var context = new MonitorContext();
-            var device = context.Devices.OfType<MonitorBox>()
+            var device = context.Devices.OfType<ModbusDevice>()
                 .Include(e => e.Channels)
                 .AsTracking()
                 .FirstOrDefault(e => e.Name == "nh3");
 
+            var deviceActions = context.DeviceActions
+                .Include(e=>e.FacilityAction)
+                .Where(e => e.ModbusDeviceId == device.Id).ToList();
 
-
-           // var inputs=CreateChannels(device, actions);
-            //context.AddRange(inputs);
+            var weightSensor = await context.Sensors.FirstOrDefaultAsync(e => e.Name=="Weight");
+            var tempSensor = await context.Sensors.FirstOrDefaultAsync(e=>e.Name=="NH3 Tank Temp.");
+            var dutySensor = await context.Sensors.FirstOrDefaultAsync(e => e.Name == "Duty Cycle");
+            var inputs=CreateChannels(device, deviceActions,weightSensor,tempSensor,dutySensor);
+            context.AddRange(inputs);
             await context.SaveChangesAsync();
             Console.WriteLine("Check Database");
         }
 
-        public static IList<AnalogInput> CreateChannels(MonitorBox device,List<DeviceAction> actions) {
+        public static IList<AnalogInput> CreateChannels(ModbusDevice device,List<DeviceAction> actions,Sensor wSensor,Sensor tSensor,Sensor dSensor) {
             var soft = actions.FirstOrDefault(e => e.FacilityAction is { ActionType: ActionType.SoftWarn });
             var warn = actions.FirstOrDefault(e => e.FacilityAction is { ActionType: ActionType.Warning });
             var alrm = actions.FirstOrDefault(e => e.FacilityAction is { ActionType: ActionType.Alarm });
 
-            var tank1 = CreateAnalogInput(device, "Tank1", 1, soft, warn, alrm, "Tank1 Weight", 0, 2, true, 200, 150, 100);
-            var tank2 = CreateAnalogInput(device, "Tank1", 1, soft, warn, alrm, "Tank2 Weight", 0, 2, true, 200, 150, 100);
-            var temp1 = CreateAnalogInput(device, "Temp1", 1, soft, warn, alrm, "Tank1 Temp.", 0, 1, false, 0, 0, 0);
-            var temp2 = CreateAnalogInput(device, "Temp2", 1, soft, warn, alrm, "Tank2 Temp.", 0, 1, false, 0, 0, 0);
-            var h1 = CreateAnalogInput(device, "Heater1", 1, soft, warn, alrm, "Heater1 Duty Cycle", 0, 1, false, 0, 0, 0);
-            var h2 = CreateAnalogInput(device, "Heater2", 1, soft, warn, alrm, "Heater1 Duty Cycle", 0, 1, false, 0, 0, 0);
+            var tank1 = CreateAnalogInput(device, "Tank1", 1, soft, warn, alrm, "Tank1 Weight", 0, 2, true, 200, 150, 100,wSensor);
+            var tank2 = CreateAnalogInput(device, "Tank2", 1, soft, warn, alrm, "Tank2 Weight",2, 2, true, 200, 150, 100,wSensor);
+            var temp1 = CreateAnalogInput(device, "Temp1", 1, soft, warn, alrm, "Tank1 Temp.", 60, 1, false, 0, 0, 0,tSensor);
+            var temp2 = CreateAnalogInput(device, "Temp2", 1, soft, warn, alrm, "Tank2 Temp.", 61, 1, false, 0, 0, 0,tSensor);
+            var h1 = CreateAnalogInput(device, "Heater1", 1, soft, warn, alrm, "Heater1 Duty Cycle", 66, 1, false, 0, 0, 0,dSensor);
+            var h2 = CreateAnalogInput(device, "Heater2", 1, soft, warn, alrm, "Heater1 Duty Cycle", 67, 1, false, 0, 0, 0,dSensor);
             return new List<AnalogInput>() { tank1, tank2, temp1, temp2, h1, h2 };
         }
 
         public static async Task CreateDeviceActions() {
             Console.WriteLine("Creating DeviceActions, Please Wait...");
             var context = new MonitorContext();
-            var device = context.Devices.OfType<MonitorBox>()
+            var device = context.Devices.OfType<ModbusDevice>()
                 .Include(e => e.Channels)
                 .AsTracking()
                 .FirstOrDefault(e => e.Name == "nh3");
@@ -92,10 +111,10 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("DeviceActions Created, Checked Database");
         }
 
-        public static AnalogInput CreateAnalogInput(MonitorBox device,string id,int ch,
+        public static AnalogInput CreateAnalogInput(ModbusDevice device,string id,int ch,
             DeviceAction soft,DeviceAction warn,DeviceAction alrm,
             string name, int reg,int regCount,bool enAlert,
-            int setsoft,int setwarn,int setalrm) {
+            int setsoft,int setwarn,int setalrm,Sensor sensor) {
             AnalogInput input = new AnalogInput();
             input.Identifier = id;
             input.SystemChannel = ch;
@@ -104,6 +123,8 @@ namespace MonitoringSystem.ConsoleTesting {
             input.Bypass = false;
             input.Display = true;
             input.ModbusDevice = device;
+            input.Sensor = sensor;
+            input.SensorId = sensor.Id;
 
             ModbusAddress address = new ModbusAddress();
             address.RegisterType = ModbusRegister.Holding;
@@ -120,30 +141,30 @@ namespace MonitoringSystem.ConsoleTesting {
             alert.BypassResetTime = 24;
 
             var softwarn = new AnalogLevel();
-            if (enAlert) {
+
                 softwarn.DeviceAction = soft;
                 softwarn.DeviceActionId = soft.Id;
-            }
+
             softwarn.SetPoint = setsoft;
             softwarn.Bypass = false;
             softwarn.Enabled = enAlert;
             softwarn.BypassResetTime = 24;
 
             var warning = new AnalogLevel();
-            if (enAlert) {
-                warning.DeviceAction = warn;
-                warning.DeviceActionId = warn.Id;
-            }
+
+            warning.DeviceAction = warn;
+            warning.DeviceActionId = warn.Id;
+            
             warning.SetPoint = setwarn;
             warning.Bypass = false;
             warning.Enabled = enAlert;
             warning.BypassResetTime = 24;
 
             var alarm = new AnalogLevel();
-            if (enAlert) {
-                alarm.DeviceAction = alrm;
-                alarm.DeviceActionId = alarm.Id;
-            }
+
+            alarm.DeviceAction = alrm;
+            alarm.DeviceActionId = alarm.Id;
+            
             alarm.SetPoint = setalrm;
             alarm.Bypass = false;
             alarm.Enabled = enAlert;
@@ -159,7 +180,7 @@ namespace MonitoringSystem.ConsoleTesting {
         public static async Task CreateNHDevice() {
             Console.WriteLine("Creating Device,Please wait");
             using var context = new MonitorContext();
-            var device = new MonitorBox();
+            var device = new ModbusDevice();
             device.Name = "nh3";
             device.HubAddress = @"http:\\nhstream\hubs\nhstreaming";
             device.HubName = "nhstreaming";
