@@ -682,7 +682,7 @@ namespace MonitoringConfig.Data.Migrations
                     b.HasOne("MonitoringConfig.Data.Model.AnalogAlert", "AnalogAlert")
                         .WithMany("AlertLevels")
                         .HasForeignKey("AnalogAlertId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AnalogAlert");

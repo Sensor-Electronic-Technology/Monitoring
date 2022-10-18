@@ -111,7 +111,7 @@ public class MonitorContext:DbContext {
             .HasMany(e => e.AlertLevels)
             .WithOne(e => e.AnalogAlert)
             .HasForeignKey(e => e.AnalogAlertId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<DiscreteAlert>()
             .HasOne(e => e.AlertLevel)
