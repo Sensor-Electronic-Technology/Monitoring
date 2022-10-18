@@ -5,6 +5,7 @@ using MonitoringConfig.Data.Model;
 using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringSystem.Shared.Contracts.Requests.Get;
 using MonitoringSystem.Shared.Contracts.Responses.Get;
+using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.ConfigApi.Endpoints; 
 
@@ -19,11 +20,14 @@ public class GetAnalogChannelsEndpoint:Endpoint<GetDeviceChannelsRequest,GetAnal
     public override async Task HandleAsync(GetDeviceChannelsRequest req, CancellationToken ct) {
         var analogChannels = await this._context.Channels.OfType<AnalogInput>()
             .Where(e => e.ModbusDeviceId == req.Id)
-            .Select(e=>e.ToDto())
             .ToListAsync(ct);
-        var response = new GetAnalogChannelsResponse() {
-            AnalogInputs = analogChannels
-        };
+        var response = new GetAnalogChannelsResponse();
+        
+        if (analogChannels.Any()) {
+            response.AnalogInputs = analogChannels.Select(e => e.ToDto()).AsEnumerable();
+        } else {
+            response.AnalogInputs = Enumerable.Empty<AnalogInputDto>();
+        }
         await SendOkAsync(response, ct);
     }
 }

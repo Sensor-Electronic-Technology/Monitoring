@@ -100,10 +100,7 @@
 @code {
     [Parameter]
     public string? ChannelId { get; set; }
-    
-    [Parameter]
-    public
-    
+
     AlertDto? Alert { get; set; }
     IEnumerable<AnalogLevelDto>? AnalogLevels { get; set; }
     DiscreteLevelDto? DiscreteLevel { get; set; }
@@ -133,7 +130,7 @@
         }
     }
 
-    private async void SelectedChannelChangedHandler() {
+    async void SelectedChannelChangedHandler() {
         this.ChannelId = this.SelectionChanged.SelectedItem?.Id.ToString();
         await this.Update();
     }

@@ -23,8 +23,8 @@ using MonitoringSystem.Shared.Data.SettingsModel;
 namespace MonitoringSystem.ConsoleTesting {
     public class Program {
         static async Task Main(string[] args) {
-            var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("epi1_data_dev");
+            /*var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("epi1_data_dev");*/
             //await CreateMongoDB("Epi1");
             //await BuildSettingsDB();
             //await BuildEmailSettingsCollection();
@@ -35,9 +35,20 @@ namespace MonitoringSystem.ConsoleTesting {
             foreach (var device in response.DeviceActions) {
                 Console.WriteLine($"Name: {device.Name}");
             }*/
-            ChannelDto channel = new AnalogInputDto();
-            Console.WriteLine(channel.GetType().Name);
+            var context = new MonitorContext();
+            var analogInputs = await context.Channels.OfType<AnalogInput>()
+                .Include(e => e.ModbusDevice)
+                .Include(e => e.Alert)
+                .ThenInclude(e => ((AnalogAlert)e).AlertLevels)
+                .ThenInclude(e => e.DeviceAction.FacilityAction)
+                .Include(e => e.Sensor)
+                .Where(e => e.ModbusDevice.Name == "nh3")
+                .Select(e=>e.ToDto())
+                .ToListAsync();
 
+            foreach (var input in analogInputs) {
+                Console.WriteLine($"Channel: {input.DisplayName}");
+            }
         }
 
         static async Task DtoTesting() {

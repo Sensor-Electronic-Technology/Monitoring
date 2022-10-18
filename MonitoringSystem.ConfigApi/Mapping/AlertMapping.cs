@@ -1,4 +1,5 @@
 ﻿using MonitoringConfig.Data.Model;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.ConfigApi.Mapping;
@@ -10,9 +11,9 @@ public static class AlertMapping {
             Bypass = alert.Bypass,
             BypassResetTime = alert.BypassResetTime,
             Enabled = alert.Enabled,
-            Register = alert.ModbusAddress.Address,
-            RegisterLength = alert.ModbusAddress.RegisterLength,
-            RegisterType=alert.ModbusAddress.RegisterType,
+            Register = alert.ModbusAddress?.Address ?? 0,
+            RegisterLength = alert.ModbusAddress?.RegisterLength ?? 0,
+            RegisterType=alert.ModbusAddress?.RegisterType ?? 0,
             Name = alert.Name,
             InputChannelId = alert.InputChannelId
         };
@@ -53,7 +54,7 @@ public static class AlertMapping {
             SetPoint = level.SetPoint,
             DeviceActionId = level.DeviceActionId,
             AnalogAlertId = level.AnalogAlertId,
-            ActionType = level.DeviceAction.FacilityAction.ActionType
+            ActionType = level.DeviceAction?.FacilityAction?.ActionType ?? ActionType.Okay
         };
         return dto;
     }
@@ -66,7 +67,7 @@ public static class AlertMapping {
             TriggerOn = level.TriggerOn,
             DeviceActionId = level.DeviceActionId,
             DiscreteAlertId = level.DiscreteAlertId,
-            ActionType = level.DeviceAction.FacilityAction.ActionType
+            ActionType = level.DeviceAction?.FacilityAction?.ActionType ?? ActionType.Okay
         };
         return dto;
     }

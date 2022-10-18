@@ -14,11 +14,11 @@ public static class ChannelMapping {
             Connected = input.Connected,
             Bypass = input.Bypass,
             Display = input.Display,
-            RegisterAddress = input.ModbusAddress.Address,
-            RegisterLength=input.ModbusAddress.RegisterLength,
-            RegisterType = input.ModbusAddress.RegisterType,
-            ChannelAddress=input.ChannelAddress.Channel,
-            ModuleSlot=input.ChannelAddress.ModuleSlot,
+            RegisterAddress = input.ModbusAddress?.Address ?? 0,
+            RegisterLength=input.ModbusAddress?.RegisterLength ?? 0,
+            RegisterType = input.ModbusAddress?.RegisterType ??0,
+            ChannelAddress=input.ChannelAddress?.Channel ?? 0,
+            ModuleSlot=input.ChannelAddress?.ModuleSlot ?? 0,
             SensorId = input.SensorId,
             ModbusDeviceId = input.ModbusDeviceId
         };
