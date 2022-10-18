@@ -1,6 +1,6 @@
 ﻿using MonitoringSystem.Shared.Data.EntityDtos;
 
-namespace MonitoringWeb.ConfigTesting.Services; 
+namespace MonitoringWeb.WebAppV2.Services; 
 
 public class DeviceSelectionState {
     public ModbusDeviceDto? SelectedDevice { get; private set; }

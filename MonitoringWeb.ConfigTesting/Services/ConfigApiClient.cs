@@ -1,5 +1,5 @@
-﻿using MonitoringSystem.ConfigApi.Contracts.Requests.Update;
-using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
+﻿using MonitoringSystem.Shared.Contracts.Requests.Update;
+using MonitoringSystem.Shared.Contracts.Responses.Get;
 using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringWeb.ConfigTesting.Services; 

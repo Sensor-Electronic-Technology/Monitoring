@@ -15,7 +15,6 @@ using MongoDB.Bson;
 using MonitoringConfig.Data.Model;
 using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringData.Infrastructure.Services.AlertServices;
-using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Services;

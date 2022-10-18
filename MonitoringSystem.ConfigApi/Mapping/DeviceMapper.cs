@@ -1,6 +1,6 @@
 ﻿using FastEndpoints;
 using MonitoringConfig.Data.Model;
-using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
+using MonitoringSystem.Shared.Contracts.Responses.Get;
 using MonitoringSystem.Shared.Data.EntityDtos;
 
 namespace MonitoringSystem.ConfigApi.Mapping; 

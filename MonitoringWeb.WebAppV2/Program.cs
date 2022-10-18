@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MongoDB.Driver;
+using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringWeb.WebAppV2.Data;
 using MonitoringWeb.WebAppV2.Services;
 
@@ -17,7 +18,7 @@ if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
         // Creating the URI helper needs to wait until the JS Runtime is initialized, so defer it.
         var uriHelper = s.GetRequiredService<NavigationManager>();
         return new HttpClient {
-            BaseAddress = new Uri("https://localhost:7133"),
+            BaseAddress = new Uri("http://configapi"),
         };
     });
 }
@@ -29,6 +30,9 @@ var connectionString = builder.Configuration.GetSection(nameof(MonitorWebsiteSet
     .ConnectionString;
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
 builder.Services.AddSingleton<WebsiteConfigurationProvider>();
+builder.Services.AddScoped<ConfigApiClient>();
+builder.Services.AddSingleton<SelectionChanged<ModbusDeviceDto>>();
+builder.Services.AddSingleton<SelectionChanged<ChannelDto>>();
 builder.Services.AddDevExpressBlazorWasmMasks();
 
 builder.Services.Configure<DevExpress.Blazor.Configuration.GlobalOptions>(options => {

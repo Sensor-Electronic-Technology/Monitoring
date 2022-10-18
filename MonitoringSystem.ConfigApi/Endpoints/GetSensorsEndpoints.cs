@@ -2,8 +2,8 @@
 using FastEndpoints;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 using MonitoringSystem.ConfigApi.Mapping;
+using MonitoringSystem.Shared.Contracts.Responses.Get;
 
 namespace MonitoringSystem.ConfigApi.Endpoints;
 

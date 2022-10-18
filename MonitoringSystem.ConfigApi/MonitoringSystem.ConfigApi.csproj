@@ -22,4 +22,8 @@
     <ProjectReference Include="..\MonitoringConfig.Data\MonitoringConfig.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Contracts" />
+  </ItemGroup>
+
 </Project>

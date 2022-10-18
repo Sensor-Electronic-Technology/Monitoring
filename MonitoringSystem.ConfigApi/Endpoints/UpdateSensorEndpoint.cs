@@ -1,9 +1,9 @@
 ﻿using MonitoringConfig.Data.Model;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authorization;
-using MonitoringSystem.ConfigApi.Contracts.Requests.Update;
-using MonitoringSystem.ConfigApi.Contracts.Responses.Update;
 using MonitoringSystem.ConfigApi.Mapping;
+using MonitoringSystem.Shared.Contracts.Requests.Update;
+using MonitoringSystem.Shared.Contracts.Responses.Update;
 
 namespace MonitoringSystem.ConfigApi.Endpoints; 
 

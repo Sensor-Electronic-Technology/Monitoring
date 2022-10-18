@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MonitoringConfig.Data.Model;
-using MonitoringSystem.ConfigApi.Contracts.Requests.Get;
-using MonitoringSystem.ConfigApi.Contracts.Responses.Get;
 using MonitoringSystem.ConfigApi.Mapping;
+using MonitoringSystem.Shared.Contracts.Requests.Get;
+using MonitoringSystem.Shared.Contracts.Responses.Get;
 
 namespace MonitoringSystem.ConfigApi.Endpoints;
 
