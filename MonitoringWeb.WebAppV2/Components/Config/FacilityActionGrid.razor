@@ -1,0 +1,65 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringSystem.Shared.Data
+@using MonitoringWeb.ConfigTesting.Services
+@using MonitoringWeb.WebAppV2.Services
+@inject ConfigApiClient Client
+
+<DxGrid Data="@FacilityActions"
+        KeyFieldName="Id"
+        ValidationEnabled="false"
+        AllowSelectRowByClick="true"
+        SelectionMode="GridSelectionMode.Single"
+        EditModelSaving="Grid_EditModelSaving"
+        DataItemDeleting="Grid_DataItemDeleting"
+        PopupEditFormCssClass="pw-800"
+        EditMode="GridEditMode.EditForm">
+    <Columns>
+        <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+        <DxGridDataColumn FieldName="@nameof(FacilityActionDto.Id)" Visible="false"/>
+        <DxGridDataColumn FieldName="@nameof(FacilityActionDto.Name)"/>
+        <DxGridDataColumn FieldName="@nameof(FacilityActionDto.ActionType)"/>
+        <DxGridDataColumn FieldName="@nameof(FacilityActionDto.EmailEnabled)"/>
+        <DxGridDataColumn FieldName="@nameof(FacilityActionDto.EmailPeriod)"/>
+    </Columns>
+    <EditFormTemplate Context="EditFormContext">
+        @{
+            var facilityAction = EditFormContext.EditModel as FacilityActionDto;
+        }
+        <DxFormLayout>
+            <DxFormLayoutItem Caption="@nameof(FacilityActionDto.Name)">
+                <DxTextBox @bind-Text="facilityAction.Name"></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="@nameof(FacilityActionDto.ActionType)">
+                <DxComboBox Data="@this.ActionTypes"
+                            @bind-Value="facilityAction.ActionType" />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="@nameof(FacilityActionDto.EmailEnabled)">
+                <DxCheckBox @bind-Checked="facilityAction.EmailEnabled"></DxCheckBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="@nameof(FacilityActionDto.EmailPeriod)">
+                <DxSpinEdit @bind-Value="facilityAction.EmailPeriod"></DxSpinEdit>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </EditFormTemplate>
+</DxGrid>
+
+@code {
+    IEnumerable<FacilityActionDto>? FacilityActions { get; set; }
+    IEnumerable<ActionType>? ActionTypes { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        this.ActionTypes=Enum.GetValues(typeof(ActionType))
+            .OfType<ActionType>()
+            .ToList();
+        this.FacilityActions = await this.Client.GetFacilityActions();
+    }
+    
+    async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
+    //await this.DataService.UpdateModbusDevice((ModbusDeviceDto)e.DataItem,(ModbusDeviceDto)e.EditModel);
+    }
+    async Task Grid_DataItemDeleting(GridDataItemDeletingEventArgs e) {
+    //await NwindDataService.RemoveEmployeeAsync((EditableEmployee)e.DataItem);
+    //await UpdateDataAsync();
+    }
+
+}

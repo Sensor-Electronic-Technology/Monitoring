@@ -18,7 +18,6 @@ if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
         var uriHelper = s.GetRequiredService<NavigationManager>();
         return new HttpClient {
             BaseAddress = new Uri("https://localhost:7133"),
-            
         };
     });
 }

@@ -1,4 +1,5 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringWeb.WebAppV2.Data;
@@ -38,13 +39,13 @@ public class PlotDataService {
             return analogReadings;
         }
         
-        public async Task<IEnumerable<AnalogReadingDto>> GetDataBySensor(string deviceData,DateTime start, DateTime stop,string sensorId) {
+        public async Task<IEnumerable<AnalogReadingDto>> GetDataBySensor(string deviceData,DateTime start, DateTime stop,ObjectId sensorId) {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase(deviceData);
             this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
             this._analogItems = database.GetCollection<AnalogItem>("analog_items");
             List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
-            var analogItems = await this._analogItems.Find(e => e.Display && e.SensorId.ToString()==sensorId)
+            var analogItems = await this._analogItems.Find(e => e.Display && e.SensorId==sensorId)
                 .ToListAsync();
             using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
             while (await cursor.MoveNextAsync()){

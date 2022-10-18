@@ -18,7 +18,102 @@ public class CloneDatabase {
 
     static async Task Main(string[] args) {
         //await CreateManagedDevice("nh3");
-        await CreateMongoDB("nh3");
+        //await CreateMongoDB("nh3");
+        //await UpdateAlerts("gasbay");
+        /*await UpdateAlertNames("epi1");
+        await UpdateAlertNames("epi2");
+        await UpdateAlertNames("gasbay");*/
+        /*await UpdateChannels("epi1");
+        await UpdateChannels("epi2");
+        await UpdateChannels("gasbay");
+        await UpdateChannels("nh3");*/
+    }
+
+    static async Task UpdateAlertNames(string deviceName) {
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase($"{deviceName}_data_dev");
+        var alertCollection = database.GetCollection<MonitorAlert>("alert_items");
+        var alerts = await alertCollection.FindSync(_ => true).ToListAsync();
+        foreach (var alert in alerts) {
+            var filter = Builders<MonitorAlert>.Filter.Eq(e => e._id, alert._id);
+            var index = alert.DisplayName.IndexOf("Alert");
+            if (index > 0) {
+                var newName = alert.DisplayName.Remove(index);
+                var update = Builders<MonitorAlert>.Update.Set(e => e.DisplayName, newName.TrimEnd());
+                await alertCollection.UpdateOneAsync(filter, update);
+            }
+
+        }
+        Console.WriteLine($"Check {deviceName} database");
+    }
+
+    static async Task UpdateChannels(string deviceName) {
+        await using var context = new MonitorContext();
+        var inputs =await context.Channels
+            .OfType<InputChannel>()
+            .Include(e => e.ModbusDevice)
+            .Include(e => e.Alert)
+            .Where(e => e.ModbusDevice.Name == deviceName.ToLower())
+            .ToListAsync();
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase($"{deviceName}_data_dev");
+        var discreteCollection = database.GetCollection<DiscreteItem>("discrete_items");
+        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+        var virtualCollection = database.GetCollection<VirtualItem>("virtual_items");
+        foreach (var input in inputs) {
+            input.Display = input.Alert.Enabled;
+            if (typeof(AnalogInput) == input.GetType()) {
+                var filter = Builders<AnalogItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
+                var update = Builders<AnalogItem>.Update
+                    .Set(e => e.Display, input.Display);
+                await analogCollection.UpdateOneAsync(filter, update);
+            }else if (typeof(DiscreteInput) == input.GetType()) {
+                var filter = Builders<DiscreteItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
+                var update = Builders<DiscreteItem>.Update
+                    .Set(e => e.Display, input.Display);
+                await discreteCollection.UpdateOneAsync(filter, update);
+            }else if (typeof(VirtualInput) == input.GetType()) {
+                var filter = Builders<VirtualItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
+                var update = Builders<VirtualItem>.Update
+                    .Set(e => e.Display, input.Display);
+                await virtualCollection.UpdateOneAsync(filter, update);
+            }
+        }
+        context.UpdateRange(inputs);
+        await context.SaveChangesAsync();
+        Console.WriteLine($"Check {deviceName} database");
+    }
+
+    static async Task UpdateAlertsMongo(string deviceName) {
+        await using var context = new MonitorContext();
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase($"{deviceName}_data_dev");
+        var alertCollection = database.GetCollection<MonitorAlert>("alert_items");
+        
+        var inputs =await context.Channels
+            .OfType<InputChannel>()
+            .Include(e => e.ModbusDevice)
+            .Include(e => e.Alert)
+            .Where(e => e.ModbusDevice.Name == deviceName.ToLower())
+            .ToListAsync();
+       
+        foreach (var input in inputs) {
+            AlertItemType itemType = AlertItemType.Discrete;
+            if (typeof(AnalogInput) == input.GetType()) {
+                itemType = AlertItemType.Analog;
+            }else if (typeof(DiscreteInput) == input.GetType()) {
+                itemType = AlertItemType.Discrete;
+            }else if (typeof(VirtualInput) == input.GetType()) {
+                itemType = AlertItemType.Virtual;
+            }
+
+            var filter = Builders<MonitorAlert>.Filter.Eq(e => e.EntityId, input.Alert?.Id.ToString());
+            var update = Builders<MonitorAlert>.Update
+                .Set(e => e.Enabled, input.Alert?.Enabled)
+                .Set(e=>e.AlertItemType,itemType);
+            await alertCollection.UpdateOneAsync(filter, update);
+        }
+        Console.WriteLine("Check Database");
     }
     
     
