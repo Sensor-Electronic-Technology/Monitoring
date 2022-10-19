@@ -3,54 +3,61 @@
 @using MonitoringWeb.WebAppV2.Services
 @inject ConfigApiClient Client
 @inject SelectionChanged<ModbusDeviceDto> SelectionChanged
-
 <div class="row" style="padding: 1rem">
-    <DxGrid @ref="Grid"
-            Data="@ModbusDevices"
-            KeyFieldName="Id"
-            ValidationEnabled="false"
-            AllowSelectRowByClick="true"
-            SelectedDataItem="@this.SelectedDevice"
-            SelectionMode="GridSelectionMode.Single"
-            EditModelSaving="Grid_EditModelSaving"
-            DataItemDeleting="Grid_DataItemDeleting"
-            SelectedDataItemChanged="@Callback"
-            PopupEditFormCssClass="pw-800"
-            EditMode="GridEditMode.EditForm">
-        <Columns>
-            <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
-            <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.Id)" Visible="false"/>
-            <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.Name)"/>
-            <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.Database)"/>
-            <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.HubName)"/>
-            <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.HubAddress)"/>
-            <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.ReadInterval)"/>
-            <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.SaveInterval)"/>
-        </Columns>
-        <EditFormTemplate Context="EditFormContext">
-            @{
-                var device = (ModbusDeviceDto)EditFormContext.EditModel;
-            }
-            <DxFormLayout CssClass="w-100">
-                <DxFormLayoutItem Caption="Name:" ColSpanMd="6">
-                    <DxTextBox @bind-Text="@device.Name"/>
-                </DxFormLayoutItem>
-                <DxFormLayoutItem Caption="HubName" ColSpanMd="6">
-                    <DxTextBox @bind-Text="@device.HubName"/>
-                </DxFormLayoutItem>
-                <DxFormLayoutItem Caption="HubAddress" ColSpanMd="6">
-                    <DxTextBox @bind-Text="@device.HubAddress"/>
-                </DxFormLayoutItem>
-                <DxFormLayoutItem Caption="ReadInterval" ColSpanMd="6">
-                    <DxSpinEdit @bind-Value="@device.ReadInterval"/>
-                </DxFormLayoutItem>
-                <DxFormLayoutItem Caption="SaveInterval" ColSpanMd="6">
-                    <DxSpinEdit @bind-Value="@device.SaveInterval"/>
-                </DxFormLayoutItem>
-            </DxFormLayout>
-        </EditFormTemplate>
-    </DxGrid>
+    <div class="card">
+        <h5 class="card-header text-center" >
+            Monitor Devices
+        </h5>
+        <div class="card-body">
+            <DxGrid @ref="Grid"
+                    Data="@ModbusDevices"
+                    KeyFieldName="Id"
+                    ValidationEnabled="false"
+                    AllowSelectRowByClick="true"
+                    SelectedDataItem="@this.SelectedDevice"
+                    SelectionMode="GridSelectionMode.Single"
+                    EditModelSaving="Grid_EditModelSaving"
+                    DataItemDeleting="Grid_DataItemDeleting"
+                    SelectedDataItemChanged="@Callback"
+                    PopupEditFormCssClass="pw-800"
+                    EditMode="GridEditMode.EditForm">
+                <Columns>
+                    <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.Id)" Visible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.Name)"/>
+                    <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.Database)"/>
+                    <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.HubName)"/>
+                    <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.HubAddress)"/>
+                    <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.ReadInterval)"/>
+                    <DxGridDataColumn FieldName="@nameof(ModbusDeviceDto.SaveInterval)"/>
+                </Columns>
+                <EditFormTemplate Context="EditFormContext">
+                    @{
+                        var device = (ModbusDeviceDto)EditFormContext.EditModel;
+                    }
+                    <DxFormLayout CssClass="w-100">
+                        <DxFormLayoutItem Caption="Name:" ColSpanMd="6">
+                            <DxTextBox @bind-Text="@device.Name"/>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem Caption="HubName" ColSpanMd="6">
+                            <DxTextBox @bind-Text="@device.HubName"/>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem Caption="HubAddress" ColSpanMd="6">
+                            <DxTextBox @bind-Text="@device.HubAddress"/>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem Caption="ReadInterval" ColSpanMd="6">
+                            <DxSpinEdit @bind-Value="@device.ReadInterval"/>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem Caption="SaveInterval" ColSpanMd="6">
+                            <DxSpinEdit @bind-Value="@device.SaveInterval"/>
+                        </DxFormLayoutItem>
+                    </DxFormLayout>
+                </EditFormTemplate>
+            </DxGrid>
+        </div>
+    </div>
 </div>
+
 <div class="row" style="padding: 1rem">
     <p class="demo-text w-100 mt-2">Selected Product: <b>@this.SelectedText</b></p>
     @if (this.SelectedDevice == null) {
@@ -86,7 +93,7 @@
 
 
 @code {
-    IEnumerable<ModbusDeviceDto> ModbusDevices { get; set; }= Enumerable.Empty<ModbusDeviceDto>();
+    IEnumerable<ModbusDeviceDto>? ModbusDevices { get; set; }= Enumerable.Empty<ModbusDeviceDto>();
     IEnumerable<DeviceActionDto> DeviceActions { get; set; } = Enumerable.Empty<DeviceActionDto>();
     string? SelectedText { get; set; }
     ModbusDeviceDto? SelectedDevice { get; set; }

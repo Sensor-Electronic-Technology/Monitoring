@@ -2,42 +2,52 @@
 @using MonitoringWeb.WebAppV2.Services
 @inject ConfigApiClient Client
 
-<DxGrid Data="@DeviceActions"
-        KeyFieldName="Id"
-        ValidationEnabled="false"
-        AllowSelectRowByClick="true"
-        SelectionMode="GridSelectionMode.Single"
-        EditModelSaving="Grid_EditModelSaving"
-        DataItemDeleting="Grid_DataItemDeleting"
-        PopupEditFormCssClass="pw-800"
-        EditMode="GridEditMode.EditForm">
-    <Columns>
-        <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
-        <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Id)" Visible="false"/>
-        <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Name)"/>
-        <DxGridDataColumn FieldName="@nameof(DeviceActionDto.FirmwareId)"/>
-        <DxGridDataColumn FieldName="@nameof(DeviceActionDto.ActionType)"/>
-    </Columns>
-    <EditFormTemplate Context="EditFormContext">
-        @{
-            var deviceAction = EditFormContext.EditModel as DeviceActionDto;
-        }
-        <DxFormLayout>
-            <DxFormLayoutItem Caption="@nameof(DeviceActionDto.Name)">
-                <DxTextBox @bind-Text="deviceAction.Name"></DxTextBox>
-            </DxFormLayoutItem>
-            <DxFormLayoutItem Caption="@nameof(DeviceActionDto.FirmwareId)">
-                <DxSpinEdit @bind-Value="deviceAction.FirmwareId"></DxSpinEdit>
-            </DxFormLayoutItem>
-            <DxFormLayoutItem Caption="FacilityAction">
-                <DxComboBox Data="@this.FacilityActions"
-                            TextFieldName="@nameof(FacilityActionDto.Name)"
-                            ValueFieldName="@nameof(FacilityActionDto.Id)"
-                            @bind-Value="deviceAction.FacilityActionId"/>
-            </DxFormLayoutItem>
-        </DxFormLayout>
-    </EditFormTemplate>
-</DxGrid>
+<div class="row" style="padding: 1rem">
+    <div class="card">
+        <h5 class="card-header text-center">
+            Device Actions    
+        </h5>
+        <div class="card-body">
+            <DxGrid Data="@DeviceActions"
+                    KeyFieldName="Id"
+                    ValidationEnabled="false"
+                    AllowSelectRowByClick="true"
+                    SelectionMode="GridSelectionMode.Single"
+                    EditModelSaving="Grid_EditModelSaving"
+                    DataItemDeleting="Grid_DataItemDeleting"
+                    PopupEditFormCssClass="pw-800"
+                    EditMode="GridEditMode.EditForm">
+                <Columns>
+                    <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Id)" Visible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Name)"/>
+                    <DxGridDataColumn FieldName="@nameof(DeviceActionDto.FirmwareId)"/>
+                    <DxGridDataColumn FieldName="@nameof(DeviceActionDto.ActionType)"/>
+                </Columns>
+                <EditFormTemplate Context="EditFormContext">
+                    @{
+                        var deviceAction = EditFormContext.EditModel as DeviceActionDto;
+                    }
+                    <DxFormLayout>
+                        <DxFormLayoutItem Caption="@nameof(DeviceActionDto.Name)">
+                            <DxTextBox @bind-Text="deviceAction.Name"></DxTextBox>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem Caption="@nameof(DeviceActionDto.FirmwareId)">
+                            <DxSpinEdit @bind-Value="deviceAction.FirmwareId"></DxSpinEdit>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem Caption="FacilityAction">
+                            <DxComboBox Data="@this.FacilityActions"
+                                        TextFieldName="@nameof(FacilityActionDto.Name)"
+                                        ValueFieldName="@nameof(FacilityActionDto.Id)"
+                                        @bind-Value="deviceAction.FacilityActionId"/>
+                        </DxFormLayoutItem>
+                    </DxFormLayout>
+                </EditFormTemplate>
+            </DxGrid>
+        </div>
+    </div>
+</div>
+
 
 @code {
     [Parameter]

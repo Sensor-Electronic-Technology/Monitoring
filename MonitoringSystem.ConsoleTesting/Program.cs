@@ -36,19 +36,21 @@ namespace MonitoringSystem.ConsoleTesting {
                 Console.WriteLine($"Name: {device.Name}");
             }*/
             var context = new MonitorContext();
-            var analogInputs = await context.Channels.OfType<AnalogInput>()
+            var discreteInputs = await context.Channels.OfType<DiscreteInput>()
                 .Include(e => e.ModbusDevice)
                 .Include(e => e.Alert)
-                .ThenInclude(e => ((AnalogAlert)e).AlertLevels)
+                .ThenInclude(e => ((DiscreteAlert)e).AlertLevel)
                 .ThenInclude(e => e.DeviceAction.FacilityAction)
-                .Include(e => e.Sensor)
-                .Where(e => e.ModbusDevice.Name == "nh3")
-                .Select(e=>e.ToDto())
+                .Where(e => e.ModbusDevice.Name == "epi1")
                 .ToListAsync();
-
-            foreach (var input in analogInputs) {
-                Console.WriteLine($"Channel: {input.DisplayName}");
+            int count = 0;
+            foreach (var input in discreteInputs) {
+                if ((input.Alert as DiscreteAlert).AlertLevel.DeviceAction == null) {
+                    count++;
+                }
             }
+
+            Console.WriteLine($"Null Count: {count}");
         }
 
         static async Task DtoTesting() {

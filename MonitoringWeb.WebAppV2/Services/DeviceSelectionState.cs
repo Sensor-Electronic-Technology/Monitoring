@@ -19,7 +19,7 @@ public class DeviceSelectionState {
 public class SelectionChanged<T> {
     public T? SelectedItem { get; private set; }
 
-    public event Action? OnChanged;
+    public event Func<Task>? OnChanged;
 
     public void SetItem(T item) {
         this.SelectedItem = item;

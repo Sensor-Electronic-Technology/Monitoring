@@ -20,14 +20,11 @@ public class GetAnalogChannelsEndpoint:Endpoint<GetDeviceChannelsRequest,GetAnal
     public override async Task HandleAsync(GetDeviceChannelsRequest req, CancellationToken ct) {
         var analogChannels = await this._context.Channels.OfType<AnalogInput>()
             .Where(e => e.ModbusDeviceId == req.Id)
+            .Select(e=>e.ToDto())
             .ToListAsync(ct);
-        var response = new GetAnalogChannelsResponse();
-        
-        if (analogChannels.Any()) {
-            response.AnalogInputs = analogChannels.Select(e => e.ToDto()).AsEnumerable();
-        } else {
-            response.AnalogInputs = Enumerable.Empty<AnalogInputDto>();
-        }
+        var response = new GetAnalogChannelsResponse() {
+            AnalogInputs = analogChannels.AsEnumerable()
+        };
         await SendOkAsync(response, ct);
     }
 }

@@ -93,6 +93,25 @@ public class ConfigApiClient {
         var response = await this._client.GetFromJsonAsync<GetDiscreteLevelResponse>($"alerts/levels/discrete/{alertId}");
         return response.DiscreteLevel;
     }
-    
-    
+
+    public async Task UpdateAlert(AlertDto alert) {
+        var alertRequest = new UpdateAlertRequest() { Alert = alert };
+        var alertResponse = await this._client.PutAsJsonAsync("alerts/Alert", alertRequest);
+
+    }
+
+    public async Task UpdateDiscreteLevel(DiscreteLevelDto level) {
+        var levelRequest = new UpdateDiscreteLevelRequest() { DiscreteLevel = level };
+        var levelResponse= await this._client.PutAsJsonAsync("alerts/levels/discrete/DiscreteLevel",levelRequest);
+    }
+
+    public async Task UpdateAnalogLevel(AnalogLevelDto level) {
+        var request = new UpdateAnalogLevelRequest() { AnalogLevel = level };
+
+        var response=await this._client.PutAsJsonAsync<UpdateAnalogLevelRequest>($"alerts/levels/analog/AnalogLevel",request);
+        var content = await response.Content.ReadAsStringAsync();
+        var requestContent=await response.RequestMessage.Content.ReadAsStringAsync();
+        Console.WriteLine(content);
+        Console.WriteLine(requestContent);
+    }
 }

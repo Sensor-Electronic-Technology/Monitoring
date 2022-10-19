@@ -7,83 +7,77 @@
 @inject SelectionChanged<ModbusDeviceDto> SelectionChanged
 @inject SelectionChanged<ChannelDto> SelectedChannelChanged
 
-<div class="row" style="padding: .5rem">
-    <h3>@this.Text</h3>
-</div>
-<div class="row" style="padding: .5rem">
-    <DxGrid Data="@this.Channels"
-            KeyFieldName="Id"
-            ValidationEnabled="false"
-            AllowSelectRowByClick="true"
-            SelectionMode="GridSelectionMode.Single"
-            SelectedDataItem="@this.SelectedChannel"
-            SelectedDataItemChanged="@SelectedDataItemChanged"
-            EditModelSaving="EditModelSaving"
-            PopupEditFormCssClass="pw-800"
-            EditMode="GridEditMode.EditForm">
-        <Columns>
-            <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
-            <DxGridDataColumn FieldName="@nameof(ChannelDto.Id)" Visible="false" />
-            <DxGridDataColumn FieldName="@nameof(ChannelDto.Identifier)"/>
-            <DxGridDataColumn FieldName="@nameof(ChannelDto.DisplayName)"/>
-            <DxGridDataColumn FieldName="@nameof(ChannelDto.Connected)"/>
-            <DxGridDataColumn FieldName="@nameof(ChannelDto.Display)"/>
-        </Columns>
-        <DetailRowTemplate Context="DetailContext">
-            @{
-                var device = (ChannelDto)DetailContext.DataItem;
-            }
-            @if (typeof(TItem) != typeof(DiscreteOutputDto)) {
-                @*<AlertEditView ChannelId="@device.Id.ToString()" />*@
-            }
-        </DetailRowTemplate>
-        <EditFormTemplate Context="EditViewContext">
-            @{
-                
-                var device = (ChannelDto)EditViewContext.EditModel;
-            }
-            <DxFormLayout>
-                <DxFormLayoutItem Caption="Identifier" ColSpanSm="6">
-                    <DxTextBox @bind-text="@device.Identifier"></DxTextBox>
-                </DxFormLayoutItem>
-                <DxFormLayoutItem Caption="Display Name" ColSpanSm="6">
-                    <DxTextBox @bind-text="@device.DisplayName"></DxTextBox>
-                </DxFormLayoutItem>
-                <DxFormLayoutItem Caption="Connected" ColSpanSm="6">
-                    <DxCheckBox @bind-Checked="@device.Connected"></DxCheckBox>
-                </DxFormLayoutItem>
-                <DxFormLayoutItem Caption="Display" ColSpanSm="6">
-                    <DxCheckBox @bind-Checked="@device.Display"></DxCheckBox>
-                </DxFormLayoutItem>
-                @if (device is AnalogInputDto) {
-                    <DxFormLayoutItem Caption="Sensor">
-                        <DxComboBox Data="@this.Sensors" 
-                                    @bind-Value="((AnalogInputDto)device).SensorId"
-                                    TextFieldName="@nameof(SensorDto.Name)"
-                                    ValueFieldName="@nameof(SensorDto.Id)" />
-                    </DxFormLayoutItem>
+
+<div class="row" style="padding: 1rem">
+    @if (this.Channels.Any()) {
+        <DxGrid Data="@this.Channels"
+                KeyFieldName="Id"
+                ValidationEnabled="false"
+                AllowSelectRowByClick="true"
+                SelectionMode="GridSelectionMode.Single"
+                SelectedDataItem="@this.SelectedChannel"
+                SelectedDataItemChanged="@SelectedDataItemChanged"
+                EditModelSaving="EditModelSaving"
+                PopupEditFormCssClass="pw-800"
+                EditMode="GridEditMode.EditForm">
+            <Columns>
+                <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+                <DxGridDataColumn FieldName="@nameof(ChannelDto.Id)" Visible="false"/>
+                <DxGridDataColumn FieldName="@nameof(ChannelDto.Identifier)"/>
+                <DxGridDataColumn FieldName="@nameof(ChannelDto.DisplayName)"/>
+                <DxGridDataColumn FieldName="@nameof(ChannelDto.Connected)"/>
+                <DxGridDataColumn FieldName="@nameof(ChannelDto.Display)"/>
+            </Columns>
+            <DetailRowTemplate Context="DetailContext">
+                @{
+                    var device = (ChannelDto)DetailContext.DataItem;
                 }
-            </DxFormLayout>
-        </EditFormTemplate>
-    </DxGrid>
+                @if (typeof(TItem) != typeof(DiscreteOutputDto)) {
+                @*<AlertEditView ChannelId="@device.Id.ToString()" />*@
+                }
+            </DetailRowTemplate>
+            <EditFormTemplate Context="EditViewContext">
+                @{
+                    var device = (ChannelDto)EditViewContext.EditModel;
+                }
+                <DxFormLayout>
+                    <DxFormLayoutItem Caption="Identifier" ColSpanSm="6">
+                        <DxTextBox @bind-text="@device.Identifier"></DxTextBox>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="Display Name" ColSpanSm="6">
+                        <DxTextBox @bind-text="@device.DisplayName"></DxTextBox>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="Connected" ColSpanSm="6">
+                        <DxCheckBox @bind-Checked="@device.Connected"></DxCheckBox>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="Display" ColSpanSm="6">
+                        <DxCheckBox @bind-Checked="@device.Display"></DxCheckBox>
+                    </DxFormLayoutItem>
+                    @if (device is AnalogInputDto) {
+                        <DxFormLayoutItem Caption="Sensor">
+                            <DxComboBox Data="@this.Sensors"
+                                        @bind-Value="((AnalogInputDto)device).SensorId"
+                                        TextFieldName="@nameof(SensorDto.Name)"
+                                        ValueFieldName="@nameof(SensorDto.Id)"/>
+                        </DxFormLayoutItem>
+                    }
+                </DxFormLayout>
+            </EditFormTemplate>
+        </DxGrid>
+    }
 </div>
 <div class="row" style="padding: 1rem">
     @if (typeof(TItem) != typeof(DiscreteOutputDto)) {
-        if (typeof(TItem) == typeof(AnalogInputDto)) {
-            <AlertEditView ChannelId="@((this.SelectedChannel as ChannelDto)?.Id.ToString())"
-                           TItem="@AnalogInputDto" />
-        } else {
-            <AlertEditView ChannelId="@((this.SelectedChannel as ChannelDto)?.Id.ToString())"
-                           TItem="@DiscreteInputDto" />
-        }
+        <AlertEditView ChannelId="@((this.SelectedChannel as ChannelDto)?.Id.ToString())"
+                       TItem="@TItem" />
     }
 </div>
 
 @code {
     [Parameter]
     public string? DeviceId { get; set; }
-    
-    IEnumerable<ChannelDto>? Channels { get; set; }
+
+    IEnumerable<ChannelDto> Channels { get; set; } = Enumerable.Empty<ChannelDto>();
     IEnumerable<SensorDto>? Sensors { get; set; }
     string? Text { get; set; }
     ChannelDto? SelectedChannel { get; set; }
@@ -99,19 +93,27 @@
             if (typeof(TItem)==typeof(AnalogInputDto)) {
                 this.Text = "Analog Inputs";
                 this.Channels = await this.Client.GetAnalogChannels(this.DeviceId);
-                this.SelectedChannel = this.Channels.First();
+                if (this.Channels.Any()) {
+                    this.SelectedChannel = this.Channels.First();
+                }
             }else if (typeof(TItem)== typeof(DiscreteInputDto)) {
                 this.Text = "Discrete Inputs";
                 this.Channels = await this.Client.GetDiscreteChannels(this.DeviceId);
-                this.SelectedChannel = this.Channels.First();
+                if (this.Channels.Any()) {
+                    this.SelectedChannel = this.Channels.First();
+                }
             }else if (typeof(TItem) == typeof(VirtualInputDto)) {
                 this.Text = "Virtual Inputs";
                 this.Channels = await this.Client.GetVirtualChannels(this.DeviceId);
-                this.SelectedChannel = this.Channels.First();
+                if (this.Channels.Any()) {
+                    this.SelectedChannel = this.Channels.First();
+                }
             }else if (typeof(TItem)== typeof(DiscreteOutputDto)) {
                 this.Text = "Discrete Outputs";
                 this.Channels = await this.Client.GetOutputChannels(this.DeviceId);
-                this.SelectedChannel = this.Channels.First();
+                if (this.Channels.Any()) {
+                    this.SelectedChannel = this.Channels.First();
+                }
             } else {
                 this.Text = "Incompatible Channel Type"; 
             }
@@ -125,7 +127,8 @@
         this.SelectedChannelChanged.SetItem(this.SelectedChannel);
     }
 
-    async void SelectedDeviceChanged() {
+    async Task SelectedDeviceChanged() {
+        //var type=this.SelectionChanged?.SelectedItem
         this.DeviceId = this.SelectionChanged?.SelectedItem?.Id.ToString();
         await this.Update();
         await InvokeAsync(StateHasChanged);
