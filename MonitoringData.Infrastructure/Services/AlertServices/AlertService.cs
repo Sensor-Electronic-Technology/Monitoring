@@ -23,8 +23,7 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly IEmailService _emailService;
         private readonly List<AlertRecord> _activeAlerts = new List<AlertRecord>();
         private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
-
-
+        
         public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,
             IHubContext<MonitorHub,IMonitorHub> monitorHub,
             IEmailService emailService) {

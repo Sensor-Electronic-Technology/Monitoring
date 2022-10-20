@@ -13,7 +13,6 @@
                     AllowSelectRowByClick="true"
                     SelectionMode="GridSelectionMode.Single"
                     EditModelSaving="Grid_EditModelSaving"
-                    DataItemDeleting="Grid_DataItemDeleting"
                     PopupEditFormCssClass="pw-800"
                     EditMode="GridEditMode.EditForm">
                 <Columns>
@@ -28,18 +27,18 @@
                     @{
                         var facilityAction = EditFormContext.EditModel as FacilityActionDto;
                     }
-                    <DxFormLayout>
-                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.Name)">
+                    <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.Name)" ColSpanMd="4">
                             <DxTextBox @bind-Text="facilityAction.Name"></DxTextBox>
                         </DxFormLayoutItem>
-                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.ActionType)">
+                        @*<DxFormLayoutItem Caption="@nameof(FacilityActionDto.ActionType)">
                             <DxComboBox Data="@this.ActionTypes"
                                         @bind-Value="facilityAction.ActionType" />
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.EmailEnabled)">
+                        </DxFormLayoutItem>*@
+                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.EmailEnabled)" ColSpanMd="4">
                             <DxCheckBox @bind-Checked="facilityAction.EmailEnabled"></DxCheckBox>
                         </DxFormLayoutItem>
-                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.EmailPeriod)">
+                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.EmailPeriod)" ColSpanMd="4">
                             <DxSpinEdit @bind-Value="facilityAction.EmailPeriod"></DxSpinEdit>
                         </DxFormLayoutItem>
                     </DxFormLayout>
@@ -60,13 +59,19 @@
             .ToList();
         this.FacilityActions = await this.Client.GetFacilityActions();
     }
+
+    async Task Update() {
+        this.ActionTypes=Enum.GetValues(typeof(ActionType))
+            .OfType<ActionType>()
+            .ToList();
+        this.FacilityActions = await this.Client.GetFacilityActions();
+        await InvokeAsync(StateHasChanged);
+    }
     
     async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
-    //await this.DataService.UpdateModbusDevice((ModbusDeviceDto)e.DataItem,(ModbusDeviceDto)e.EditModel);
+        if (e.EditModel is FacilityActionDto action) {
+            await this.Client.UpdateFacilityAction(action);
+            await this.Update();
+        }
     }
-    async Task Grid_DataItemDeleting(GridDataItemDeletingEventArgs e) {
-    //await NwindDataService.RemoveEmployeeAsync((EditableEmployee)e.DataItem);
-    //await UpdateDataAsync();
-    }
-
 }

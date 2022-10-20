@@ -7,7 +7,6 @@
 @inject SelectionChanged<ModbusDeviceDto> SelectionChanged
 @inject SelectionChanged<ChannelDto> SelectedChannelChanged
 
-
 <div class="row" style="padding: 1rem">
     @if (this.Channels.Any()) {
         <DxGrid Data="@this.Channels"
@@ -28,14 +27,6 @@
                 <DxGridDataColumn FieldName="@nameof(ChannelDto.Connected)"/>
                 <DxGridDataColumn FieldName="@nameof(ChannelDto.Display)"/>
             </Columns>
-            <DetailRowTemplate Context="DetailContext">
-                @{
-                    var device = (ChannelDto)DetailContext.DataItem;
-                }
-                @if (typeof(TItem) != typeof(DiscreteOutputDto)) {
-                @*<AlertEditView ChannelId="@device.Id.ToString()" />*@
-                }
-            </DetailRowTemplate>
             <EditFormTemplate Context="EditViewContext">
                 @{
                     var device = (ChannelDto)EditViewContext.EditModel;
@@ -79,7 +70,6 @@
 
     IEnumerable<ChannelDto> Channels { get; set; } = Enumerable.Empty<ChannelDto>();
     IEnumerable<SensorDto>? Sensors { get; set; }
-    string? Text { get; set; }
     ChannelDto? SelectedChannel { get; set; }
     
     protected override async Task OnInitializedAsync() {
@@ -91,35 +81,18 @@
         this.Sensors = await this.Client.GetSensors();
         if (this.DeviceId!=null) {
             if (typeof(TItem)==typeof(AnalogInputDto)) {
-                this.Text = "Analog Inputs";
                 this.Channels = await this.Client.GetAnalogChannels(this.DeviceId);
-                if (this.Channels.Any()) {
-                    this.SelectedChannel = this.Channels.First();
-                }
             }else if (typeof(TItem)== typeof(DiscreteInputDto)) {
-                this.Text = "Discrete Inputs";
                 this.Channels = await this.Client.GetDiscreteChannels(this.DeviceId);
-                if (this.Channels.Any()) {
-                    this.SelectedChannel = this.Channels.First();
-                }
             }else if (typeof(TItem) == typeof(VirtualInputDto)) {
-                this.Text = "Virtual Inputs";
                 this.Channels = await this.Client.GetVirtualChannels(this.DeviceId);
-                if (this.Channels.Any()) {
-                    this.SelectedChannel = this.Channels.First();
-                }
             }else if (typeof(TItem)== typeof(DiscreteOutputDto)) {
-                this.Text = "Discrete Outputs";
                 this.Channels = await this.Client.GetOutputChannels(this.DeviceId);
-                if (this.Channels.Any()) {
-                    this.SelectedChannel = this.Channels.First();
-                }
-            } else {
-                this.Text = "Incompatible Channel Type"; 
             }
         } else {
             this.Logger.LogError("Channel or ModbusDevice null");
         }
+        await InvokeAsync(StateHasChanged);
     }
 
     private void SelectedDataItemChanged(object selected) {
@@ -128,10 +101,8 @@
     }
 
     async Task SelectedDeviceChanged() {
-        //var type=this.SelectionChanged?.SelectedItem
         this.DeviceId = this.SelectionChanged?.SelectedItem?.Id.ToString();
         await this.Update();
-        await InvokeAsync(StateHasChanged);
     }
 
     async Task EditModelSaving(GridEditModelSavingEventArgs e) {

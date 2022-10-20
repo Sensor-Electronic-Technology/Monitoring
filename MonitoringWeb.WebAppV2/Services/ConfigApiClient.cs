@@ -1,4 +1,5 @@
-﻿using MonitoringSystem.Shared.Contracts.Requests.Update;
+﻿using MonitoringSystem.Shared.Contracts.Requests.Insert;
+using MonitoringSystem.Shared.Contracts.Requests.Update;
 using MonitoringSystem.Shared.Contracts.Responses.Get;
 using MonitoringSystem.Shared.Data.EntityDtos;
 
@@ -20,18 +21,34 @@ public class ConfigApiClient {
         return response?.Sensors;
     }
 
+    public async Task UpdateSensor(SensorDto sensor) {
+        var response = await this._client.PutAsJsonAsync("sensors/Sensor", 
+                new UpdateSensorRequest() { Sensor = sensor });
+    }
+    
+    public async Task InsertSensor(SensorDto sensor) {
+        var response = await this._client.PostAsJsonAsync("sensors/Sensor",
+            new InsertSensorRequest() { Sensor = sensor });
+    } 
+
     public async Task<IEnumerable<FacilityActionDto>?> GetFacilityActions() {
         var response = await this._client.GetFromJsonAsync<GetFacilityActionsResponse>("actions/facility");
         return response?.FacilityActions;
     }
 
-    public async Task<IEnumerable<DeviceActionDto>> GetDeviceAction(string id) {
-        var response = await this._client.GetFromJsonAsync<GetDeviceActionsResponse>($"actions/deviceactions/{id}");
-        if (response is not null) {
-            return response.DeviceActions;
-        } else {
-            return Enumerable.Empty<DeviceActionDto>();   
-        }
+    public async Task UpdateFacilityAction(FacilityActionDto action) {
+        var response = await this._client.PutAsJsonAsync("actions/facility/FacilityAction",
+            new UpdateFacilityActionRequest() { FacilityAction = action });
+    }
+
+    public async Task<IEnumerable<DeviceActionDto>> GetDeviceActions(string id) {
+        var response = await this._client.GetFromJsonAsync<GetDeviceActionsResponse>($"actions/device/{id}");
+        return response.DeviceActions;
+    }
+
+    public async Task UpdateDeviceAction(DeviceActionDto action) {
+        var response = await this._client.PutAsJsonAsync("actions/device/DeviceAction",
+            new UpdateDeviceActionRequest() { DeviceAction = action });
     }
 
     public async Task UpdateChannel(ChannelDto channelDto) {
@@ -99,7 +116,7 @@ public class ConfigApiClient {
         var alertResponse = await this._client.PutAsJsonAsync("alerts/Alert", alertRequest);
 
     }
-
+    
     public async Task UpdateDiscreteLevel(DiscreteLevelDto level) {
         var levelRequest = new UpdateDiscreteLevelRequest() { DiscreteLevel = level };
         var levelResponse= await this._client.PutAsJsonAsync("alerts/levels/discrete/DiscreteLevel",levelRequest);

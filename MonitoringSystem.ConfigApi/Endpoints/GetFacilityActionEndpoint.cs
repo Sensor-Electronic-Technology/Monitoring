@@ -26,7 +26,7 @@ public class GetFacilityActionsEndpoint : EndpointWithoutRequest<GetFacilityActi
     }
 }
 
-[HttpGet("actions/deviceactions/{DeviceId:guid}"),AllowAnonymous]
+[HttpGet("actions/device/{DeviceId:guid}"),AllowAnonymous]
 public class GetAllDeviceActionsEndpoint : Endpoint<GetDeviceActionsRequest,GetDeviceActionsResponse> {
     private readonly MonitorContext _context;
 
@@ -49,7 +49,7 @@ public class GetAllDeviceActionsEndpoint : Endpoint<GetDeviceActionsRequest,GetD
     }
 }
 
-[HttpGet("actions/deviceaction/{DeviceActionId:guid}"),AllowAnonymous]
+/*[HttpGet("actions/device/{DeviceActionId:guid}"),AllowAnonymous]
 public class GetDeviceActionEndpoint : Endpoint<GetDeviceActionRequest,GetDeviceActionResponse> {
     private readonly MonitorContext _context;
 
@@ -67,4 +67,4 @@ public class GetDeviceActionEndpoint : Endpoint<GetDeviceActionRequest,GetDevice
             await SendNotFoundAsync(ct);
         }
     }
-}
+}*/

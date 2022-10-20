@@ -35,7 +35,7 @@ namespace MonitoringSystem.ConsoleTesting {
             foreach (var device in response.DeviceActions) {
                 Console.WriteLine($"Name: {device.Name}");
             }*/
-            var context = new MonitorContext();
+            /*var context = new MonitorContext();
             var discreteInputs = await context.Channels.OfType<DiscreteInput>()
                 .Include(e => e.ModbusDevice)
                 .Include(e => e.Alert)
@@ -50,7 +50,14 @@ namespace MonitoringSystem.ConsoleTesting {
                 }
             }
 
-            Console.WriteLine($"Null Count: {count}");
+            Console.WriteLine($"Null Count: {count}");*/
+            ModbusService modservice = new ModbusService();
+            Console.WriteLine("Epi1 Running");
+            /*await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 0, true);
+            await Task.Delay(1000);*/
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
         }
 
         static async Task DtoTesting() {

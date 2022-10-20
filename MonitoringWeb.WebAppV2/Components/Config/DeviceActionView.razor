@@ -1,6 +1,8 @@
 ﻿@using MonitoringSystem.Shared.Data.EntityDtos
 @using MonitoringWeb.WebAppV2.Services
+@implements IAsyncDisposable
 @inject ConfigApiClient Client
+@inject SelectionChanged<ModbusDeviceDto> SelectionChanged
 
 <div class="row" style="padding: 1rem">
     <div class="card">
@@ -14,11 +16,11 @@
                     AllowSelectRowByClick="true"
                     SelectionMode="GridSelectionMode.Single"
                     EditModelSaving="Grid_EditModelSaving"
-                    DataItemDeleting="Grid_DataItemDeleting"
                     PopupEditFormCssClass="pw-800"
                     EditMode="GridEditMode.EditForm">
                 <Columns>
-                    <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+                    <DxGridCommandColumn Width="120px" NewButtonVisible="false" 
+                                         DeleteButtonVisible="false"/>
                     <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Id)" Visible="false"/>
                     <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Name)"/>
                     <DxGridDataColumn FieldName="@nameof(DeviceActionDto.FirmwareId)"/>
@@ -57,15 +59,36 @@
     IEnumerable<FacilityActionDto>? FacilityActions { get; set; }
 
     protected override async Task OnInitializedAsync() {
-        this.FacilityActions = await this.Client.GetFacilityActions();
-        this.DeviceActions = await this.Client.GetDeviceAction(this.DeviceId);
+        this.SelectionChanged.OnChanged += this.DeviceChanged;
+        if (this.DeviceId != null) {
+            this.FacilityActions = await this.Client.GetFacilityActions();
+            this.DeviceActions = await this.Client.GetDeviceActions(this.DeviceId);
+        }
+    }
+
+    async Task DeviceChanged() {
+        this.DeviceId = this.SelectionChanged?.SelectedItem?.Id.ToString();
+        await this.Update();
+    }
+
+    async Task Update() {
+        if (this.DeviceId != null) {
+            this.FacilityActions = await this.Client.GetFacilityActions();
+            this.DeviceActions = await this.Client.GetDeviceActions(this.DeviceId);
+        }
+        await InvokeAsync(StateHasChanged);
     }
     
     async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
-    //await this.DataService.UpdateModbusDevice((ModbusDeviceDto)e.DataItem,(ModbusDeviceDto)e.EditModel);
+        if (e.EditModel is DeviceActionDto deviceAction) {
+            await this.Client.UpdateDeviceAction(deviceAction);
+            await this.Update();
+        }
     }
-    async Task Grid_DataItemDeleting(GridDataItemDeletingEventArgs e) {
-    //await NwindDataService.RemoveEmployeeAsync((EditableEmployee)e.DataItem);
-    //await UpdateDataAsync();
+
+    public ValueTask DisposeAsync() {
+        this.SelectionChanged.OnChanged -= this.DeviceChanged;
+        return ValueTask.CompletedTask;
     }
+
 }

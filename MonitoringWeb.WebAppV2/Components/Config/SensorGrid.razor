@@ -12,11 +12,11 @@
                     AllowSelectRowByClick="true"
                     SelectionMode="GridSelectionMode.Single"
                     EditModelSaving="Grid_EditModelSaving"
-                    DataItemDeleting="Grid_DataItemDeleting"
                     PopupEditFormCssClass="pw-800"
                     EditMode="GridEditMode.EditForm">
                 <Columns>
-                    <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+                    <DxGridCommandColumn Width="120px" NewButtonVisible="true" EditButtonVisible="true" 
+                                         DeleteButtonVisible="false"/>
                     <DxGridDataColumn FieldName="@nameof(SensorDto.Id)" Visible="false"/>
                     <DxGridDataColumn FieldName="@nameof(SensorDto.Name)"/>
                     <DxGridDataColumn FieldName="@nameof(SensorDto.DisplayName)"/>
@@ -72,7 +72,6 @@
             </DxGrid>
         </div>
     </div>
-
 </div>
 
 
@@ -83,10 +82,19 @@
         this.Sensors = await this.Client.GetSensors();
     }
 
-    async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
-
+    async Task Update() {
+        this.Sensors = await this.Client.GetSensors();
+        await InvokeAsync(StateHasChanged);
     }
-    async Task Grid_DataItemDeleting(GridDataItemDeletingEventArgs e) {
 
+    async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
+        if (e.EditModel is SensorDto sensor) {
+            if (e.IsNew) {
+                await this.Client.InsertSensor(sensor);
+            } else {
+                await this.Client.UpdateSensor(sensor);
+            }
+        }
+        await this.Update();
     }
 }
