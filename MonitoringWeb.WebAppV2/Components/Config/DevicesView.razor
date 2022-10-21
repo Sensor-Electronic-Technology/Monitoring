@@ -17,7 +17,6 @@
                     SelectedDataItem="@this.SelectedDevice"
                     SelectionMode="GridSelectionMode.Single"
                     EditModelSaving="Grid_EditModelSaving"
-                    DataItemDeleting="Grid_DataItemDeleting"
                     SelectedDataItemChanged="@Callback"
                     PopupEditFormCssClass="pw-800"
                     EditMode="GridEditMode.EditForm">
@@ -106,15 +105,25 @@
             this.SelectedDevice = this.ModbusDevices.First();
         }
     }
+
+    async Task Update() {
+        var  devices= await this.Client.GetModbusDevices();
+        if (devices is not null) {
+            this.ModbusDevices = devices;
+            this.SelectedDevice = this.ModbusDevices.First();
+            this.SelectionChanged.SetItem(this.SelectedDevice);
+            this.SelectedText = this.SelectedDevice?.Name;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
     
     async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
-    //await this.DataService.UpdateModbusDevice((ModbusDeviceDto)e.DataItem,(ModbusDeviceDto)e.EditModel);
+        if (e.EditModel is ModbusDeviceDto device) {
+            await this.Client.UpdateDevice(device);
+            await this.Update();
+        }
     }
-    async Task Grid_DataItemDeleting(GridDataItemDeletingEventArgs e) {
-    //await NwindDataService.RemoveEmployeeAsync((EditableEmployee)e.DataItem);
-    //await UpdateDataAsync();
-    }
-    
+
     async Task UpdateDataAsync() {
         this.ModbusDevices = await this.Client.GetModbusDevices();
     }

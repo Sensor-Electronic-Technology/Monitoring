@@ -16,6 +16,11 @@ public class ConfigApiClient {
         return await this._client.GetFromJsonAsync<IEnumerable<ModbusDeviceDto>>("devices");
     }
 
+    public async Task UpdateDevice(ModbusDeviceDto device) {
+        var response = await this._client.PutAsJsonAsync($"devices/ModbusDevice",
+            new UpdateDeviceRequest(){ModbusDevice = device});
+    }
+
     public async Task<IEnumerable<SensorDto>?> GetSensors() {
         var response= await this._client.GetFromJsonAsync<GetAllSensorsResponse>("sensors");
         return response?.Sensors;

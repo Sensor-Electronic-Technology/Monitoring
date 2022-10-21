@@ -38,6 +38,10 @@ namespace MonitoringData.Infrastructure.Services {
             bool sendEmail = false;     
             foreach (var alert in alerts) {
                 if (alert.Enabled) {
+                    /*if (alert.DisplayName == "H2 PPM-10") {
+                        alert.CurrentState = ActionType.SoftWarn;
+                        alert.ChannelReading = 100.00f;
+                    }*/
                     var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
                     var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.ActionType == alert.CurrentState);
                     switch (alert.CurrentState) {
@@ -121,7 +125,6 @@ namespace MonitoringData.Infrastructure.Services {
                         Value = e.ChannelReading.ToString(CultureInfo.InvariantCulture)
                     }).ToList()
             };
-            
             if (this._activeAlerts.Any()) {
                 monitorData.activeAlerts = new List<ItemStatus>();
                 if (this._activeAlerts.FirstOrDefault(e => e.CurrentState == ActionType.Alarm)!=null) {
@@ -143,7 +146,7 @@ namespace MonitoringData.Infrastructure.Services {
                 if (sendEmail) {
                     /*await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
                         messageBuilder);*/
-                    this._logger.LogInformation("Email Sent");
+                    //this._logger.LogInformation("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         MonitorItemId = e.AlertId,
                         AlertState = e.CurrentState,

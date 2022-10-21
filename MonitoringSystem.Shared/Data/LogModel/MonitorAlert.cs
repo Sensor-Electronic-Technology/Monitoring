@@ -10,6 +10,7 @@ namespace MonitoringSystem.Shared.Data.LogModel {
         public bool Enabled { get; set; }
         public bool Bypassed { get; set; }
         public int BypassResetTime { get; set; }
+        public int Register { get; set; }
         public MonitorAlert Clone() {
             return (MonitorAlert)this.MemberwiseClone();
         }

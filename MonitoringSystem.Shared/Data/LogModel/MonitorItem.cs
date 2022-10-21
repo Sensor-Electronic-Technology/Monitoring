@@ -11,13 +11,13 @@ public class MonitorItem {
 
 public class MonitorChannel : MonitorItem {
     public int SystemChannel { get; set; }
+    public int Register { get; set; }
 }
 
 public class AnalogItem : MonitorChannel {
     public ObjectId SensorId { get; set; }
     public float RecordThreshold { get; set; }
     public int Factor { get; set; }
-    public int Register { get; set; }
     public int RegisterLength { get; set; }
     public ActionType Level1Action { get; set; }
     public float Level1SetPoint { get; set; }
@@ -37,7 +37,6 @@ public class OutputItem : MonitorChannel {
 }
 
 public class VirtualItem : DiscreteItem {
-    public int Register { get; set; }
 }
 
 public class ActionItem : MonitorItem {

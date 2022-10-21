@@ -53,10 +53,6 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 var now = DateTime.Now;
                 this._alerts = new List<AlertRecord>();
                 if (result.HoldingRegisters != null) {
-                    /*var analogRaw = new ArraySegment<ushort>(result.HoldingRegisters, 
-                        this._channelMapping.AnalogStart, 
-                        (this._channelMapping.AnalogStop - this._channelMapping.AnalogStart) + 1)
-                        .ToArray();*/
                     var analogRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._device.ChannelMapping.AnalogStart, 
                         (this._device.ChannelMapping.AnalogStop - this._device.ChannelMapping.AnalogStart) + 1).ToArray();
                     await this.ProcessAnalogReadings(analogRaw, now);

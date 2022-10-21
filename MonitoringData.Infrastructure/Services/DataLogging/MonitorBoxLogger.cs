@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ConsoleTables;
+using Microsoft.Extensions.Logging;
 using MonitoringData.Infrastructure.Data;
 using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
@@ -86,14 +87,18 @@ namespace MonitoringData.Infrastructure.Services {
 
         private Task ProcessAlertReadings(ushort[] raw, DateTime now) {
             List<AlertReading> alertReadings = new List<AlertReading>();
-            for (int i = 0; i < raw.Length; i++) {
+            ConsoleTable table = new ConsoleTable("Name", "Register", "Value");
+            foreach (var alert in this._dataService.MonitorAlerts) {
                 var alertReading = new AlertReading() {
-                    MonitorItemId = this._dataService.MonitorAlerts[i]._id,
-                    AlertState = this.ToActionType(raw[i])
+                    MonitorItemId = alert._id,
+                    AlertState = this.ToActionType(raw[alert.Register])
                 };
                 alertReadings.Add(alertReading);
-                this._alerts.Add(new AlertRecord(this._dataService.MonitorAlerts[i], alertReading.AlertState));
+                this._alerts.Add(new AlertRecord(alert,alertReading.AlertState));
+                table.AddRow(alert.DisplayName, alert.Register,alertReading.AlertState.ToString());
             }
+
+            Console.WriteLine(table.ToMinimalString());
             return Task.CompletedTask;
         }
 
@@ -101,28 +106,26 @@ namespace MonitoringData.Infrastructure.Services {
             if (this._dataService.AnalogItems.Count == raw.Length) {
                 List<AnalogReading> readings = new List<AnalogReading>();
                 bool record = false;
-                for (int i = 0; i < raw.Length; i++) {
-                    var item = this._dataService.AnalogItems[i];
-                    var analogReading = new AnalogReading() { 
-                        MonitorItemId = this._dataService.AnalogItems[i]._id, 
-                        Value = (float)raw[i] / (float)this._dataService.AnalogItems[i].Factor
+                foreach (var item in this._dataService.AnalogItems) {
+                    var analogReading = new AnalogReading() {
+                        MonitorItemId = item._id, Value = (float)raw[item.Register] / item.Factor
                     };
                     if (analogReading.Value >= item.RecordThreshold) {
                         record = true;
                     }
                     readings.Add(analogReading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == analogReading.MonitorItemId);
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = (float)analogReading.Value;
                     } else {
-                        this.LogError("Analog ItemAlert not found");
+                        this.LogError("Analog MonitorAlert not found");
                     }
-                }                
+                }
                 return Task.FromResult<Tuple<AnalogReadings, bool>>(new(
                     new AnalogReadings() { 
                         readings = readings.ToArray(), 
                         timestamp = now 
-                    }, record));       
+                    }, record));
             } else {
                 this.LogError("Error: AnalogItems count doesn't match raw data count");
                 return Task.FromResult<Tuple<AnalogReadings, bool>>(new(null,false));
@@ -133,16 +136,16 @@ namespace MonitoringData.Infrastructure.Services {
             bool record = false;
             if (this._dataService.DiscreteItems.Count == raw.Length) {
                 List<DiscreteReading> readings = new List<DiscreteReading>();
-                for (int i = 0; i < raw.Length; i++) {
+                foreach (var item in this._dataService.DiscreteItems) {
                     var reading = new DiscreteReading() {
-                        MonitorItemId = this._dataService.DiscreteItems[i]._id,
-                        Value = raw[i]
+                        MonitorItemId = item._id,
+                        Value = raw[item.Register]
                     };
                     if (reading.Value) {
                         record = true;
                     }              
                     readings.Add(reading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.MonitorItemId);
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = reading.Value == true ? 1.00f : 0.00f;
                     } else {
@@ -162,27 +165,26 @@ namespace MonitoringData.Infrastructure.Services {
             if (this._dataService.VirtualItems.Count == raw.Length) {
                 bool record = false;
                 List<VirtualReading> readings = new List<VirtualReading>();
-                for (int i = 0; i < raw.Length; i++) {
+                foreach (var item in this._dataService.VirtualItems) {
                     var reading = new VirtualReading() {
-                        MonitorItemId = this._dataService.VirtualItems[i]._id,
-                        Value = raw[i]
+                        MonitorItemId = item._id,
+                        Value = raw[item.Register]
                     };
                     if(reading.Value) {
                         record = true;
                     }
-                    var alert = this._dataService.MonitorAlerts.FirstOrDefault(e => e._id == reading.MonitorItemId);
                     readings.Add(reading);
-                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == reading.MonitorItemId);
+                    var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
                         alertRecord.ChannelReading = reading.Value == true ? 1.00f : 0.00f;
                     } else {
-                        this.LogError("Virual ItemAlert not found");
+                        this.LogError("Virtual ItemAlert not found");
                     }
                 }
                 return Task.FromResult<Tuple<VirtualReadings, bool>>(new(
                     new VirtualReadings() { 
-                    readings = readings.ToArray(), 
-                    timestamp = now }, 
+                        readings = readings.ToArray(), 
+                        timestamp = now }, 
                     record));
             } else {
                 this.LogError("Error: Virtualitems count doesn't match raw data count");

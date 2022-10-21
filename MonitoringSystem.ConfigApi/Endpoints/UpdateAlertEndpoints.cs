@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MonitoringConfig.Data.Model;
+using MonitoringSystem.ConfigApi.EventContracts.Events;
 using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringSystem.Shared.Contracts.Requests.Update;
 using MonitoringSystem.Shared.Contracts.Responses.Update;
@@ -11,16 +12,15 @@ namespace MonitoringSystem.ConfigApi.Endpoints;
 [HttpPut("alerts/Alert"),AllowAnonymous]
 public class UpdateAlertEndpoint : Endpoint<UpdateAlertRequest, UpdateAlertResponse> {
     private readonly MonitorContext _context;
-
     public UpdateAlertEndpoint(MonitorContext context) {
         this._context = context;
     }
-
     public override async Task HandleAsync(UpdateAlertRequest req, CancellationToken ct) {
         var alert = req.Alert.ToEntity();
         this._context.Update(alert);
         var ret = await this._context.SaveChangesAsync(ct);
         if (ret > 0) {
+            await PublishAsync(new AlertUpdatedEvent() { Alert = alert.ToDto() });
             await SendOkAsync(new UpdateAlertResponse() { Alert = alert.ToDto() },ct);
         } else {
             await SendErrorsAsync(400,ct);
