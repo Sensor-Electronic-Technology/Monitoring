@@ -3,16 +3,25 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Runtime.CompilerServices
 @using MonitoringWeb.WebAppV2.Data
+@using System.Globalization
 @inject ILogger<LiveGrid> logger
 @implements IAsyncDisposable
 @if (this._monitorData != null) {
     <div class="container text-center">
         <div class="row">
             <div class="row text-center" style="padding:.05rem">
-                <h4>@(char.ToUpper(DeviceName[0])+DeviceName.Substring(1))</h4>
+                <h4>
+                    @if (DeviceName != null) {
+                        if (DeviceName == "nh3") {
+                            @DeviceName.ToUpper()
+                        } else {
+                            @(char.ToUpper(DeviceName[0]) + DeviceName.Substring(1))
+                        }
+                    }
+                </h4>
             </div>
             <div class="row text-center" style="padding:.05rem">
-                <p role="status">TimeStamp: @this._monitorData?.TimeStamp.ToLocalTime().ToString()</p>
+                <p role="status">TimeStamp: @(this._monitorData?.TimeStamp.ToLocalTime().ToString(CultureInfo.InvariantCulture))</p>
             </div>
             @if (this._monitorData?.analogData != null) {
                 @if (this._monitorData.analogData.Any()) {
@@ -25,7 +34,7 @@
                             <Columns>
                                 <DxGridDataColumn FieldName="Item" Width="140px" />
                                 <DxGridDataColumn FieldName="State" />
-                                <DxGridDataColumn FieldName="Value" />
+                                <DxGridDataColumn FieldName="Value" DisplayFormat="n0"/>
                             </Columns>
                         </DxGrid>
                     </div>

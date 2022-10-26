@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using MassTransit.Futures.Contracts;
+using MongoDB.Bson;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 
@@ -13,6 +14,7 @@ public enum AlertAction {
 public class AlertRecord {
     public ObjectId AlertId { get; set; }
     public ObjectId ChannelId { get; set; }
+    public bool Display { get; set; }
     public string DisplayName { get; set; }
     public ActionType CurrentState { get; set; }
     public AlertAction AlertAction { get; set; }
@@ -37,6 +39,7 @@ public class AlertRecord {
         this.ItemType = alert.AlertItemType;
         this.ChannelReading = 0.00f;
         this.Latched = false;
+        this.Display = alert.Display;
     }
 
     public AlertRecord(MonitorAlert alert, float reading, ActionType state) {
@@ -49,6 +52,7 @@ public class AlertRecord {
         this.ItemType = alert.AlertItemType;
         this.ChannelReading = reading;
         this.Latched = false;
+        this.Display = alert.Display;
     }
 
     public AlertRecord() {
@@ -61,6 +65,7 @@ public class AlertRecord {
         this.AlertAction = AlertAction.Nothing;
         this.ItemType = AlertItemType.Discrete;
         this.Latched = false;
+        this.Display = false;
     }
 
     public AlertRecord Clone() {

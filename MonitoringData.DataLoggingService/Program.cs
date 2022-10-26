@@ -1,11 +1,8 @@
 using MonitoringData.DataLoggingService;
-using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MassTransit;
 using MonitoringSystem.Shared.SignalR;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MongoDB.Driver;
 using MonitoringData.Infrastructure.Data;
 using MonitoringData.Infrastructure.Services.AlertServices;
@@ -33,8 +30,8 @@ builder.Services.AddSingleton<IModbusService, ModbusService>();
 builder.Services.AddSingleton<IAlertService, AlertService>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(settings.ConnectionString));
-var serviceType = Environment.GetEnvironmentVariable("SERVICE_TYPE");
-//var serviceType = nameof(ServiceType.MonitorBox);
+//var serviceType = Environment.GetEnvironmentVariable("SERVICE_TYPE");
+var serviceType = nameof(ServiceType.MonitorBox);
 Console.WriteLine($"ServiceType: {serviceType}");
 switch (serviceType) {
     case nameof(ServiceType.GenericModbus):
@@ -56,8 +53,8 @@ var app = builder.Build();
 
 var dataConfigProvider = app.Services.GetService<DataLogConfigProvider>();
 if (dataConfigProvider is not null) {
-    var deviceName=Environment.GetEnvironmentVariable("DEVICEID");
-    //var deviceName = "epi2";
+    //var deviceName=Environment.GetEnvironmentVariable("DEVICEID");
+    var deviceName = "epi1";
     if (deviceName is not null) {
         dataConfigProvider.DeviceName = deviceName;
         await dataConfigProvider.Load();

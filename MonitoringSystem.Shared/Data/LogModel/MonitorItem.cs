@@ -10,6 +10,7 @@ public class MonitorItem {
 }
 
 public class MonitorChannel : MonitorItem {
+    public bool Connected { get; set; }
     public int SystemChannel { get; set; }
     public int Register { get; set; }
 }

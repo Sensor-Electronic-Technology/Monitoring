@@ -39,6 +39,32 @@ public class PlotDataService {
             return analogReadings;
         }
         
+        public async Task<IEnumerable<AnalogReadingDto>> GetChannelData(string deviceData,string chName,DateTime start, DateTime stop) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase(deviceData);
+            this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+            this._analogItems = database.GetCollection<AnalogItem>("analog_items");
+            List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
+            var h2psi = await this._analogItems.Find(e => e.Identifier == chName).FirstOrDefaultAsync();
+            using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
+            while (await cursor.MoveNextAsync()){
+                var batch = cursor.Current;
+                foreach (var readings in batch){
+
+                    var reading =readings.readings.FirstOrDefault(e=>e.MonitorItemId==h2psi._id);
+                    if (reading != null) {
+                        var aReading=new AnalogReadingDto(){
+                            Name=h2psi.Identifier,
+                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            Value=reading.Value
+                        }; 
+                        analogReadings.Add(aReading);
+                    }
+                }
+            }
+            return analogReadings;
+        }
+        
         public async Task<IEnumerable<AnalogReadingDto>> GetDataBySensor(string deviceData,DateTime start, DateTime stop,ObjectId sensorId) {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase(deviceData);

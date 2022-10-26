@@ -1,6 +1,7 @@
 ﻿using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MonitoringData.Infrastructure.Data;
 using MonitoringData.Infrastructure.Events;
 using MonitoringSystem.Shared.Data;
@@ -13,17 +14,20 @@ using MonitoringSystem.Shared.Data.SettingsModel;
 
 namespace MonitoringData.Infrastructure.Services.DataLogging {
     public class ModbusLogger : IDataLogger {
+        private const double fweight=.01;
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
         private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
-        private IAlertService _alertService;
+        private readonly IAlertService _alertService;
         private readonly ILogger _logger;
+        private Dictionary<ObjectId, double> _filters = new Dictionary<ObjectId, double>();
 
         private bool loggingEnabled = false;
         private ManagedDevice _device;
         private IList<AlertRecord> _alerts;
         private DateTime lastRecord;
         private bool firstRecord;
+        private TimeSpan _warmUp = new TimeSpan(0, 10, 0);
 
         public ModbusLogger(IMonitorDataRepo dataService,
             ILogger<ModbusLogger> logger,
@@ -62,7 +66,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         .Select(e => new ItemStatus() { 
                             Item=e.DisplayName,
                             State=e.CurrentState.ToString(),
-                            Value=e.ChannelReading.ToString()
+                            Value= e.ChannelReading.ToString("N0")
                         
                         }).ToList();
                     await this._monitorHub.Clients.All.ShowCurrent(monitorData);
@@ -75,16 +79,19 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
 
         private async Task ProcessAnalogReadings(ushort[] raw, DateTime now) {
             List<AnalogReading> readings = new List<AnalogReading>();
-            foreach(var aItem in this._dataService.AnalogItems) {
+            foreach(var aItem in _dataService.AnalogItems) {
                 var reading = new AnalogReading();
                 reading.MonitorItemId = aItem._id;
+                double tempValue=0;
                 if (aItem.RegisterLength == 2) {
-                    reading.Value = Converters.ToInt32(raw[aItem.Register], raw[aItem.Register + 1])/aItem.Factor;
+                    tempValue = Converters.ToInt32(raw[aItem.Register], raw[aItem.Register + 1])/(double)aItem.Factor;
                 } else {
-                    reading.Value = raw[aItem.Register]/aItem.Factor;
-                }             
+                    tempValue= raw[aItem.Register]/(double)aItem.Factor;
+                }
+                this._filters[aItem._id]+=(tempValue-this._filters[aItem._id])*fweight;
+                reading.Value = this._filters[aItem._id];
                 readings.Add(reading);
-                var alert=this._dataService.MonitorAlerts.FirstOrDefault(e => e.ChannelId == aItem._id);
+                var alert=_dataService.MonitorAlerts.FirstOrDefault(e => e.ChannelId == aItem._id);
                 if (alert != null) {
                     ActionType state=ActionType.Okay;
                     if ((int)reading.Value <= aItem.Level3SetPoint) {
@@ -94,14 +101,14 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     } else if ((int)reading.Value <= aItem.Level1SetPoint) {
                         state = aItem.Level1Action;
                     }
-                    this._alerts.Add(new AlertRecord(alert,(float)reading.Value,state));
+                    _alerts.Add(new AlertRecord(alert,(float)reading.Value,state));
                 } else {
-                    this.LogError($"AnalogChannel: {aItem.Identifier} alert not found");
+                    LogError($"AnalogChannel: {aItem.Identifier} alert not found");
                 } 
             }
-            if (this.CheckSave(now, this.lastRecord)) {
-                this.lastRecord = now;
-                await this._dataService.InsertOneAsync(new AnalogReadings() {
+            if (CheckSave(now, lastRecord)) {
+                lastRecord = now;
+                await _dataService.InsertOneAsync(new AnalogReadings {
                     readings=readings.ToArray(),
                     timestamp=now
                 });
@@ -121,6 +128,19 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             await this._dataService.LoadAsync();
             await this._alertService.Load();
             this._device = this._dataService.ManagedDevice;
+            var analogReading = await this._dataService.GetLastAnalogReading();
+            foreach (var dev in this._dataService.AnalogItems) {
+                if (analogReading != null) {
+                    var reading = analogReading.readings.FirstOrDefault(e => e.MonitorItemId == dev._id);
+                    if (reading != null) {
+                        this._filters.Add(dev._id,reading.Value);
+                    } else {
+                        this._filters.Add(dev._id,0);
+                    }
+                } else {
+                    this._filters.Add(dev._id,0);
+                }
+            }
         }
 
         public async Task Reload() {

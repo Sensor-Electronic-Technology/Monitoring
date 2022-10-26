@@ -69,6 +69,7 @@ namespace MonitoringData.Infrastructure.Services {
                     if (vret.Item1 != null) {
                         await this._dataService.InsertOneAsync(vret.Item1);
                     }
+                    this.LogInformation("Data Recorded");
                 }
                 await this._alertService.ProcessAlerts(this._alerts,now);
             } else {
@@ -87,7 +88,7 @@ namespace MonitoringData.Infrastructure.Services {
 
         private Task ProcessAlertReadings(ushort[] raw, DateTime now) {
             List<AlertReading> alertReadings = new List<AlertReading>();
-            ConsoleTable table = new ConsoleTable("Name", "Register", "Value");
+            /*ConsoleTable table = new ConsoleTable("Name", "Register", "Value");*/
             foreach (var alert in this._dataService.MonitorAlerts) {
                 var alertReading = new AlertReading() {
                     MonitorItemId = alert._id,
@@ -95,10 +96,9 @@ namespace MonitoringData.Infrastructure.Services {
                 };
                 alertReadings.Add(alertReading);
                 this._alerts.Add(new AlertRecord(alert,alertReading.AlertState));
-                table.AddRow(alert.DisplayName, alert.Register,alertReading.AlertState.ToString());
+                /*table.AddRow(alert.DisplayName, alert.Register,alertReading.AlertState.ToString());*/
             }
-
-            Console.WriteLine(table.ToMinimalString());
+            /*Console.WriteLine(table.ToMinimalString());*/
             return Task.CompletedTask;
         }
 
@@ -110,7 +110,7 @@ namespace MonitoringData.Infrastructure.Services {
                     var analogReading = new AnalogReading() {
                         MonitorItemId = item._id, Value = (float)raw[item.Register] / item.Factor
                     };
-                    if (analogReading.Value >= item.RecordThreshold) {
+                    if (analogReading.Value >= item.RecordThreshold && item.Connected) {
                         record = true;
                     }
                     readings.Add(analogReading);
@@ -141,7 +141,7 @@ namespace MonitoringData.Infrastructure.Services {
                         MonitorItemId = item._id,
                         Value = raw[item.Register]
                     };
-                    if (reading.Value) {
+                    if (reading.Value && item.Connected) {
                         record = true;
                     }              
                     readings.Add(reading);
@@ -170,7 +170,7 @@ namespace MonitoringData.Infrastructure.Services {
                         MonitorItemId = item._id,
                         Value = raw[item.Register]
                     };
-                    if(reading.Value) {
+                    if(reading.Value && item.Connected) {
                         record = true;
                     }
                     readings.Add(reading);

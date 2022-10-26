@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
@@ -18,6 +19,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         Task InsertOneAsync(AnalogReadings readings);
         Task InsertOneAsync(DiscreteReadings readings);
         Task InsertOneAsync(VirtualReadings readings);
+        Task<AnalogReadings> GetLastAnalogReading();
         Task LoadAsync();
         Task ReloadAsync();
     }
@@ -79,6 +81,11 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
 
         public async Task InsertOneAsync(VirtualReadings readings) {
             await this._virtualReadings.InsertOneAsync(readings);
+        }
+
+        public async Task<AnalogReadings> GetLastAnalogReading() {
+            SortDefinition<AnalogReadings> sort="{ timestamp: -1 }";
+            return await this._analogReadings.Find(_=>true).Sort(sort).FirstOrDefaultAsync();
         }
 
         public async Task LoadAsync() {

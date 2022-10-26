@@ -7,6 +7,7 @@ namespace MonitoringSystem.Shared.Data.LogModel {
         public string DisplayName { get; set; }
         public ObjectId ChannelId { get; set; }
         public AlertItemType AlertItemType { get; set; }
+        public bool Display { get; set; }
         public bool Enabled { get; set; }
         public bool Bypassed { get; set; }
         public int BypassResetTime { get; set; }

@@ -1,0 +1,123 @@
+﻿@page "/h2plot"
+@using MonitoringWeb.WebAppV2.Data
+@using MonitoringWeb.WebAppV2.Services
+@inject PlotDataService PlotService
+@inject WebsiteConfigurationProvider ConfigurationProvider
+
+<h3>H2 Trailor PSI</h3>
+<div class="row" style="padding: 1rem">
+    <div class="row">
+        <DxFormLayout CssClass="w-100">
+            <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
+                <DxFormLayoutItem Caption="Start Date">
+                    <DxDateEdit Date="@StartDate" TimeSectionVisible="true" 
+                                DateChanged="@(async (DateTime newValue) =>await OnStartDateChange(newValue))" 
+                                CssClass="cw-320"/>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
+                <DxFormLayoutItem Caption="Stop Date">
+                    <DxDateEdit Date="@StopDate" TimeSectionVisible="true" 
+                                DateChanged="@(async (DateTime newValue) =>await OnStopDateChange(newValue))"
+                                CssClass="cw-320"/>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+        </DxFormLayout>
+    </div>
+    <div class="row text-center" style="padding:1rem">
+        <DxButton Click="@Submit" RenderStyle="ButtonRenderStyle.Primary"
+                  RenderStyleMode="ButtonRenderStyleMode.Contained"
+                  SizeMode="SizeMode.Large"
+                  Text="Fetch Plot"/>
+    </div>
+</div>
+<div class="row">
+    @if (this.PlotData == null) {
+        <div class="container-xl text-center" >                            
+            <button class="btn btn-light position-absolute top-50 start-50 translate-middle" disabled>
+                <span class="spinner-border spinner-border-sm"></span>
+                Loading...
+            </button>
+  
+        </div>
+    } else {
+        <DxChart Data="@PlotData"
+                 Width="100%"
+                 Height="100%">
+            <DxChartLegend AllowToggleSeries="true"
+                           Orientation="Orientation.Horizontal"
+                           VerticalAlignment="VerticalEdge.Top"
+                           HorizontalAlignment="HorizontalAlignment.Center"
+                           Position="RelativePosition.Outside">
+                <DxChartTitle Text="Detectors"> </DxChartTitle>
+            </DxChartLegend>
+            <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
+                                 ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
+                                 ValueField="@((AnalogReadingDto r) => (int)r.Value)">
+                <SeriesTemplate Context="settings">
+                    <DxChartLineSeries Settings="@settings">
+                        <DxChartSeriesLabel Visible="false"/>
+                        <DxChartSeriesPoint Visible="true"/>
+                        <DxChartAggregationSettings Enabled="false"
+                                                    Method="ChartAggregationMethod.Max"/>
+                    </DxChartLineSeries>
+                </SeriesTemplate>
+            </DxChartCommonSeries>
+            <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime" Type="ChartAxisType.Continuous">
+                <DxChartAxisRange StartValue="@StartDate"
+                                  EndValue="@StopDate"/>
+                
+            </DxChartArgumentAxis>
+            <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
+                <DxChartAxisRange StartValue="0" EndValue="3000"></DxChartAxisRange>
+                <DxChartAxisTitle Text="PSI"/>
+            </DxChartValueAxis>
+            <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
+            <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
+                                      ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
+            
+            <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
+                <div style="background-color: grey;">
+                    <div class="font-weight-bold">
+                        @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
+                    </div>
+                    <div>
+                        @((context.Point.Value))
+                    </div>
+                </div>
+            </DxChartTooltip>
+        </DxChart>
+    }
+</div>
+@code {
+    DateTime StartDate = DateTime.Now.AddDays(-3).ToLocalTime();
+    DateTime StopDate = DateTime.Now.AddDays(1).ToLocalTime();
+    IEnumerable<AnalogReadingDto>? PlotData { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        await this.Load();
+    }
+
+    private Task Submit() {
+        return Task.CompletedTask;
+    }
+
+    private async Task OnStartDateChange(DateTime newValue) {
+        this.StartDate = newValue;
+        await this.Load();
+    }
+    
+    private async Task OnStopDateChange(DateTime newValue) {
+        this.StopDate = newValue;
+        await this.Load();
+    }
+
+    private async Task Load() {
+        this.PlotData=null;
+        await InvokeAsync(StateHasChanged);
+        var start= this.StartDate;
+        var stop = this.StopDate;
+        this.PlotData=await this.PlotService.GetChannelData("epi1_data", "H2 PSI", start, stop);
+        await InvokeAsync(StateHasChanged);
+    }
+}

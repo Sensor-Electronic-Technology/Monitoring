@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
@@ -11,12 +12,14 @@ using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
+using Microsoft.ML;
+using Microsoft.ML.Data;
 
 namespace MonitoringSystem.ConsoleTesting; 
 
 public class CloneDatabase {
 
-    static async Task Main(string[] args) {
+    static void Main(string[] args) {
         //await CreateManagedDevice("nh3");
         //await CreateMongoDB("nh3");
         //await UpdateAlerts("gasbay");
@@ -27,64 +30,236 @@ public class CloneDatabase {
         await UpdateChannels("epi2");
         await UpdateChannels("gasbay");
         await UpdateChannels("nh3");*/
-        //await UpdateRegisters("gasbay");
+        /*await UpdateRegisters("epi1");
+        await UpdateRegisters("epi2");
+        await UpdateRegisters("gasbay");
+        await UpdateRegisters("nh3");*/
+        /*await UpdateAnalogAndSensors("epi1");
+        await UpdateAnalogAndSensors("epi2");
+        await UpdateAnalogAndSensors("gasbay");
+        await UpdateAnalogAndSensors("nh3");*/
+
+        /*await UpdateAlertDisplayMongo("epi1");
+        await UpdateAlertDisplayMongo("epi2");
+        await UpdateAlertDisplayMongo("nh3");
+        await UpdateAlertDisplayMongo("gasbay");*/
+
+        //await ReCreateTimeSeries("epi1");
+        /*await ReCreateTimeSeries("epi2");
+        await ReCreateTimeSeries("nh3");
+        await ReCreateTimeSeries("gasbay");*/
+        /*var client = new MongoClient("mongodb://172.20.3.41");
+        var databaseName = $"nh3_data";
+        var database = client.GetDatabase(databaseName);
+        var readingsCollection = database.GetCollection<AnalogReadings>("analog_readings");
+        SortDefinition<AnalogReadings> sort="{ timestamp: -1 }";
+
+        var readings = readingsCollection.Find(_=>true).Sort(sort).FirstOrDefault();
+        Console.WriteLine($"Reading: {readings.timestamp.ToLocalTime()}");*/
+        var dataPath = @"C:\Users\aelmendo\Downloads\Sensor Electronic Technology Columbia SC Tube Trailer HYD   readings 2022-10-26T17_08_00-04_00.csv";
+        var mlContext = new MLContext();
+        var loader = mlContext.Data.CreateTextLoader(new[]
+            {
+                new TextLoader.Column("Time", DataKind.DateTime,0),
+                new TextLoader.Column("PSI", DataKind.Single, 1),
+            },
+            hasHeader: true,
+            separatorChar: ',');
+        var data = loader.Load(dataPath);
+        var forecastingPipeline = mlContext.Forecasting.ForecastBySsa(
+            outputColumnName: "ForcastedPSI",
+            inputColumnName: "PSI",
+            windowSize: 3,
+            seriesLength: 5,
+            trainSize: 365,
+            horizon: 7,
+            confidenceLevel: 0.95f,
+            confidenceLowerBoundColumn: "LowerBoundPSI",
+            confidenceUpperBoundColumn: "UpperBoundPSI");
+        var forecaster = forecastingPipeline.Fit(data);
+        Evaluate(data, forecaster, mlContext);
+
+    }
+    
+    static void Evaluate(IDataView testData, ITransformer model, MLContext mlContext)
+    {
+        // Make predictions
+        IDataView predictions = model.Transform(testData);
+
+        // Actual values
+        IEnumerable<float> actual =
+            mlContext.Data.CreateEnumerable<ModelInput>(testData, true)
+                .Select(observed => observed.PSI);
+
+        // Predicted values
+        IEnumerable<float> forecast =
+            mlContext.Data.CreateEnumerable<ModelOutput>(predictions, true)
+                .Select(prediction => prediction.ForcastedPSI[0]);
+
+        // Calculate error (actual - forecast)
+        var metrics = actual.Zip(forecast, (actualValue, forecastValue) => actualValue - forecastValue);
+
+        // Get metric averages
+        var MAE = metrics.Average(error => Math.Abs(error)); // Mean Absolute Error
+        var RMSE = Math.Sqrt(metrics.Average(error => Math.Pow(error, 2))); // Root Mean Squared Error
+
+        // Output metrics
+        Console.WriteLine("Evaluation Metrics");
+        Console.WriteLine("---------------------");
+        Console.WriteLine($"Mean Absolute Error: {MAE:F3}");
+        Console.WriteLine($"Root Mean Squared Error: {RMSE:F3}\n");
+    }
+
+    static async Task ReCreateTimeSeries(string deviceName) {
         await using var context = new MonitorContext();
         var client = new MongoClient("mongodb://172.20.3.41");
-        var database = client.GetDatabase($"monitor_settings_dev");
-        var collection = database.GetCollection<ManagedDevice>("monitor_devices");
-        foreach (var device in context.Devices.ToList()) {
-            var filter = Builders<ManagedDevice>.Filter.Eq(e => e.DeviceName, device.Name);
-            var update = Builders<ManagedDevice>.Update.Set(e => e.DeviceId, device.Id.ToString());
-            var result=await collection.UpdateOneAsync(filter, update);
-            Console.WriteLine(result.IsAcknowledged);
-        }
+        var databaseName = $"{deviceName}_data_dev";
+        var database = client.GetDatabase(databaseName);
+
+        Console.WriteLine("Deleting TimeSeries");
+        await database.DropCollectionAsync("analog_readings");
+        await database.DropCollectionAsync("discrete_readings");
+        await database.DropCollectionAsync("virtual_readings");
+        await database.DropCollectionAsync("alert_readings");
+
+        Console.WriteLine("Creating TimeSeries");
+        await database.CreateCollectionAsync("analog_readings",
+            new CreateCollectionOptions() {
+                TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+            });
+
+        await database.CreateCollectionAsync("discrete_readings",
+            new CreateCollectionOptions() {
+                TimeSeriesOptions = new TimeSeriesOptions("timestamp",granularity: TimeSeriesGranularity.Seconds)
+            });
+
+        await database.CreateCollectionAsync("virtual_readings",
+            new CreateCollectionOptions() {
+                TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+            });
+                
+        await database.CreateCollectionAsync("alert_readings",
+            new CreateCollectionOptions() {
+                TimeSeriesOptions = new TimeSeriesOptions("timestamp",granularity: TimeSeriesGranularity.Seconds)
+            });
         Console.WriteLine("Check Database");
     }
     
-    static async Task UpdateRegisters(string deviceName) {
-        await using var context = new MonitorContext();
-        var client = new MongoClient("mongodb://172.20.3.41");
-        var database = client.GetDatabase($"{deviceName}_data_dev");
-        var alertCollection = database.GetCollection<MonitorAlert>("alert_items");
-        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
-        var discreteCollection = database.GetCollection<DiscreteItem>("discrete_items");
-        var virtualCollection = database.GetCollection<VirtualItem>("virtual_items");
-
-        var inputs =await context.Channels
-            .OfType<InputChannel>()
-            .Include(e => e.ModbusDevice)
-            .Include(e => e.Alert)
-            .Where(e => e.ModbusDevice.Name == deviceName.ToLower())
-            .ToListAsync();
-       
-        foreach (var input in inputs) {
-            var filter = Builders<MonitorAlert>.Filter.Eq(e => e.EntityId, input.Alert?.Id.ToString());
-            var update = Builders<MonitorAlert>.Update
-                .Set(e => e.Register, input.Alert.ModbusAddress.Address);
-            await alertCollection.UpdateOneAsync(filter, update);
-            switch (input) {
-                case AnalogInput: {
-                    var chfilter = Builders<AnalogItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
-                    var chUpdate = Builders<AnalogItem>.Update.Set(e => e.Register, input.ModbusAddress.Address);
-                    await analogCollection.UpdateOneAsync(chfilter, chUpdate);
-                    break;
-                }
-                case DiscreteInput: {
-                    var chfilter = Builders<DiscreteItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
-                    var chUpdate = Builders<DiscreteItem>.Update.Set(e => e.Register, input.ModbusAddress.Address);
-                    await discreteCollection.UpdateOneAsync(chfilter, chUpdate);
-                    break;
-                }
-                case VirtualInput: {
-                    var chfilter = Builders<VirtualItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
-                    var chUpdate = Builders<VirtualItem>.Update.Set(e => e.Register, input.ModbusAddress.Address);
-                    await virtualCollection.UpdateOneAsync(chfilter, chUpdate);
-                    break;
-                }
+    static async Task UpdateAnalogAndSensors(string deviceName) {
+    await using var context = new MonitorContext();
+    var client = new MongoClient("mongodb://172.20.3.41");
+    var databaseName = $"{deviceName}_data_dev";
+    var database = client.GetDatabase(databaseName);
+    var settingsDatabase = client.GetDatabase("monitor_settings_dev");
+    var deviceCollection = settingsDatabase.GetCollection<ManagedDevice>("monitor_devices");
+    var sensorCollection = settingsDatabase.GetCollection<SensorType>("sensor_types");
+    var alertCollection = database.GetCollection<MonitorAlert>("alert_items");
+    var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+    var discreteCollection = database.GetCollection<DiscreteItem>("discrete_items");
+    var virtualCollection = database.GetCollection<VirtualItem>("virtual_items");
+    var device= await deviceCollection.Find(e => e.DatabaseName == databaseName).FirstOrDefaultAsync();
+    if (device != null) {
+        var deviceIds =  analogCollection.AsQueryable<AnalogItem>()
+            .Select(e => e.SensorId)
+            .Distinct()
+            .ToList();
+        foreach (var id in deviceIds) {
+            if (!device.SensorTypes.Contains(id) && id.ToString()!="000000000000000000000000") {
+                device.SensorTypes.Add(id);
+                var filter=Builders<ManagedDevice>.Filter.Eq(e => e._id, device._id);
+                var update=Builders<ManagedDevice>.Update.Set(e => e.SensorTypes, device.SensorTypes);
+                await deviceCollection.UpdateOneAsync(filter, update);
+                Console.WriteLine($"Adding {id.ToString()}");
             }
         }
-        Console.WriteLine("Check Database");
+    } else {
+        Console.WriteLine($"Device Not Found: {databaseName}");
     }
+
+
+
+    var sensors = await context.Sensors.ToListAsync();
+    var analogInputs =await context.Channels
+        .OfType<AnalogInput>()
+        .Include(e => e.ModbusDevice)
+        .Include(e => e.Alert)
+        .Include(e=>e.Sensor)
+        .Where(e => e.ModbusDevice.Name == deviceName.ToLower())
+        .ToListAsync();
+    
+    
+    
+    foreach (var sensor in sensors) {
+        /*var filter = Builders<SensorType>.Filter
+            .Eq(e => e.EntityId, sensor.Id.ToString());
+        var update = Builders<SensorType>.Update
+            .Set(e => e.YAxisStart, sensor.YAxisMin)
+            .Set(e => e.YAxisStop, sensor.YAxitMax)
+            .Set(e => e.Units, sensor.Units);
+        await sensorCollection.UpdateOneAsync(filter, update);
+        var updated = await sensorCollection.Find(e => e.EntityId == sensor.Id.ToString()).FirstOrDefaultAsync();
+        if (updated != null) {
+            Console.WriteLine($"Updated Sensor: {updated.Name} Units: {updated.Units}");
+        } else {
+            Console.WriteLine($"{sensor.Name} Not Found.  Id: {sensor.Id.ToString()}");
+        }*/
+        
+        var inputs = analogInputs.Where(e => e.SensorId == sensor.Id).ToList();
+
+        foreach(var input in inputs) {
+            var chfilter = Builders<AnalogItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
+            var chUpdate = Builders<AnalogItem>.Update.Set(e => e.RecordThreshold,sensor.RecordThreshold);
+            await analogCollection.UpdateOneAsync(chfilter, chUpdate);
+            Console.WriteLine($"AnalogItem Updated: {input.DisplayName}");
+        }
+    }
+    Console.WriteLine("Check Database");
+}
+    
+    static async Task UpdateRegisters(string deviceName) {
+    await using var context = new MonitorContext();
+    var client = new MongoClient("mongodb://172.20.3.41");
+    var database = client.GetDatabase($"{deviceName}_data_dev");
+    var alertCollection = database.GetCollection<MonitorAlert>("alert_items");
+    var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+    var discreteCollection = database.GetCollection<DiscreteItem>("discrete_items");
+    var virtualCollection = database.GetCollection<VirtualItem>("virtual_items");
+
+    var inputs =await context.Channels
+        .OfType<InputChannel>()
+        .Include(e => e.ModbusDevice)
+        .Include(e => e.Alert)
+        .Where(e => e.ModbusDevice.Name == deviceName.ToLower())
+        .ToListAsync();
+   
+    foreach (var input in inputs) {
+        var filter = Builders<MonitorAlert>.Filter.Eq(e => e.EntityId, input.Alert?.Id.ToString());
+        var update = Builders<MonitorAlert>.Update
+            .Set(e => e.Register, input.Alert.ModbusAddress.Address);
+        await alertCollection.UpdateOneAsync(filter, update);
+        switch (input) {
+            case AnalogInput: {
+                var chfilter = Builders<AnalogItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
+                var chUpdate = Builders<AnalogItem>.Update.Set(e => e.Connected, input.Connected);
+                await analogCollection.UpdateOneAsync(chfilter, chUpdate);
+                break;
+            }
+            case DiscreteInput: {
+                var chfilter = Builders<DiscreteItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
+                var chUpdate = Builders<DiscreteItem>.Update.Set(e => e.Connected, input.Connected);
+                await discreteCollection.UpdateOneAsync(chfilter, chUpdate);
+                break;
+            }
+            case VirtualInput: {
+                var chfilter = Builders<VirtualItem>.Filter.Eq(e => e.ItemId, input.Id.ToString());
+                var chUpdate = Builders<VirtualItem>.Update.Set(e => e.Connected, true);
+                await virtualCollection.UpdateOneAsync(chfilter, chUpdate);
+                break;
+            }
+        }
+    }
+    Console.WriteLine("Check Database");
+}
 
     static async Task UpdateAlertNames(string deviceName) {
         var client = new MongoClient("mongodb://172.20.3.41");
@@ -139,6 +314,36 @@ public class CloneDatabase {
         context.UpdateRange(inputs);
         await context.SaveChangesAsync();
         Console.WriteLine($"Check {deviceName} database");
+    }
+    
+    static async Task UpdateAlertDisplayMongo(string deviceName) {
+        await using var context = new MonitorContext();
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase($"{deviceName}_data_dev");
+        var alertCollection = database.GetCollection<MonitorAlert>("alert_items");
+        
+        var inputs =await context.Channels
+            .OfType<InputChannel>()
+            .Include(e => e.ModbusDevice)
+            .Include(e => e.Alert)
+            .Where(e => e.ModbusDevice.Name == deviceName.ToLower())
+            .ToListAsync();
+       
+        foreach (var input in inputs) {
+            AlertItemType itemType = AlertItemType.Discrete;
+            if (typeof(AnalogInput) == input.GetType()) {
+                itemType = AlertItemType.Analog;
+            }else if (typeof(DiscreteInput) == input.GetType()) {
+                itemType = AlertItemType.Discrete;
+            }else if (typeof(VirtualInput) == input.GetType()) {
+                itemType = AlertItemType.Virtual;
+            }
+            var filter = Builders<MonitorAlert>.Filter.Eq(e => e.EntityId, input.Alert?.Id.ToString());
+            var update = Builders<MonitorAlert>.Update
+                .Set(e => e.Display, input.Alert?.Enabled);
+            await alertCollection.UpdateOneAsync(filter, update);
+        }
+        Console.WriteLine("Check Database");
     }
 
     static async Task UpdateAlertsMongo(string deviceName) {
@@ -447,5 +652,20 @@ public class CloneDatabase {
 
         }
     }
+}
+
+public class ModelInput
+{
+    public DateTime Time { get; set; }
+    public float PSI { get; set; }
+}
+
+public class ModelOutput
+{
+    public float[] ForcastedPSI { get; set; }
+
+    public float[] LowerBoundPSI { get; set; }
+
+    public float[] UpperBoundPSI { get; set; }
 }
 
