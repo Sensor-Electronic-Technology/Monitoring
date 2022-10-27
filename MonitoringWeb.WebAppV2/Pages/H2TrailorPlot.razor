@@ -5,32 +5,39 @@
 @inject WebsiteConfigurationProvider ConfigurationProvider
 
 <h3>H2 Trailor PSI</h3>
+
 <div class="row" style="padding: 1rem">
-    <div class="row">
-        <DxFormLayout CssClass="w-100">
-            <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
-                <DxFormLayoutItem Caption="Start Date">
-                    <DxDateEdit Date="@StartDate" TimeSectionVisible="true" 
-                                DateChanged="@(async (DateTime newValue) =>await OnStartDateChange(newValue))" 
-                                CssClass="cw-320"/>
-                </DxFormLayoutItem>
-            </DxFormLayoutGroup>
-            <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
-                <DxFormLayoutItem Caption="Stop Date">
-                    <DxDateEdit Date="@StopDate" TimeSectionVisible="true" 
-                                DateChanged="@(async (DateTime newValue) =>await OnStopDateChange(newValue))"
-                                CssClass="cw-320"/>
-                </DxFormLayoutItem>
-            </DxFormLayoutGroup>
-        </DxFormLayout>
-    </div>
-    <div class="row text-center" style="padding:1rem">
-        <DxButton Click="@Submit" RenderStyle="ButtonRenderStyle.Primary"
-                  RenderStyleMode="ButtonRenderStyleMode.Contained"
-                  SizeMode="SizeMode.Large"
-                  Text="Fetch Plot"/>
+    <div class="accordion" id="accordionExample">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                    Custom Date Range
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    <DxFormLayout CssClass="w-100 accordion-body">
+                        <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
+                            <DxFormLayoutItem Caption="Start Date">
+                                <DxDateEdit Date="@StartDate" TimeSectionVisible="true" 
+                                            DateChanged="@(async (DateTime newValue) =>await OnStartDateChange(newValue))" 
+                                            CssClass="cw-320"/>
+                            </DxFormLayoutItem>
+                        </DxFormLayoutGroup>
+                        <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
+                            <DxFormLayoutItem Caption="Stop Date">
+                                <DxDateEdit Date="@StopDate" TimeSectionVisible="true" 
+                                            DateChanged="@(async (DateTime newValue) =>await OnStopDateChange(newValue))"
+                                            CssClass="cw-320"/>
+                            </DxFormLayoutItem>
+                        </DxFormLayoutGroup>
+                    </DxFormLayout>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
 <div class="row">
     @if (this.PlotData == null) {
         <div class="container-xl text-center" >                            
@@ -38,7 +45,6 @@
                 <span class="spinner-border spinner-border-sm"></span>
                 Loading...
             </button>
-  
         </div>
     } else {
         <DxChart Data="@PlotData"
@@ -58,7 +64,7 @@
                     <DxChartLineSeries Settings="@settings">
                         <DxChartSeriesLabel Visible="false"/>
                         <DxChartSeriesPoint Visible="true"/>
-                        <DxChartAggregationSettings Enabled="false"
+                        <DxChartAggregationSettings Enabled="true"
                                                     Method="ChartAggregationMethod.Max"/>
                     </DxChartLineSeries>
                 </SeriesTemplate>
@@ -90,7 +96,7 @@
     }
 </div>
 @code {
-    DateTime StartDate = DateTime.Now.AddDays(-3).ToLocalTime();
+    DateTime StartDate = DateTime.Now.AddDays(-2).ToLocalTime();
     DateTime StopDate = DateTime.Now.AddDays(1).ToLocalTime();
     IEnumerable<AnalogReadingDto>? PlotData { get; set; }
 
