@@ -7,97 +7,101 @@
 <h3>H2 Trailor PSI</h3>
 
 <div class="row" style="padding: 1rem">
-    <div class="accordion" id="accordionExample">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="headingOne">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                    Custom Date Range
-                </button>
-            </h2>
-            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-                <div class="accordion-body">
-                    <DxFormLayout CssClass="w-100 accordion-body">
-                        <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
-                            <DxFormLayoutItem Caption="Start Date">
-                                <DxDateEdit Date="@StartDate" TimeSectionVisible="true" 
-                                            DateChanged="@(async (DateTime newValue) =>await OnStartDateChange(newValue))" 
-                                            CssClass="cw-320"/>
-                            </DxFormLayoutItem>
-                        </DxFormLayoutGroup>
-                        <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
-                            <DxFormLayoutItem Caption="Stop Date">
-                                <DxDateEdit Date="@StopDate" TimeSectionVisible="true" 
-                                            DateChanged="@(async (DateTime newValue) =>await OnStopDateChange(newValue))"
-                                            CssClass="cw-320"/>
-                            </DxFormLayoutItem>
-                        </DxFormLayoutGroup>
-                    </DxFormLayout>
-                </div>
+    <DxFormLayout CssClass="w-100 accordion-body">
+        <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
+            <DxFormLayoutItem Caption="Start Date">
+                <DxDateEdit Date="@StartDate" TimeSectionVisible="true" 
+                            DateChanged="@(async (DateTime newValue) =>await OnStartDateChange(newValue))" 
+                            CssClass="cw-320"/>
+            </DxFormLayoutItem>
+        </DxFormLayoutGroup>
+        <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
+            <DxFormLayoutItem Caption="Stop Date">
+                <DxDateEdit Date="@StopDate" TimeSectionVisible="true" 
+                            DateChanged="@(async (DateTime newValue) =>await OnStopDateChange(newValue))"
+                            CssClass="cw-320"/>
+            </DxFormLayoutItem>
+        </DxFormLayoutGroup>
+    </DxFormLayout>
+</div>
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                @foreach (PlotRange range in Enum.GetValues(typeof(PlotRange)).Cast<PlotRange>().ToList()) {
+
+                    <DxButton RenderStyle="ButtonRenderStyle.Light"
+                              Text="@Enum.GetName(range).Substring(1)"
+                              Click="@(async Task (arg) => { await this.OnClick(range); })"/>
+                }
             </div>
         </div>
     </div>
+    <div class="card-body">
+            @if (this.PlotData == null) {
+                <div class="container-xl text-center" >                            
+                    <button class="btn btn-light position-absolute top-50 start-50 translate-middle" disabled>
+                        <span class="spinner-border spinner-border-sm"></span>
+                        Loading...
+                    </button>
+                </div>
+            } else {
+                <DxChart Data="@PlotData"
+                         Width="100%"
+                         Height="100%">
+                    <DxChartLegend AllowToggleSeries="true"
+                                   Orientation="Orientation.Horizontal"
+                                   VerticalAlignment="VerticalEdge.Top"
+                                   HorizontalAlignment="HorizontalAlignment.Center"
+                                   Position="RelativePosition.Outside">
+                        <DxChartTitle Text="Detectors"> </DxChartTitle>
+                    </DxChartLegend>
+                    <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
+                                         ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
+                                         ValueField="@((AnalogReadingDto r) => (int)r.Value)">
+                        <SeriesTemplate Context="settings">
+                            <DxChartLineSeries Settings="@settings">
+                                <DxChartSeriesLabel Visible="false"/>
+                                <DxChartSeriesPoint Visible="true"/>
+                                <DxChartAggregationSettings Enabled="true"
+                                                            Method="ChartAggregationMethod.Min"/>
+                            </DxChartLineSeries>
+                        </SeriesTemplate>
+                    </DxChartCommonSeries>
+                    <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime" Type="ChartAxisType.Continuous">
+                        <DxChartAxisRange StartValue="@this.PlotStart"
+                                          EndValue="@this.PlotStop"/>
+                                
+                    </DxChartArgumentAxis>
+                    <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
+                        <DxChartAxisRange StartValue="0" EndValue="3000"></DxChartAxisRange>
+                        <DxChartAxisTitle Text="PSI"/>
+                    </DxChartValueAxis>
+                    <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
+                    <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
+                                              ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
+                            
+                    <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
+                        <div style="background-color: grey;">
+                            <div class="font-weight-bold">
+                                @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
+                            </div>
+                            <div>
+                                @((context.Point.Value))
+                            </div>
+                        </div>
+                    </DxChartTooltip>
+                </DxChart>
+            }
+    </div>
+
 </div>
 
-<div class="row">
-    @if (this.PlotData == null) {
-        <div class="container-xl text-center" >                            
-            <button class="btn btn-light position-absolute top-50 start-50 translate-middle" disabled>
-                <span class="spinner-border spinner-border-sm"></span>
-                Loading...
-            </button>
-        </div>
-    } else {
-        <DxChart Data="@PlotData"
-                 Width="100%"
-                 Height="100%">
-            <DxChartLegend AllowToggleSeries="true"
-                           Orientation="Orientation.Horizontal"
-                           VerticalAlignment="VerticalEdge.Top"
-                           HorizontalAlignment="HorizontalAlignment.Center"
-                           Position="RelativePosition.Outside">
-                <DxChartTitle Text="Detectors"> </DxChartTitle>
-            </DxChartLegend>
-            <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
-                                 ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
-                                 ValueField="@((AnalogReadingDto r) => (int)r.Value)">
-                <SeriesTemplate Context="settings">
-                    <DxChartLineSeries Settings="@settings">
-                        <DxChartSeriesLabel Visible="false"/>
-                        <DxChartSeriesPoint Visible="true"/>
-                        <DxChartAggregationSettings Enabled="true"
-                                                    Method="ChartAggregationMethod.Max"/>
-                    </DxChartLineSeries>
-                </SeriesTemplate>
-            </DxChartCommonSeries>
-            <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime" Type="ChartAxisType.Continuous">
-                <DxChartAxisRange StartValue="@StartDate"
-                                  EndValue="@StopDate"/>
-                
-            </DxChartArgumentAxis>
-            <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
-                <DxChartAxisRange StartValue="0" EndValue="3000"></DxChartAxisRange>
-                <DxChartAxisTitle Text="PSI"/>
-            </DxChartValueAxis>
-            <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
-            <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
-                                      ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
-            
-            <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
-                <div style="background-color: grey;">
-                    <div class="font-weight-bold">
-                        @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
-                    </div>
-                    <div>
-                        @((context.Point.Value))
-                    </div>
-                </div>
-            </DxChartTooltip>
-        </DxChart>
-    }
-</div>
 @code {
-    DateTime StartDate = DateTime.Now.AddDays(-2).ToLocalTime();
+    DateTime StartDate = DateTime.Now.AddDays(-1).ToLocalTime();
     DateTime StopDate = DateTime.Now.AddDays(1).ToLocalTime();
+    DateTime PlotStart;
+    DateTime PlotStop;
     IEnumerable<AnalogReadingDto>? PlotData { get; set; }
 
     protected override async Task OnInitializedAsync() {
@@ -112,10 +116,18 @@
         this.StartDate = newValue;
         await this.Load();
     }
-    
+
     private async Task OnStopDateChange(DateTime newValue) {
         this.StopDate = newValue;
         await this.Load();
+    }
+
+
+    private async Task OnClick(PlotRange range) {
+        this.StartDate = DateTime.Now.AddDays(-(int)range);
+        this.StopDate = DateTime.Now.AddDays((int)range);
+        await this.Load();
+
     }
 
     private async Task Load() {
@@ -124,6 +136,8 @@
         var start= this.StartDate;
         var stop = this.StopDate;
         this.PlotData=await this.PlotService.GetChannelData("epi1_data", "H2 PSI", start, stop);
+        this.PlotStart = this.StartDate;
+        this.PlotStop = this.StopDate;
         await InvokeAsync(StateHasChanged);
     }
 }
