@@ -5,10 +5,12 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using MailKit.Net.Smtp;
 using MimeKit;
 using MongoDB.Bson;
@@ -58,7 +60,40 @@ namespace MonitoringSystem.ConsoleTesting {
             await Task.Delay(1000);#1#
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
-            
+            await WriteOutAnalogFile("epi1", new DateTime(2022, 10, 24), DateTime.Now, @"C:\MonitorFiles\analogreadings.csv");
+            var client = new MongoClient("mongodb:");
+
+        }
+        
+        static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase(deviceName + "_data");
+
+            var analogItems = database.GetCollection<AnalogItem>("analog_items").Find(_ => true).ToList();
+            var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+            Console.WriteLine("Starting query");
+            var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+            var headers = analogItems.Select(e => e.Identifier).ToList();
+            StringBuilder hbuilder = new StringBuilder();
+            hbuilder.Append("timestamp,");
+            headers.ForEach((id) => {
+                hbuilder.Append(id+",");
+            });
+            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
+            List<string> lines = new List<string>();
+            lines.Add(hbuilder.ToString());
+            foreach(var readings in aReadings) {
+                StringBuilder builder = new StringBuilder();
+                builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
+                foreach(var reading in readings.readings) {
+                    builder.Append($"{reading.Value},");
+                }
+                lines.Add(builder.ToString());
+            }
+            Console.WriteLine("Writing Out Data");
+            File.WriteAllLines(fileName, lines);
+            Console.WriteLine("Check File");
         }
 
         static async Task DtoTesting() {
