@@ -1,4 +1,4 @@
-﻿@page "/h2plot"
+﻿@page "/nh3plot"
 @using MonitoringWeb.WebAppV2.Data
 @using MonitoringWeb.WebAppV2.Services
 @using DevExpress;
@@ -6,10 +6,9 @@
 @inject WebsiteConfigurationProvider ConfigurationProvider
 
 
-<h3 class="text-center">H2 Trailor PSI</h3>
+<h3 class="text-center">NH3 Tank(s) Plot</h3>
 
 <div class="row" style="padding: 1rem">
-
     <DxFormLayout>
         <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
             <DxFormLayoutItem Caption="Start Date">
@@ -77,8 +76,8 @@
                                 
                     </DxChartArgumentAxis>
                     <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
-                        <DxChartAxisRange StartValue="0" EndValue="3000"></DxChartAxisRange>
-                        <DxChartAxisTitle Text="PSI"/>
+                        <DxChartAxisRange StartValue="0" EndValue="1000"></DxChartAxisRange>
+                        <DxChartAxisTitle Text="lb"/>
                     </DxChartValueAxis>
                     <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
                     <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
@@ -138,7 +137,10 @@
         await InvokeAsync(StateHasChanged);
         var start= this.StartDate;
         var stop = this.StopDate;
-        this.PlotData=await this.PlotService.GetChannelData("epi1_data", "H2 PSI", start, stop);
+        List<AnalogReadingDto> data = new List<AnalogReadingDto>();
+        data.AddRange(await this.PlotService.GetChannelData("nh3_data", "Tank1 Weight", start, stop));
+        data.AddRange(await this.PlotService.GetChannelData("nh3_data", "Tank2 Weight", start, stop));
+        this.PlotData = data.AsEnumerable();
         this.PlotStart = this.StartDate;
         this.PlotStop = this.StopDate;
         await InvokeAsync(StateHasChanged);

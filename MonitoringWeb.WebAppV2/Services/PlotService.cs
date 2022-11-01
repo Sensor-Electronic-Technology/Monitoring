@@ -38,7 +38,7 @@ public class PlotDataService {
             }
             return analogReadings;
         }
-        
+
         public async Task<IEnumerable<AnalogReadingDto>> GetChannelData(string deviceData,string chName,DateTime start, DateTime stop) {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase(deviceData);
@@ -50,7 +50,6 @@ public class PlotDataService {
             while (await cursor.MoveNextAsync()){
                 var batch = cursor.Current;
                 foreach (var readings in batch){
-
                     var reading =readings.readings.FirstOrDefault(e=>e.MonitorItemId==h2psi._id);
                     if (reading != null) {
                         var aReading=new AnalogReadingDto(){

@@ -1,4 +1,4 @@
-﻿@page "/h2plot"
+﻿@page "/n2plot"
 @using MonitoringWeb.WebAppV2.Data
 @using MonitoringWeb.WebAppV2.Services
 @using DevExpress;
@@ -6,7 +6,7 @@
 @inject WebsiteConfigurationProvider ConfigurationProvider
 
 
-<h3 class="text-center">H2 Trailor PSI</h3>
+<h3 class="text-center">N2 inH2O</h3>
 
 <div class="row" style="padding: 1rem">
 
@@ -77,8 +77,8 @@
                                 
                     </DxChartArgumentAxis>
                     <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
-                        <DxChartAxisRange StartValue="0" EndValue="3000"></DxChartAxisRange>
-                        <DxChartAxisTitle Text="PSI"/>
+                        <DxChartAxisRange StartValue="0" EndValue="200"></DxChartAxisRange>
+                        <DxChartAxisTitle Text="inH20"/>
                     </DxChartValueAxis>
                     <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
                     <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
@@ -138,7 +138,7 @@
         await InvokeAsync(StateHasChanged);
         var start= this.StartDate;
         var stop = this.StopDate;
-        this.PlotData=await this.PlotService.GetChannelData("epi1_data", "H2 PSI", start, stop);
+        this.PlotData=await this.PlotService.GetChannelData("epi1_data", "N2 inH20", start, stop);
         this.PlotStart = this.StartDate;
         this.PlotStop = this.StopDate;
         await InvokeAsync(StateHasChanged);
