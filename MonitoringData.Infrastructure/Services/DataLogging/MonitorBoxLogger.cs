@@ -15,7 +15,7 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly ILogger _logger;
 
         private ManagedDevice _device;
-        private bool loggingEnabled = false;
+        private bool _loggingEnabled = false;
         private IList<AlertRecord> _alerts;
 
         private DateTime _lastRecord;
@@ -24,7 +24,9 @@ namespace MonitoringData.Infrastructure.Services {
 
         private DateTime _boxOfflineTime;
         private bool _offlineLatch = false;
-        private readonly int _alertTime = 60;
+
+        private readonly int ThresholdInterval = 30;
+
         
         public MonitorBoxLogger(IMonitorDataRepo dataService,
             ILogger<MonitorBoxLogger> logger, 
@@ -34,7 +36,7 @@ namespace MonitoringData.Infrastructure.Services {
             this._alertService = alertService;
             this._logger = logger;
             this._modbusService = modbusService;
-            this.loggingEnabled = true;
+            this._loggingEnabled = true;
             this._firstRecord = true;
         }
         
@@ -54,20 +56,20 @@ namespace MonitoringData.Infrastructure.Services {
                     (this._device.ChannelMapping.VirtualStop - this._device.ChannelMapping.VirtualStart) + 1).ToArray();
                 this._alerts = new List<AlertRecord>();
                 await this.ProcessAlertReadings(alertsRaw, now);
-                var aret=await this.ProcessAnalogReadings(analogRaw, now);
-                var dret=await this.ProcessDiscreteReadings(discreteRaw, now);
-                var vret=await this.ProcessVirtualReadings(virtualRaw, now);
+                var analogProcessed=await this.ProcessAnalogReadings(analogRaw, now);
+                var discreteProcessed=await this.ProcessDiscreteReadings(discreteRaw, now);
+                var virtualProcessed=await this.ProcessVirtualReadings(virtualRaw, now);
                 
-                if(CheckSave(now,this._lastRecord,(aret.Item2 || dret.Item2 || vret.Item2))) {
+                if(CheckSave(now,(analogProcessed.Item2 || discreteProcessed.Item2 || virtualProcessed.Item2))) {
                     this._lastRecord = now;
-                    if (aret.Item1 != null) {
-                        await this._dataService.InsertOneAsync(aret.Item1);
+                    if (analogProcessed.Item1 != null) {
+                        await this._dataService.InsertOneAsync(analogProcessed.Item1);
                     }
-                    if (dret.Item1 != null) {
-                        await this._dataService.InsertOneAsync(dret.Item1);
+                    if (discreteProcessed.Item1 != null) {
+                        await this._dataService.InsertOneAsync(discreteProcessed.Item1);
                     }
-                    if (vret.Item1 != null) {
-                        await this._dataService.InsertOneAsync(vret.Item1);
+                    if (virtualProcessed.Item1 != null) {
+                        await this._dataService.InsertOneAsync(virtualProcessed.Item1);
                     }
                     this.LogInformation("Data Recorded");
                 }
@@ -101,7 +103,7 @@ namespace MonitoringData.Infrastructure.Services {
             /*Console.WriteLine(table.ToMinimalString());*/
             return Task.CompletedTask;
         }
-
+        
         private Task<Tuple<AnalogReadings,bool>> ProcessAnalogReadings(ushort[] raw, DateTime now) {
             if (this._dataService.AnalogItems.Count == raw.Length) {
                 List<AnalogReading> readings = new List<AnalogReading>();
@@ -110,9 +112,14 @@ namespace MonitoringData.Infrastructure.Services {
                     var analogReading = new AnalogReading() {
                         MonitorItemId = item._id, Value = (float)raw[item.Register] / item.Factor
                     };
-                    if (analogReading.Value >= item.RecordThreshold && item.Connected) {
-                        record = true;
+                    if (item.Connected) {
+                        var thresholdMet=(item.ValueDirection==ValueDirection.Increasing) ? 
+                            (analogReading.Value >= item.RecordThreshold):(analogReading.Value<=item.RecordThreshold);
+                        record= thresholdMet && ((now - this._lastRecord).TotalSeconds >= item.ThresholdInterval);
+                    } else {
+                        record = false;
                     }
+                    
                     readings.Add(analogReading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
@@ -141,9 +148,9 @@ namespace MonitoringData.Infrastructure.Services {
                         MonitorItemId = item._id,
                         Value = raw[item.Register]
                     };
-                    if (reading.Value && item.Connected) {
-                        record = true;
-                    }              
+                    record = item.Connected && reading.Value &&
+                             ((now - this._lastRecord).TotalSeconds >= item.ThresholdInterval);
+                    
                     readings.Add(reading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
@@ -153,7 +160,9 @@ namespace MonitoringData.Infrastructure.Services {
                     }
                 }
                 return Task.FromResult<Tuple<DiscreteReadings, bool>>(new(
-                    new DiscreteReadings() { readings = readings.ToArray(), timestamp = now }, 
+                    new DiscreteReadings() { 
+                        readings = readings.ToArray(), 
+                        timestamp = now }, 
                     record));
             } else {
                 this.LogError("Error: DiscreteItems count doesn't match raw data count");
@@ -170,9 +179,9 @@ namespace MonitoringData.Infrastructure.Services {
                         MonitorItemId = item._id,
                         Value = raw[item.Register]
                     };
-                    if(reading.Value && item.Connected) {
-                        record = true;
-                    }
+                    record = item.Connected && reading.Value &&
+                             ((now - this._lastRecord).TotalSeconds >= item.ThresholdInterval);
+                    
                     readings.Add(reading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
@@ -187,23 +196,26 @@ namespace MonitoringData.Infrastructure.Services {
                         timestamp = now }, 
                     record));
             } else {
-                this.LogError("Error: Virtualitems count doesn't match raw data count");
+                this.LogError("Error: VirtualItems count doesn't match raw data count");
                 return Task.FromResult<Tuple<VirtualReadings, bool>>(new(null, false));
             }
         }
 
-        private bool CheckSave(DateTime now,DateTime last,bool thresholdMet) {
+        private bool CheckSave(DateTime now,bool thresholdMet) {
             if (this._firstRecord) {
                 this._firstRecord = false;
                 return true;
             } else {
-                return ((now - last).TotalSeconds >= this._recordInterval.TotalSeconds)
-                        || thresholdMet;
+                var deltaTime = (now - this._lastRecord).TotalSeconds;
+                return (deltaTime >= this._recordInterval.TotalSeconds)
+                       || (thresholdMet && (deltaTime >= this.ThresholdInterval));
+                /*return ((now - last).TotalSeconds >= this._recordInterval.TotalSeconds)
+                       || thresholdMet;*/
             }
         }
 
         private void LogInformation(string msg) {
-            if (this.loggingEnabled) {
+            if (this._loggingEnabled) {
                 this._logger.LogInformation(msg);
             } else {
                 Console.WriteLine(msg);
@@ -211,7 +223,7 @@ namespace MonitoringData.Infrastructure.Services {
         }
 
         private void LogWarning(string msg) {
-            if (this.loggingEnabled) {
+            if (this._loggingEnabled) {
                 this._logger.LogWarning(msg);
             } else {
                 Console.WriteLine(msg);
@@ -219,13 +231,12 @@ namespace MonitoringData.Infrastructure.Services {
         }
 
         private void LogError(string msg) {
-            if (this.loggingEnabled) {
+            if (this._loggingEnabled) {
                 this._logger.LogError(msg);
             } else {
                 Console.WriteLine(msg);
             }
         }
-        
         private ActionType ToActionType(ushort value) {
             switch (value) {
                 case 1: {
@@ -257,20 +268,11 @@ namespace MonitoringData.Infrastructure.Services {
             this._device = this._dataService.ManagedDevice;
             this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
         }
-
         public async Task Reload() {
             await this._dataService.ReloadAsync();
             await this._alertService.Reload();
             this._device = this._dataService.ManagedDevice;
             this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
         }
-        
-        /*public async Task Consume(ConsumeContext<ReloadConsumer> context) {
-            this.LogInformation("Reloading System");
-            await this.Reload();
-            this.LogInformation($"Device Ip: {this._device.IpAddress}");
-            this.LogInformation("Reload Finished");
-        }*/
     }
-
 }

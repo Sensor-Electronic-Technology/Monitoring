@@ -25,8 +25,6 @@ namespace MonitoringData.DataLoggingService {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             using var cursor = await this._database.WatchAsync(cancellationToken: stoppingToken);
             foreach (var change in cursor.ToEnumerable()) {
-                /*this._logger.LogInformation("Change Detected: {S}", change.ToString());
-                this._applicationLifetime.StopApplication();*/
                 await this._mediator.Publish<ReloadConsumer>(new ReloadConsumer(), stoppingToken);
             }
         }

@@ -56,14 +56,15 @@ public class CloneDatabase {
 
         var readings = readingsCollection.Find(_=>true).Sort(sort).FirstOrDefault();
         Console.WriteLine($"Reading: {readings.timestamp.ToLocalTime()}");*/
-        var client = new MongoClient("mongodb://172.20.3.41");
+        /*var client = new MongoClient("mongodb://172.20.3.41");
         var database = client.GetDatabase($"epi1_data");
         Console.WriteLine("Creating Collections");
         
         await database.CreateCollectionAsync("analog_readings",
             new CreateCollectionOptions() {
                 TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
-            });
+            });*/
+        Console.WriteLine($"Increasing Value: {(int)ValueDirection.Increasing}");
         
     }
 

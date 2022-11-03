@@ -21,12 +21,10 @@ namespace MonitoringData.DataLoggingService {
         public async Task StartAsync(CancellationToken cancellationToken) {
             await this._dataLogger.Load();
             this._timer.Start();
-            //this._timer = new Timer(this.DataLogHandler, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
         }
 
         private async Task DataLogHandler() {
             await this._dataLogger.Read();
-            this._logger.LogInformation("Logged Data");
         }
 
         public Task StopAsync(CancellationToken cancellationToken) {

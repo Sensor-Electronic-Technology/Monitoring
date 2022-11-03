@@ -32,4 +32,9 @@ namespace MonitoringSystem.Shared.Data {
         Discrete,
         Virtual
     }
+    
+    public enum ValueDirection {
+        Decreasing,
+        Increasing
+    }
 }

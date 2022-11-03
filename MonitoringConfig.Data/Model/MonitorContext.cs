@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MonitoringSystem.Shared.Data;
 using Microsoft.EntityFrameworkCore.Design;
-
 namespace MonitoringConfig.Data.Model; 
 
 public class MonitorContext:DbContext {

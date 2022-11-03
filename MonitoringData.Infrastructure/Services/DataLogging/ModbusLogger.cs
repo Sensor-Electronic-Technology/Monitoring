@@ -42,14 +42,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             this.loggingEnabled=true;
             this.firstRecord = true;
         }
-
-        /*public ModbusLogger(string connName, string databaseName, Dictionary<Type, string> collectionNames) {
-            this._dataService = new MonitorDataService(connName, databaseName, collectionNames);
-            this._alertService = new AlertService(connName, databaseName, collectionNames[typeof(ActionItem)], collectionNames[typeof(MonitorAlert)]);
-            this.loggingEnabled = false;
-            this._modbusService = new ModbusService();
-        }*/
-
+        
         public async Task Read() {
             var result = await this._modbusService.Read(this._device.IpAddress, this._device.Port, 
                 this._device.ModbusConfiguration);
@@ -70,7 +63,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         
                         }).ToList();
                     await this._monitorHub.Clients.All.ShowCurrent(monitorData);
-                    //await this._alertService.ProcessAlerts(this._alerts,now);
+                    await this._alertService.ProcessAlerts(this._alerts,now);
                 }
             } else {
                 this.LogError("Modbus read failed");

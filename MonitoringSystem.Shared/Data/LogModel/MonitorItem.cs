@@ -13,11 +13,13 @@ public class MonitorChannel : MonitorItem {
     public bool Connected { get; set; }
     public int SystemChannel { get; set; }
     public int Register { get; set; }
+    public int ThresholdInterval { get; set; }
 }
 
 public class AnalogItem : MonitorChannel {
     public ObjectId SensorId { get; set; }
     public float RecordThreshold { get; set; }
+    public ValueDirection ValueDirection { get; set; }
     public int Factor { get; set; }
     public int RegisterLength { get; set; }
     public ActionType Level1Action { get; set; }

@@ -185,6 +185,8 @@ public static class ChannelMapping {
             Offset = sensor.Offset,
             Slope = sensor.Slope,
             RecordThreshold = sensor.RecordThreshold,
+            ThresholdInterval = sensor.ThresholdInterval,
+            ValueDirection = sensor.ValueDirection,
             Units = sensor.Units,
             YAxisMax = sensor.YAxitMax,
             YAxisMin = sensor.YAxisMin
@@ -201,6 +203,8 @@ public static class ChannelMapping {
             Offset = sensor.Offset,
             Slope = sensor.Slope,
             RecordThreshold = sensor.RecordThreshold,
+            ThresholdInterval = sensor.ThresholdInterval,
+            ValueDirection = sensor.ValueDirection,
             Units = sensor.Units,
             YAxitMax = sensor.YAxisMax,
             YAxisMin = sensor.YAxisMin

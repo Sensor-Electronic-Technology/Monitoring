@@ -7,15 +7,12 @@ public abstract class Channel {
     public Guid Id { get; set; }
     public string? Identifier { get; set; }
     public string? DisplayName { get; set; }
-    
     public int SystemChannel { get; set; }
     public bool Connected { get; set; }
     public bool Bypass { get; set; }
     public bool Display { get; set; }
-    
     public ModbusAddress? ModbusAddress { get; set; }
     public ChannelAddress? ChannelAddress { get; set; }
-    
     public Guid ModbusDeviceId { get; set; }
     public ModbusDevice? ModbusDevice { get; set; }
 }
