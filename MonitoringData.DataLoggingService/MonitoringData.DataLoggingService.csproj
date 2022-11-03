@@ -17,4 +17,10 @@
     <ProjectReference Include="..\MonitoringData.Infrastructure\MonitoringData.Infrastructure.csproj" />
     <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="GasDetectorMap.png" />
+    <Content Include="GasDetectorMap.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

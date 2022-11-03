@@ -53,16 +53,35 @@ namespace MonitoringSystem.ConsoleTesting {
             }
             
             Console.WriteLine($"Null Count: {count}");*/
+            /*var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            var collection = database.GetCollection<EmailRecipient>("email_recipients");
+            await collection.InsertOneAsync(new EmailRecipient() {
+                Username = "Norman", Address = "nculbertson@s-et.com", _id = ObjectId.GenerateNewId()
+            });
+            await collection.InsertOneAsync(new EmailRecipient() {
+                Username = "Brandon", Address = "brobinson@s-et.com", _id = ObjectId.GenerateNewId()
+            });
+            await collection.InsertOneAsync(new EmailRecipient() {
+                Username = "Graci", Address = "ghill@s-et.com", _id = ObjectId.GenerateNewId()
+            });
+            await collection.InsertOneAsync(new EmailRecipient() {
+                Username = "Dev", Address = "devendra@s-et.com", _id = ObjectId.GenerateNewId()
+            });
+            await collection.InsertOneAsync(new EmailRecipient() {
+                Username = "Mark", Address = "mgeppert@s-et.com", _id = ObjectId.GenerateNewId()
+            });
+            Console.WriteLine("Check Database");*/
             /*ModbusService modservice = new ModbusService();
             Console.WriteLine("Epi1 Running");
-            /*await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, true);
-            await Task.Delay(1000);#1#
+            await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
-            await WriteOutAnalogFile("epi1", new DateTime(2022, 10, 24), DateTime.Now, @"C:\MonitorFiles\analogreadings.csv");
-            var client = new MongoClient("mongodb:");
-
+            /*await WriteOutAnalogFile("epi1", new DateTime(2022, 10, 24), DateTime.Now, @"C:\MonitorFiles\analogreadings.csv");
+            var client = new MongoClient("mongodb:");*/
+            //await RemoteAlertTesting();
         }
         
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
