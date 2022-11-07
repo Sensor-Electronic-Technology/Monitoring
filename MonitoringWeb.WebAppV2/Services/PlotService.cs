@@ -56,7 +56,8 @@ public class PlotDataService {
                             Name=h2psi.Identifier,
                             TimeStamp = readings.timestamp.ToLocalTime(),
                             Value=reading.Value
-                        }; 
+                        };
+                        aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading);
                     }
                 }

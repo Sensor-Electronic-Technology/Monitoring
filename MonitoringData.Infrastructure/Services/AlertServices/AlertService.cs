@@ -106,7 +106,7 @@ namespace MonitoringData.Infrastructure.Services {
                     .Select(e => new ItemStatus() {
                         Item = e.DisplayName,
                         State = e.CurrentState.ToString(),
-                        Value = e.ChannelReading.ToString(CultureInfo.InvariantCulture)
+                        Value = e.ChannelReading.ToString("N0")
                     }).ToList(),
                 discreteData = alerts.Where(e => e.Display && e.ItemType == AlertItemType.Discrete)
                     .Select(e => new ItemStatus() {

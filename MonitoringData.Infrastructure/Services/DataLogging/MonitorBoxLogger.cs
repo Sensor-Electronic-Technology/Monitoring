@@ -1,5 +1,6 @@
 ﻿using ConsoleTables;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MonitoringData.Infrastructure.Data;
 using MonitoringSystem.Shared.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
@@ -13,19 +14,15 @@ namespace MonitoringData.Infrastructure.Services {
         private readonly IModbusService _modbusService;
         private readonly IAlertService _alertService;
         private readonly ILogger _logger;
-
         private ManagedDevice _device;
         private bool _loggingEnabled = false;
         private IList<AlertRecord> _alerts;
-
         private DateTime _lastRecord;
         private TimeSpan _recordInterval;
         private bool _firstRecord;
-
         private DateTime _boxOfflineTime;
         private bool _offlineLatch = false;
-
-        private readonly int ThresholdInterval = 30;
+        private Dictionary<ObjectId, bool> _lastState = new Dictionary<ObjectId, bool>();
 
         
         public MonitorBoxLogger(IMonitorDataRepo dataService,
@@ -41,7 +38,8 @@ namespace MonitoringData.Infrastructure.Services {
         }
         
         public async Task Read() {
-            var result = await this._modbusService.Read(this._device.IpAddress, this._device.Port, 
+            var result = await this._modbusService.Read(this._device.IpAddress, 
+                this._device.Port, 
                 this._device.ModbusConfiguration);
             var now = DateTime.Now;
             if (result.Success) {
@@ -89,14 +87,14 @@ namespace MonitoringData.Infrastructure.Services {
         }
 
         private Task ProcessAlertReadings(ushort[] raw, DateTime now) {
-            List<AlertReading> alertReadings = new List<AlertReading>();
+            /*List<AlertReading> alertReadings = new List<AlertReading>();*/
             /*ConsoleTable table = new ConsoleTable("Name", "Register", "Value");*/
             foreach (var alert in this._dataService.MonitorAlerts) {
                 var alertReading = new AlertReading() {
                     MonitorItemId = alert._id,
                     AlertState = this.ToActionType(raw[alert.Register])
                 };
-                alertReadings.Add(alertReading);
+                /*alertReadings.Add(alertReading);*/
                 this._alerts.Add(new AlertRecord(alert,alertReading.AlertState));
                 /*table.AddRow(alert.DisplayName, alert.Register,alertReading.AlertState.ToString());*/
             }
@@ -109,6 +107,7 @@ namespace MonitoringData.Infrastructure.Services {
                 List<AnalogReading> readings = new List<AnalogReading>();
                 bool record = false;
                 foreach (var item in this._dataService.AnalogItems) {
+
                     var analogReading = new AnalogReading() {
                         MonitorItemId = item._id, Value = (float)raw[item.Register] / item.Factor
                     };
@@ -148,9 +147,12 @@ namespace MonitoringData.Infrastructure.Services {
                         MonitorItemId = item._id,
                         Value = raw[item.Register]
                     };
-                    record = item.Connected && reading.Value &&
-                             ((now - this._lastRecord).TotalSeconds >= item.ThresholdInterval);
-                    
+                    if (this._firstRecord) {
+                        this._lastState[item._id] = reading.Value;
+                        record = item.Connected;
+                    } else {
+                        record = item.Connected && (reading.Value != this._lastState[item._id]);
+                    }
                     readings.Add(reading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
@@ -207,10 +209,7 @@ namespace MonitoringData.Infrastructure.Services {
                 return true;
             } else {
                 var deltaTime = (now - this._lastRecord).TotalSeconds;
-                return (deltaTime >= this._recordInterval.TotalSeconds)
-                       || (thresholdMet && (deltaTime >= this.ThresholdInterval));
-                /*return ((now - last).TotalSeconds >= this._recordInterval.TotalSeconds)
-                       || thresholdMet;*/
+                return (deltaTime >= this._recordInterval.TotalSeconds) || thresholdMet;
             }
         }
 
@@ -267,12 +266,20 @@ namespace MonitoringData.Infrastructure.Services {
             await this._alertService.Load();
             this._device = this._dataService.ManagedDevice;
             this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
+            foreach (var item in this._dataService.DiscreteItems) {
+                this._lastState.Add(item._id,false);
+            }
         }
         public async Task Reload() {
             await this._dataService.ReloadAsync();
             await this._alertService.Reload();
             this._device = this._dataService.ManagedDevice;
             this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
+            this._firstRecord = true;
+            this._lastState.Clear();
+            foreach (var item in this._dataService.DiscreteItems) {
+                this._lastState.Add(item._id, false);
+            }
         }
     }
 }

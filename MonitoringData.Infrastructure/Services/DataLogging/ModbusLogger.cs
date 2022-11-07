@@ -62,7 +62,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                             Value= e.ChannelReading.ToString("N0")
                         
                         }).ToList();
-                    await this._monitorHub.Clients.All.ShowCurrent(monitorData);
+                    //await this._monitorHub.Clients.All.ShowCurrent(monitorData);
                     await this._alertService.ProcessAlerts(this._alerts,now);
                 }
             } else {

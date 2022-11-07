@@ -10,6 +10,7 @@
     <PackageReference Include="DevExpress.Blazor" Version="22.1.6" />
     <PackageReference Include="DevExpress.Blazor.Server.WebAssembly" Version="22.1.6" />
     <PackageReference Include="DevExpress.Drawing" Version="22.1.6" />
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.4" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
     <PackageReference Include="BlazorDownloadFileFast" Version="0.2.0" />

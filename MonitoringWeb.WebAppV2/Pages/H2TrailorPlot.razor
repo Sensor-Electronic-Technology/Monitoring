@@ -1,15 +1,16 @@
 ﻿@page "/h2plot"
 @using MonitoringWeb.WebAppV2.Data
 @using MonitoringWeb.WebAppV2.Services
-@using DevExpress;
+@using MathNet
+@using DevExpress
+@using MathNet.Numerics
+@using MathNet.Numerics.LinearRegression
 @inject PlotDataService PlotService
 @inject WebsiteConfigurationProvider ConfigurationProvider
 
 
 <h3 class="text-center">H2 Trailor PSI</h3>
-
 <div class="row" style="padding: 1rem">
-
     <DxFormLayout>
         <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
             <DxFormLayoutItem Caption="Start Date">
@@ -97,16 +98,16 @@
                 </DxChart>
             }
     </div>
-
 </div>
 
 @code {
+    AccordionExpandCollapseAction ExpandCollapseAction { get; set; } = AccordionExpandCollapseAction.HeaderClick;
     DateTime StartDate = DateTime.Now.AddDays(-1).ToLocalTime();
     DateTime StopDate = DateTime.Now.AddDays(1).ToLocalTime();
     DateTime PlotStart;
     DateTime PlotStop;
     IEnumerable<AnalogReadingDto>? PlotData { get; set; }
-
+    
     protected override async Task OnInitializedAsync() {
         await this.Load();
     }
@@ -124,15 +125,13 @@
         this.StopDate = newValue;
         await this.Load();
     }
-
-
+    
     private async Task OnClick(PlotRange range) {
         this.StartDate = DateTime.Now.AddDays(-(int)range);
         this.StopDate = DateTime.Now.AddDays((int)range);
         await this.Load();
-
     }
-
+    
     private async Task Load() {
         this.PlotData=null;
         await InvokeAsync(StateHasChanged);
@@ -141,6 +140,38 @@
         this.PlotData=await this.PlotService.GetChannelData("epi1_data", "H2 PSI", start, stop);
         this.PlotStart = this.StartDate;
         this.PlotStop = this.StopDate;
+        /*if (this.PlotData != null) {
+            var list = this.PlotData.ToList();
+            var x=this.PlotData.Select(e => e.Time).ToArray();
+            var y = this.PlotData.Select(e => e.Value).ToArray();
+            var fit=Fit.Polynomial(x, y,4);
+            var fitLine = Fit.Line(x, y);
+            var max = this.PlotData.Max(e=>e.TimeStamp);
+            /*foreach (var val in fit) {
+                Console.WriteLine(val);
+            }#1#
+            for (int i = 0; i < 2880; i++) {
+                AnalogReadingDto reading = new AnalogReadingDto();
+                reading.Name = "Fit";
+                reading.TimeStamp = max.AddMinutes(i*5);
+                var time = double.Parse(reading.TimeStamp.ToString("yyyyMMddHHmmss"));
+                //reading.Value = fitLine.B * time + fitLine.A;
+                reading.Value = 0;
+                for (int p = 0; p < fit.Length; p++) {
+                    if (p == 0) {
+                        reading.Value += fit[p];
+                    }else if (p == 1) {
+                        reading.Value += fit[p]*time;
+                    } else {
+                        reading.Value += fit[p] * Math.Pow(time, p);
+                    }
+                }
+                list.Add(reading);
+            }
+            this.PlotData = list.AsEnumerable();
+        }*/
+
+        
         await InvokeAsync(StateHasChanged);
     }
 }
