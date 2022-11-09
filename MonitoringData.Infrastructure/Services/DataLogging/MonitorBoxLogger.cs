@@ -71,7 +71,7 @@ namespace MonitoringData.Infrastructure.Services {
                     }
                     this.LogInformation("Data Recorded");
                 }
-                await this._alertService.ProcessAlerts(this._alerts,now);
+                //await this._alertService.ProcessAlerts(this._alerts,now);
             } else {
                 if (!this._offlineLatch) {
                     this._offlineLatch = true;
@@ -107,18 +107,18 @@ namespace MonitoringData.Infrastructure.Services {
                 List<AnalogReading> readings = new List<AnalogReading>();
                 bool record = false;
                 foreach (var item in this._dataService.AnalogItems) {
-
                     var analogReading = new AnalogReading() {
                         MonitorItemId = item._id, Value = (float)raw[item.Register] / item.Factor
                     };
                     if (item.Connected) {
                         var thresholdMet=(item.ValueDirection==ValueDirection.Increasing) ? 
                             (analogReading.Value >= item.RecordThreshold):(analogReading.Value<=item.RecordThreshold);
-                        record= thresholdMet && ((now - this._lastRecord).TotalSeconds >= item.ThresholdInterval);
-                    } else {
-                        record = false;
+                        if (thresholdMet && ((now - this._lastRecord).TotalSeconds >= item.ThresholdInterval)) {
+                            record = true;
+                        }
                     }
-                    
+
+                    //Console.WriteLine(record);
                     readings.Add(analogReading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {

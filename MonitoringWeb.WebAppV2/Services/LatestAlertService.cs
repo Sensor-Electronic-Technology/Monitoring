@@ -25,8 +25,6 @@ namespace MonitoringWeb.WebAppV2.Services;
                 var alertReadings = await database.GetCollection<AlertReadings>(device.CollectionNames[nameof(AlertReadings)])
                     .Find(e=>e.timestamp>=DateTime.Now.ToLocalTime().AddDays(-days))
                     .ToListAsync();
-
-                
                 foreach(var alertReading in alertReadings) {
                     var alerts=alertReading.readings.Where(e => e.AlertState != ActionType.Okay && e.AlertState != ActionType.Custom);
                     foreach(var alert in alerts) {
