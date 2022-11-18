@@ -7,8 +7,69 @@ using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.Services;
+using System.Net.NetworkInformation;
+using System.Text;
 
 namespace MonitoringData.Infrastructure.Services {
+
+    public struct DeviceCheckReply {
+        public bool Notify;
+        public bool Status;
+        public int TimeOffline;
+    }
+    
+    public class DeviceCheck {
+        private readonly byte[] _buffer = Encoding.ASCII.GetBytes ("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        public int Timeout { get; set; } = 10000;
+        public string? IP { get; set; } = "";
+        private PingOptions _options = new PingOptions (64, true);
+        private Ping _sender = new Ping();
+
+        private int _failures=0;
+        private int _timeoffline=0;
+        private bool _latch=false;
+        private bool _firstLatch = false;
+
+        private DateTimeOffset _start;
+        private DateTimeOffset _last;
+
+        public int TimeOffline => this._timeoffline;
+
+        public async Task<DeviceCheckReply> Check() {
+            var response = new DeviceCheckReply();
+            var reply = await this._sender.SendPingAsync(this.IP, this.Timeout, this._buffer, this._options);
+            if (reply.Status != IPStatus.Success) {
+                if (!this._latch) {
+                    this._latch = true;
+                    this._failures = 1;
+                    this._timeoffline = 0;
+                    this._start=DateTimeOffset.Now;
+                    this._last = this._start;
+                } else {
+                    this._failures++;
+                    this._timeoffline = this._failures * this.Timeout;
+                    
+                    if (!this._firstLatch && (DateTimeOffset.Now-this._start).Seconds>=120) {
+                        this._last=DateTimeOffset.Now;
+                        this._firstLatch = true;
+                        //send first email
+                    } else {
+                        //if((DateTimeOffset.Now-this._last).Seconds>=)
+                        //TODO finsih!
+                    }
+                }
+            } else {
+                this._start=DateTimeOffset.MaxValue;
+                this._last=DateTimeOffset.MaxValue;
+                this._latch = false;
+                this._timeoffline = 0;
+                this._failures = 0;
+            }
+
+
+        }
+    }
+    
     public class MonitorBoxLogger : IDataLogger {
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
@@ -23,8 +84,8 @@ namespace MonitoringData.Infrastructure.Services {
         private DateTime _boxOfflineTime;
         private bool _offlineLatch = false;
         private Dictionary<ObjectId, bool> _lastState = new Dictionary<ObjectId, bool>();
+        private DeviceCheck _deviceCheck = new DeviceCheck();
 
-        
         public MonitorBoxLogger(IMonitorDataRepo dataService,
             ILogger<MonitorBoxLogger> logger, 
             IAlertService alertService,
@@ -38,6 +99,7 @@ namespace MonitoringData.Infrastructure.Services {
         }
         
         public async Task Read() {
+            
             var result = await this._modbusService.Read(this._device.IpAddress, 
                 this._device.Port, 
                 this._device.ModbusConfiguration);
@@ -71,17 +133,7 @@ namespace MonitoringData.Infrastructure.Services {
                     }
                     this.LogInformation("Data Recorded");
                 }
-                //await this._alertService.ProcessAlerts(this._alerts,now);
             } else {
-                if (!this._offlineLatch) {
-                    this._offlineLatch = true;
-                    this._boxOfflineTime = now;
-                } else {
-                    if((now - this._boxOfflineTime).TotalSeconds >= 60) {
-                        await this._alertService.DeviceOfflineAlert();
-                        this._boxOfflineTime = now;
-                    }
-                }
                 this._logger.LogError("Modbus read failed");
             }
         }
@@ -265,6 +317,7 @@ namespace MonitoringData.Infrastructure.Services {
             await this._dataService.LoadAsync();
             await this._alertService.Load();
             this._device = this._dataService.ManagedDevice;
+            this._deviceCheck.IP = this._device.IpAddress;
             this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
             foreach (var item in this._dataService.DiscreteItems) {
                 this._lastState.Add(item._id,false);
@@ -274,6 +327,7 @@ namespace MonitoringData.Infrastructure.Services {
             await this._dataService.ReloadAsync();
             await this._alertService.Reload();
             this._device = this._dataService.ManagedDevice;
+            this._deviceCheck.IP = this._device.IpAddress;
             this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
             this._firstRecord = true;
             this._lastState.Clear();
