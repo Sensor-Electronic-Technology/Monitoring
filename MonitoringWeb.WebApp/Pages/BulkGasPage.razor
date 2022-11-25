@@ -1,0 +1,55 @@
+﻿@page "/bulkgas/{GasType:int}"
+@using MonitoringWeb.WebApp.Data
+
+<h3 class="text-center">@this.Header</h3>
+
+<DxTabs>
+    <DxTabPage Text="Plot">
+        <BulkGasPlot GasType="@this.GasType"/>
+    </DxTabPage>
+    <DxTabPage Text="Consumption">
+        <ConsumptionTable GasType="@this.GasType"></ConsumptionTable>
+    </DxTabPage>
+</DxTabs>
+
+@code {
+    [Parameter]
+    public BulkGasType GasType { get; set; }
+
+    string Header = "";
+
+    protected override Task OnInitializedAsync() {
+        switch (this.GasType) {
+            case BulkGasType.N2:
+                this.Header = "N2 inH2O";
+                break;
+            case BulkGasType.H2:
+                this.Header = "H2 Trailor PSI";
+                break;
+            case BulkGasType.NH3:
+                this.Header = "NH3 Tank(s) Plot";
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        return Task.CompletedTask;
+    }
+    public override async Task SetParametersAsync(ParameterView parameters) {
+        await base.SetParametersAsync(parameters);
+        switch (this.GasType) {
+            case BulkGasType.N2:
+                this.Header = "N2 inH2O";
+                break;
+            case BulkGasType.H2:
+                this.Header = "H2 Trailor PSI";
+                break;
+            case BulkGasType.NH3:
+                this.Header = "NH3 Tank(s) Plot";
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

@@ -1,14 +1,27 @@
-﻿<nav class="navbar header-navbar p-0">
+﻿@using Microsoft.AspNetCore.Components
+<nav class="navbar header-navbar p-0">
     <button class="navbar-toggler bg-primary d-block" @onclick="OnToggleClick">
         <span class="navbar-toggler-icon"></span>
     </button>
     <div class="ms-3 fw-bold title pe-4">Facility Monitoring</div>
+    <div class="theme-settings @Active ms-auto">
+        <a class="nav-item nav-link" @onclick="@OnClick" @onclick:preventDefault href="#">
+            <span class="oi oi-cog"></span>
+        </a>
+    </div>
 </nav>
 
 @code {
     [Parameter] public bool ToggleOn { get; set; }
     [Parameter] public EventCallback<bool> ToggleOnChanged { get; set; }
-
+    
+    [Parameter] public bool Active { get; set; }
+    [Parameter] public EventCallback<bool> ActiveChanged { get; set; }
+    
+    async Task OnClick() {
+        await ActiveChanged.InvokeAsync(!Active);
+    }
+    
     async Task OnToggleClick() => await Toggle();
 
     async Task Toggle(bool? value = null) {
@@ -18,4 +31,6 @@
             await ToggleOnChanged.InvokeAsync(ToggleOn);
         }
     }
+    
+    
 }

@@ -1,47 +1,82 @@
 ﻿@page "/"
-@using DevExpress.Blazor
-@using DevExpress.Blazor.Configuration
-@using MonitoringData.Infrastructure.Services.DataAccess
-@using System.Drawing
-@inject LatestAlertService AlarmService
+@using MonitoringWeb.WebApp.Data
+@using MonitoringSystem.Shared.Data
+@using MonitoringWeb.WebApp.Services
+@using DevExpress.Blazor.Internal
+@using MonitoringSystem.Shared.Data.SettingsModel
+@inject WebsiteConfigurationProvider ConfigurationProvider
 
-<h2 class="pb-2">Facility Monitoring Dashboard</h2>
-
-<h2>Latest Alerts, Timespan=7days</h2>
-@if (this.Data == null) {
-    <h3>@Message</h3>
-} else {
-    <DxGrid Data="@Data"
-        ShowGroupPanel="true"
-        AutoExpandAllGroupRows="true"
-        PageSize="10"
-        PagerPosition="GridPagerPosition.Bottom"
-        PageSizeSelectorVisible="true"
-        PageSizeSelectorItems="@(new int[] { 5, 10, 20, 30 })"
-        PageSizeSelectorAllRowsItemVisible="true"
-        PagerSwitchToInputBoxButtonCount="10"
-        PagerVisibleNumericButtonCount="10">
-    <Columns>
-        <DxGridDataColumn FieldName="TimeStamp" DisplayFormat="G"/>
-        <DxGridDataColumn FieldName="Device" GroupIndex="0"  />
-        <DxGridDataColumn FieldName="Name"  />
-        <DxGridDataColumn FieldName="State"  />
-        <DxGridDataColumn FieldName="Value"  />
-    </Columns>
-</DxGrid>
-}
-
-@code{
-    object Data { get; set; }
-    string Message { get; set; } = "Data loading...";
-
-    protected override async Task OnInitializedAsync() {
-        this.Data=await this.AlarmService.GetLatestAlarms();
-        if (this.Data==null) {
-            this.Message = "No Recent Alerts";
+<div class="row">
+    <div class="row text-center" style="padding:1rem">
+        <DxButton
+            Click="() => IsOpen = !IsOpen"
+            SizeMode="SizeMode.Medium"
+            RenderStyleMode="ButtonRenderStyleMode.Contained"
+            RenderStyle="@ButtonRenderStyle.Info">Show Floorplan</DxButton>
+    </div>
+    <DxDropDown
+        @bind-IsOpen="@IsOpen"
+        CloseOnOutsideClick="true"
+        PositionMode="DropDownPositionMode.Center"
+        PositionTarget=".status-container"
+        RestrictionMode="DropDownRestrictionMode.Page"
+        PreventCloseOnPositionTargetClick="false"
+        CloseMode="@DropDownCloseMode.Hide"
+        FitToRestriction="true">
+        <div class="custom-flyout-body">
+            <img src="images/GasDetectorMap.PNG" />
+        </div>
+    </DxDropDown>
+</div >
+<div class="row status-container">
+    <div class="row">
+        @foreach (var status in this._statusList) {
+            <StatusCard DeviceStatus="@status"/>
         }
-    } 
+    </div>
+    <div class="row">
+        @if (this._devices == null) {
+            <h4>Loading Devices, Please Wait..</h4>
+        } else {
+            <div class="row profile-row" style="padding:1rem">
+                @foreach (var device in this._devices) {
+                    <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+                        <LiveGrid Hub="@device.HubAddress" DeviceName="@device.DeviceName" OnAlert="@OnAlertUpdate"/>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+
+@code {
+    bool IsOpen { get; set; } = false;
+    IEnumerable<ManagedDevice>? _devices;
+    List<DeviceStatus> _statusList=new List<DeviceStatus>();
+    
+    protected override async Task OnInitializedAsync() {
+        await Task.Run(() => {
+            this._devices = this.ConfigurationProvider.Devices;
+            foreach (var device in this._devices) {
+                this._statusList.Add(new DeviceStatus() {
+                    DeviceName=device.DeviceName,
+                    Status = ActionType.Alarm
+                });
+            }
+        });
+    }
+    
+    async Task OnAlertUpdate(DeviceStatus status) {
+        var deviceStatus=this._statusList.FirstOrDefault(e => e.DeviceName == status.DeviceName);
+        if (deviceStatus != null) {
+            deviceStatus.Status=status.Status;
+            deviceStatus.ActiveAlerts = status.ActiveAlerts;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async Task Update() {
+        await InvokeAsync(StateHasChanged);
+    }
 }
-
-
-

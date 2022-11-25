@@ -59,10 +59,9 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         .Select(e => new ItemStatus() { 
                             Item=e.DisplayName,
                             State=e.CurrentState.ToString(),
-                            Value= e.ChannelReading.ToString("N0")
+                            Value= e.ChannelReading.ToString("N1")
                         
                         }).ToList();
-                    //await this._monitorHub.Clients.All.ShowCurrent(monitorData);
                     await this._alertService.ProcessAlerts(this._alerts,now);
                 }
             } else {

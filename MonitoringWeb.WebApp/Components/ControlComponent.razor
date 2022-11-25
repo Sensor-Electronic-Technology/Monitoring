@@ -1,0 +1,69 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringSystem.Shared.Data
+@using MonitoringSystem.Shared.Data.SettingsModel
+@using MonitoringSystem.Shared.SignalR;
+@using MonitoringWeb.WebApp.Data
+@inject ILogger<ControlComponent> Logger
+@implements IAsyncDisposable
+
+@if (this.Device==null) {
+    <h4>Device not set</h4>
+} else {
+    if (this._switchActions != null) {
+        <DxFormLayout>
+            @foreach (var action in this._switchActions) {
+                <DxFormLayoutItem ColSpanXs="2">
+                    <ToggleSwitch SwitchAction=@action></ToggleSwitch>
+                </DxFormLayoutItem>
+            }
+        </DxFormLayout>
+    }
+}
+@code {
+    [Parameter]
+    public ManagedDevice? Device { get; set; }
+    
+    private HubConnection? _connection;
+    private List<SwitchAction>? _switchActions;
+
+    protected override async Task OnInitializedAsync() {
+        this._connection=new HubConnectionBuilder()
+            .WithAutomaticReconnect()
+            .WithUrl("http://localhost:5000/hubs/controlhub")
+            .Build();
+        /*this._connection.On("Initialize", async (IEnumerable<RemoteAction> remoteActions) => {
+            if (this.Device != null) {
+                this.Device.RemoteActions = remoteActions;
+                List<SwitchAction> switchActions = new List<SwitchAction>();
+                foreach (var ract in this.Device.RemoteActions) {
+                    var switchAction = new SwitchAction {
+                        Name = ract.Name,
+                        State = ract.State,
+                        DeviceName = this.Device.DeviceName,
+                        SwitchId = $"{this.Device.DeviceName}_{ract.Name}",
+                        Toggle = async (string deviceName,string name) => {
+                            await this._connection.InvokeAsync("Toggle",deviceName, name);
+                        }
+                    };
+                    switchActions.Add(switchAction);
+                }
+                this._switchActions = switchActions;
+                await InvokeAsync(StateHasChanged);
+            } else {
+                this.Logger.LogError("RemoteActions Failed to Load");
+            }
+        });*/
+        try {
+            await this._connection.StartAsync();
+            await this._connection.InvokeAsync("Initialize", this.Device?.DeviceName);
+        } catch {
+            this.Logger.LogError("Hub Connection Failed");
+        }
+    }
+    
+    public async ValueTask DisposeAsync() {
+        if (this._connection is not null) {
+            await this._connection.DisposeAsync();
+        }
+    }
+}

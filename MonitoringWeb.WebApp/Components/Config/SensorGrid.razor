@@ -1,0 +1,100 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringWeb.WebApp.Services
+@inject ConfigApiClient Client
+
+<div class="row" style="padding: 1rem">
+    <div class="card">
+        <h5 class="card-header text-center">Sensors</h5>
+        <div class="card-body">
+            <DxGrid Data="@Sensors"
+                    KeyFieldName="Id"
+                    ValidationEnabled="false"
+                    AllowSelectRowByClick="true"
+                    SelectionMode="GridSelectionMode.Single"
+                    EditModelSaving="Grid_EditModelSaving"
+                    PopupEditFormCssClass="pw-800"
+                    EditMode="GridEditMode.EditForm">
+                <Columns>
+                    <DxGridCommandColumn Width="120px" NewButtonVisible="true" EditButtonVisible="true" 
+                                         DeleteButtonVisible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.Id)" Visible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.Name)"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.DisplayName)"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.Description)"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.Slope)"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.Offset)"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.YAxisMin)"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.YAxisMax)"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.Units)"/>
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.Factor)"/>    
+                    <DxGridDataColumn FieldName="@nameof(SensorDto.RecordThreshold)"/>
+                </Columns>
+                <EditFormTemplate Context="EditFormContext">
+                    @{
+                        var sensor = EditFormContext.EditModel as SensorDto;
+                    }
+                    <DxFormLayout>
+                        <DxFormLayoutGroup Caption="General">
+                            <DxFormLayoutItem Caption="@nameof(SensorDto.Name)">
+                                <DxTextBox @bind-Text="sensor.Name"></DxTextBox>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@nameof(SensorDto.DisplayName)">
+                                <DxTextBox @bind-Text="sensor.DisplayName"></DxTextBox>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@nameof(SensorDto.Description)">
+                                <DxTextBox @bind-Text="sensor.Description"></DxTextBox>
+                            </DxFormLayoutItem>
+                        </DxFormLayoutGroup>
+                        <DxFormLayoutGroup Caption="Conversion">
+                            <DxFormLayoutItem Caption="@nameof(SensorDto.Slope)">
+                                <DxSpinEdit @bind-Value="sensor.Slope"></DxSpinEdit>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@nameof(SensorDto.Offset)">
+                                <DxSpinEdit @bind-Value="sensor.Offset"></DxSpinEdit>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@nameof(SensorDto.Factor)">
+                                <DxSpinEdit @bind-Value="sensor.Factor"></DxSpinEdit>
+                            </DxFormLayoutItem>
+                        </DxFormLayoutGroup>
+                        <DxFormLayoutGroup Caption="Display Settings">
+                            <DxFormLayoutItem Caption="@nameof(SensorDto.YAxisMin)">
+                                <DxSpinEdit @bind-Value="sensor.YAxisMin"></DxSpinEdit>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@nameof(SensorDto.YAxisMax)">
+                                <DxSpinEdit @bind-Value="sensor.YAxisMax"></DxSpinEdit>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@nameof(SensorDto.Units)">
+                                <DxTextBox @bind-Text="sensor.Units"></DxTextBox>
+                            </DxFormLayoutItem>
+                        </DxFormLayoutGroup>
+                    </DxFormLayout>
+                </EditFormTemplate>
+            </DxGrid>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    IEnumerable<SensorDto>? Sensors { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        this.Sensors = await this.Client.GetSensors();
+    }
+
+    async Task Update() {
+        this.Sensors = await this.Client.GetSensors();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
+        if (e.EditModel is SensorDto sensor) {
+            if (e.IsNew) {
+                await this.Client.InsertSensor(sensor);
+            } else {
+                await this.Client.UpdateSensor(sensor);
+            }
+        }
+        await this.Update();
+    }
+}

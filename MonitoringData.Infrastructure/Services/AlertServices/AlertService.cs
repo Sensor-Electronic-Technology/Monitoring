@@ -137,7 +137,7 @@ namespace MonitoringData.Infrastructure.Services {
                         Value = alert.ChannelReading.ToString(CultureInfo.InvariantCulture)
                     });
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), 
-                        alert.ChannelReading.ToString(CultureInfo.InvariantCulture));
+                        alert.ChannelReading.ToString("N1"));
                 }
                 if (sendEmail) {
                     await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 

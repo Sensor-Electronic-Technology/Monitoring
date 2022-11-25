@@ -8,35 +8,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="~/" />
-    <link rel="stylesheet" href="css/blazing_dark/bootstrap.min.css" />
     <link href="css/site.css" rel="stylesheet" />
     <link href="MonitoringWeb.WebApp.styles.css" rel="stylesheet" />
+    <link href="_content/DevExpress.Blazor.Themes/blazing-dark.bs5.min.css" rel="stylesheet" />
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
-    <link href="_content/DevExpress.Blazor/dx-blazor.bs5.css" rel="stylesheet" />
-
     <script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-3.4.1.min.js"></script>
-
-    <!-- DevExtreme themes -->
-    <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/21.2.7/css/dx.common.css">
-    <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/21.2.7/css/dx.light.css">
-
-    <!-- DevExtreme library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/devextreme-quill/1.5.7/dx-quill.min.js"></script>
-    <script type="text/javascript" src="https://cdn3.devexpress.com/jslib/21.2.7/js/dx.all.js"></script>
-
-    <script>
-        function renderDevExtremeControls(loadIndicatorContainerID) {
-            renderLoadIndicator(loadIndicatorContainerID);
-        }
-
-        function renderLoadIndicator(container) {
-            $(container).dxLoadIndicator({
-                ID: "large-indicator",
-                Height: 100,
-                Width: 100
-            });
-        }
-    </script>
 </head>
 <body>
     @{

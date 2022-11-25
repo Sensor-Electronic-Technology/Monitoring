@@ -1,0 +1,28 @@
+﻿@using MonitoringSystem.Shared.Data
+@using MonitoringSystem.Shared.Data.SettingsModel
+@using MonitoringWeb.WebApp.Services
+@inject WebsiteConfigurationProvider ConfigurationProvider
+
+@if (Visible) {
+    if (this._devices == null) {
+        <h4>Devices not set</h4>
+    } else {
+        @foreach (var device in this._devices) {
+            <div class="row" style="padding: .5rem">
+                <ControlComponent Device=@device />
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+
+    private IEnumerable<ManagedDevice>? _devices;
+
+    protected override Task OnInitializedAsync() {
+        this._devices = this.ConfigurationProvider.Devices;
+        return Task.CompletedTask;
+    }
+}

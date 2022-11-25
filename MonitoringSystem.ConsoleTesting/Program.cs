@@ -79,8 +79,8 @@ namespace MonitoringSystem.ConsoleTesting {
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
-            /*await WriteOutAnalogFile("epi1", new DateTime(2022, 10, 24), DateTime.Now, @"C:\MonitorFiles\analogreadings.csv");
-            var client = new MongoClient("mongodb:");*/
+            await WriteOutAnalogFile("nh3", new DateTime(2022, 9, 1), DateTime.Now, @"C:\MonitorFiles\analogreadings4.csv");
+            //var client = new MongoClient("mongodb:");*/
             //await RemoteAlertTesting();
         }
         

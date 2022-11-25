@@ -1,10 +1,9 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
-using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
-using MonitoringWeb.WebAppV2.Data;
+using MonitoringWeb.WebApp.Data;
 
-namespace MonitoringWeb.WebAppV2.Services;
+namespace MonitoringWeb.WebApp.Services;
 public class PlotDataService {
         private IMongoCollection<AnalogReadings> _analogReadings;
         private IMongoCollection<AnalogItem> _analogItems;
@@ -106,6 +105,78 @@ public class PlotDataService {
                 }
             }
             return analogReadings;
+        }
+        
+        public async Task<Tuple<SensorType,IEnumerable<AnalogReadingDto>>> GetChannelDatav2(string deviceData,string chName,DateTime start, DateTime stop) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase(deviceData);
+            this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+            this._analogItems = database.GetCollection<AnalogItem>("analog_items");
+            List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
+            var h2psi = await this._analogItems.Find(e => e.Identifier == chName).FirstOrDefaultAsync();
+            var sensor = this._configProvider.Sensors.FirstOrDefault(e => e._id == h2psi.SensorId);
+            using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
+            while (await cursor.MoveNextAsync()){
+                var batch = cursor.Current;
+                foreach (var readings in batch){
+                    var reading =readings.readings.FirstOrDefault(e=>e.MonitorItemId==h2psi._id);
+                    if (reading != null) {
+                        var aReading=new AnalogReadingDto(){
+                            Name=h2psi.Identifier,
+                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            Value=reading.Value
+                        };
+                        aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
+                        analogReadings.Add(aReading);
+                    }
+                }
+            }
+            return new Tuple<SensorType, IEnumerable<AnalogReadingDto>>(sensor,analogReadings);
+        }
+        
+        public async Task<Tuple<SensorType,IEnumerable<AnalogReadingDto>>> GetBulkNH3(DateTime start, DateTime stop) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("nh3_data");
+            this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+            this._analogItems = database.GetCollection<AnalogItem>("analog_items");
+            List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
+            var tank1 = await this._analogItems.Find(e => e.Identifier == "Tank1 Weight").FirstOrDefaultAsync();
+            var tank2 = await this._analogItems.Find(e => e.Identifier =="Tank2 Weight" ).FirstOrDefaultAsync();
+            var sensor = this._configProvider.Sensors.FirstOrDefault(e => e._id == tank1.SensorId);
+            using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
+            while (await cursor.MoveNextAsync()){
+                var batch = cursor.Current;
+                foreach (var readings in batch){
+                    var reading1 =readings.readings.FirstOrDefault(e=>e.MonitorItemId==tank1._id);
+                    var reading2 =readings.readings.FirstOrDefault(e=>e.MonitorItemId==tank2._id);
+                    if (reading1 != null && reading2!=null) {
+                        var aReading1=new AnalogReadingDto(){
+                            Name=tank1.Identifier,
+                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            Value=reading1.Value
+                        };
+                        aReading1.Time = double.Parse(aReading1.TimeStamp.ToString("yyyyMMddHHmmss"));
+                        analogReadings.Add(aReading1);
+                        
+                        var aReading2=new AnalogReadingDto(){
+                            Name=tank2.Identifier,
+                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            Value=reading2.Value
+                        };
+                        aReading2.Time = double.Parse(aReading2.TimeStamp.ToString("yyyyMMddHHmmss"));
+                        analogReadings.Add(aReading2);
+                        
+                        var aReading3=new AnalogReadingDto(){
+                            Name="Combined",
+                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            Value=reading1.Value+reading2.Value
+                        };
+                        aReading3.Time = double.Parse(aReading3.TimeStamp.ToString("yyyyMMddHHmmss"));
+                        analogReadings.Add(aReading3);
+                    }
+                }
+            }
+            return new Tuple<SensorType, IEnumerable<AnalogReadingDto>>(sensor,analogReadings);
         }
         
         public async Task<IEnumerable<AnalogReadingDto>> GetDataBySensor(string deviceData,DateTime start, DateTime stop,ObjectId sensorId) {

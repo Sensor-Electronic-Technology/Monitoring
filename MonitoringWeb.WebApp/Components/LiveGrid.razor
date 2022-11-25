@@ -1,30 +1,147 @@
 ﻿@using MonitoringSystem.Shared.Data
 @using MonitoringSystem.Shared.SignalR
-
-    <h1>Analog Channels</h1>
-    @if (this.Data == null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else
-    {
-        <DxGrid Data="@this.Data.analogData" 
-            CssClass="my-class" 
-            ShowAllRows=true 
-            CustomizeElement="Grid_CustomizeElement">
-            <Columns>
-                <DxGridDataColumn FieldName="Item"/>
-                <DxGridDataColumn FieldName="State"/>
-                <DxGridDataColumn FieldName="Value"/>
-            </Columns>
-        </DxGrid>
-    }
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Runtime.CompilerServices
+@using System.Globalization
+@using MonitoringWeb.WebApp.Data
+@inject ILogger<LiveGrid> logger
+@implements IAsyncDisposable
+@if (this._monitorData != null) {
+    <div class="container text-center">
+        <div class="row">
+            <div class="row text-center" style="padding:.05rem">
+                <h4>
+                    @if (DeviceName != null) {
+                        if (DeviceName == "nh3") {
+                            @DeviceName.ToUpper()
+                        } else {
+                            @(char.ToUpper(DeviceName[0]) + DeviceName.Substring(1))
+                        }
+                    }
+                </h4>
+            </div>
+            <div class="row text-center" style="padding:.05rem">
+                <p role="status">TimeStamp: @(this._monitorData?.TimeStamp.ToLocalTime().ToString(CultureInfo.InvariantCulture))</p>
+            </div>
+            @if (this._monitorData?.analogData != null) {
+                @if (this._monitorData.analogData.Any()) {
+                    <div class="row text-center" style="padding: .5rem">
+                        <h6>Analog Channels</h6>
+                    </div>
+                    <div class="row">
+                        <DxGrid Data="@this._monitorData.analogData"
+                                ShowAllRows=true>
+                            <Columns>
+                                <DxGridDataColumn FieldName="Item" Width="140px" />
+                                <DxGridDataColumn FieldName="State" />
+                                <DxGridDataColumn FieldName="Value" DisplayFormat="n0"/>
+                            </Columns>
+                        </DxGrid>
+                    </div>
+                    <h4>@Message</h4>
+                }
+            }
+            @if (this._monitorData?.discreteData != null) {
+                @if (this._monitorData.discreteData.Any()) {
+                    <div class="row text-center" style="padding: .5rem">
+                        <h6>Discrete Channels</h6>
+                    </div>
+                    <div class="row">
+                        <DxGrid Data="@this._monitorData.discreteData"
+                                ShowAllRows=true
+                                CustomizeElement="Grid_CustomizeElement">
+                            <Columns>
+                                <DxGridDataColumn FieldName="Item" Width="140px" />
+                                <DxGridDataColumn FieldName="State" />
+                                <DxGridDataColumn FieldName="Value" />
+                            </Columns>
+                        </DxGrid>
+                    </div>
+                }
+            }
+            @if (this._monitorData?.virtualData != null) {
+                @if (this._monitorData.virtualData.Any()) {
+                    <div class="row text-center" style="padding: .5rem">
+                        <h6>Virtual Channels</h6>
+                    </div>
+                    <div class="row">
+                        <DxGrid Data="@this._monitorData.virtualData"
+                                ShowAllRows=true
+                                CustomizeElement="Grid_CustomizeElement">
+                            <Columns >
+                                <DxGridDataColumn FieldName="Item" Width="140px" />
+                                <DxGridDataColumn FieldName="State" />
+                                <DxGridDataColumn FieldName="Value" />
+                            </Columns>
+                        </DxGrid>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+} else {
+    <p><em>Loading....</em></p>
+}
 
 @code {
+    // [Parameter]
     [Parameter]
-    public MonitorData? Data { get; set; }
+    public string? Hub { get; set; }
+
     [Parameter]
-    public string? Header { get; set; }
+    public string? DeviceName { get; set; }
+
+    [Parameter]
+    public EventCallback<DeviceStatus> OnAlert { get; set; }
+    
+    string Message { get; set; }
+    
+    void OnWidthChanged(string NewValue) {
+        Message = NewValue;
+    }
+    
+    private HubConnection? _hubConnection;
+    private MonitorData? _monitorData;
+
+    protected override async Task OnInitializedAsync() {
+        var hub = this.Hub;
+        if (hub != null) {
+            this._hubConnection = new HubConnectionBuilder()
+                .WithAutomaticReconnect(new TimeSpan[] {
+                    TimeSpan.FromSeconds(3),
+                    TimeSpan.FromSeconds(9),
+                    TimeSpan.FromSeconds(20),
+                    TimeSpan.FromSeconds(40),
+                    TimeSpan.FromSeconds(60),
+                    TimeSpan.FromSeconds(120),
+                    TimeSpan.FromSeconds(240)
+                })
+                .WithUrl(hub)
+                .Build();
+            this._hubConnection.On<MonitorData>("ShowCurrent", this.OnShowCurrent);
+
+            this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+            this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+
+            try {
+                await this._hubConnection.StartAsync();
+                this.logger.LogInformation(hub + " Connected");
+            } catch {
+                this.logger.LogError(hub + " hub connection failed");
+            }
+        }
+    }
+
+    async Task OnShowCurrent(MonitorData data) {
+        this._monitorData = data;
+        DeviceStatus status = new DeviceStatus() {
+            DeviceName = this.DeviceName,
+            Status = data.DeviceState,
+            ActiveAlerts = data.activeAlerts.AsEnumerable()
+        };
+        await this.OnAlert.InvokeAsync(status);
+        await InvokeAsync(StateHasChanged);
+    }
 
     void Grid_CustomizeElement(GridCustomizeElementEventArgs e) {
         if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Alarm.ToString()) {
@@ -32,6 +149,11 @@
         }
         if(e.ElementType == GridElementType.DataRow && (String)e.Grid.GetRowValue(e.VisibleIndex, "State")==ActionType.Warning.ToString()) {
             e.CssClass = "alarm-item";
+        }
+    }
+    public async ValueTask DisposeAsync() {
+        if (this._hubConnection is not null) {
+            await this._hubConnection.DisposeAsync();
         }
     }
 }

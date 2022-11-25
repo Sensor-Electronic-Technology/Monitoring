@@ -1,17 +1,28 @@
-﻿<div class="sidebar @StateCssClass">
-<DxTreeView AllowSelectNodes="true" CssClass="app-sidebar">
-    <Nodes>
-        <DxTreeViewNode NavigateUrl="/" Text="Dashboard" ></DxTreeViewNode>
-        <DxTreeViewNode Text="Data">
-            <Nodes>
-                <DxTreeViewNode NavigateUrl="plot" Text="H2 Plots"></DxTreeViewNode>
-                <DxTreeViewNode NavigateUrl="liveview" Text="Live View"></DxTreeViewNode>
-            </Nodes>
-        </DxTreeViewNode>
-    </Nodes>
-</DxTreeView>
+﻿@using MonitoringWeb.WebApp.Components
+@using MonitoringWeb.WebApp.Data
+@inject NavigationManager NavigationManager
+
+<div class="sidebar @StateCssClass">
+    <DxTreeView AllowSelectNodes="true" CssClass="app-sidebar" >
+        <Nodes>
+            <DxTreeViewNode  NavigateUrl="/" Text="Dashboard" ></DxTreeViewNode>
+            <DxTreeViewNode NavigateUrl="alertsview" Text="Recent Alerts"></DxTreeViewNode>
+            <DxTreeViewNode NavigateUrl="plot" Text="Detector Plots"></DxTreeViewNode>
+            <DxTreeViewNode NavigateUrl="config" Text="Configuration"></DxTreeViewNode>
+            <DxTreeViewNode Name="BulkGases" Text="Bulk Gases" Expanded="true">
+                <Nodes>
+                    <DxTreeViewNode Text="H2 Trailor" NavigateUrl="@h2gas"/>
+                    <DxTreeViewNode Text="Nitrogen" NavigateUrl="@n2gas" />
+                    <DxTreeViewNode Text="NH3 Tanks" NavigateUrl="@nh3gas" />
+                </Nodes>
+            </DxTreeViewNode>
+        </Nodes>
+    </DxTreeView>
 </div>
 
 @code {
     [Parameter] public string? StateCssClass { get; set; }
+    string h2gas = $"bulkgas/{(int)BulkGasType.H2}";
+    string n2gas = $"bulkgas/{(int)BulkGasType.N2}";
+    string nh3gas = $"bulkgas/{(int)BulkGasType.NH3}";
 }

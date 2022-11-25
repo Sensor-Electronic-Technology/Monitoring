@@ -1,0 +1,94 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringWeb.WebApp.Services
+@implements IAsyncDisposable
+@inject ConfigApiClient Client
+@inject SelectionChanged<ModbusDeviceDto> SelectionChanged
+
+<div class="row" style="padding: 1rem">
+    <div class="card">
+        <h5 class="card-header text-center">
+            Device Actions    
+        </h5>
+        <div class="card-body">
+            <DxGrid Data="@DeviceActions"
+                    KeyFieldName="Id"
+                    ValidationEnabled="false"
+                    AllowSelectRowByClick="true"
+                    SelectionMode="GridSelectionMode.Single"
+                    EditModelSaving="Grid_EditModelSaving"
+                    PopupEditFormCssClass="pw-800"
+                    EditMode="GridEditMode.EditForm">
+                <Columns>
+                    <DxGridCommandColumn Width="120px" NewButtonVisible="false" 
+                                         DeleteButtonVisible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Id)" Visible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(DeviceActionDto.Name)"/>
+                    <DxGridDataColumn FieldName="@nameof(DeviceActionDto.FirmwareId)"/>
+                    <DxGridDataColumn FieldName="@nameof(DeviceActionDto.ActionType)"/>
+                </Columns>
+                <EditFormTemplate Context="EditFormContext">
+                    @{
+                        var deviceAction = EditFormContext.EditModel as DeviceActionDto;
+                    }
+                    <DxFormLayout>
+                        <DxFormLayoutItem Caption="@nameof(DeviceActionDto.Name)">
+                            <DxTextBox @bind-Text="deviceAction.Name"></DxTextBox>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem Caption="@nameof(DeviceActionDto.FirmwareId)">
+                            <DxSpinEdit @bind-Value="deviceAction.FirmwareId"></DxSpinEdit>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem Caption="FacilityAction">
+                            <DxComboBox Data="@this.FacilityActions"
+                                        TextFieldName="@nameof(FacilityActionDto.Name)"
+                                        ValueFieldName="@nameof(FacilityActionDto.Id)"
+                                        @bind-Value="deviceAction.FacilityActionId"/>
+                        </DxFormLayoutItem>
+                    </DxFormLayout>
+                </EditFormTemplate>
+            </DxGrid>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public string? DeviceId { get; set; }
+
+    IEnumerable<DeviceActionDto>? DeviceActions { get; set; }
+    IEnumerable<FacilityActionDto>? FacilityActions { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        this.SelectionChanged.OnChanged += this.DeviceChanged;
+        if (this.DeviceId != null) {
+            this.FacilityActions = await this.Client.GetFacilityActions();
+            this.DeviceActions = await this.Client.GetDeviceActions(this.DeviceId);
+        }
+    }
+
+    async Task DeviceChanged() {
+        this.DeviceId = this.SelectionChanged?.SelectedItem?.Id.ToString();
+        await this.Update();
+    }
+
+    async Task Update() {
+        if (this.DeviceId != null) {
+            this.FacilityActions = await this.Client.GetFacilityActions();
+            this.DeviceActions = await this.Client.GetDeviceActions(this.DeviceId);
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
+        if (e.EditModel is DeviceActionDto deviceAction) {
+            await this.Client.UpdateDeviceAction(deviceAction);
+            await this.Update();
+        }
+    }
+
+    public ValueTask DisposeAsync() {
+        this.SelectionChanged.OnChanged -= this.DeviceChanged;
+        return ValueTask.CompletedTask;
+    }
+
+}

@@ -1,0 +1,43 @@
+﻿@using MonitoringWeb.WebApp.Data
+@using MonitoringSystem.Shared.Data.UsageModel
+@using MongoDB.Driver
+@inject IMongoClient Client;
+<h3>ConsumptionTable</h3>
+<DxGrid Data="@Records" AutoCollapseDetailRow="false" AllowGroup="true" ShowGroupPanel="true">
+    <Columns>
+        <DxGridDataColumn FieldName="Name" Caption="Month" SortIndex="0" />
+        <DxGridDataColumn FieldName="Consumption" />
+        <DxGridDataColumn FieldName="PerDay" />
+        <DxGridDataColumn FieldName="PerHour" />
+    </Columns>
+    <DetailRowTemplate >
+        @{
+            var monthRecord = context.DataItem as MonthRecord;
+        }
+        <DxGrid Data="@monthRecord?.DayRecords" ShowGroupPanel="true">
+            <Columns>
+                <DxGridDataColumn FieldName="Day" Caption="DayOfMonth" />
+                <DxGridDataColumn FieldName="Name" Caption="Day"/>
+                <DxGridDataColumn FieldName="Consumption"/>
+                <DxGridDataColumn FieldName="PerHour"/>
+                <DxGridDataColumn FieldName="PerMin"/>
+            </Columns>
+        </DxGrid>
+    </DetailRowTemplate>
+</DxGrid>
+@code {
+    [Parameter]
+    public BulkGasType GasType { get; set; }
+    
+    IEnumerable<MonthRecord> Records { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        if (this.GasType == BulkGasType.NH3) {
+            var database = this.Client.GetDatabase("consumption");
+            var collection = database.GetCollection<UsageRecord>("consumption_records");
+            var record = await collection.Find(_ => true).FirstAsync();
+            this.Records = record.MonthRecords.AsEnumerable();
+        }
+    }
+
+}

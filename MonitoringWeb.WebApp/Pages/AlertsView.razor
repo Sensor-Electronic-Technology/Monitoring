@@ -1,0 +1,107 @@
+﻿@page "/alertsview"
+@using Microsoft.AspNetCore.Components
+@using MonitoringSystem.Shared.Data
+@using MonitoringWeb.WebApp.Services
+@inject LatestAlertService AlarmService
+
+<div class="container-fluid alert-container">
+    <div class="row text-center">
+        <div class="row text-center" style="padding:1rem">
+            <DxButton
+                Click="() => IsOpen = !IsOpen"
+                SizeMode="SizeMode.Medium"
+                RenderStyleMode="ButtonRenderStyleMode.Contained"
+                RenderStyle="@ButtonRenderStyle.Info">Show Floorplan</DxButton>
+        </div>
+        <DxDropDown
+            @bind-IsOpen="@IsOpen"
+            CloseOnOutsideClick="true"
+            PositionMode="DropDownPositionMode.Center"
+            PositionTarget=".alert-container"
+            RestrictionMode="DropDownRestrictionMode.Page"
+            PreventCloseOnPositionTargetClick="false"
+            CloseMode="@DropDownCloseMode.Hide"
+            FitToRestriction="true">
+            <div class="custom-flyout-body">
+                <img src="images/GasDetectorMap.PNG" />
+            </div>
+        </DxDropDown>
+    </div>
+    <div class="row" style="padding-bottom: .5rem">
+        <div class="col">
+            <DxSpinEdit @bind-Value="DaysBack"
+                        Increment="1M"
+                        MinValue="1M"
+                        MaxValue="10M"
+                        CssClass="cw-320"/>
+        </div>
+        <div class="col">
+            <DxButton Click="@FetchAlerts" RenderStyle="ButtonRenderStyle.Primary"
+                      RenderStyleMode="ButtonRenderStyleMode.Contained"
+                      Text="Fetch Alerts"/>
+        </div>
+    </div>
+    <div class="row">
+        @if (this.Data == null) {
+            <h3>@Message</h3>
+        } else {
+            <DxGrid Data="@Data"
+                    ShowGroupPanel="true"
+                    AutoExpandAllGroupRows="true"
+                    SelectionMode="GridSelectionMode.Single"
+                    AllowSelectRowByClick="true"
+                    KeyFieldNames="@KeyFieldNames"
+                    @bind-SelectedDataItem="SelectedAlert"
+                    PageSize="15"
+                    PagerPosition="GridPagerPosition.TopAndBottom"
+                    PageSizeSelectorVisible="true"
+                    PageSizeSelectorItems="@(new int[] { 5, 10, 15, 20 })"
+                    PageSizeSelectorAllRowsItemVisible="true"
+                    PagerSwitchToInputBoxButtonCount="10"
+                    PagerVisibleNumericButtonCount="10">
+                <Columns>
+                    <DxGridDataColumn FieldName="TimeStamp" DisplayFormat="G"/>
+                    <DxGridDataColumn FieldName="Device" GroupIndex="0"/>
+                    <DxGridDataColumn FieldName="Name" GroupIndex="1"/>
+                    <DxGridDataColumn FieldName="State"/>
+                    <DxGridDataColumn FieldName="Value"/>
+                </Columns>
+            </DxGrid>
+        }
+    </div>
+</div>
+<div class="row" style="padding: 1rem">
+    <DetectorPlot SelectedAlert="@this.SelectedAlert"/>
+</div>
+
+@code{
+    IReadOnlyList<string> KeyFieldNames = new [] {
+        "alertId",
+        "TimeStamp",
+    };
+    DateTime StartDate { get; set; }
+    DateTime StopDate { get; set; }
+    IEnumerable<LastAlertDto>? Data { get; set; }
+    Decimal DaysBack { get; set; } = 3;
+    object? SelectedAlert { get; set; }
+    string Message { get; set; } = "Data loading...";
+    bool IsOpen { get; set; } = false;
+    
+    protected override async Task OnInitializedAsync() {
+        this.Data=await this.AlarmService.GetLatestAlarms((int)this.DaysBack);
+        if (this.Data == null) {
+            this.Message = $"No Alerts in last {this.DaysBack} days";
+        }
+    }
+
+    private async void FetchAlerts() {
+        this.Data = null;
+        this.Message = "Fetching Data, Please Wait...";
+        await InvokeAsync(StateHasChanged);
+        this.Data=await this.AlarmService.GetLatestAlarms((int)this.DaysBack);
+        if (this.Data==null) {
+            this.Message = $"No Alerts in last {this.DaysBack} days";
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}

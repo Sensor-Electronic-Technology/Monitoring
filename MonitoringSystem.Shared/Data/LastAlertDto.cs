@@ -1,8 +1,11 @@
-﻿namespace MonitoringSystem.Shared.Data; 
+﻿using MongoDB.Bson;
+
+namespace MonitoringSystem.Shared.Data; 
 
 public class LastAlertDto {
     public string alertId { get; set; }
-    public string channelId { get; set; }
+    public ObjectId channelId { get; set; }
+    public string sensorId { get; set; }
     public AlertItemType ItemType { get; set; }
     public string Name { get; set; }
     public DateTime TimeStamp { get; set; }

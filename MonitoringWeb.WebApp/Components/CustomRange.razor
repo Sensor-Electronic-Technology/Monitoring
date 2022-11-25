@@ -1,0 +1,86 @@
+﻿@using MonitoringWeb.WebApp.Data
+@using MonitoringWeb.WebApp.Services
+@implements IAsyncDisposable
+@inject ValueChanged<DateRange> DateRangeChange
+
+<DxAccordion>
+    <Items>
+        <DxAccordionItem Text="Custom Date Range">
+            <ContentTemplate Context="info">
+                <DxFormLayout>
+                    <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
+                        <DxFormLayoutItem Caption="Start Date">
+                            @*<DxDateEdit Date="@StartDate" TimeSectionVisible="true"
+                                            DateChanged="@(async (DateTime newValue) => await OnStartDateChange(newValue))"
+                                            CssClass="cw-320"/>*@
+                            <DxDateEdit @bind-Date="this.StartDate" TimeSectionVisible="true"
+                                        CssClass="cw-320"/>
+                        </DxFormLayoutItem>
+                    </DxFormLayoutGroup>
+                    <DxFormLayoutGroup Caption="Stop DateTime" ColSpanMd="6">
+                        <DxFormLayoutItem Caption="Stop Date">
+                            @*<DxDateEdit Date="@StopDate" TimeSectionVisible="true"
+                                            DateChanged="@(async (DateTime newValue) => await OnStopDateChange(newValue))"
+                                            CssClass="cw-320"/>*@
+                            <DxDateEdit @bind-Date="this.StopDate" TimeSectionVisible="true"
+                                        CssClass="cw-320"/>
+                        </DxFormLayoutItem>
+                    </DxFormLayoutGroup>
+                    <DxFormLayoutItem ColSpanMd="12">
+                        <DxButton RenderStyle="ButtonRenderStyle.Light"
+                                  Text="Fetch Data"
+                                  Click="@this.Fetch"/>
+                    </DxFormLayoutItem>
+                </DxFormLayout>
+            </ContentTemplate>
+        </DxAccordionItem>
+    </Items>
+</DxAccordion>
+
+@code {
+    [Parameter]
+    public DateTime StartDate { get; set; }
+    [Parameter]
+    public DateTime StopDate { get; set; }
+    
+    [Parameter]
+    public EventCallback<DateTime> StartDateChanged { get; set; }
+    
+    [Parameter]
+    public EventCallback<DateTime> StopDateChanged { get; set; }
+
+    protected override Task OnInitializedAsync() {
+        this.DateRangeChange.OnParentChanged += this.DateRangeChanged;
+        return Task.CompletedTask;
+    }
+
+    private async Task DateRangeChanged() {
+        
+        this.StartDate = this.DateRangeChange.Item.Start;
+        this.StopDate = this.DateRangeChange.Item.Start;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void Fetch() {
+        this.DateRangeChange.SetItemChild(new DateRange() {
+            Start=this.StartDate,
+            Stop=this.StopDate
+        });
+    }
+
+    /*private async Task OnStartDateChange(DateTime newValue) {
+        this.StartDate = newValue;
+        await this.StartDateChanged.InvokeAsync(newValue);
+    }
+
+    private async Task OnStopDateChange(DateTime newValue) {
+        this.StopDate = newValue;
+        await this.StopDateChanged.InvokeAsync(newValue);
+    }*/
+    
+    public ValueTask DisposeAsync() {
+        this.DateRangeChange.OnParentChanged-=this.DateRangeChanged;
+        return ValueTask.CompletedTask;
+    }
+
+}

@@ -1,0 +1,77 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringSystem.Shared.Data
+@using MonitoringWeb.WebApp.Services
+@inject ConfigApiClient Client
+
+<div class="row" style="padding: 1rem">
+    <div class="card">
+        <h5 class="card-header text-center">Facility Actions</h5>
+        <div class="card body">
+            <DxGrid Data="@FacilityActions"
+                    KeyFieldName="Id"
+                    ValidationEnabled="false"
+                    AllowSelectRowByClick="true"
+                    SelectionMode="GridSelectionMode.Single"
+                    EditModelSaving="Grid_EditModelSaving"
+                    PopupEditFormCssClass="pw-800"
+                    EditMode="GridEditMode.EditForm">
+                <Columns>
+                    <DxGridCommandColumn Width="120px" NewButtonVisible="false" DeleteButtonVisible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(FacilityActionDto.Id)" Visible="false"/>
+                    <DxGridDataColumn FieldName="@nameof(FacilityActionDto.Name)"/>
+                    <DxGridDataColumn FieldName="@nameof(FacilityActionDto.ActionType)"/>
+                    <DxGridDataColumn FieldName="@nameof(FacilityActionDto.EmailEnabled)"/>
+                    <DxGridDataColumn FieldName="@nameof(FacilityActionDto.EmailPeriod)"/>
+                </Columns>
+                <EditFormTemplate Context="EditFormContext">
+                    @{
+                        var facilityAction = EditFormContext.EditModel as FacilityActionDto;
+                    }
+                    <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.Name)" ColSpanMd="4">
+                            <DxTextBox @bind-Text="facilityAction.Name"></DxTextBox>
+                        </DxFormLayoutItem>
+                        @*<DxFormLayoutItem Caption="@nameof(FacilityActionDto.ActionType)">
+                            <DxComboBox Data="@this.ActionTypes"
+                                        @bind-Value="facilityAction.ActionType" />
+                        </DxFormLayoutItem>*@
+                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.EmailEnabled)" ColSpanMd="4">
+                            <DxCheckBox @bind-Checked="facilityAction.EmailEnabled"></DxCheckBox>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem Caption="@nameof(FacilityActionDto.EmailPeriod)" ColSpanMd="4">
+                            <DxSpinEdit @bind-Value="facilityAction.EmailPeriod"></DxSpinEdit>
+                        </DxFormLayoutItem>
+                    </DxFormLayout>
+                </EditFormTemplate>
+            </DxGrid>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    IEnumerable<FacilityActionDto>? FacilityActions { get; set; }
+    IEnumerable<ActionType>? ActionTypes { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        this.ActionTypes=Enum.GetValues(typeof(ActionType))
+            .OfType<ActionType>()
+            .ToList();
+        this.FacilityActions = await this.Client.GetFacilityActions();
+    }
+
+    async Task Update() {
+        this.ActionTypes=Enum.GetValues(typeof(ActionType))
+            .OfType<ActionType>()
+            .ToList();
+        this.FacilityActions = await this.Client.GetFacilityActions();
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e) {
+        if (e.EditModel is FacilityActionDto action) {
+            await this.Client.UpdateFacilityAction(action);
+            await this.Update();
+        }
+    }
+}

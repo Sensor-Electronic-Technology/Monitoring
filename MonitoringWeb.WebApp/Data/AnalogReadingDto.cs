@@ -1,6 +1,6 @@
 ﻿using MongoDB.Bson;
 
-namespace MonitoringWeb.WebAppV2.Data;
+namespace MonitoringWeb.WebApp.Data;
 public class AnalogReadingDto {
     public string Name { get; set; }
     public DateTime TimeStamp { get; set; }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
 using Microsoft.ML;
 using Microsoft.ML.Data;
+using MonitoringSystem.Shared.Data.UsageModel;
 
 namespace MonitoringSystem.ConsoleTesting; 
 
@@ -68,9 +70,125 @@ public class CloneDatabase {
         //await UpdateSensors();
         //await UpdateAnalogAndSensors("epi1");
         //await UpdateAnalogAndSensors("nh3");
-        await UpdateAnalogAndSensors("gasbay");
-        await UpdateAnalogAndSensors("epi2");
+        /*await UpdateAnalogAndSensors("gasbay");
+        await UpdateAnalogAndSensors("epi2");*/
+        /*double value = 989.43234564;
+        Console.WriteLine($"Value: {value.ToString("N1")}");*/
+        //await UsageN2Testing();
+        await UsageNH3Testing();
     }
+    
+    static async Task UsageN2Testing() {
+        await using var context = new MonitorContext();
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase("epi1_data");
+        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
+
+        UsageRecord record = new UsageRecord();
+        
+        var item = await analogCollection.Find(e => e.Identifier == "N2 inH20").FirstOrDefaultAsync();
+        var readings = await analogReadCollection.Find(_ => true).ToListAsync();
+        var start = new DateTime(2022, 11, 1,3,1,0);
+        var stop = new DateTime(2022, 11, 23, 8, 22, 0);
+        
+        var values = readings.Where(e=>e.timestamp>=start && e.timestamp<=stop)
+            .Select(e => new { timestamp = e.timestamp, value = e.readings.FirstOrDefault(e=>e.MonitorItemId==item._id).Value }).ToArray();
+        List<double> rates = new List<double>();
+        List<double> times = new List<double>();
+        for (int i = 1; i < values.Count(); i++) {
+            var dV = (values[i].value - values[i - 1].value);
+            var dt = (values[i].timestamp - values[i - 1].timestamp).TotalHours;
+            var rate = dV / dt;
+            if (rate<=0) {
+                rates.Add(rate);
+                times.Add(dt);
+            }
+        }
+        Console.WriteLine($"Rate Sum: {rates.Sum()}");
+        Console.WriteLine($"Time Sum: {times.Sum()}");
+        Console.WriteLine($"Usage/Hour: {rates.Sum()/times.Sum()}");
+        Console.WriteLine($"Usage/Hour: {rates.Sum()/(rates.Count())}");
+    }
+    
+    static async Task UsageNH3Testing() {
+        await using var context = new MonitorContext();
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase("nh3_data");
+        var usageDatabase = client.GetDatabase("consumption");
+        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
+        var consumptionCollection = usageDatabase.GetCollection<UsageRecord>("consumption_records");
+        var start = new DateTime(2022, 10, 25,18,27,0);
+        var readings = await analogReadCollection.Find(e=>e.timestamp>=start).ToListAsync();
+        var gMonths = readings.GroupBy(e => e.timestamp.Month, 
+                e => new { timestamp = e.timestamp, value = (e.readings[0].Value + e.readings[1].Value) })
+            .ToDictionary(e => e.Key, e => e.ToList());
+        UsageRecord main = new UsageRecord() { _id = ObjectId.GenerateNewId(), Year = 2022 };
+        main.Identifier = "NH3 Weight Combined";
+        List<MonthRecord> monthRecords = new List<MonthRecord>();
+        foreach (var gMonth in gMonths) {
+            MonthRecord record = new MonthRecord();
+            record.Month = gMonth.Key;
+            record.Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(record.Month);
+            var values = gMonth.Value;
+            var days = values.GroupBy(e => e.timestamp.Day).ToDictionary(e=>e.Key,e=>e.ToList());
+            foreach (var day in days) {
+                DayRecord dayRecord = new DayRecord() {
+                    Day = day.Key, Name = day.Value.First().timestamp.DayOfWeek.ToString()
+                };
+                List<double> rates = new List<double>();
+                for (int i = 1; i < day.Value.Count(); i++) {
+                    var dV = (day.Value[i].value - day.Value[i - 1].value);
+                    var dt = (day.Value[i].timestamp - day.Value[i - 1].timestamp).TotalSeconds*24;
+                    var rate = dV / dt;
+                    if (rate<=0) {
+                        rates.Add(Math.Abs(rate));
+                    }
+                }
+                dayRecord.TimeStamp = DateTime.Now;
+                dayRecord.PerSec = rates.Average();
+                dayRecord.PerMin = dayRecord.PerSec * 60;
+                dayRecord.PerHour = dayRecord.PerMin * 60;
+                dayRecord.Consumption = dayRecord.PerHour * 24;
+                record.DayRecords.Add(dayRecord);
+            }
+            
+            
+            record.TimeStamp = DateTime.Now;
+            record.StartDate = new DateTime(2022, record.Month, 1);
+            record.StopDate= new DateTime(2022, 
+                record.Month, 
+                DateTime.DaysInMonth(2022, 
+                    record.Month));
+            record.PerSec = record.DayRecords.Average(e=>e.PerSec);
+            record.PerMin = record.DayRecords.Average(e => e.PerMin);
+            record.PerHour = record.DayRecords.Average(e => e.PerHour);
+            record.PerDay = record.DayRecords.Average(e => e.Consumption);
+            record.Consumption = record.PerDay * DateTime.DaysInMonth(2022, record.Month);
+            /*record.PerMin = record.PerSec * 60;
+            record.PerHour = record.PerMin * 60;
+            record.PerDay = record.PerHour * 24;*/
+            //record.PerMonth = record.PerDay*DateTime.DaysInMonth(2022,record.Month);
+            main.MonthRecords.Add(record);
+        }
+
+        await consumptionCollection.InsertOneAsync(main);
+        Console.WriteLine("Check Database");
+
+        /*foreach (var usage in usageRecords) {
+            var month = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(usage.Month);
+            Console.WriteLine($"Month: {month}");
+            Console.WriteLine($"Range: {usage.StartDate.Date}-{usage.StopDate.Date}");
+            Console.WriteLine($"Usage/sec: {usage.PerSec}");
+            Console.WriteLine($"Usage/min: {usage.PerMin}");
+            Console.WriteLine($"Usage/hour: {usage.PerHour}");
+            Console.WriteLine($"Usage/day: {usage.PerDay}");
+            Console.WriteLine($"Usage/Month: {usage.PerMonth}");
+        }*/
+    }
+
+
 
     static async Task UpdateSensors() {
         await using var context = new MonitorContext();

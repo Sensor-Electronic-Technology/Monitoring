@@ -1,0 +1,174 @@
+﻿@using MonitoringWeb.WebApp.Data
+@using MonitoringWeb.WebApp.Services
+@using System.Drawing
+@using MongoDB.Driver
+@using MonitoringSystem.Shared.Data.LogModel
+@inject PlotDataService PlotService
+@inject ValueChanged<DateRange> DateRangeState
+@implements IAsyncDisposable
+
+
+        <CustomRange @bind-StartDate="this.StartDate" @bind-StopDate="@StopDate"></CustomRange>
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                @foreach (PlotRange range in Enum.GetValues(typeof(PlotRange)).Cast<PlotRange>().ToList()) {
+                    <DxButton RenderStyle="ButtonRenderStyle.Light"
+                              Text="@Enum.GetName(range).Substring(1)"
+                              Click="@(async Task (arg) => { await this.OnClick(range); })"/>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (this.PlotData == null) {
+            <div class="container-xl text-center">
+                <button class="btn btn-light position-absolute top-50 start-50 translate-middle" disabled>
+                    <span class="spinner-border spinner-border-sm"></span>
+                    Loading...
+                </button>
+            </div>
+        } else {
+            <DxChart Data="@PlotData"
+                     Width="100%"
+                     Height="100%">
+                <DxChartLegend AllowToggleSeries="true"
+                               Orientation="Orientation.Horizontal"
+                               VerticalAlignment="VerticalEdge.Top"
+                               HorizontalAlignment="HorizontalAlignment.Center"
+                               Position="RelativePosition.Outside">
+                    <DxChartTitle Text="Detectors"> </DxChartTitle>
+                </DxChartLegend>
+
+                <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
+                                     ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
+                                     ValueField="@((AnalogReadingDto r) => (int)r.Value)">
+                    <SeriesTemplate Context="settings">
+                        @if (this.GasType == BulkGasType.NH3) {
+                            <DxChartLineSeries Settings="@settings">
+                                <DxChartSeriesLabel Visible="false"/>
+                                <DxChartSeriesPoint Visible="true"/>
+                                <DxChartAggregationSettings Enabled="true"
+                                                            Method="ChartAggregationMethod.Min"/>
+                            </DxChartLineSeries>
+                        } else {
+                            <DxChartLineSeries Settings="@settings" Color="Color.Aqua">
+                                <DxChartSeriesLabel Visible="false"/>
+                                <DxChartSeriesPoint Visible="true"/>
+                                <DxChartAggregationSettings Enabled="true"
+                                                            Method="ChartAggregationMethod.Min"/>
+                            </DxChartLineSeries>
+                        }
+                    </SeriesTemplate>
+                </DxChartCommonSeries>
+                <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime" Type="ChartAxisType.Continuous">
+                    <DxChartAxisRange StartValue="@this.PlotStart"
+                                      EndValue="@this.PlotStop"/>
+
+                </DxChartArgumentAxis>
+                <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
+                    <DxChartAxisRange StartValue="@this.Sensor.YAxisStart" EndValue="@this.Sensor.YAxisStop"></DxChartAxisRange>
+                    <DxChartAxisTitle Text="@this.Sensor.Units"/>
+                </DxChartValueAxis>
+                <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
+                <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
+                                          ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
+
+                <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
+                    <div style="background-color: grey;">
+                        <div class="font-weight-bold">
+                            @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
+                        </div>
+                        <div>
+                            @((context.Point.Value))
+                        </div>
+                    </div>
+                </DxChartTooltip>
+            </DxChart>
+        }
+    </div>
+</div>
+
+
+
+@code {
+    [Parameter]
+    public BulkGasType GasType { get; set; }
+    
+    AccordionExpandCollapseAction ExpandCollapseAction { get; set; } = AccordionExpandCollapseAction.HeaderClick;
+    DateTime StartDate = DateTime.Now.AddDays(-1).ToLocalTime();
+    DateTime StopDate = DateTime.Now.AddDays(1).ToLocalTime();
+    DateTime PlotStart;
+    DateTime PlotStop;
+    SensorType Sensor;
+    IEnumerable<AnalogReadingDto>? PlotData { get; set; }
+    string Header = "";
+
+    protected override async Task OnInitializedAsync() {
+        this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
+        await this.Load();
+    }
+
+    private Task Submit() {
+        return Task.CompletedTask;
+    }
+
+    private async Task OnDateRangeChanged() {
+        this.StartDate = this.DateRangeState.Item.Start;
+        this.StopDate = this.DateRangeState.Item.Stop;
+        await this.Load();
+    }
+    
+    private async Task OnClick(PlotRange range) {
+        this.StartDate = DateTime.Now.AddDays(-(int)range);
+        this.StopDate = DateTime.Now.AddDays((int)range);
+        await this.Load();
+    }
+    
+    private async Task Load() {
+        this.PlotData=null;
+        await InvokeAsync(StateHasChanged);
+        var start= this.StartDate;
+        var stop = this.StopDate;
+        switch (this.GasType) {
+            case BulkGasType.N2:
+                this.Header = "N2 inH2O";
+                var ret=await this.PlotService.GetChannelDatav2("epi1_data", "N2 inH20", start, stop);
+                this.PlotData = ret.Item2;
+                this.Sensor = ret.Item1;
+                break;
+            case BulkGasType.H2:
+                this.Header = "H2 Trailor PSI";
+                var ret2 = await this.PlotService.GetChannelDatav2("epi1_data", "H2 PSI", start, stop);
+                this.PlotData = ret2.Item2;
+                this.Sensor = ret2.Item1;
+                break;
+            case BulkGasType.NH3:
+                this.Header = "NH3 Tank(s) Plot";
+                var ret3 = await this.PlotService.GetBulkNH3(this.StartDate, this.StopDate);
+                this.PlotData = ret3.Item2;
+                this.Sensor = ret3.Item1;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        
+        this.PlotStart = this.StartDate;
+        this.PlotStop = this.StopDate;
+        this.DateRangeState.SetItemParent(new DateRange() {
+            Start=this.StartDate,Stop = this.StopDate
+        });
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public override async Task SetParametersAsync(ParameterView parameters) {
+        await base.SetParametersAsync(parameters);
+        await this.Load();
+    }
+    
+    public ValueTask DisposeAsync() {
+        this.DateRangeState.OnChildChanged -= this.OnDateRangeChanged;
+        return ValueTask.CompletedTask;
+    }
+}

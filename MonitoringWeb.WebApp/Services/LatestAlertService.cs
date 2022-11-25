@@ -1,7 +1,8 @@
 ﻿using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
-namespace MonitoringWeb.WebAppV2.Services; 
+
+namespace MonitoringWeb.WebApp.Services; 
 
     public class LatestAlertService {
         private readonly ILogger<LatestAlertService> _logger;
