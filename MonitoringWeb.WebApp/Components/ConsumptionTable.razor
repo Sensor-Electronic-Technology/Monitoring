@@ -33,8 +33,8 @@
 
     protected override async Task OnInitializedAsync() {
         if (this.GasType == BulkGasType.NH3) {
-            var database = this.Client.GetDatabase("consumption");
-            var collection = database.GetCollection<UsageRecord>("consumption_records");
+            var database = this.Client.GetDatabase("nh3_data");
+            var collection = database.GetCollection<UsageRecord>("nh3_consumption");
             var record = await collection.Find(_ => true).FirstAsync();
             this.Records = record.MonthRecords.AsEnumerable();
         }

@@ -115,10 +115,10 @@ public class CloneDatabase {
         await using var context = new MonitorContext();
         var client = new MongoClient("mongodb://172.20.3.41");
         var database = client.GetDatabase("nh3_data");
-        var usageDatabase = client.GetDatabase("consumption");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var consumptionCollection = usageDatabase.GetCollection<UsageRecord>("consumption_records");
+        var consumptionCollection = database.GetCollection<UsageRecord>("nh3_consumption");
+       
         var start = new DateTime(2022, 10, 25,18,27,0);
         var readings = await analogReadCollection.Find(e=>e.timestamp>=start).ToListAsync();
         var gMonths = readings.GroupBy(e => e.timestamp.Month, 
