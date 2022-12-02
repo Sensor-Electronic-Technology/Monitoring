@@ -77,66 +77,168 @@ public class CloneDatabase {
         /*double value = 989.43234564;
         Console.WriteLine($"Value: {value.ToString("N1")}");*/
         //await UsageN2Testing();
-        await UsageNH3Testing();
+        await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
+        //await UpdateUsageRecord("Tank1 Weight", "Tank2 Weight");
+        /*await using var context = new MonitorContext();
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase("nh3_data");
+        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
+        var usageCollection = database.GetCollection<UsageDayRecord>("usage_records");
+        var sort=Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
+        /*var tank1 = await analogCollection.Find(e => e.Identifier == channel1).FirstOrDefaultAsync();
+        var tank2 = await analogCollection.Find(e => e.Identifier == channel2).FirstOrDefaultAsync();#1#
 
+        var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
+        var hours = ( DateTime.Now-latest.Date).TotalHours;
+        var start = latest.Date.AddDays(1).AddHours(-4);
+        var stop = DateTime.Now.Date.AddMinutes(-1).AddHours(-4);
+        Console.WriteLine($"Latest: {latest.Date}");
+        Console.WriteLine($"Start: {start}");
+        Console.WriteLine($"Stop: {stop}");
+        Console.WriteLine($"Hours: {hours}");*/
     }
-
-    static async Task UsageNH3Testing() {
+    static async Task UsageNH3Testing(string channel1,string channel2) {
         await using var context = new MonitorContext();
         var client = new MongoClient("mongodb://172.20.3.41");
         var database = client.GetDatabase("nh3_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<DayRecord>("nh3_usage");
-        
+        var usageCollection = database.GetCollection<UsageDayRecord>("usage_records");
         
         var start = new DateTime(2022, 10, 25,18,27,0);
-        var readings = await analogReadCollection.Find(e=>e.timestamp>=start).ToListAsync();
-        var days = readings.GroupBy(e => e.timestamp.Date,
-                e => new { timestamp = e.timestamp, value = (e.readings[0].Value + e.readings[1].Value) })
+        var stop = new DateTime(2022, 11, 25,0,0,0);
+        var tank1 = await analogCollection.Find(e => e.Identifier == channel1).FirstOrDefaultAsync();
+        var tank2 = await analogCollection.Find(e => e.Identifier == channel2).FirstOrDefaultAsync();
+        if (tank1 != null && tank2 != null) {
+            var readings = await analogReadCollection.Find(e => e.timestamp >= start && e.timestamp <= stop)
+                .ToListAsync();
+            var days =  readings.GroupBy(e => 
+                        e.timestamp.Date, 
+                    e => new { 
+                        timestamp = e.timestamp, 
+                        value = (e.readings.FirstOrDefault(m=>m.MonitorItemId==tank1._id)!.Value+ 
+                                 e.readings.FirstOrDefault(m=>m.MonitorItemId==tank2._id)!.Value) 
+                    })
                 .ToDictionary(e => e.Key, e => e.ToList());
-        List<DayRecord> dayRecords = new List<DayRecord>();
-        foreach (var day in days) {
-            DayRecord dayRecord = new DayRecord() {
-                _id = ObjectId.GenerateNewId(),
-                DayOfMonth = day.Key.Day, 
-                DayOfWeek = day.Key.DayOfWeek,
-                Date=day.Key,
-                Month = day.Key.Month,
-                WeekOfYear = CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,CalendarWeekRule.FirstDay,DayOfWeek.Monday),
-                Year = day.Key.Year,
-                DayOfYear = day.Key.DayOfYear,
-                MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
-            };
             
-            List<double> rates = new List<double>();
-            for (int i = 1; i < day.Value.Count(); i++) {
-                var dV = (day.Value[i].value - day.Value[i - 1].value);
-                var dt = (day.Value[i].timestamp - day.Value[i - 1].timestamp).TotalSeconds*24;
-                var rate = dV / dt;
-                if (rate<=0) {
-                    rates.Add(Math.Abs(rate));
+            List<UsageDayRecord> dayRecords = new List<UsageDayRecord>();
+            foreach (var day in days) {
+                UsageDayRecord usageDayRecord = new UsageDayRecord() {
+                    _id = ObjectId.GenerateNewId(),
+                    DayOfMonth = day.Key.Day, 
+                    DayOfWeek = day.Key.DayOfWeek,
+                    Date=day.Key,
+                    Month = day.Key.Month,
+                    WeekOfYear = CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,CalendarWeekRule.FirstDay,DayOfWeek.Monday),
+                    Year = day.Key.Year,
+                    DayOfYear = day.Key.DayOfYear,
+                    MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
+                };
+                List<double> rates = new List<double>();
+                double totalS = 0;
+                for (int i = 1; i < day.Value.Count(); i++) {
+                    var dlb = (day.Value[i].value - day.Value[i-1].value);
+                    var dt = (day.Value[i].timestamp - day.Value[i-1].timestamp).TotalMinutes;
+                    if (dlb > 10.00) {
+                        Console.WriteLine($"dlb: {dlb} dt:{dt}");
+                        dlb = 0;
+                    }
+                    var rate = dlb / dt;
+                    totalS += dt;
+                    rates.Add(rate);
                 }
+
+                /*Console.WriteLine($"Day: {day.Key}");
+                Console.WriteLine($"Hours: {totalS/(24*3600)}");
+                Console.WriteLine($"Start_t: {day.Value.First().timestamp} Start_t: {day.Value.Last().timestamp}");
+                Console.WriteLine($"Delta LB: {day.Value.Last().value-day.Value.First().value}");
+                Console.WriteLine($"lb/day: {(day.Value.Last().value-day.Value.First().value)/(totalS/(24*3600))}");*/
+                usageDayRecord.Usage = rates.Sum();
+                usageDayRecord.PerHour =Math.Round(usageDayRecord.Usage/24,3);
+                usageDayRecord.PerMin = Math.Round(usageDayRecord.PerHour/60,3);
+                usageDayRecord.PerSec = Math.Round(usageDayRecord.PerMin/60,4);
+                dayRecords.Add(usageDayRecord);
             }
-            dayRecord.PerSec = rates.Average();
-            dayRecord.PerMin = dayRecord.PerSec * 60;
-            dayRecord.PerHour = dayRecord.PerMin * 60;
-            dayRecord.Usage = dayRecord.PerHour * 24;
-            dayRecords.Add(dayRecord);
+            await usageCollection.InsertManyAsync(dayRecords);
+            Console.WriteLine("CheckDatabase");            
+        } else {
+            Console.WriteLine("Error: could not find channels");
         }
-        await usageCollection.InsertManyAsync(dayRecords);
-        Console.WriteLine("CheckDatabase");
     }
 
-    static async Task UpdateUsageRecord() {
+    static async Task UpdateUsageRecord(string channel1,string channel2) {
         await using var context = new MonitorContext();
         var client = new MongoClient("mongodb://172.20.3.41");
         var database = client.GetDatabase("nh3_data");
+        
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        //var usageCollection = database.GetCollection<UsageRecord>("nh3_usage");
-        
+        var usageCollection = database.GetCollection<UsageDayRecord>("usage_records");
+        var sort=Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
+        var count=await usageCollection.EstimatedDocumentCountAsync();
+        var tank1 = await analogCollection.Find(e => e.Identifier == channel1).FirstOrDefaultAsync();
+        var tank2 = await analogCollection.Find(e => e.Identifier == channel2).FirstOrDefaultAsync();
+        if (tank1 != null && tank2 != null) {
+            var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
+            var hours = ( DateTime.Now-latest.Date).TotalHours;
+            var now = DateTime.Now.Date;
+            if (hours >= 24) {
+                var start = latest.Date.AddDays(1);
+                var stop = DateTime.Now.Date.AddSeconds(-1).AddHours(-5);
+                var readings = await analogReadCollection.Find(e => 
+                        e.timestamp >= start && 
+                        e.timestamp < stop)
+                    .ToListAsync();
+                var days =  readings.GroupBy(e => 
+                            e.timestamp.Date, 
+                        e => new { 
+                            timestamp = e.timestamp, 
+                            value = (e.readings.FirstOrDefault(m=>m.MonitorItemId==tank1._id)!.Value+ 
+                                     e.readings.FirstOrDefault(m=>m.MonitorItemId==tank2._id)!.Value) 
+                        })
+                    .ToDictionary(e => e.Key, e => e.ToList());
+                List<UsageDayRecord> dayRecords = new List<UsageDayRecord>();
+                foreach (var day in days) {
+                    UsageDayRecord usageDayRecord = new UsageDayRecord() {
+                        _id = ObjectId.GenerateNewId(),
+                        DayOfMonth = day.Key.Day, 
+                        DayOfWeek = day.Key.DayOfWeek,
+                        Date=day.Key,
+                        Month = day.Key.Month,
+                        WeekOfYear = CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,CalendarWeekRule.FirstDay,DayOfWeek.Monday),
+                        Year = day.Key.Year,
+                        DayOfYear = day.Key.DayOfYear,
+                        MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
+                    };
+                    usageDayRecord.ChannelIds.Add(tank1._id);
+                    usageDayRecord.ChannelIds.Add(tank2._id);
+                    List<double> rates = new List<double>();
+                    for (int i = 1; i < day.Value.Count(); i++) {
+                        var dV = (day.Value[i-1].value - day.Value[i].value);
+                        var dt = (day.Value[i-1].timestamp - day.Value[i].timestamp).TotalDays*24*60*60;
+                        var rate = dV / dt;
+                        if (rate>=0) {
+                            rates.Add(Math.Abs(rate));
+                        }
+                    }
+                    usageDayRecord.PerSec = rates.Average();
+                    usageDayRecord.PerMin = usageDayRecord.PerSec * 60;
+                    usageDayRecord.PerHour = usageDayRecord.PerMin * 60;
+                    usageDayRecord.Usage = usageDayRecord.PerHour * 24;
+                    dayRecords.Add(usageDayRecord);
+                }
+                await usageCollection.InsertManyAsync(dayRecords);
+                Console.WriteLine("CheckDatabase");  
+            }
+        } else {
+            Console.WriteLine("Error: Could not find channels");
+        }
     }
+
+    /*static async Task<List<UsageDayRecord>> GenerateUsageRecords() {
+        
+    }*/
 
 
 

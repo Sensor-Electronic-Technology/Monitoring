@@ -75,6 +75,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 var reading = new AnalogReading();
                 reading.MonitorItemId = aItem._id;
                 double tempValue=0;
+                
                 if (aItem.RegisterLength == 2) {
                     tempValue = Converters.ToInt32(raw[aItem.Register], raw[aItem.Register + 1])/(double)aItem.Factor;
                 } else {
