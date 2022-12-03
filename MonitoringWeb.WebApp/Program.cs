@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data.EntityDtos;
+using MonitoringSystem.Shared.Services;
 using MonitoringWeb.WebApp.Data;
 using MonitoringWeb.WebApp.Services;
 
@@ -38,6 +39,8 @@ builder.Services.AddScoped<ConfigApiClient>();
 builder.Services.AddSingleton<SelectionChanged<ModbusDeviceDto>>();
 builder.Services.AddSingleton<SelectionChanged<ChannelDto>>();
 builder.Services.AddSingleton<ValueChanged<DateRange>>();
+builder.Services.AddSingleton<ValueChanged<BulkGasType>>();
+builder.Services.AddSingleton<UsageService>();
 
 var app = builder.Build();
 

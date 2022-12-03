@@ -1,20 +1,45 @@
 ﻿@page "/bulkgas/{GasType:int}"
 @using MonitoringWeb.WebApp.Data
+@using MonitoringWeb.WebApp.Services
+@inject ValueChanged<BulkGasType> GasTypeChanged
 
 <h3 class="text-center">@this.Header</h3>
 
-<DxTabs>
+@*<div class="row" style="padding: 1rem">
+    <BulkGasPlot GasType="@this.GasType" />
+</div>
+<div class="row" style="padding: 1rem">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="text-center">Usage Table</h3>
+        </div>
+    </div>
+    <div class="card-body">
+        <UsageTable GasType="@this.GasType"/>
+    </div>
+</div>*@
+
+<DxTabs RenderMode="TabsRenderMode.AllTabs" @bind-ActiveTabIndex="tabIndex">
     <DxTabPage Text="Plot">
-        <BulkGasPlot GasType="@this.GasType"/>
+        <BulkGasPlot GasType="@this.GasType" />
     </DxTabPage>
-    <DxTabPage Text="Consumption">
-        <UsageTable GasType="@this.GasType"></UsageTable>
+    <DxTabPage Text="Usage">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="text-center">Usage Table</h5>
+            </div>
+        </div>
+        <div class="card-body">
+            <UsageTable GasType="@this.GasType"/>
+        </div>
     </DxTabPage>
 </DxTabs>
 
 @code {
     [Parameter]
     public BulkGasType GasType { get; set; }
+
+    int tabIndex = 1;
 
     string Header = "";
 
@@ -24,14 +49,15 @@
                 this.Header = "N2 inH2O";
                 break;
             case BulkGasType.H2:
-                this.Header = "H2 Trailor PSI";
+                this.Header = "H2 Trailer PSI";
                 break;
             case BulkGasType.NH3:
-                this.Header = "NH3 Tank(s) Plot";
+                this.Header = "NH3 Tank(s)";
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
+        this.tabIndex = 0;
         return Task.CompletedTask;
     }
     public override async Task SetParametersAsync(ParameterView parameters) {
@@ -49,6 +75,8 @@
             default:
                 throw new ArgumentOutOfRangeException();
         }
+        this.tabIndex = 0;
+        //this.GasTypeChanged.SetItemParent(this.GasType);
         await InvokeAsync(StateHasChanged);
     }
 

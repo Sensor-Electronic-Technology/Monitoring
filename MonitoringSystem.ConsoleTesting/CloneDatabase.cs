@@ -16,7 +16,9 @@ using MonitoringSystem.Shared.Data.SettingsModel;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Microsoft.VisualBasic;
+using MonitoringData.Infrastructure.Services;
 using MonitoringSystem.Shared.Data.UsageModel;
+using MonitoringSystem.Shared.Services;
 using YamlDotNet.Core.Tokens;
 
 namespace MonitoringSystem.ConsoleTesting; 
@@ -77,7 +79,7 @@ public class CloneDatabase {
         /*double value = 989.43234564;
         Console.WriteLine($"Value: {value.ToString("N1")}");*/
         //await UsageN2Testing();
-        await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
+        //await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
         //await UpdateUsageRecord("Tank1 Weight", "Tank2 Weight");
         /*await using var context = new MonitorContext();
         var client = new MongoClient("mongodb://172.20.3.41");
@@ -97,6 +99,13 @@ public class CloneDatabase {
         Console.WriteLine($"Start: {start}");
         Console.WriteLine($"Stop: {stop}");
         Console.WriteLine($"Hours: {hours}");*/
+        await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
+        //Console.WriteLine();
+        UsageService service = new UsageService();
+        await service.GetH2Usage();
+        await service.GetH2Usage();
+        await service.GetNH3Usage();
+        Console.WriteLine("Check Database");
     }
     static async Task UsageNH3Testing(string channel1,string channel2) {
         await using var context = new MonitorContext();
@@ -104,7 +113,7 @@ public class CloneDatabase {
         var database = client.GetDatabase("nh3_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("usage_records");
+        var usageCollection = database.GetCollection<UsageDayRecord>("nh3_usage");
         
         var start = new DateTime(2022, 10, 25,18,27,0);
         var stop = new DateTime(2022, 11, 25,0,0,0);
@@ -148,16 +157,10 @@ public class CloneDatabase {
                     totalS += dt;
                     rates.Add(rate);
                 }
-
-                /*Console.WriteLine($"Day: {day.Key}");
-                Console.WriteLine($"Hours: {totalS/(24*3600)}");
-                Console.WriteLine($"Start_t: {day.Value.First().timestamp} Start_t: {day.Value.Last().timestamp}");
-                Console.WriteLine($"Delta LB: {day.Value.Last().value-day.Value.First().value}");
-                Console.WriteLine($"lb/day: {(day.Value.Last().value-day.Value.First().value)/(totalS/(24*3600))}");*/
-                usageDayRecord.Usage = rates.Sum();
-                usageDayRecord.PerHour =Math.Round(usageDayRecord.Usage/24,3);
-                usageDayRecord.PerMin = Math.Round(usageDayRecord.PerHour/60,3);
-                usageDayRecord.PerSec = Math.Round(usageDayRecord.PerMin/60,4);
+                usageDayRecord.Usage = Math.Abs(Math.Round(rates.Sum(), 2));
+                usageDayRecord.PerHour = Math.Abs(Math.Round(usageDayRecord.Usage / 24, 2));
+                usageDayRecord.PerMin = Math.Abs(Math.Round(usageDayRecord.PerHour / 60, 2));
+                usageDayRecord.PerSec = Math.Abs(Math.Round(usageDayRecord.PerMin / 60, 4));
                 dayRecords.Add(usageDayRecord);
             }
             await usageCollection.InsertManyAsync(dayRecords);
@@ -171,7 +174,6 @@ public class CloneDatabase {
         await using var context = new MonitorContext();
         var client = new MongoClient("mongodb://172.20.3.41");
         var database = client.GetDatabase("nh3_data");
-        
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
         var usageCollection = database.GetCollection<UsageDayRecord>("usage_records");
@@ -214,18 +216,28 @@ public class CloneDatabase {
                     usageDayRecord.ChannelIds.Add(tank1._id);
                     usageDayRecord.ChannelIds.Add(tank2._id);
                     List<double> rates = new List<double>();
+                    double totalS = 0;
                     for (int i = 1; i < day.Value.Count(); i++) {
-                        var dV = (day.Value[i-1].value - day.Value[i].value);
-                        var dt = (day.Value[i-1].timestamp - day.Value[i].timestamp).TotalDays*24*60*60;
-                        var rate = dV / dt;
-                        if (rate>=0) {
-                            rates.Add(Math.Abs(rate));
+                        var dlb = (day.Value[i].value - day.Value[i-1].value);
+                        var dt = (day.Value[i].timestamp - day.Value[i-1].timestamp).TotalMinutes;
+                        if (dlb > 10.00) {
+                            Console.WriteLine($"dlb: {dlb} dt:{dt}");
+                            dlb = 0;
                         }
+                        var rate = dlb / dt;
+                        totalS += dt;
+                        rates.Add(rate);
                     }
-                    usageDayRecord.PerSec = rates.Average();
-                    usageDayRecord.PerMin = usageDayRecord.PerSec * 60;
-                    usageDayRecord.PerHour = usageDayRecord.PerMin * 60;
-                    usageDayRecord.Usage = usageDayRecord.PerHour * 24;
+
+                    /*Console.WriteLine($"Day: {day.Key}");
+                    Console.WriteLine($"Hours: {totalS/(24*3600)}");
+                    Console.WriteLine($"Start_t: {day.Value.First().timestamp} Start_t: {day.Value.Last().timestamp}");
+                    Console.WriteLine($"Delta LB: {day.Value.Last().value-day.Value.First().value}");
+                    Console.WriteLine($"lb/day: {(day.Value.Last().value-day.Value.First().value)/(totalS/(24*3600))}");*/
+                    usageDayRecord.Usage = rates.Sum();
+                    usageDayRecord.PerHour =Math.Round(usageDayRecord.Usage/24,3);
+                    usageDayRecord.PerMin = Math.Round(usageDayRecord.PerHour/60,3);
+                    usageDayRecord.PerSec = Math.Round(usageDayRecord.PerMin/60,4);
                     dayRecords.Add(usageDayRecord);
                 }
                 await usageCollection.InsertManyAsync(dayRecords);

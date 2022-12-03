@@ -1,8 +1,12 @@
 ﻿@using MonitoringWeb.WebApp.Data
 @using MonitoringSystem.Shared.Data.UsageModel
 @using MongoDB.Driver
-@inject IMongoClient Client;
-<h3>Usage Table</h3>
+@using MonitoringSystem.Shared.Services
+@using MonitoringWeb.WebApp.Services
+@inject UsageService UsageService
+@inject ValueChanged<BulkGasType> GasTypeChanged;
+
+
 <DxGrid Data="@Records" AutoCollapseDetailRow="false" 
         AllowGroup="true" 
         ShowGroupPanel="true"
@@ -48,29 +52,6 @@
                    VerticalAlignment="VerticalEdge.Bottom" />
 </DxChart>
 
-@*<DxGrid Data="@Records" AutoCollapseDetailRow="false" AllowGroup="true" ShowGroupPanel="true">
-    <Columns>
-                <DxGridDataColumn FieldName="DayOfMonth" />
-                <DxGridDataColumn FieldName="DayOfWeek" />
-                <DxGridDataColumn FieldName="Consumption"/>
-                <DxGridDataColumn FieldName="PerHour"/>
-                <DxGridDataColumn FieldName="PerMin"/>
-    </Columns>
-    <DetailRowTemplate >
-        @{
-            var monthRecord = context.DataItem as MonthRecord;
-        }
-        <DxGrid Data="@monthRecord?.DayRecords" ShowGroupPanel="true">
-            <Columns>
-                <DxGridDataColumn FieldName="DayOfMonth" />
-                <DxGridDataColumn FieldName="DayOfWeek" />
-                <DxGridDataColumn FieldName="Consumption"/>
-                <DxGridDataColumn FieldName="PerHour"/>
-                <DxGridDataColumn FieldName="PerMin"/>
-            </Columns>
-        </DxGrid>
-    </DetailRowTemplate>
-</DxGrid>*@
 @code {
     [Parameter]
     public BulkGasType GasType { get; set; }
@@ -84,12 +65,35 @@
     }
 
     protected override async Task OnInitializedAsync() {
-        if (this.GasType == BulkGasType.NH3) {
-            var database = this.Client.GetDatabase("nh3_data");
-            var collection = database.GetCollection<UsageDayRecord>("usage_records");
-            var record = await collection.Find(_ => true).ToListAsync();
-            this.Records = record.AsEnumerable();
+        this.GasTypeChanged.OnParentChanged += this.OnGasTypeChanged;
+        await this.Load();
+    }
+    
+    public override async Task SetParametersAsync(ParameterView parameters) {
+        await base.SetParametersAsync(parameters);
+        await this.Load();
+    }
+
+    private async Task OnGasTypeChanged() {
+        await this.Load();
+    }
+
+    private async Task Load() {
+        switch (this.GasType) {
+            case BulkGasType.NH3: {
+                this.Records = await this.UsageService.GetNH3Usage();
+                break;
+            }
+            case BulkGasType.H2: {
+                this.Records = await this.UsageService.GetH2Usage();
+                break;
+            }
+            case BulkGasType.N2: {
+                this.Records = await this.UsageService.GetN2Usage();
+                break;
+            }
         }
+        await InvokeAsync(StateHasChanged);
     }
 
 }
