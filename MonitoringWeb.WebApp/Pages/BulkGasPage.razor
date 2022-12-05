@@ -4,34 +4,12 @@
 @inject ValueChanged<BulkGasType> GasTypeChanged
 
 <h3 class="text-center">@this.Header</h3>
-
-@*<div class="row" style="padding: 1rem">
-    <BulkGasPlot GasType="@this.GasType" />
-</div>
-<div class="row" style="padding: 1rem">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="text-center">Usage Table</h3>
-        </div>
-    </div>
-    <div class="card-body">
-        <UsageTable GasType="@this.GasType"/>
-    </div>
-</div>*@
-
-<DxTabs RenderMode="TabsRenderMode.AllTabs" @bind-ActiveTabIndex="tabIndex">
+<DxTabs RenderMode="TabsRenderMode.Default" @bind-ActiveTabIndex="tabIndex">
     <DxTabPage Text="Plot">
         <BulkGasPlot GasType="@this.GasType" />
     </DxTabPage>
-    <DxTabPage Text="Usage">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="text-center">Usage Table</h5>
-            </div>
-        </div>
-        <div class="card-body">
-            <UsageTable GasType="@this.GasType"/>
-        </div>
+    <DxTabPage Text="Consumption">
+        <UsageTable GasType="@this.GasType"/>
     </DxTabPage>
 </DxTabs>
 
@@ -46,13 +24,13 @@
     protected override Task OnInitializedAsync() {
         switch (this.GasType) {
             case BulkGasType.N2:
-                this.Header = "N2 inH2O";
+                this.Header = "Bulk N2 ";
                 break;
             case BulkGasType.H2:
-                this.Header = "H2 Trailer PSI";
+                this.Header = "Bulk H2";
                 break;
             case BulkGasType.NH3:
-                this.Header = "NH3 Tank(s)";
+                this.Header = "Bulk NH3";
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -64,19 +42,18 @@
         await base.SetParametersAsync(parameters);
         switch (this.GasType) {
             case BulkGasType.N2:
-                this.Header = "N2 inH2O";
+                this.Header = "Bulk N2 ";
                 break;
             case BulkGasType.H2:
-                this.Header = "H2 Trailor PSI";
+                this.Header = "Bulk H2";
                 break;
             case BulkGasType.NH3:
-                this.Header = "NH3 Tank(s) Plot";
+                this.Header = "Bulk NH3";
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
         this.tabIndex = 0;
-        //this.GasTypeChanged.SetItemParent(this.GasType);
         await InvokeAsync(StateHasChanged);
     }
 

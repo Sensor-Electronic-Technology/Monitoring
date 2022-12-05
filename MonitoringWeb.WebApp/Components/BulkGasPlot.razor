@@ -62,7 +62,8 @@
                         }
                     </SeriesTemplate>
                 </DxChartCommonSeries>
-                <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime" Type="ChartAxisType.Continuous">
+                <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime" 
+                                     Type="ChartAxisType.Continuous">
                     <DxChartAxisRange StartValue="@this.PlotStart"
                                       EndValue="@this.PlotStop"/>
 
@@ -133,19 +134,19 @@
         var stop = this.StopDate;
         switch (this.GasType) {
             case BulkGasType.N2:
-                this.Header = "N2 inH2O";
+                this.Header = "Bulk N2";
                 var ret=await this.PlotService.GetChannelDatav2("epi1_data", "N2 inH20", start, stop);
                 this.PlotData = ret.Item2;
                 this.Sensor = ret.Item1;
                 break;
             case BulkGasType.H2:
-                this.Header = "H2 Trailor PSI";
+                this.Header = "Bulk H2";
                 var ret2 = await this.PlotService.GetChannelDatav2("epi1_data", "H2 PSI", start, stop);
                 this.PlotData = ret2.Item2;
                 this.Sensor = ret2.Item1;
                 break;
             case BulkGasType.NH3:
-                this.Header = "NH3 Tank(s) Plot";
+                this.Header = "Bulk NH3";
                 var ret3 = await this.PlotService.GetBulkNH3(this.StartDate, this.StopDate);
                 this.PlotData = ret3.Item2;
                 this.Sensor = ret3.Item1;

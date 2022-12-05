@@ -101,11 +101,11 @@ public class CloneDatabase {
         Console.WriteLine($"Hours: {hours}");*/
         //await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
         //Console.WriteLine();
-        /*UsageService service = new UsageService();
+       UsageService service = new UsageService();
         await service.GetH2Usage();
-        await service.GetN2Usage();*/
-        //await service.GetNH3Usage();
-        await UsageH2Testing("H2 PSI");
+        await service.GetN2Usage();
+        await service.GetNH3Usage();
+        //await UsageH2Testing("H2 PSI");
         Console.WriteLine("Check Database");
     }
     
@@ -199,19 +199,6 @@ public class CloneDatabase {
         if (tank1 != null && tank2 != null) {
             var readings = await analogReadCollection.Find(e => e.timestamp >= start && e.timestamp <= stop)
                 .ToListAsync();
-            var all = readings.Select(e => new {
-                timestamp = e.timestamp,
-                value = (e.readings.FirstOrDefault(m => m.MonitorItemId == tank1._id)!.Value +
-                         e.readings.FirstOrDefault(m => m.MonitorItemId == tank2._id)!.Value) 
-            }).ToList();
-            List<(int index,double value)> maximums=new List<(int index, double value)>();
-            for (int i = 1; i < all.Count(); i++) {
-                var rate=all[i].value-all[i-1].value;
-                if (rate >= 100) {
-                    maximums.Add((i,all[i].value));
-                }
-            }
-            
             var days =  readings.GroupBy(e => 
                         e.timestamp.Date, 
                     e => new { 
@@ -235,17 +222,19 @@ public class CloneDatabase {
                     MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
                 };
                 List<double> rates = new List<double>();
-                double totalS = 0;
                 for (int i = 1; i < day.Value.Count(); i++) {
                     var dlb = (day.Value[i].value - day.Value[i-1].value);
                     var dt = (day.Value[i].timestamp - day.Value[i-1].timestamp).TotalMinutes;
-                    if (dlb > 10.00) {
-                        Console.WriteLine($"dlb: {dlb} dt:{dt}");
-                        dlb = 0;
+                    if (dlb <= 10) {
+                        if (dt>=1) {
+                            var rate = dlb / dt;
+                            rates.Add(rate);
+                        } else {
+                            Console.WriteLine("Less than 1");
+                        }
+                    } else {
+                        rates.Add(0);
                     }
-                    var rate = dlb / dt;
-                    totalS += dt;
-                    rates.Add(rate);
                 }
                 usageDayRecord.PerMin = Math.Abs(rates.Average());
                 usageDayRecord.PerHour = usageDayRecord.PerMin * 60;
@@ -337,12 +326,6 @@ public class CloneDatabase {
             Console.WriteLine("Error: Could not find channels");
         }
     }
-
-    /*static async Task<List<UsageDayRecord>> GenerateUsageRecords() {
-        
-    }*/
-
-
 
     static async Task UpdateSensors() {
         await using var context = new MonitorContext();

@@ -7,61 +7,70 @@
 @inject ValueChanged<BulkGasType> GasTypeChanged;
 
 
-<DxGrid Data="@Records" AutoCollapseDetailRow="false" 
-        AllowGroup="true" 
-        ShowGroupPanel="true"
-        CustomizeSummaryDisplayText="Grid_CustomizeSummaryDisplayText"
-        PageSize="15"
-        PagerPosition="GridPagerPosition.TopAndBottom"
-        PageSizeSelectorVisible="true"
-        PageSizeSelectorItems="@(new int[] { 5, 10, 15, 20 })"
-        PageSizeSelectorAllRowsItemVisible="true"
-        PagerSwitchToInputBoxButtonCount="10"
-        PagerVisibleNumericButtonCount="10">
+<div class="row" style="padding: .5rem">
+    <DxGrid Data="@Records" AutoCollapseDetailRow="false" 
+            AllowGroup="true" 
+            ShowGroupPanel="true"
+            CustomizeSummaryDisplayText="Grid_CustomizeSummaryDisplayText"
+            ShowAllRows="true">
     <Columns>
-        <DxGridDataColumn FieldName="Date" DisplayFormat="d" />
-        <DxGridDataColumn FieldName="DayOfWeek"/>
-        <DxGridDataColumn FieldName="DayOfMonth"/>
-        <DxGridDataColumn FieldName="WeekOfYear" GroupIndex="2"/>
-        <DxGridDataColumn FieldName="MonthName" Caption="Month" GroupIndex="1"/>
-        <DxGridDataColumn FieldName="Year" GroupIndex="0"  DisplayFormat="D"/>
-        <DxGridDataColumn FieldName="Usage"/>
-        <DxGridDataColumn FieldName="PerHour"/>
-    </Columns>
-    <GroupSummary>
-        <DxGridSummaryItem SummaryType="GridSummaryItemType.Avg" FieldName="Usage" Name="PerDay"/>
-        <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum" FieldName="Usage" Name="Usage"/>
-    </GroupSummary>
-</DxGrid>
+            <DxGridDataColumn FieldName="Date" DisplayFormat="d" />
+            <DxGridDataColumn FieldName="DayOfWeek"/>
+            <DxGridDataColumn FieldName="DayOfMonth"/>
+            <DxGridDataColumn FieldName="WeekOfYear" GroupIndex="2"/>
+            <DxGridDataColumn FieldName="MonthName" Caption="Month" GroupIndex="1"/>
+            <DxGridDataColumn FieldName="Year" GroupIndex="0"  DisplayFormat="D"/>
+            <DxGridDataColumn FieldName="Usage" Caption="@this.PerDayCaption"/>
+            <DxGridDataColumn FieldName="PerHour" Caption="@this.PerHourCaption"/>
+        </Columns>
+        <GroupSummary>
+            <DxGridSummaryItem SummaryType="GridSummaryItemType.Avg" FieldName="Usage" Name="PerDay"/>
+            <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum" FieldName="Usage" Name="Consumption"/>
+        </GroupSummary>
+    </DxGrid>
+</div>
+<div class="row" style="padding: .5rem">
+    <DxChart T="UsageDayRecord"
+             Data="@Records"
+             Width="100%">
+        <DxChartTitle Text="Consumption">
+            <DxChartSubTitle Text="Weekly Consumption"/>
+        </DxChartTitle>
+        <DxChartBarSeries Name="Week Of Year" 
+                          T="UsageDayRecord" 
+                          TValue="double" 
+                          TArgument="string" 
+                          SummaryMethod="Enumerable.Sum"
+                          ArgumentField="@((UsageDayRecord s) => s.WeekOfYear.ToString())"
+                          ValueField="@((UsageDayRecord s) => s.Usage)" />
+        <DxChartLegend Position="RelativePosition.Outside"
+                       HorizontalAlignment="HorizontalAlignment.Center"
+                       VerticalAlignment="VerticalEdge.Bottom" />
+        <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
+            <DxChartAxisTitle Text="@this.Units"/>
+        </DxChartValueAxis>
+    </DxChart>
+</div>
 
-<DxChart T="UsageDayRecord"
-         Data="@Records"
-         Width="100%">
-    <DxChartTitle Text="Usage">
-        <DxChartSubTitle Text="Usage" />
-    </DxChartTitle>
-    <DxChartLineSeries  Name="By Week"
-                        T="UsageDayRecord"
-                        TArgument="int"
-                        TValue="double"
-                        ArgumentField="pasi => pasi.WeekOfYear"
-                        ValueField="pasi => pasi.Usage"
-                        SummaryMethod="Enumerable.Sum" />
-    <DxChartLegend Position="RelativePosition.Outside"
-                   HorizontalAlignment="HorizontalAlignment.Center"
-                   VerticalAlignment="VerticalEdge.Bottom" />
-</DxChart>
+
+
 
 @code {
     [Parameter]
     public BulkGasType GasType { get; set; }
 
-    ChartAxisTickInterval interval;
-    
     IEnumerable<UsageDayRecord>? Records { get; set; }
+    string Units { get; set; }
+    string PerDayCaption { get; set; }
+    string PerHourCaption { get; set; }
     
     void Grid_CustomizeSummaryDisplayText(GridCustomizeSummaryDisplayTextEventArgs e) {
-        e.DisplayText = string.Format(e.Item.Name+": {0:N1}", e.Value);
+        if (e.Item.Name == "PerDay") {
+            e.DisplayText = string.Format("Avg "+this.Units+"/day"+" : {0:N1}", e.Value);
+        } else {
+            e.DisplayText = string.Format(e.Item.Name+": {0:N1} "+this.Units, e.Value);
+        }
+        
     }
 
     protected override async Task OnInitializedAsync() {
@@ -82,17 +91,22 @@
         switch (this.GasType) {
             case BulkGasType.NH3: {
                 this.Records = await this.UsageService.GetNH3Usage();
+                this.Units = "lb";
                 break;
             }
             case BulkGasType.H2: {
                 this.Records = await this.UsageService.GetH2Usage();
+                this.Units = "PSI";
                 break;
             }
             case BulkGasType.N2: {
                 this.Records = await this.UsageService.GetN2Usage();
+                this.Units = "inH20";
                 break;
             }
         }
+        this.PerDayCaption = this.Units + "/day";
+        this.PerHourCaption = this.Units + "/hr";
         await InvokeAsync(StateHasChanged);
     }
 
