@@ -96,18 +96,31 @@ public class UsageService {
                     usageDayRecord.ChannelIds.Add(item2._id);
                 }
 
-                List<double> rates = new List<double>();
-                for (int i = 1; i < day.Value.Count(); i++) {
-                    var dlb = (day.Value[i].value - day.Value[i - 1].value);
-                    var dt = (day.Value[i].timestamp - day.Value[i - 1].timestamp).TotalMinutes;
-                    dlb = (dlb > 10) ? 0 : dlb;
-                    var rate = dlb / dt;
-                    rates.Add(rate);
+                var hours = day.Value.GroupBy(e => e.timestamp.Hour).ToDictionary(e=>e.Key,e=>e.ToList());
+
+                List<double> hourRates = new List<double>();
+                foreach (var hour in hours) {
+                    var first = hour.Value.First();
+                    var last = hour.Value.Last();
+                    var rate = (last.value - first.value)/((last.timestamp-first.timestamp).TotalHours);
+                    rate = (rate > 0) ? 0 : rate;
+                    hourRates.Add(rate);
                 }
-                usageDayRecord.Usage = Math.Abs(Math.Round(rates.Sum(), 2));
-                usageDayRecord.PerHour = Math.Abs(Math.Round(usageDayRecord.Usage / 24, 2));
-                usageDayRecord.PerMin = Math.Abs(Math.Round(usageDayRecord.PerHour / 60, 2));
-                usageDayRecord.PerSec = Math.Abs(Math.Round(usageDayRecord.PerMin / 60, 4));
+                
+                /*List<double> rates = new List<double>();
+                for (int i = 1; i < day.Value.Count(); i++) {
+                    var dlb = (day.Value[i].value - day.Value[i-1].value);
+                    var dt = (day.Value[i].timestamp - day.Value[i-1].timestamp).TotalMinutes;
+                    if (dt != 0) {
+                        var rate = dlb / dt;
+                        if (rate <= 100) {
+                            rates.Add(rate);
+                        }
+                    }
+                }*/
+                usageDayRecord.PerHour = Math.Abs(hourRates.Average());
+                usageDayRecord.PerMin = usageDayRecord.PerHour / 60;
+                usageDayRecord.Usage = usageDayRecord.PerHour * 24;
                 dayRecords.Add(usageDayRecord);
             }
             await usageCollection.InsertManyAsync(dayRecords);
@@ -115,9 +128,9 @@ public class UsageService {
             
         } else {
             var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
-            var hours = (DateTime.Now - latest.Date.AddDays(1)).TotalHours;
+            var deltaHours = (DateTime.Now - latest.Date.AddDays(1)).TotalHours;
             var now = DateTime.Now.Date;
-            if (hours >= 24) {
+            if (deltaHours >= 24) {
                 var start = latest.Date.AddDays(1);
                 var stop = DateTime.Now.Date.AddSeconds(-1).AddHours(-5);
                 List<AnalogReadings> readings;
@@ -168,19 +181,22 @@ public class UsageService {
                         usageDayRecord.ChannelIds.Add(item2._id);
                     }
 
+                    var hours = day.Value.GroupBy(e => e.timestamp.Hour).ToDictionary(e=>e.Key,e=>e.ToList());
+                    
                     List<double> rates = new List<double>();
                     for (int i = 1; i < day.Value.Count(); i++) {
-                        var dlb = (day.Value[i].value - day.Value[i - 1].value);
-                        var dt = (day.Value[i].timestamp - day.Value[i - 1].timestamp).TotalMinutes;
-                        dlb = (dlb > 10) ? 0 : dlb;
-                        var rate = dlb / dt;
-                        rates.Add(rate);
+                        var dlb = (day.Value[i].value - day.Value[i-1].value);
+                        var dt = (day.Value[i].timestamp - day.Value[i-1].timestamp).TotalMinutes;
+                        if (dt != 0) {
+                            var rate = dlb / dt;
+                            if (rate <= 100) {
+                                rates.Add(rate);
+                            }
+                        }
                     }
-
-                    usageDayRecord.Usage = Math.Abs(Math.Round(rates.Sum(), 2));
-                    usageDayRecord.PerHour = Math.Abs(Math.Round(usageDayRecord.Usage / 24, 2));
-                    usageDayRecord.PerMin = Math.Abs(Math.Round(usageDayRecord.PerHour / 60, 2));
-                    usageDayRecord.PerSec = Math.Abs(Math.Round(usageDayRecord.PerMin / 60, 4));
+                    /*usageDayRecord.PerHour = Math.Abs(hourRates.Average());
+                    usageDayRecord.PerMin = usageDayRecord.PerHour / 60;
+                    usageDayRecord.Usage = usageDayRecord.PerHour * 24;*/
                     dayRecords.Add(usageDayRecord);
                 }
                 await usageCollection.InsertManyAsync(dayRecords);
@@ -189,9 +205,7 @@ public class UsageService {
                 return (await usageCollection.Find(_ => true).ToListAsync()).AsEnumerable();
             }
         }
-        return Enumerable.Empty<UsageDayRecord>();
     }
-
 }
 
 public struct ValueReturn {
