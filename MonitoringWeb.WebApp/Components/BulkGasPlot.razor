@@ -5,9 +5,10 @@
 @using MonitoringSystem.Shared.Data.LogModel
 @inject PlotDataService PlotService
 @inject ValueChanged<DateRange> DateRangeState
+@inject IJSRuntime JSRuntime;
 @implements IAsyncDisposable
 
-
+<Spinner></Spinner>
 <CustomRange @bind-StartDate="this.StartDate" @bind-StopDate="@StopDate"></CustomRange>
 <div class="card">
     <div class="card-header">
@@ -23,12 +24,15 @@
     </div>
     <div class="card-body">
         @if (this.PlotData == null) {
-            <div class="container-xl text-center">
+            <div id="loading-indicator">
+                
+            </div>
+            @*<div class="container-xl text-center">
                 <button class="btn btn-light position-absolute top-50 start-50 translate-middle" disabled>
                     <span class="spinner-border spinner-border-sm"></span>
                     Loading...
                 </button>
-            </div>
+            </div>*@
         } else {
             <DxChart Data="@PlotData"
                      Width="100%"
@@ -90,9 +94,6 @@
         }
     </div>
 </div>
-
-
-
 @code {
     [Parameter]
     public BulkGasType GasType { get; set; }
@@ -109,6 +110,10 @@
     protected override async Task OnInitializedAsync() {
         this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
         await this.Load();
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        await JSRuntime.InvokeVoidAsync("renderDevExtremeControls", ".loading-indicator");
     }
 
     private Task Submit() {

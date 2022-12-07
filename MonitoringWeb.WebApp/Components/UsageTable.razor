@@ -3,9 +3,13 @@
 @using MongoDB.Driver
 @using MonitoringSystem.Shared.Services
 @using MonitoringWeb.WebApp.Services
+@using Blazor.DownloadFileFast.Interfaces
+@using ClosedXML.Excel
+@using System.Text
 @inject UsageService UsageService
 @inject ValueChanged<BulkGasType> GasTypeChanged;
-
+@inject IBlazorDownloadFileService DownloadService
+@inject SpinnerService SpinnerService
 
 <div class="row" style="padding: .5rem">
     <DxGrid Data="@Records" AutoCollapseDetailRow="false" 
@@ -13,7 +17,7 @@
             ShowGroupPanel="true"
             CustomizeSummaryDisplayText="Grid_CustomizeSummaryDisplayText"
             ShowAllRows="true">
-    <Columns>
+        <Columns>
             <DxGridDataColumn FieldName="Date" DisplayFormat="d" />
             <DxGridDataColumn FieldName="DayOfWeek"/>
             <DxGridDataColumn FieldName="DayOfMonth"/>
@@ -29,8 +33,13 @@
         </GroupSummary>
     </DxGrid>
 </div>
+<div class="row">
+    <DxButton RenderStyle="ButtonRenderStyle.Light"
+              Text="Download"
+              Click="@this.DownloadHandler"/>
+</div>
 <div class="row" style="padding: .5rem">
-    <DxChart T="UsageDayRecord"
+    <DxChart @ref="chart" T="UsageDayRecord"
              Data="@Records"
              Width="100%">
         <DxChartTitle Text="Consumption">
@@ -64,6 +73,12 @@
     string PerDayCaption { get; set; }
     string PerHourCaption { get; set; }
     
+    DxChartBase chart;
+    
+    async void ExportChart(ChartExportFormat format) {
+        await chart?.ExportAsync("BubbleChart", format);
+    }
+    
     void Grid_CustomizeSummaryDisplayText(GridCustomizeSummaryDisplayTextEventArgs e) {
         if (e.Item.Name == "PerDay") {
             e.DisplayText = string.Format("Avg "+this.Units+"/day"+" : {0:N1}", e.Value);
@@ -85,6 +100,70 @@
 
     private async Task OnGasTypeChanged() {
         await this.Load();
+    }
+
+    private async Task DownloadHandler() {
+        this.SpinnerService.Show();
+        var wb = new XLWorkbook();
+        var worksheet=wb.Worksheets.Add("Consumption");
+        worksheet.Cell(1, 1).Value = "Date";
+        worksheet.Cell(1, 2).Value = "Year";
+        worksheet.Cell(1, 3).Value = "Month";
+        worksheet.Cell(1, 4).Value = "WeekOfYear";
+        worksheet.Cell(1, 5).Value = "DayOfWeek";
+        worksheet.Cell(1, 6).Value = "PerHour";
+        worksheet.Cell(1, 7).Value = "PerDay";
+
+
+        int count = 2;
+        foreach (var item in this.Records) {
+            worksheet.Cell(count, 1).Value = item.Date;
+            worksheet.Cell(count, 2).Value = item.Year;
+            worksheet.Cell(count, 3).Value = item.Month;
+            worksheet.Cell(count, 4).Value = item.WeekOfYear;
+            worksheet.Cell(count, 5).Value = item.DayOfWeek;
+            worksheet.Cell(count, 6).Value = item.PerHour;
+            worksheet.Cell(count, 7).Value = item.Usage;
+            count++;
+        }
+        worksheet.Cell(1, 10).Value = "Week";
+        //worksheet.Cell(1, 11).Value = "Month";
+        worksheet.Cell(1, 11).Value = "Avg. Daily";
+        worksheet.Cell(1, 12).Value = "Week Total";
+
+        var weeks=this.Records.GroupBy(e => e.WeekOfYear, e => new {
+            month = e.Month, day = e.Date.DayOfYear, hour = e.PerHour, daily = e.Usage
+        }).ToDictionary(e => e.Key, e => e.ToArray());
+        count = 2;
+        foreach (var week in weeks) {
+            worksheet.Cell(count,10).Value=week.Key;
+            worksheet.Cell(count,11).Value=week.Value.Average(e => e.daily);
+            worksheet.Cell(count,12).Value=week.Value.Sum(e => e.daily);
+            count++;
+        }
+        
+        worksheet.Cell(1, 14).Value = "Month";
+        worksheet.Cell(1, 15).Value = "Avg. Daily";
+        worksheet.Cell(1, 16).Value = "Month Total";
+
+        var months=this.Records.GroupBy(e => e.Month, e => new {
+            month = e.Month, day = e.Date.DayOfYear, hour = e.PerHour, daily = e.Usage
+        }).ToDictionary(e => e.Key, e => e.ToArray());
+        count = 2;
+        
+        foreach (var month in months) {
+            worksheet.Cell(count,14).Value=month.Key;
+            worksheet.Cell(count,15).Value=month.Value.Average(e => e.daily);
+            worksheet.Cell(count,16).Value=month.Value.Sum(e => e.daily);
+            count++;
+        }
+
+        var stream = new MemoryStream();
+        wb.SaveAs(stream);
+        var bytes = stream.ToArray();
+        await this.DownloadService.DownloadFileAsync("test.xlsx", bytes);
+        
+        this.SpinnerService.Hide();
     }
 
     private async Task Load() {
