@@ -9,6 +9,25 @@ using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.Services;
 
 namespace MonitoringData.Infrastructure.Services {
+    public class DeviceCheck {
+        private bool _offlineLatch;
+        private DateTime _offlineTime;
+
+        public bool Latch(DateTime now) {
+            if (!this._offlineLatch) {
+                this._offlineLatch = true;
+                this._offlineTime = now;
+            }
+            return this._offlineLatch;
+        }
+        public void Clear() {
+            this._offlineLatch = false;
+        }
+        public bool CheckTime(DateTime now) {
+            return (now - this._offlineTime).TotalMinutes >= 30;
+        }
+    }
+    
     public class MonitorBoxLogger : IDataLogger {
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
@@ -20,8 +39,8 @@ namespace MonitoringData.Infrastructure.Services {
         private DateTime _lastRecord;
         private TimeSpan _recordInterval;
         private bool _firstRecord;
-        private DateTime _boxOfflineTime;
-        private bool _offlineLatch = false;
+        private DeviceCheck _deviceCheck=new DeviceCheck();
+        
         private Dictionary<ObjectId, bool> _lastState = new Dictionary<ObjectId, bool>();
 
         
@@ -38,55 +57,47 @@ namespace MonitoringData.Infrastructure.Services {
         }
         
         public async Task Read() {
-            var result = await this._modbusService.Read(this._device.IpAddress, 
+            var result = await this._modbusService.Read(this._device.IpAddress!, 
                 this._device.Port, 
-                this._device.ModbusConfiguration);
+                this._device.ModbusConfiguration!);
             var now = DateTime.Now;
             if (result.Success) {
-                this._offlineLatch = false;
-                var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._device.ChannelMapping.DiscreteStart,
-                    (this._device.ChannelMapping.DiscreteStop - this._device.ChannelMapping.DiscreteStart) + 1).ToArray();
-                var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._device.ChannelMapping.AnalogStart, 
-                    (this._device.ChannelMapping.AnalogStop - this._device.ChannelMapping.AnalogStart) + 1).ToArray();
-                var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._device.ChannelMapping.AlertStart,
-                    (this._device.ChannelMapping.AlertStop - this._device.ChannelMapping.AlertStart) + 1).ToArray();
+                this._deviceCheck.Clear();
+                var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._device.ChannelMapping!.DiscreteStart,
+                    (this._device.ChannelMapping!.DiscreteStop - this._device.ChannelMapping!.DiscreteStart) + 1).ToArray();
+                var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._device.ChannelMapping!.AnalogStart, 
+                    (this._device.ChannelMapping.AnalogStop - this._device.ChannelMapping!.AnalogStart) + 1).ToArray();
+                var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._device.ChannelMapping!.AlertStart,
+                    (this._device.ChannelMapping!.AlertStop - this._device.ChannelMapping!.AlertStart) + 1).ToArray();
                 var virtualRaw = new ArraySegment<bool>(result.Coils, this._device.ChannelMapping.VirtualStart, 
-                    (this._device.ChannelMapping.VirtualStop - this._device.ChannelMapping.VirtualStart) + 1).ToArray();
+                    (this._device.ChannelMapping!.VirtualStop - this._device.ChannelMapping!.VirtualStart) + 1).ToArray();
                 this._alerts = new List<AlertRecord>();
-                await this.ProcessAlertReadings(alertsRaw, now);
+                await this.ProcessAlertReadings(alertsRaw);
                 var analogProcessed=await this.ProcessAnalogReadings(analogRaw, now);
                 var discreteProcessed=await this.ProcessDiscreteReadings(discreteRaw, now);
                 var virtualProcessed=await this.ProcessVirtualReadings(virtualRaw, now);
                 
                 if(CheckSave(now,(analogProcessed.Item2 || discreteProcessed.Item2 || virtualProcessed.Item2))) {
                     this._lastRecord = now;
-                    if (analogProcessed.Item1 != null) {
-                        await this._dataService.InsertOneAsync(analogProcessed.Item1);
-                    }
-                    if (discreteProcessed.Item1 != null) {
-                        await this._dataService.InsertOneAsync(discreteProcessed.Item1);
-                    }
-                    if (virtualProcessed.Item1 != null) {
-                        await this._dataService.InsertOneAsync(virtualProcessed.Item1);
-                    }
+                    await this._dataService.InsertOneAsync(analogProcessed.Item1);
+                    await this._dataService.InsertOneAsync(discreteProcessed.Item1);
+                    await this._dataService.InsertOneAsync(virtualProcessed.Item1);
                     this.LogInformation("Data Recorded");
                 }
                 await this._alertService.ProcessAlerts(this._alerts,now);
             } else {
-                if (!this._offlineLatch) {
-                    this._offlineLatch = true;
-                    this._boxOfflineTime = now;
+                if (this._deviceCheck.Latch(now)) {
+                    await this._alertService.DeviceOfflineAlert();
                 } else {
-                    if((now - this._boxOfflineTime).TotalSeconds >= 60) {
+                    if (this._deviceCheck.CheckTime(now)) {
                         await this._alertService.DeviceOfflineAlert();
-                        this._boxOfflineTime = now;
                     }
                 }
                 this._logger.LogError("Modbus read failed");
             }
         }
 
-        private Task ProcessAlertReadings(ushort[] raw, DateTime now) {
+        private Task ProcessAlertReadings(ushort[] raw) {
             foreach (var alert in this._dataService.MonitorAlerts) {
                 var alertReading = new AlertReading() {
                     MonitorItemId = alert._id,
@@ -97,7 +108,7 @@ namespace MonitoringData.Infrastructure.Services {
             return Task.CompletedTask;
         }
         
-        private Task<Tuple<AnalogReadings,bool>> ProcessAnalogReadings(ushort[] raw, DateTime now) {
+        private Task<Tuple<AnalogReadings?, bool>> ProcessAnalogReadings(ushort[] raw, DateTime now) {
             if (this._dataService.AnalogItems.Count == raw.Length) {
                 List<AnalogReading> readings = new List<AnalogReading>();
                 bool record = false;
@@ -120,18 +131,18 @@ namespace MonitoringData.Infrastructure.Services {
                         this.LogError("Analog MonitorAlert not found");
                     }
                 }
-                return Task.FromResult<Tuple<AnalogReadings, bool>>(new(
+                return Task.FromResult<Tuple<AnalogReadings?, bool>>(new(
                     new AnalogReadings() { 
                         readings = readings.ToArray(), 
                         timestamp = now 
                     }, record));
             } else {
                 this.LogError("Error: AnalogItems count doesn't match raw data count");
-                return Task.FromResult<Tuple<AnalogReadings, bool>>(new(null,false));
+                return Task.FromResult<Tuple<AnalogReadings?, bool>>(new(null,false));
             }
         }
 
-        private Task<Tuple<DiscreteReadings,bool>> ProcessDiscreteReadings(bool[] raw, DateTime now) {
+        private Task<Tuple<DiscreteReadings?, bool>> ProcessDiscreteReadings(bool[] raw, DateTime now) {
             bool record = false;
             if (this._dataService.DiscreteItems.Count == raw.Length) {
                 List<DiscreteReading> readings = new List<DiscreteReading>();
@@ -149,23 +160,23 @@ namespace MonitoringData.Infrastructure.Services {
                     readings.Add(reading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
-                        alertRecord.ChannelReading = reading.Value == true ? 1.00f : 0.00f;
+                        alertRecord.ChannelReading = reading.Value ? 1.00f : 0.00f;
                     } else {
                         this.LogError("Discrete ItemAlert not found");
                     }
                 }
-                return Task.FromResult<Tuple<DiscreteReadings, bool>>(new(
+                return Task.FromResult<Tuple<DiscreteReadings?, bool>>(new(
                     new DiscreteReadings() { 
                         readings = readings.ToArray(), 
                         timestamp = now }, 
                     record));
             } else {
                 this.LogError("Error: DiscreteItems count doesn't match raw data count");
-                return Task.FromResult<Tuple<DiscreteReadings, bool>>(new(null, false));
+                return Task.FromResult<Tuple<DiscreteReadings?, bool>>(new(null, false));
             }
         }
 
-        private Task<Tuple<VirtualReadings,bool>> ProcessVirtualReadings(bool[] raw, DateTime now) {         
+        private Task<Tuple<VirtualReadings?, bool>> ProcessVirtualReadings(bool[] raw, DateTime now) {         
             if (this._dataService.VirtualItems.Count == raw.Length) {
                 bool record = false;
                 List<VirtualReading> readings = new List<VirtualReading>();
@@ -180,19 +191,19 @@ namespace MonitoringData.Infrastructure.Services {
                     readings.Add(reading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
-                        alertRecord.ChannelReading = reading.Value == true ? 1.00f : 0.00f;
+                        alertRecord.ChannelReading = reading.Value ? 1.00f : 0.00f;
                     } else {
                         this.LogError("Virtual ItemAlert not found");
                     }
                 }
-                return Task.FromResult<Tuple<VirtualReadings, bool>>(new(
+                return Task.FromResult<Tuple<VirtualReadings?, bool>>(new(
                     new VirtualReadings() { 
                         readings = readings.ToArray(), 
                         timestamp = now }, 
                     record));
             } else {
                 this.LogError("Error: VirtualItems count doesn't match raw data count");
-                return Task.FromResult<Tuple<VirtualReadings, bool>>(new(null, false));
+                return Task.FromResult<Tuple<VirtualReadings?, bool>>(new(null, false));
             }
         }
 
@@ -264,6 +275,7 @@ namespace MonitoringData.Infrastructure.Services {
             }
         }
         public async Task Reload() {
+            this.LogInformation("Reloading DataLogger");
             await this._dataService.ReloadAsync();
             await this._alertService.Reload();
             this._device = this._dataService.ManagedDevice;

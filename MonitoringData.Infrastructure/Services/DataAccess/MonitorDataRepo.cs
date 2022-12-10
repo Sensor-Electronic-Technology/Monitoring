@@ -16,10 +16,10 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         ManagedDevice ManagedDevice { get; }
 
         Task InsertOneAsync(AlertReadings readings);
-        Task InsertOneAsync(AnalogReadings readings);
-        Task InsertOneAsync(DiscreteReadings readings);
-        Task InsertOneAsync(VirtualReadings readings);
-        Task<AnalogReadings> GetLastAnalogReading();
+        Task InsertOneAsync(AnalogReadings? readings);
+        Task InsertOneAsync(DiscreteReadings? readings);
+        Task InsertOneAsync(VirtualReadings? readings);
+        Task<AnalogReadings?> GetLastAnalogReading();
         Task LoadAsync();
         Task ReloadAsync();
     }
@@ -29,13 +29,13 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private readonly IMongoClient _client;
         private ManagedDevice _device;
 
-        public ManagedDevice ManagedDevice { get=>this._device;}
-        public List<AnalogItem> AnalogItems { get; private set; }
-        public List<DiscreteItem> DiscreteItems { get; private set; }
-        public List<OutputItem> OutputItems { get; private set; }
-        public List<VirtualItem> VirtualItems { get; private set; }
-        public List<MonitorAlert> MonitorAlerts { get; private set; }
-        public List<ActionItem> ActionItems { get; private set; }
+        public ManagedDevice ManagedDevice => this._device;
+        public List<AnalogItem> AnalogItems { get; private set; } = new List<AnalogItem>();
+        public List<DiscreteItem> DiscreteItems { get; private set; } = new List<DiscreteItem>();
+        public List<OutputItem> OutputItems { get; private set; } = new List<OutputItem>();
+        public List<VirtualItem> VirtualItems { get; private set; } = new List<VirtualItem>();
+        public List<MonitorAlert> MonitorAlerts { get; private set; } = new List<MonitorAlert>();
+        public List<ActionItem> ActionItems { get; private set; } = new List<ActionItem>();
 
         private IMongoCollection<MonitorAlert> _monitorAlerts;
         private IMongoCollection<AnalogItem> _analogItems;
@@ -44,20 +44,21 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<VirtualItem> _virtualItems;
         private IMongoCollection<ActionItem> _actionItems;
 
-        private IMongoCollection<AnalogReadings> _analogReadings;
-        private IMongoCollection<DiscreteReadings> _discreteReadings;
-        private IMongoCollection<VirtualReadings> _virtualReadings;
+        private IMongoCollection<AnalogReadings?> _analogReadings;
+        private IMongoCollection<DiscreteReadings?> _discreteReadings;
+        private IMongoCollection<VirtualReadings?> _virtualReadings;
         private IMongoCollection<AlertReadings> _alertReadings;
 
-        public MonitorDataService(IMongoClient client,DataLogConfigProvider configProvider,ILogger<MonitorDataService> logger) {
+        public MonitorDataService(IMongoClient client,DataLogConfigProvider configProvider,
+            ILogger<MonitorDataService> logger) {
             this._client = client;
             this._configProvider = configProvider;
             this._device = this._configProvider.ManagedDevice;
             this._logger = logger;
             var database = this._client.GetDatabase(this._device.DatabaseName);
-            this._analogReadings = database.GetCollection<AnalogReadings>(this._device.CollectionNames[nameof(AnalogReadings)]);
-            this._discreteReadings = database.GetCollection<DiscreteReadings>(this._device.CollectionNames[nameof(DiscreteReadings)]);
-            this._virtualReadings = database.GetCollection<VirtualReadings>(this._device.CollectionNames[nameof(VirtualReadings)]);
+            this._analogReadings = database.GetCollection<AnalogReadings?>(this._device.CollectionNames[nameof(AnalogReadings)]);
+            this._discreteReadings = database.GetCollection<DiscreteReadings?>(this._device.CollectionNames[nameof(DiscreteReadings)]);
+            this._virtualReadings = database.GetCollection<VirtualReadings?>(this._device.CollectionNames[nameof(VirtualReadings)]);
             this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
             this._actionItems = database.GetCollection<ActionItem>(this._device.CollectionNames[nameof(ActionItem)]);
             this._analogItems = database.GetCollection<AnalogItem>(this._device.CollectionNames[nameof(AnalogItem)]);
@@ -71,39 +72,40 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             await this._alertReadings.InsertOneAsync(readings);
         }
 
-        public async Task InsertOneAsync(AnalogReadings readings) {
+        public async Task InsertOneAsync(AnalogReadings? readings) {
             await this._analogReadings.InsertOneAsync(readings);
         }
 
-        public async Task InsertOneAsync(DiscreteReadings readings) {
+        public async Task InsertOneAsync(DiscreteReadings? readings) {
             await this._discreteReadings.InsertOneAsync(readings);
         }
 
-        public async Task InsertOneAsync(VirtualReadings readings) {
+        public async Task InsertOneAsync(VirtualReadings? readings) {
             await this._virtualReadings.InsertOneAsync(readings);
         }
 
-        public async Task<AnalogReadings> GetLastAnalogReading() {
-            SortDefinition<AnalogReadings> sort="{ timestamp: -1 }";
+        public async Task<AnalogReadings?> GetLastAnalogReading() {
+            SortDefinition<AnalogReadings?> sort="{ timestamp: -1 }";
             return await this._analogReadings.Find(_=>true).Sort(sort).FirstOrDefaultAsync();
         }
 
         public async Task LoadAsync() {
-            this.AnalogItems = await (await this._analogItems.FindAsync(_ => true)).ToListAsync();
-            this.DiscreteItems = await (await this._discreteItems.FindAsync(_ => true)).ToListAsync();
-            this.OutputItems =await (await this._outputItems.FindAsync(_ => true)).ToListAsync();
-            this.VirtualItems = await (await this._virtualItems.FindAsync(_ => true)).ToListAsync();
-            this.ActionItems = await (await this._actionItems.FindAsync(_ => true)).ToListAsync();
-            this.MonitorAlerts = await (await this._monitorAlerts.FindAsync(_ => true)).ToListAsync();
+            this.AnalogItems = await this._analogItems.Find(_ => true).ToListAsync();
+            this.DiscreteItems = await this._discreteItems.Find(_ => true).ToListAsync();
+            this.OutputItems = await this._outputItems.Find(_ => true).ToListAsync();
+            this.VirtualItems = await this._virtualItems.Find(_ => true).ToListAsync();
+            this.ActionItems = await this._actionItems.Find(_ => true).ToListAsync();
+            this.MonitorAlerts = await this._monitorAlerts.Find(_ => true).ToListAsync();
         }
 
         public async Task ReloadAsync() {
+            this._logger.LogInformation("MonitorDataRepo Reloading");
             await this._configProvider.Reload();
             this._device = this._configProvider.ManagedDevice;
             var database = this._client.GetDatabase(this._device.DatabaseName);
-            this._analogReadings = database.GetCollection<AnalogReadings>(this._device.CollectionNames[nameof(AnalogReadings)]);
-            this._discreteReadings = database.GetCollection<DiscreteReadings>(this._device.CollectionNames[nameof(DiscreteReadings)]);
-            this._virtualReadings = database.GetCollection<VirtualReadings>(this._device.CollectionNames[nameof(VirtualReadings)]);
+            this._analogReadings = database.GetCollection<AnalogReadings?>(this._device.CollectionNames[nameof(AnalogReadings)]);
+            this._discreteReadings = database.GetCollection<DiscreteReadings?>(this._device.CollectionNames[nameof(DiscreteReadings)]);
+            this._virtualReadings = database.GetCollection<VirtualReadings?>(this._device.CollectionNames[nameof(VirtualReadings)]);
             this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
             this._actionItems = database.GetCollection<ActionItem>(this._device.CollectionNames[nameof(ActionItem)]);
             this._analogItems = database.GetCollection<AnalogItem>(this._device.CollectionNames[nameof(AnalogItem)]);
@@ -111,12 +113,12 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._virtualItems = database.GetCollection<VirtualItem>(this._device.CollectionNames[nameof(VirtualItem)]);
             this._outputItems = database.GetCollection<OutputItem>(this._device.CollectionNames[nameof(OutputItem)]);
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
-            this.AnalogItems = await (await this._analogItems.FindAsync(_ => true)).ToListAsync();
-            this.DiscreteItems = await (await this._discreteItems.FindAsync(_ => true)).ToListAsync();
-            this.OutputItems =await (await this._outputItems.FindAsync(_ => true)).ToListAsync();
-            this.VirtualItems = await (await this._virtualItems.FindAsync(_ => true)).ToListAsync();
-            this.ActionItems = await (await this._actionItems.FindAsync(_ => true)).ToListAsync();
-            this.MonitorAlerts = await (await this._monitorAlerts.FindAsync(_ => true)).ToListAsync();
+            this.AnalogItems = await this._analogItems.Find(_ => true).ToListAsync();
+            this.DiscreteItems = await this._discreteItems.Find(_ => true).ToListAsync();
+            this.OutputItems = await this._outputItems.Find(_ => true).ToListAsync();
+            this.VirtualItems = await this._virtualItems.Find(_ => true).ToListAsync();
+            this.ActionItems = await this._actionItems.Find(_ => true).ToListAsync();
+            this.MonitorAlerts = await this._monitorAlerts.Find(_ => true).ToListAsync();
         }
     }
 }
