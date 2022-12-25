@@ -101,12 +101,31 @@ public class CloneDatabase {
         Console.WriteLine($"Hours: {hours}");*/
         //await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
         //Console.WriteLine();
-       UsageService service = new UsageService();
+       /*UsageService service = new UsageService();
         await service.GetH2Usage();
         await service.GetN2Usage();
         await service.GetNH3Usage();
         //await UsageH2Testing("H2 PSI");
-        Console.WriteLine("Check Database");
+        Console.WriteLine("Check Database");*/
+       await TestTimeCheck();
+    }
+
+    static async Task TestTimeCheck() {
+        DeviceCheck _deviceCheck = new DeviceCheck();
+        while (true) {
+            var now = DateTime.Now;
+            if (_deviceCheck.CheckTime(now)) {
+                Console.WriteLine($"{now}: Resending Email");
+            }
+            /*if (_deviceCheck.Latch(DateTime.Now)) {
+                Console.WriteLine("First Email Sent");
+            } else {
+                var now = DateTime.Now;
+                if (_deviceCheck.CheckTime(now)) {
+                    Console.WriteLine($"{now}: Resending Email");
+                }
+            }*/
+        }
     }
     
     static async Task UsageH2Testing(string item) {

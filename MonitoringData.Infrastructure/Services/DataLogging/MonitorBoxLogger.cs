@@ -12,19 +12,21 @@ namespace MonitoringData.Infrastructure.Services {
     public class DeviceCheck {
         private bool _offlineLatch;
         private DateTime _offlineTime;
-
-        public bool Latch(DateTime now) {
-            if (!this._offlineLatch) {
-                this._offlineLatch = true;
-                this._offlineTime = now;
-            }
-            return this._offlineLatch;
-        }
         public void Clear() {
             this._offlineLatch = false;
         }
         public bool CheckTime(DateTime now) {
-            return (now - this._offlineTime).TotalMinutes >= 30;
+            if (!this._offlineLatch) {
+                this._offlineLatch = true;
+                this._offlineTime = now;
+                return true;
+            } else {
+                if ((now - this._offlineTime).TotalSeconds >= 5) {
+                    this._offlineTime = now;
+                    return true;
+                }
+                return false;
+            }
         }
     }
     
@@ -86,12 +88,8 @@ namespace MonitoringData.Infrastructure.Services {
                 }
                 await this._alertService.ProcessAlerts(this._alerts,now);
             } else {
-                if (this._deviceCheck.Latch(now)) {
+                if (this._deviceCheck.CheckTime(now)) {
                     await this._alertService.DeviceOfflineAlert();
-                } else {
-                    if (this._deviceCheck.CheckTime(now)) {
-                        await this._alertService.DeviceOfflineAlert();
-                    }
                 }
                 this._logger.LogError("Modbus read failed");
             }
@@ -287,4 +285,5 @@ namespace MonitoringData.Infrastructure.Services {
             }
         }
     }
+    
 }
