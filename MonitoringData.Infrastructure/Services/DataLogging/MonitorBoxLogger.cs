@@ -21,7 +21,7 @@ namespace MonitoringData.Infrastructure.Services {
                 this._offlineTime = now;
                 return true;
             } else {
-                if ((now - this._offlineTime).TotalSeconds >= 5) {
+                if ((now - this._offlineTime).TotalSeconds >= 30) {
                     this._offlineTime = now;
                     return true;
                 }
@@ -78,7 +78,6 @@ namespace MonitoringData.Infrastructure.Services {
                 var analogProcessed=await this.ProcessAnalogReadings(analogRaw, now);
                 var discreteProcessed=await this.ProcessDiscreteReadings(discreteRaw, now);
                 var virtualProcessed=await this.ProcessVirtualReadings(virtualRaw, now);
-                
                 if(CheckSave(now,(analogProcessed.Item2 || discreteProcessed.Item2 || virtualProcessed.Item2))) {
                     this._lastRecord = now;
                     await this._dataService.InsertOneAsync(analogProcessed.Item1);
@@ -90,6 +89,7 @@ namespace MonitoringData.Infrastructure.Services {
             } else {
                 if (this._deviceCheck.CheckTime(now)) {
                     await this._alertService.DeviceOfflineAlert();
+                    this.LogWarning("Device Offline Email Sent");
                 }
                 this._logger.LogError("Modbus read failed");
             }

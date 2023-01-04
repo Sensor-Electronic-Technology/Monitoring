@@ -107,7 +107,7 @@ public class CloneDatabase {
         await service.GetNH3Usage();
         //await UsageH2Testing("H2 PSI");
         Console.WriteLine("Check Database");*/
-       await TestTimeCheck();
+       //await TestTimeCheck();
     }
 
     static async Task TestTimeCheck() {
