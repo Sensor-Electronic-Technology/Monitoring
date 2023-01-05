@@ -43,7 +43,7 @@ namespace MonitoringSystem.Shared.Services {
         public async Task<ModbusResult> Read(string ip, int port, ModbusConfigDto configurationDto) {
             try {
                 using var client = new TcpClient(ip, port);
-                client.ReceiveTimeout = 2000;
+                client.ReceiveTimeout = 500;
                 var modbus = ModbusIpMaster.CreateIp(client);
                 
                 ModbusResult result = new ModbusResult();

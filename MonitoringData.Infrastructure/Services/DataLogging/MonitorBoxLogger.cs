@@ -10,21 +10,31 @@ using MonitoringSystem.Shared.Services;
 
 namespace MonitoringData.Infrastructure.Services {
     public class DeviceCheck {
+        private static int FailLimit=20;
         private bool _offlineLatch;
+        private int _failCount;
         private DateTime _offlineTime;
+        
         public void Clear() {
             this._offlineLatch = false;
+            this._failCount = 0;
         }
+        
         public bool CheckTime(DateTime now) {
-            if (!this._offlineLatch) {
-                this._offlineLatch = true;
-                this._offlineTime = now;
-                return true;
-            } else {
-                if ((now - this._offlineTime).TotalSeconds >= 30) {
+            if (this._failCount >= DeviceCheck.FailLimit) {
+                if (!this._offlineLatch) {
+                    this._offlineLatch = true;
                     this._offlineTime = now;
                     return true;
+                } else {
+                    if ((now - this._offlineTime).TotalSeconds >= 30) {
+                        this._offlineTime = now;
+                        return true;
+                    }
+                    return false;
                 }
+            } else {
+                this._failCount++;
                 return false;
             }
         }
@@ -42,9 +52,7 @@ namespace MonitoringData.Infrastructure.Services {
         private TimeSpan _recordInterval;
         private bool _firstRecord;
         private DeviceCheck _deviceCheck=new DeviceCheck();
-        
         private Dictionary<ObjectId, bool> _lastState = new Dictionary<ObjectId, bool>();
-
         
         public MonitorBoxLogger(IMonitorDataRepo dataService,
             ILogger<MonitorBoxLogger> logger, 
@@ -85,11 +93,12 @@ namespace MonitoringData.Infrastructure.Services {
                     await this._dataService.InsertOneAsync(virtualProcessed.Item1);
                     this.LogInformation("Data Recorded");
                 }
+                this._logger.LogInformation("Data Read");
                 await this._alertService.ProcessAlerts(this._alerts,now);
             } else {
                 if (this._deviceCheck.CheckTime(now)) {
                     await this._alertService.DeviceOfflineAlert();
-                    this.LogWarning("Device Offline Email Sent");
+                    this.LogInformation("Device Offline Email Sent");
                 }
                 this._logger.LogError("Modbus read failed");
             }

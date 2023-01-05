@@ -26,6 +26,7 @@ public class UsageService {
         var usageCollection = database.GetCollection<UsageDayRecord>("nh3_usage");
         var item1 = await analogCollection.Find(e => e.Identifier == "Tank1 Weight").FirstOrDefaultAsync();
         var item2 = await analogCollection.Find(e => e.Identifier == "Tank2 Weight").FirstOrDefaultAsync();
+        
         return await this.GetUsageRecords(usageCollection, analogReadCollection,10,item1, item2);
     }
     
