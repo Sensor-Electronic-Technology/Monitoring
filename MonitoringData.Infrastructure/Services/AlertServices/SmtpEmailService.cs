@@ -30,8 +30,7 @@ public class SmtpEmailService:IEmailService {
             await client.ConnectAsync(this._settings.SmtpHost, this._settings.SmtpPort,false);
             var message =new MimeMessage();
             message.From.Add(this._from);
-            //message.To.AddRange(this._recipients);
-            message.To.Add(new MailboxAddress("Andrew","aelmendorf@s-et.com"));
+            message.To.AddRange(this._recipients);
             BodyBuilder builder = new BodyBuilder();
             var bodyImage=await builder.LinkedResources.AddAsync("GasDetectorMap.png");
             bodyImage.ContentId = MimeUtils.GenerateMessageId();

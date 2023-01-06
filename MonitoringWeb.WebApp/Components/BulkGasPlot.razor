@@ -111,10 +111,6 @@
         this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
         await this.Load();
     }
-    
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        await JSRuntime.InvokeVoidAsync("renderDevExtremeControls", ".loading-indicator");
-    }
 
     private Task Submit() {
         return Task.CompletedTask;
@@ -140,13 +136,13 @@
         switch (this.GasType) {
             case BulkGasType.N2:
                 this.Header = "Bulk N2";
-                var ret=await this.PlotService.GetChannelDatav2("epi1_data", "N2 inH20", start, stop);
+                var ret=await this.PlotService.GetChannelDatav2("epi1_data", "Bulk N2(inH20)", start, stop);
                 this.PlotData = ret.Item2;
                 this.Sensor = ret.Item1;
                 break;
             case BulkGasType.H2:
                 this.Header = "Bulk H2";
-                var ret2 = await this.PlotService.GetChannelDatav2("epi1_data", "H2 PSI", start, stop);
+                var ret2 = await this.PlotService.GetChannelDatav2("epi1_data", "Bulk H2(PSI)", start, stop);
                 this.PlotData = ret2.Item2;
                 this.Sensor = ret2.Item1;
                 break;

@@ -153,7 +153,7 @@ public class PlotDataService {
                         var aReading1=new AnalogReadingDto(){
                             Name=tank1.Identifier,
                             TimeStamp = readings.timestamp.ToLocalTime(),
-                            Value=reading1.Value
+                            Value=reading1.Value>=0 ? reading1.Value:0 
                         };
                         aReading1.Time = double.Parse(aReading1.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading1);
@@ -161,7 +161,7 @@ public class PlotDataService {
                         var aReading2=new AnalogReadingDto(){
                             Name=tank2.Identifier,
                             TimeStamp = readings.timestamp.ToLocalTime(),
-                            Value=reading2.Value
+                            Value=reading2.Value>=0 ? reading2.Value:0 
                         };
                         aReading2.Time = double.Parse(aReading2.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading2);
@@ -169,7 +169,7 @@ public class PlotDataService {
                         var aReading3=new AnalogReadingDto(){
                             Name="Combined",
                             TimeStamp = readings.timestamp.ToLocalTime(),
-                            Value=reading1.Value+reading2.Value
+                            Value=aReading1.Value+aReading2.Value
                         };
                         aReading3.Time = double.Parse(aReading3.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading3);
@@ -180,7 +180,6 @@ public class PlotDataService {
         }
         
         public async Task<IEnumerable<AnalogReadingDto>> GetDataBySensor(string deviceData,DateTime start, DateTime stop,ObjectId sensorId) {
-            /*var client = new MongoClient("mongodb://172.20.3.41");*/
             var database = this._client.GetDatabase(deviceData);
             this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
             this._analogItems = database.GetCollection<AnalogItem>("analog_items");

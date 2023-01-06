@@ -24,10 +24,10 @@ public class UsageService {
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
         var usageCollection = database.GetCollection<UsageDayRecord>("nh3_usage");
+        var start = new DateTime(2022, 10, 25,18,27,0);
         var item1 = await analogCollection.Find(e => e.Identifier == "Tank1 Weight").FirstOrDefaultAsync();
         var item2 = await analogCollection.Find(e => e.Identifier == "Tank2 Weight").FirstOrDefaultAsync();
-        
-        return await this.GetUsageRecords(usageCollection, analogReadCollection,10,item1, item2);
+        return await this.GetUsageRecords(usageCollection, analogReadCollection,10,item1, item2,start);
     }
     
     public async Task<IEnumerable<UsageDayRecord>> GetH2Usage() {
@@ -50,21 +50,38 @@ public class UsageService {
 
     private async Task<IEnumerable<UsageDayRecord>> GetUsageRecords(
         IMongoCollection<UsageDayRecord> usageCollection,
-        IMongoCollection<AnalogReadings> analogReadCollection, double threshold,AnalogItem? item1, AnalogItem? item2 = null) {
+        IMongoCollection<AnalogReadings> analogReadCollection, 
+        double threshold,AnalogItem? item1, AnalogItem? item2 = null,DateTime? startDate=null) {
         var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
         var count = await usageCollection.EstimatedDocumentCountAsync();
         if (count == 0) {
             var stopDate = DateTime.Now.Date.AddHours(-5);
             Dictionary<DateTime, List<ValueReturn>> days;
-            var readings = await analogReadCollection.Find(e=>e.timestamp<stopDate)
-                .ToListAsync();
-            List<ValueReturn> rawData;
+            List<AnalogReadings> readings;
+            if (startDate.HasValue) {
+                readings = await analogReadCollection.Find(e=>e.timestamp>=startDate && e.timestamp<stopDate)
+                    .ToListAsync();
+            } else {
+                readings = await analogReadCollection.Find(e=>e.timestamp<stopDate)
+                    .ToListAsync();
+            }
+
+            List<ValueReturn> rawData=new List<ValueReturn>();
             if (item2 != null) {
-                rawData = readings.Select(e => new ValueReturn() {
+                foreach (var reading in readings) {
+                    var r1 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item1._id)!.Value;
+                    var r2 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item2._id)!.Value;
+                    var valueReturn = new ValueReturn() {
+                        timestamp = reading.timestamp,
+                        value=(r1>=0.00 ? r1:0.00)+(r2>=0 ? r2:0)
+                    };
+                    rawData.Add(valueReturn);
+                }
+                /*rawData = readings.Select(e => new ValueReturn() {
                     timestamp = e.timestamp,
                     value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value +
                              e.readings.FirstOrDefault(m => m.MonitorItemId == item2._id)!.Value)
-                }).ToList();
+                }).ToList();*/
             } else {
                 rawData = readings.Select(e => new ValueReturn() {
                     timestamp = e.timestamp,
