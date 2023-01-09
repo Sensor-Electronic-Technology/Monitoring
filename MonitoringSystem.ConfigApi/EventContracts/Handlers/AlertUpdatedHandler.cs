@@ -15,7 +15,7 @@ public class AlertUpdatedHandler:FastEventHandler<AlertUpdatedEvent> {
         //var context = Resolve<MonitorContext>();
         var client = Resolve<IMongoClient>();
         var deviceCollection =
-            client.GetDatabase("monitor_settings_dev").GetCollection<ManagedDevice>("monitor_devices");
+            client.GetDatabase("monitor_settings").GetCollection<ManagedDevice>("monitor_devices");
         
         var alertDto = eventModel.Alert;
         var alert = await context.Alerts

@@ -28,46 +28,6 @@ public class UpdateAlertEndpoint : Endpoint<UpdateAlertRequest, UpdateAlertRespo
     }
 }
 
-/*[HttpPut("alerts/analog/AnalogAlert"),AllowAnonymous]
-public class UpdateAnalogAlertEndpoint : Endpoint<UpdateAnalogAlertRequest, UpdateAnalogAlertResponse> {
-    private readonly MonitorContext _context;
-
-    public UpdateAnalogAlertEndpoint(MonitorContext context) {
-        this._context = context;
-    }
-
-    public override async Task HandleAsync(UpdateAnalogAlertRequest req, CancellationToken ct) {
-        var analogInput = req.AnalogAlert.ToEntity();
-        this._context.Update(analogInput);
-        var ret = await this._context.SaveChangesAsync(ct);
-        if (ret > 0) {
-            await SendOkAsync(new UpdateAnalogAlertResponse() { AnalogAlert = analogInput.ToDto() },ct);
-        } else {
-            await SendErrorsAsync(400,ct);
-        }
-    }
-}
-
-[HttpPut("alerts/discrete/DiscreteAlert"),AllowAnonymous]
-public class UpdateDiscreteAlertEndpoint : Endpoint<UpdateDiscreteAlertRequest, UpdateDiscreteAlertResponse> {
-    private readonly MonitorContext _context;
-
-    public UpdateDiscreteAlertEndpoint(MonitorContext context) {
-        this._context = context;
-    }
-
-    public override async Task HandleAsync(UpdateDiscreteAlertRequest req, CancellationToken ct) {
-        var analogInput = req.DiscreteAlert.ToEntity();
-        this._context.Update(analogInput);
-        var ret = await this._context.SaveChangesAsync(ct);
-        if (ret > 0) {
-            await SendOkAsync(new UpdateDiscreteAlertResponse() { DiscreteAlert = analogInput.ToDto() },ct);
-        } else {
-            await SendErrorsAsync(400,ct);
-        }
-    }
-}*/
-
 [HttpPut("alerts/levels/analog/AnalogLevel"),AllowAnonymous]
 public class UpdateAnalogLevelEndpoint : Endpoint<UpdateAnalogLevelRequest, UpdateAnalogLevelResponse> {
     private readonly MonitorContext _context;
@@ -107,5 +67,45 @@ public class UpdateDiscreteLevelEndpoint : Endpoint<UpdateDiscreteLevelRequest, 
         }
     }
 }
+
+/*[HttpPut("alerts/analog/AnalogAlert"),AllowAnonymous]
+public class UpdateAnalogAlertEndpoint : Endpoint<UpdateAnalogAlertRequest, UpdateAnalogAlertResponse> {
+    private readonly MonitorContext _context;
+
+    public UpdateAnalogAlertEndpoint(MonitorContext context) {
+        this._context = context;
+    }
+
+    public override async Task HandleAsync(UpdateAnalogAlertRequest req, CancellationToken ct) {
+        var analogInput = req.AnalogAlert.ToEntity();
+        this._context.Update(analogInput);
+        var ret = await this._context.SaveChangesAsync(ct);
+        if (ret > 0) {
+            await SendOkAsync(new UpdateAnalogAlertResponse() { AnalogAlert = analogInput.ToDto() },ct);
+        } else {
+            await SendErrorsAsync(400,ct);
+        }
+    }
+}
+
+[HttpPut("alerts/discrete/DiscreteAlert"),AllowAnonymous]
+public class UpdateDiscreteAlertEndpoint : Endpoint<UpdateDiscreteAlertRequest, UpdateDiscreteAlertResponse> {
+    private readonly MonitorContext _context;
+
+    public UpdateDiscreteAlertEndpoint(MonitorContext context) {
+        this._context = context;
+    }
+
+    public override async Task HandleAsync(UpdateDiscreteAlertRequest req, CancellationToken ct) {
+        var analogInput = req.DiscreteAlert.ToEntity();
+        this._context.Update(analogInput);
+        var ret = await this._context.SaveChangesAsync(ct);
+        if (ret > 0) {
+            await SendOkAsync(new UpdateDiscreteAlertResponse() { DiscreteAlert = analogInput.ToDto() },ct);
+        } else {
+            await SendErrorsAsync(400,ct);
+        }
+    }
+}*/
 
 

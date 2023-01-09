@@ -27,7 +27,7 @@ namespace MonitoringData.Infrastructure.Services {
                     this._offlineTime = now;
                     return true;
                 } else {
-                    if ((now - this._offlineTime).TotalSeconds >= 30) {
+                    if ((now - this._offlineTime).TotalMinutes >= 30) {
                         this._offlineTime = now;
                         return true;
                     }

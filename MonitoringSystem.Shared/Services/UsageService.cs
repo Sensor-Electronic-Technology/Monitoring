@@ -35,7 +35,7 @@ public class UsageService {
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
         var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
-        var item = await analogCollection.Find(e => e.Identifier == "H2 PSI").FirstOrDefaultAsync();
+        var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
         return await this.GetUsageRecords(usageCollection,analogReadCollection,0,item);
     }
     
@@ -44,7 +44,7 @@ public class UsageService {
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
         var usageCollection = database.GetCollection<UsageDayRecord>("n2_usage");
-        var item = await analogCollection.Find(e => e.Identifier == "N2 inH20").FirstOrDefaultAsync();
+        var item = await analogCollection.Find(e => e.Identifier == "Bulk N2(inH20)").FirstOrDefaultAsync();
         return await this.GetUsageRecords(usageCollection,analogReadCollection,0, item);
     }
 
