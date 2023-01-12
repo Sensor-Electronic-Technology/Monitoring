@@ -35,21 +35,42 @@
                         var device = (ModbusDeviceDto)EditFormContext.EditModel;
                     }
                     <DxFormLayout CssClass="w-100">
-                        <DxFormLayoutItem Caption="Name:" ColSpanMd="6">
-                            <DxTextBox @bind-Text="@device.Name"/>
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem Caption="HubName" ColSpanMd="6">
-                            <DxTextBox @bind-Text="@device.HubName"/>
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem Caption="HubAddress" ColSpanMd="6">
-                            <DxTextBox @bind-Text="@device.HubAddress"/>
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem Caption="ReadInterval" ColSpanMd="6">
-                            <DxSpinEdit @bind-Value="@device.ReadInterval"/>
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem Caption="SaveInterval" ColSpanMd="6">
-                            <DxSpinEdit @bind-Value="@device.SaveInterval"/>
-                        </DxFormLayoutItem>
+                        <DxFormLayoutTabPages>
+                            <DxFormLayoutTabPage Caption="Device Info">
+                                <DxFormLayoutItem Caption="Name:" ColSpanMd="6">
+                                    <DxTextBox @bind-Text="@device.Name"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="HubName" ColSpanMd="6">
+                                    <DxTextBox @bind-Text="@device.HubName"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="HubAddress" ColSpanMd="6">
+                                    <DxTextBox @bind-Text="@device.HubAddress"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="ReadInterval" ColSpanMd="6">
+                                    <DxSpinEdit @bind-Value="@device.ReadInterval"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="SaveInterval" ColSpanMd="6">
+                                    <DxSpinEdit @bind-Value="@device.SaveInterval"/>
+                                </DxFormLayoutItem>
+                            </DxFormLayoutTabPage>
+                            <DxFormLayoutTabPage Caption="Network Config.">
+                                <DxFormLayoutItem>
+                                    <DxTextBox @bind-Text="@device.NetworkConfig.IpAddress"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem>
+                                    <DxTextBox @bind-Text="@device.NetworkConfig.Dns"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem>
+                                    <DxTextBox @bind-Text="@device.NetworkConfig.Mac"/>
+                                </DxFormLayoutItem>
+                                
+                            </DxFormLayoutTabPage>
+                            <DxFormLayoutTabPage Caption="Modbus Config">
+                                                            
+                            </DxFormLayoutTabPage>
+                            
+                        </DxFormLayoutTabPages>
+
                     </DxFormLayout>
                 </EditFormTemplate>
             </DxGrid>
