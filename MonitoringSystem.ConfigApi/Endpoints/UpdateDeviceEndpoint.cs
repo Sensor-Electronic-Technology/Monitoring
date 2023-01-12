@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MonitoringConfig.Data.Model;
+using MonitoringSystem.ConfigApi.EventContracts.Events;
 using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringSystem.Shared.Contracts.Requests.Update;
 using MonitoringSystem.Shared.Contracts.Responses.Update;
@@ -11,7 +12,7 @@ namespace MonitoringSystem.ConfigApi.Endpoints;
 [HttpPut("devices/ModbusDevice"),AllowAnonymous]
 public class UpdateDeviceEndpoint:Endpoint<UpdateDeviceRequest,UpdateDeviceResponse> {
     private readonly MonitorContext _context;
-
+    
     public UpdateDeviceEndpoint(MonitorContext context) {
         this._context = context;
     }
@@ -30,6 +31,7 @@ public class UpdateDeviceEndpoint:Endpoint<UpdateDeviceRequest,UpdateDeviceRespo
                 UpdateDeviceResponse response = new UpdateDeviceResponse() {
                     ModbusDevice = updated.ToDto()
                 };
+                await PublishAsync(new DeviceUpdatedEvent() { ModbusDevice = req.ModbusDevice},cancellation:ct);
                 await SendOkAsync(response, ct);
             } else {
                 await SendNotFoundAsync(ct);
