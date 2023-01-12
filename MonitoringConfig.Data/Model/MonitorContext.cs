@@ -50,6 +50,7 @@ public class MonitorContext:DbContext {
         builder.Entity<ModbusChannelRegisterMap>().HasKey(e=>e.Id);
         builder.Entity<Alert>().HasKey(e => e.Id);
         builder.Entity<AlertLevel>().HasKey(e=>e.Id);
+        builder.Entity<Module>().HasKey(e => e.Id);
 
         builder.Entity<Channel>()
             .OwnsOne(e => e.ChannelAddress);
@@ -85,6 +86,23 @@ public class MonitorContext:DbContext {
             .HasMany(e => e.DeviceActions)
             .WithOne(e => e.ModbusDevice)
             .HasForeignKey(e => e.ModbusDeviceId);
+        
+        builder.Entity<MonitorBox>()
+            .HasMany(e=>e.Modules)
+            .WithMany(e=>e.MoitorBoxes)
+            .UsingEntity<MonitorBoxModule>(
+                j=>j
+                    .HasOne(bm=>bm.Module)
+                    .WithMany(m=>m.MonitorBoxModules)
+                    .HasForeignKey(e=>e.ModuleId),
+                j=>j
+                    .HasOne(bm=>bm.ModuleBox)
+                    .WithMany(m=>m.MonitorBoxModules)
+                    .HasForeignKey(bm=>bm.MonitorBoxId),
+                j =>
+                {
+                    j.HasKey(bm => new { bm.ModuleId, bm.MonitorBoxId });
+                });
         
         //Channel Configuration
         

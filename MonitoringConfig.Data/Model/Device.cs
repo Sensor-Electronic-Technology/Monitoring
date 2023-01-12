@@ -19,6 +19,7 @@ public class ModbusDevice:Device {
 }
 
 public class MonitorBox : ModbusDevice {
-
+    public ICollection<Module> Modules { get; set; }
+    public List<MonitorBoxModule> MonitorBoxModules { get; set; }
 }
 

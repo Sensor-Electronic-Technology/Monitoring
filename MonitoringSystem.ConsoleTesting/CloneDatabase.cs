@@ -13,9 +13,6 @@ using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
-using Microsoft.ML;
-using Microsoft.ML.Data;
-using Microsoft.VisualBasic;
 using MonitoringData.Infrastructure.Services;
 using MonitoringSystem.Shared.Data.UsageModel;
 using MonitoringSystem.Shared.Services;
@@ -101,13 +98,48 @@ public class CloneDatabase {
         Console.WriteLine($"Hours: {hours}");*/
         //await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
         //Console.WriteLine();
-       UsageService service = new UsageService();
+       //UsageService service = new UsageService();
         //await service.GetH2Usage();
         //await service.GetN2Usage();
-        await service.GetNH3Usage();
+        //await service.GetNH3Usage();
         //await UsageH2Testing("H2 PSI");
-        Console.WriteLine("Check Database");
+        //Console.WriteLine("Check Database");
        //await TestTimeCheck();
+       await CreateModules();
+    }
+
+    static async Task CreateModules() {
+        var context = new MonitorContext();
+        var mod1 = new Module() {
+            Id=Guid.NewGuid(),
+            Name="P1-16ND3",
+            ChannelCount = 16,
+            ModuleType = ModuleType.DiscreteInput
+        };
+        var mod2 = new Module() {
+            Id=Guid.NewGuid(),
+            Name="P1-08ADL-1",
+            ChannelCount = 8,
+            ModuleType = ModuleType.AnalogInput
+        };
+        var mod3 = new Module() {
+            Id=Guid.NewGuid(),
+            Name="P1-08TD2",
+            ChannelCount = 8,
+            ModuleType = ModuleType.DiscreteOutput
+        };
+        var mod4 = new Module() {
+            Id=Guid.NewGuid(),
+            Name="P1-08SIM",
+            ChannelCount = 8,
+            ModuleType = ModuleType.DiscreteInput
+        };
+        await context.AddAsync(mod1);
+        await context.AddAsync(mod2);
+        await context.AddAsync(mod3);
+        await context.AddAsync(mod4);
+        await context.SaveChangesAsync();
+        Console.WriteLine("Check Database");
     }
 
     static async Task TestTimeCheck() {
