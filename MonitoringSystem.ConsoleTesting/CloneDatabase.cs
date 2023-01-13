@@ -105,7 +105,9 @@ public class CloneDatabase {
         //await UsageH2Testing("H2 PSI");
         //Console.WriteLine("Check Database");
        //await TestTimeCheck();
-       await CreateModules();
+       //await CreateModules();
+       //await ConfigureBoxModule();
+       await ConfigureBoxModuleChannnels();
     }
 
     static async Task CreateModules() {
@@ -138,6 +140,79 @@ public class CloneDatabase {
         await context.AddAsync(mod2);
         await context.AddAsync(mod3);
         await context.AddAsync(mod4);
+        await context.SaveChangesAsync();
+        Console.WriteLine("Check Database");
+    }
+    static async Task ConfigureBoxModule() {
+        var context = new MonitorContext();
+        var device = await context.Devices.OfType<MonitorBox>()
+            .Include(e=>e.BoxModules)
+            .FirstOrDefaultAsync(e => e.Name == "Epi2");
+        
+        var modDiscrete = await context.Modules.FirstOrDefaultAsync(e => e.Name == "P1-16ND3");
+        var modAnalog = await context.Modules.FirstOrDefaultAsync(e => e.Name == "P1-08ADL-1");
+        var modOutput = await context.Modules.FirstOrDefaultAsync(e => e.Name == "P1-08TD2");
+        var modSim = await context.Modules.FirstOrDefaultAsync(e => e.Name == "P1-08SIM");
+
+        var boxMod1 = new BoxModule() {
+            Id = Guid.NewGuid(),
+            Module = modDiscrete,
+            MonitorBox = device,
+            ModuleSlot = 1
+        };
+        var boxMod2 = new BoxModule() {
+            Id = Guid.NewGuid(),
+            Module = modDiscrete,
+            MonitorBox = device,
+            ModuleSlot = 2
+        };
+        var boxMod3 = new BoxModule() {
+            Id = Guid.NewGuid(),
+            Module = modAnalog,
+            MonitorBox = device,
+            ModuleSlot = 3
+        };
+        var boxMod4 = new BoxModule() {
+            Id = Guid.NewGuid(),
+            Module = modAnalog,
+            MonitorBox = device,
+            ModuleSlot = 4
+        };
+        var boxMod5 = new BoxModule() {
+            Id = Guid.NewGuid(),
+            Module = modOutput,
+            MonitorBox = device,
+            ModuleSlot = 5
+        };
+        var boxMod6 = new BoxModule() {
+            Id = Guid.NewGuid(),
+            Module = modSim,
+            MonitorBox = device,
+            ModuleSlot = 6
+        };
+        await context.AddRangeAsync(boxMod1, boxMod2, boxMod3, boxMod4, boxMod5, boxMod6);
+        await context.SaveChangesAsync();
+        Console.WriteLine("Check Database");
+    }
+
+    static async Task ConfigureBoxModuleChannnels() {
+        var context = new MonitorContext();
+        var device = await context.Devices.OfType<MonitorBox>()
+            .Include(e => e.Channels)
+            .Include(e => e.BoxModules)
+                .ThenInclude(e => e.Module)
+            .FirstOrDefaultAsync(e => e.Name == "Epi2");
+        var discreteChannels1 = device.Channels.OfType<DiscreteInput>()
+            .Where(e => e.SystemChannel <= 16);
+        var discreteChannels2 = device.Channels.OfType<DiscreteInput>()
+            .Where(e => e.SystemChannel > 16 && e.SystemChannel <= 32);
+        var boxModule1=device.BoxModules.FirstOrDefault(e => e.ModuleSlot == 1);
+        var boxModule2 = device.BoxModules.FirstOrDefault(e => e.ModuleSlot == 2);
+        
+        boxModule1.Channels.AddRange(discreteChannels1);
+        boxModule2.Channels.AddRange(discreteChannels2);
+
+        context.UpdateRange(boxModule1, boxModule2);
         await context.SaveChangesAsync();
         Console.WriteLine("Check Database");
     }

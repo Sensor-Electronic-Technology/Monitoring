@@ -13,18 +13,21 @@ public class Module {
     public ModuleType ModuleType { get; set; }
     public int ChannelCount { get; set; }
     
-    public ICollection<MonitorBox> MoitorBoxes { get; set; }
-    public List<MonitorBoxModule> MonitorBoxModules { get; set; }
+    //public ICollection<MonitorBox> MoitorBoxes { get; set; }
+    public ICollection<BoxModule> BoxModules { get; set; } = new List<BoxModule>();
 
-    //public ICollection<Channel> Channels { get; set; } = new List<Channel>();
+
 }
 
-public class MonitorBoxModule {
+public class BoxModule {
+    public Guid Id { get; set; }
+    
     public Guid ModuleId { get; set; }
     public Module Module { get; set; }
     
     public Guid MonitorBoxId { get; set; }
-    public MonitorBox ModuleBox { get; set; }
+    public MonitorBox MonitorBox { get; set; }
     
     public int ModuleSlot { get; set; }
+    public List<Channel> Channels { get; set; } = new List<Channel>();
 }

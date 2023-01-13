@@ -15,6 +15,10 @@ public abstract class Channel {
     public ChannelAddress? ChannelAddress { get; set; }
     public Guid ModbusDeviceId { get; set; }
     public ModbusDevice? ModbusDevice { get; set; }
+    
+    public Guid? BoxModuleId { get; set; }
+    public BoxModule? BoxModule { get; set; }
+    
 }
 
 public class InputChannel:Channel {

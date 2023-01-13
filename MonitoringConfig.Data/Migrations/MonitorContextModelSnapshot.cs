@@ -116,10 +116,37 @@ namespace MonitoringConfig.Data.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("AlertLevel");
                 });
 
+            modelBuilder.Entity("MonitoringConfig.Data.Model.BoxModule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ModuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ModuleSlot")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("MonitorBoxId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModuleId");
+
+                    b.HasIndex("MonitorBoxId");
+
+                    b.ToTable("BoxModules");
+                });
+
             modelBuilder.Entity("MonitoringConfig.Data.Model.Channel", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BoxModuleId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("Bypass")
@@ -148,6 +175,8 @@ namespace MonitoringConfig.Data.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BoxModuleId");
 
                     b.HasIndex("ModbusDeviceId");
 
@@ -343,25 +372,7 @@ namespace MonitoringConfig.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Module");
-                });
-
-            modelBuilder.Entity("MonitoringConfig.Data.Model.MonitorBoxModule", b =>
-                {
-                    b.Property<Guid>("ModuleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("MonitorBoxId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("ModuleSlot")
-                        .HasColumnType("int");
-
-                    b.HasKey("ModuleId", "MonitorBoxId");
-
-                    b.HasIndex("MonitorBoxId");
-
-                    b.ToTable("MonitorBoxModule");
+                    b.ToTable("Modules");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.NetworkConfiguration", b =>
@@ -577,7 +588,7 @@ namespace MonitoringConfig.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("MonitoringSystem.Shared.Data.EntityDtos.ModbusAddress", "ModbusAddress", b1 =>
+                    b.OwnsOne("MonitoringSystem.Shared.Data.ModbusAddress", "ModbusAddress", b1 =>
                         {
                             b1.Property<Guid>("AlertId")
                                 .HasColumnType("uniqueidentifier");
@@ -613,15 +624,38 @@ namespace MonitoringConfig.Data.Migrations
                     b.Navigation("DeviceAction");
                 });
 
+            modelBuilder.Entity("MonitoringConfig.Data.Model.BoxModule", b =>
+                {
+                    b.HasOne("MonitoringConfig.Data.Model.Module", "Module")
+                        .WithMany("BoxModules")
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MonitoringConfig.Data.Model.MonitorBox", "MonitorBox")
+                        .WithMany("BoxModules")
+                        .HasForeignKey("MonitorBoxId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Module");
+
+                    b.Navigation("MonitorBox");
+                });
+
             modelBuilder.Entity("MonitoringConfig.Data.Model.Channel", b =>
                 {
+                    b.HasOne("MonitoringConfig.Data.Model.BoxModule", "BoxModule")
+                        .WithMany("Channels")
+                        .HasForeignKey("BoxModuleId");
+
                     b.HasOne("MonitoringConfig.Data.Model.ModbusDevice", "ModbusDevice")
                         .WithMany("Channels")
                         .HasForeignKey("ModbusDeviceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("MonitoringSystem.Shared.Data.EntityDtos.ModbusAddress", "ModbusAddress", b1 =>
+                    b.OwnsOne("MonitoringSystem.Shared.Data.ModbusAddress", "ModbusAddress", b1 =>
                         {
                             b1.Property<Guid>("ChannelId")
                                 .HasColumnType("uniqueidentifier");
@@ -643,7 +677,7 @@ namespace MonitoringConfig.Data.Migrations
                                 .HasForeignKey("ChannelId");
                         });
 
-                    b.OwnsOne("MonitoringSystem.Shared.Data.EntityDtos.ChannelAddress", "ChannelAddress", b1 =>
+                    b.OwnsOne("MonitoringSystem.Shared.Data.ChannelAddress", "ChannelAddress", b1 =>
                         {
                             b1.Property<Guid>("ChannelId")
                                 .HasColumnType("uniqueidentifier");
@@ -661,6 +695,8 @@ namespace MonitoringConfig.Data.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("ChannelId");
                         });
+
+                    b.Navigation("BoxModule");
 
                     b.Navigation("ChannelAddress");
 
@@ -710,25 +746,6 @@ namespace MonitoringConfig.Data.Migrations
                     b.Navigation("ModbusDevice");
                 });
 
-            modelBuilder.Entity("MonitoringConfig.Data.Model.MonitorBoxModule", b =>
-                {
-                    b.HasOne("MonitoringConfig.Data.Model.Module", "Module")
-                        .WithMany("MonitorBoxModules")
-                        .HasForeignKey("ModuleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MonitoringConfig.Data.Model.MonitorBox", "ModuleBox")
-                        .WithMany("MonitorBoxModules")
-                        .HasForeignKey("MonitorBoxId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Module");
-
-                    b.Navigation("ModuleBox");
-                });
-
             modelBuilder.Entity("MonitoringConfig.Data.Model.NetworkConfiguration", b =>
                 {
                     b.HasOne("MonitoringConfig.Data.Model.ModbusDevice", "ModbusDevice")
@@ -771,6 +788,11 @@ namespace MonitoringConfig.Data.Migrations
                     b.Navigation("Sensor");
                 });
 
+            modelBuilder.Entity("MonitoringConfig.Data.Model.BoxModule", b =>
+                {
+                    b.Navigation("Channels");
+                });
+
             modelBuilder.Entity("MonitoringConfig.Data.Model.DeviceAction", b =>
                 {
                     b.Navigation("ActionOutputs");
@@ -785,7 +807,7 @@ namespace MonitoringConfig.Data.Migrations
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.Module", b =>
                 {
-                    b.Navigation("MonitorBoxModules");
+                    b.Navigation("BoxModules");
                 });
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.Sensor", b =>
@@ -828,7 +850,7 @@ namespace MonitoringConfig.Data.Migrations
 
             modelBuilder.Entity("MonitoringConfig.Data.Model.MonitorBox", b =>
                 {
-                    b.Navigation("MonitorBoxModules");
+                    b.Navigation("BoxModules");
                 });
 #pragma warning restore 612, 618
         }

@@ -15,6 +15,8 @@ public class MonitorContext:DbContext {
     public DbSet<NetworkConfiguration> NetworkConfigurations { get; set; }
     public DbSet<ModbusConfiguration> ModbusConfigurations { get; set; }
     public DbSet<ModbusChannelRegisterMap> ModbusChannelRegisterMaps { get; set; }
+    public DbSet<Module> Modules { get; set; }
+    public DbSet<BoxModule> BoxModules { get; set; }
     
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -51,6 +53,7 @@ public class MonitorContext:DbContext {
         builder.Entity<Alert>().HasKey(e => e.Id);
         builder.Entity<AlertLevel>().HasKey(e=>e.Id);
         builder.Entity<Module>().HasKey(e => e.Id);
+        builder.Entity<BoxModule>().HasKey(e => e.Id);
 
         builder.Entity<Channel>()
             .OwnsOne(e => e.ChannelAddress);
@@ -86,8 +89,20 @@ public class MonitorContext:DbContext {
             .HasMany(e => e.DeviceActions)
             .WithOne(e => e.ModbusDevice)
             .HasForeignKey(e => e.ModbusDeviceId);
-        
-        builder.Entity<MonitorBox>()
+
+        builder.Entity<BoxModule>()
+            .HasOne(e => e.MonitorBox)
+            .WithMany(e => e.BoxModules)
+            .HasForeignKey(e => e.MonitorBoxId);
+
+        builder.Entity<BoxModule>()
+            .HasOne(e => e.Module)
+            .WithMany(e => e.BoxModules)
+            .HasForeignKey(e => e.ModuleId);
+
+
+
+        /*builder.Entity<MonitorBox>()
             .HasMany(e=>e.Modules)
             .WithMany(e=>e.MoitorBoxes)
             .UsingEntity<MonitorBoxModule>(
@@ -102,9 +117,15 @@ public class MonitorContext:DbContext {
                 j =>
                 {
                     j.HasKey(bm => new { bm.ModuleId, bm.MonitorBoxId });
-                });
+                });*/
         
         //Channel Configuration
+        
+        builder.Entity<Channel>()
+            .HasOne(e => e.BoxModule)
+            .WithMany(e => e.Channels)
+            .HasForeignKey(e => e.BoxModuleId)
+            .IsRequired(false);
         
         builder.Entity<InputChannel>()
             .HasOne(e => e.Alert)
