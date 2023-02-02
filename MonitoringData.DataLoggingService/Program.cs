@@ -19,7 +19,6 @@ builder.Services.Configure<MonitorEmailSettings>(builder.Configuration.GetSectio
 //var hub = builder.Configuration.GetSection(MonitorDatabaseSettings.SectionName).Get<MonitorDatabaseSettings>().HubName;
 var settings = builder.Configuration.GetSection(nameof(MonitorDataLogSettings)).Get<MonitorDataLogSettings>();
 builder.Services.AddMediator(cfg => {
-    //cfg.AddConsumer<MonitorBoxLogger>();
     cfg.AddConsumer<Worker>();
 });
 

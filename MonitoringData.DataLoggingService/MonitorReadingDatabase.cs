@@ -25,7 +25,14 @@ namespace MonitoringData.DataLoggingService {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             using var cursor = await this._database.WatchAsync(cancellationToken: stoppingToken);
             foreach (var change in cursor.ToEnumerable()) {
-                await this._mediator.Publish<ReloadConsumer>(new ReloadConsumer(), stoppingToken);
+                var collectionName = change.CollectionNamespace.CollectionName;
+                
+                var reload= collectionName=="analog_items" || collectionName=="discrete_items" || 
+                            collectionName=="alert_items" || collectionName=="virtual_items" ||
+                            collectionName=="action_item";
+                if (reload) {
+                    await this._mediator.Publish<ReloadConsumer>(new ReloadConsumer(), stoppingToken);
+                }
             }
         }
     }
