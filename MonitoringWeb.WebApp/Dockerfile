@@ -5,7 +5,7 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["NuGet.config", "."]
+
 COPY ["MonitoringWeb.WebApp/MonitoringWeb.WebApp.csproj", "MonitoringWeb.WebApp/"]
 COPY ["MonitoringSystem.Shared/MonitoringSystem.Shared.csproj", "MonitoringSystem.Shared/"]
 RUN dotnet restore "MonitoringWeb.WebApp/MonitoringWeb.WebApp.csproj"
