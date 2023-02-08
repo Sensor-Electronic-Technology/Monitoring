@@ -32,6 +32,9 @@
     <Content Include="..\.dockerignore">
       <Link>.dockerignore</Link>
     </Content>
+    <Content Update="wwwroot\images\GasDetectorMap.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <AdditionalFiles Include="Components\Config\AlertEditView.razor" />
