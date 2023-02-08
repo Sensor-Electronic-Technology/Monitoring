@@ -1,5 +1,6 @@
 using BlazorSpinner;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data.EntityDtos;
@@ -39,6 +40,10 @@ builder.Services.AddSingleton<ValueChanged<BulkGasType>>();
 builder.Services.AddSingleton<UsageService>();
 builder.Services.AddBlazorDownloadFile();
 builder.Services.AddScoped<SpinnerService>();
+builder.Services.AddSingleton<FileUrlStorageService>();
+builder.Services.AddControllers();
+builder.WebHost.UseWebRoot("wwwroot");
+builder.WebHost.UseStaticWebAssets();
 
 var app = builder.Build();
 
@@ -61,5 +66,5 @@ if (websiteConfigProvider is not null) {
     throw new Exception("Error: could not resolve WebsiteConfigurationProvider");
 }
 app.MapFallbackToPage("/_Host");
-
+app.MapControllers();
 app.Run();

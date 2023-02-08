@@ -1,0 +1,22 @@
+﻿@page "/upload"
+@using MonitoringWeb.WebApp.Services
+@inject NavigationManager NavigationManager
+@inject FileUrlStorageService _fileUrlStorageService
+<h3>FloorplanUpload</h3>
+
+<DxUpload Name="ImageUpload"
+          UploadUrl="@GetUploadUrl("/api/Upload/UploadFile/")" ChunkSize="20000"
+          ShowFileList="false" AllowedFileExtensions="@(new List<string> { ".jpg", ".jpeg", ".gif", ".png" })">
+</DxUpload>
+
+
+@code {
+    
+    protected string GetUploadUrl(string url) {
+        return NavigationManager.ToAbsoluteUri(url).AbsoluteUri;
+    }
+    
+    protected void OnFileUploaded(FileUploadEventArgs args) {
+        var fileUrl = _fileUrlStorageService.Get(Guid.Parse(args.FileInfo.Guid));
+    }
+}

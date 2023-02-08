@@ -26,14 +26,8 @@
     <Content Update="wwwroot\images\GasDetectorMap.PNG">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\images\GasDetectorMap.PNG">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\.dockerignore">
       <Link>.dockerignore</Link>
-    </Content>
-    <Content Update="wwwroot\images\GasDetectorMap.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
