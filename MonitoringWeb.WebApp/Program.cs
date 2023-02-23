@@ -40,7 +40,7 @@ builder.Services.AddSingleton<ValueChanged<BulkGasType>>();
 builder.Services.AddSingleton<UsageService>();
 builder.Services.AddBlazorDownloadFile();
 builder.Services.AddScoped<SpinnerService>();
-builder.Services.AddSingleton<FileUrlStorageService>();
+builder.Services.AddSingleton<FileHandlerService>();
 builder.Services.AddControllers();
 builder.WebHost.UseWebRoot("wwwroot");
 builder.WebHost.UseStaticWebAssets();

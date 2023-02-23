@@ -1,4 +1,6 @@
 using MassTransit;
+using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
 using MonitoringData.Infrastructure.Events;
 using MonitoringData.Infrastructure.Services;
 
@@ -19,6 +21,7 @@ namespace MonitoringData.DataLoggingService {
         }
 
         public async Task StartAsync(CancellationToken cancellationToken) {
+            //await DownloadImage();
             await this._dataLogger.Load();
             this._timer.Start();
         }
@@ -46,6 +49,35 @@ namespace MonitoringData.DataLoggingService {
             await this._dataLogger.Reload();
             this._logger.LogInformation("Starting Service");
             await this.StartAsync(source.Token);
+        }
+        
+        private async Task DownloadImage() {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("monitor_settings");
+            this._logger.LogInformation("Starting download..");
+            var bucket = new GridFSBucket(database, new GridFSBucketOptions {
+                BucketName = "website_images"
+            });
+            var options = new GridFSDownloadByNameOptions { Revision = -1 };
+            using (var stream = new FileStream(@"GasDetectorMap_New.png", FileMode.Append,FileAccess.Write)) {
+                await bucket.DownloadToStreamByNameAsync("GasDetectorMap.png", stream);
+            }
+            
+            if (File.Exists("GasDetectorMap_New.png")) {
+                if (File.Exists("GasDetectorMap.png")) {
+                    File.Delete("GasDetectorMap.png");
+                }
+                File.Copy("GasDetectorMap_New.png", "GasDetectorMap.png");
+                File.SetAttributes("GasDetectorMap.png",FileAttributes.Normal);
+                File.Delete("GasDetectorMap_New.png");
+                this._logger.LogInformation("New floor plan downloaded");
+            } else {
+                if (!File.Exists("GasDetectorMap.png")) {
+                    this._logger.LogCritical("Download failed and no existing floor plan found");
+                } else {
+                    this._logger.LogWarning("GasDetectorMap.png not replaced.  Download Failed");
+                }
+            }
         }
     }
 }

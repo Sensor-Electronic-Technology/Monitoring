@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
 using MonitoringConfig.Data.Model;
 using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringSystem.Shared.Data;
@@ -107,7 +110,48 @@ public class CloneDatabase {
        //await TestTimeCheck();
        //await CreateModules();
        //await ConfigureBoxModule();
-       await ConfigureBoxModuleChannnels();
+       //await ConfigureBoxModuleChannnels();
+       //await TestGridFs();
+       var client = new MongoClient("mongodb://172.20.3.41");
+       var database = client.GetDatabase("monitor_settings");
+       var collections = await (await database.ListCollectionNamesAsync()).ToListAsync();
+       foreach (var name in collections) {
+           Console.WriteLine(name);
+       }
+    }
+
+    static async Task TestGridFs() {
+        var client = new MongoClient("mongodb://172.20.3.41");
+        var database = client.GetDatabase("monitor_settings");
+        var bucket = new GridFSBucket(database, new GridFSBucketOptions {
+            BucketName = "website_images"
+            /*ChunkSizeBytes = 255 * 1024,
+            WriteConcern = WriteConcern.WMajority,
+            ReadPreference = ReadPreference.Secondary*/
+        });
+        
+        var options = new GridFSDownloadByNameOptions
+        {
+            Revision = -1
+        };
+
+        using (var stream = new FileStream(@"C:\Users\aelmendo\Documents\filenamev3.png", FileMode.Append, FileAccess.Write)) {
+            await bucket.DownloadToStreamByNameAsync("filename", stream);
+        }
+
+        /*var bytes = await bucket.DownloadAsBytesByNameAsync("filename",options);
+        File.WriteAllBytes(@"C:\Users\aelmendo\Documents\filenamev2.png",bytes);*/
+        Console.WriteLine("Check Documents");
+
+        /*string info=Path.GetFileName(
+            @"\\172.20.4.6\Data\Engineering\Software\Facility Monitoring\Facility Planning\Documents\GasDetectorMaprev2.png");
+        Console.WriteLine(info);
+
+        var stream=File.Open(@"\\172.20.4.6\Data\Engineering\Software\Facility Monitoring\Facility Planning\Documents\GasDetectorMaprev2.png"
+            ,FileMode.Open);
+        
+        var id = await bucket.UploadFromStreamAsync("filename", stream);
+        Console.WriteLine($"Uploaded? {id}");*/
     }
 
     static async Task CreateModules() {

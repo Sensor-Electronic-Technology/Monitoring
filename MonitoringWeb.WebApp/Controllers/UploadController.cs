@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using MonitoringWeb.WebApp.Services;
+using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
+
+//using MongoDB
 
 namespace MonitoringWeb.WebApp.Controllers {
     public class ChunkMetadata {
@@ -14,32 +18,32 @@ namespace MonitoringWeb.WebApp.Controllers {
     [Route("api/[controller]")]
     public class UploadController : Controller {
         private readonly IWebHostEnvironment _hostingEnvironment;
-        FileUrlStorageService _fileUrlStorageService;
-        public UploadController(IWebHostEnvironment hostingEnvironment, FileUrlStorageService fileUrlStorageService) {
+        //FileUrlStorageService _fileUrlStorageService;
+        private readonly FileHandlerService _fileHandlerService;
+        public UploadController(IWebHostEnvironment hostingEnvironment,FileHandlerService fileHandlerService) {
             _hostingEnvironment = hostingEnvironment;
-            _fileUrlStorageService = fileUrlStorageService;
+            //_fileUrlStorageService = fileUrlStorageService;
+            this._fileHandlerService = fileHandlerService;
         }
 
         [HttpPost]
         [Route("UploadFile")]
         [DisableRequestSizeLimit]
-        public ActionResult UploadFile(IFormFile ImageUpload, string chunkMetadata) {
+        public async Task<ActionResult> UploadFile(IFormFile ImageUpload, string chunkMetadata) {
             var tempPath = Path.Combine(_hostingEnvironment.WebRootPath, "Images");
             // Removes temporary files
-            RemoveTempFilesAfterDelay(tempPath, new TimeSpan(0, 5, 0));
-
+            RemoveTempFilesAfterDelay(tempPath, new TimeSpan(0, 0, 20));
             try {
                 if (!string.IsNullOrEmpty(chunkMetadata)) {
                     var metaDataObject = JsonConvert.DeserializeObject<ChunkMetadata>(chunkMetadata);
                     var tempFilePath = Path.Combine(tempPath, metaDataObject.FileGuid + ".tmp");
                     if (!Directory.Exists(tempPath))
                         Directory.CreateDirectory(tempPath);
-
+                    
                     AppendContentToFile(tempFilePath, ImageUpload);
-
-                    if (metaDataObject.Index == (metaDataObject.TotalCount - 1)) {
-                        ProcessUploadedFile(tempFilePath, metaDataObject.FileName);
-                        //_fileUrlStorageService.Add(Guid.Parse(metaDataObject.FileGuid), @"Images\" + metaDataObject.FileName);
+                    if(metaDataObject.Index == (metaDataObject.TotalCount - 1)) {
+                        ProcessUploadedFile(tempFilePath,"GasDetectorMap.png");
+                        await this._fileHandlerService.UploadNewImage(ImageUpload, "GasDetectorMap.png");
                     }
                 }
             }
@@ -55,7 +59,7 @@ namespace MonitoringWeb.WebApp.Controllers {
                     file.Delete();
         }
         void ProcessUploadedFile(string tempFilePath, string fileName) {
-            var path = Path.Combine(_hostingEnvironment.WebRootPath, "Images");
+            var path = Path.Combine(_hostingEnvironment.WebRootPath, "images");
             var imagePath = Path.Combine(path, fileName);
             if (System.IO.File.Exists(imagePath))
                 System.IO.File.Delete(imagePath);

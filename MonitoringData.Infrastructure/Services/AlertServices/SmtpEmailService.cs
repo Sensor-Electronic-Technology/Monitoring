@@ -31,15 +31,22 @@ public class SmtpEmailService:IEmailService {
             var message =new MimeMessage();
             message.From.Add(this._from);
             message.To.AddRange(this._recipients);
+            //message.To.Add(new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com"));
             BodyBuilder builder = new BodyBuilder();
-            var bodyImage=await builder.LinkedResources.AddAsync("GasDetectorMap.png");
+            /*if (File.Exists("GasDetectorMap.png")) {
+
+            } */
+            /*this._logger.LogInformation("Linking file");
+            var stream = File.Open("GasDetectorMap.png", FileMode.Open);
+            var bodyImage=await builder.LinkedResources.AddAsync("GasDetectorMap.png",stream);*/
+            var bodyImage = await builder.LinkedResources.AddAsync("GasDetectorMap.png");
             bodyImage.ContentId = MimeUtils.GenerateMessageId();
             builder.HtmlBody=messageBuilder.FinishMessage(bodyImage.ContentId);
             message.Body = builder.ToMessageBody();
             message.Subject = subject;
-            
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
+            //stream.Close();
         } catch(Exception e) {
             this._logger.LogCritical("Error: Could not connect to smtp host");
             this._logger.LogCritical("Message: {EMessage}", e.Message);

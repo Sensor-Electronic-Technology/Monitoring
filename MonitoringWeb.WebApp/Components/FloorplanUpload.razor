@@ -1,7 +1,7 @@
 ﻿@page "/upload"
 @using MonitoringWeb.WebApp.Services
 @inject NavigationManager NavigationManager
-@inject FileUrlStorageService _fileUrlStorageService
+
 <h3>FloorplanUpload</h3>
 
 <DxUpload Name="ImageUpload"
@@ -17,6 +17,6 @@
     }
     
     protected void OnFileUploaded(FileUploadEventArgs args) {
-        var fileUrl = _fileUrlStorageService.Get(Guid.Parse(args.FileInfo.Guid));
+        
     }
 }
