@@ -1,4 +1,5 @@
 ﻿@using System.Drawing
+@using System.Globalization
 @using MonitoringSystem.Shared.Data
 @using MonitoringWeb.WebApp.Data
 @using MonitoringWeb.WebApp.Services
@@ -95,10 +96,14 @@
                 <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
                     <div style="background-color: grey;">
                         <div class="font-weight-bold">
-                            @(((DateTime)context.Point.Argument).ToString())
+                            t: @(((DateTime)context.Point.Argument).AddHours(-5).
+                                ToString("g"))
                         </div>
                         <div>
-                            @((context.Point.Value))
+                            device: @context.Point.SeriesName
+                        </div>
+                        <div>
+                            value: @((context.Point.Value))
                         </div>
                     </div>
                 </DxChartTooltip>

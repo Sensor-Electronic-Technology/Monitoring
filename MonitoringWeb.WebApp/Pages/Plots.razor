@@ -62,9 +62,6 @@
                   Text="Fetch Plot"/>
     </div>
 </div>
-<div class="row">
-    <p class="demo-text w-100 mt-2">Selected Product: <b>@this.SelectedSensor</b></p>
-</div>
 <div class="row" style="padding:1rem">
     @if (this.PlotData == null) {
         <h2 style="align-content:center">@Message</h2>
@@ -104,12 +101,16 @@
                                       ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
             <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
                 <div style="background-color: grey;">
-                    <div class="font-weight-bold">
-                        @(((DateTime)context.Point.Argument).ToLocalTime().ToString())
-                    </div>
-                    <div>
-                        @((context.Point.Value))
-                    </div>
+                        <div class="font-weight-bold">
+                            t: @(((DateTime)context.Point.Argument).AddHours(-5).
+                                ToString("g"))
+                        </div>
+                        <div>
+                            device: @context.Point.SeriesName
+                        </div>
+                        <div>
+                            value: @((context.Point.Value))
+                        </div>
                 </div>
             </DxChartTooltip>
         </DxChart>
