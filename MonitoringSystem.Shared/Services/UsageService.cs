@@ -101,7 +101,7 @@ public class UsageService {
                     Month = day.Key.Month,
                     WeekOfYear = 
                         CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
-                            CalendarWeekRule.FirstDay, DayOfWeek.Monday),
+                            CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
                     Year = day.Key.Year,
                     DayOfYear = day.Key.DayOfYear,
                     MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
@@ -175,7 +175,7 @@ public class UsageService {
                         Month = day.Key.Month,
                         WeekOfYear =
                             CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
-                                CalendarWeekRule.FirstDay, DayOfWeek.Monday),
+                                CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
                         Year = day.Key.Year,
                         DayOfYear = day.Key.DayOfYear,
                         MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)

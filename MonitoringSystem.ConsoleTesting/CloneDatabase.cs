@@ -101,23 +101,23 @@ public class CloneDatabase {
         Console.WriteLine($"Hours: {hours}");*/
         //await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
         //Console.WriteLine();
-       //UsageService service = new UsageService();
-        //await service.GetH2Usage();
-        //await service.GetN2Usage();
-        //await service.GetNH3Usage();
-        //await UsageH2Testing("H2 PSI");
-        //Console.WriteLine("Check Database");
+       UsageService service = new UsageService();
+        await service.GetH2Usage();
+        await service.GetN2Usage();
+        await service.GetNH3Usage();
+        await UsageH2Testing("H2 PSI");
+        Console.WriteLine("Check Database");
        //await TestTimeCheck();
        //await CreateModules();
        //await ConfigureBoxModule();
        //await ConfigureBoxModuleChannnels();
        //await TestGridFs();
-       var client = new MongoClient("mongodb://172.20.3.41");
+       /*var client = new MongoClient("mongodb://172.20.3.41");
        var database = client.GetDatabase("monitor_settings");
        var collections = await (await database.ListCollectionNamesAsync()).ToListAsync();
        foreach (var name in collections) {
            Console.WriteLine(name);
-       }
+       }*/
     }
 
     static async Task TestGridFs() {
