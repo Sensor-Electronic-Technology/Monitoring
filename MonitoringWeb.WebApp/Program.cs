@@ -21,7 +21,7 @@ if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
     builder.Services.AddScoped<HttpClient>(s => {
         var uriHelper = s.GetRequiredService<NavigationManager>();
         return new HttpClient {
-            BaseAddress = new Uri("http://172.20.3.203"),
+            BaseAddress = new Uri("http://configapi"),
         };
     });
 }
