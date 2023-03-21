@@ -72,16 +72,17 @@ namespace MonitoringSystem.ConsoleTesting {
                 Username = "Mark", Address = "mgeppert@s-et.com", _id = ObjectId.GenerateNewId()
             });
             Console.WriteLine("Check Database");*/
-            ModbusService modservice = new ModbusService();
+            /*ModbusService modservice = new ModbusService();
             Console.WriteLine("Epi1 Running");
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, true);
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
-            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
-            //await WriteOutAnalogFile("nh3", new DateTime(2022, 9, 1), DateTime.Now, @"C:\MonitorFiles\analogreadings4.csv");
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
+            //await WriteOutAnalogFile("nh3", new DateTime(2023, 1, 15), new DateTime(2023, 2, 3), @"C:\MonitorFiles\nh_analog_2023.csv");
             //var client = new MongoClient("mongodb:");*/
             //await RemoteAlertTesting();
+            await TestSmptEmail();
         }
         
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
