@@ -72,17 +72,17 @@ namespace MonitoringSystem.ConsoleTesting {
                 Username = "Mark", Address = "mgeppert@s-et.com", _id = ObjectId.GenerateNewId()
             });
             Console.WriteLine("Check Database");*/
-            /*ModbusService modservice = new ModbusService();
+            ModbusService modservice = new ModbusService();
             Console.WriteLine("Epi1 Running");
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, true);
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
-            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
+            await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
             //await WriteOutAnalogFile("nh3", new DateTime(2023, 1, 15), new DateTime(2023, 2, 3), @"C:\MonitorFiles\nh_analog_2023.csv");
             //var client = new MongoClient("mongodb:");*/
             //await RemoteAlertTesting();
-            await TestSmptEmail();
+            //await TestSmptEmail();
         }
         
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
@@ -181,7 +181,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await client.AuthenticateAsync("seti.monitoring@gmail.com", "Today@seti!");*/
             client.CheckCertificateRevocation = false;
             client.ServerCertificateValidationCallback = MyServerCertificateValidationCallback;
-            await client.ConnectAsync("192.168.0.123",25,false);
+            await client.ConnectAsync("10.92.3.215",25,false);
             
             //await client.AuthenticateAsync("600076@seoulsemicon.com", "Drizzle3219753!");
             MimeMessage mailMessage = new MimeMessage();
