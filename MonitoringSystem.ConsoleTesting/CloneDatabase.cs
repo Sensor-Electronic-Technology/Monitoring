@@ -26,8 +26,9 @@ namespace MonitoringSystem.ConsoleTesting;
 public class CloneDatabase {
 
     static async Task Main(string[] args) {
-        //await CreateManagedDevice("nh3");
-        //await CreateMongoDB("nh3");
+        //await UpdateSensors();
+        //await CreateManagedDevice("th");
+        //await CreateMongoDB("th");
         //await UpdateAlerts("gasbay");
         /*await UpdateAlertNames("epi1");
         await UpdateAlertNames("epi2");
@@ -102,10 +103,10 @@ public class CloneDatabase {
         //await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
         //Console.WriteLine();
        UsageService service = new UsageService();
-        await service.GetH2Usage();
-        await service.GetN2Usage();
-        await service.GetNH3Usage();
-        await UsageH2Testing("H2 PSI");
+        //await service.GetH2Usage();
+        //await service.GetN2Usage();
+        //await service.GetNH3Usage();
+        //await UsageH2Testing("H2 PSI");
         Console.WriteLine("Check Database");
        //await TestTimeCheck();
        //await CreateModules();
@@ -496,7 +497,6 @@ public class CloneDatabase {
             Console.WriteLine("Error: Could not find channels");
         }
     }
-
     static async Task UpdateSensors() {
         await using var context = new MonitorContext();
         var client = new MongoClient("mongodb://172.20.3.41");
@@ -761,11 +761,11 @@ public class CloneDatabase {
     public static async Task CreateMongoDB(string deviceName) {
             using var context = new MonitorContext();
             var client = new MongoClient("mongodb://172.20.3.41");
-            var sensorTypes = client.GetDatabase("monitor_settings_dev")
+            var sensorTypes = client.GetDatabase("monitor_settings")
                 .GetCollection<SensorType>("sensor_types");
             
             var sensors = await sensorTypes.Find(_ => true).ToListAsync();
-            var managedCollection = client.GetDatabase("monitor_settings_dev")
+            var managedCollection = client.GetDatabase("monitor_settings")
                 .GetCollection<ManagedDevice>("monitor_devices");
             
             var device = context.Devices.OfType<ModbusDevice>()
@@ -779,7 +779,7 @@ public class CloneDatabase {
             
             if(device is not null) {
                 Console.WriteLine($"Device {device.Name} found");
-                var database = client.GetDatabase($"{device.Name.ToLower()}_data_dev");
+                var database = client.GetDatabase($"{device.Name.ToLower()}_data");
                 Console.WriteLine("Creating Collections");
                 Console.WriteLine($"Device {device.Name.ToLower()} found");
 
@@ -834,7 +834,7 @@ public class CloneDatabase {
                         Identifier = input.DisplayName,
                         SystemChannel = input.SystemChannel,
                         ItemId = input.Id.ToString(),
-                        Factor = 10,
+                        Factor = 100,
                         Display = input.Display,
                         ManagedDeviceId = managedDevice._id,
                         SensorId = sensor?._id ?? ObjectId.Empty,
@@ -975,12 +975,14 @@ public class CloneDatabase {
     public static async Task CreateManagedDevice(string deviceName) {
         var context = new MonitorContext();
         var client = new MongoClient("mongodb://172.20.3.41");
-        var database = client.GetDatabase("monitor_settings_dev");
+        var database = client.GetDatabase("monitor_settings");
         var sensorCollection = database.GetCollection<SensorType>("sensor_types");
         var managedCollection = database.GetCollection<ManagedDevice>("monitor_devices");
-        var tSensor = await sensorCollection.Find(e => e.Name == "NH3 Tank Temp.").FirstOrDefaultAsync();;
+        /*var tSensor = await sensorCollection.Find(e => e.Name == "NH3 Tank Temp.").FirstOrDefaultAsync();;
         var dSensor =await  sensorCollection.Find(e => e.Name == "Duty Cycle").FirstOrDefaultAsync();;
-        var wSensor =await sensorCollection.Find(e => e.Name == "Weight").FirstOrDefaultAsync();
+        var wSensor =await sensorCollection.Find(e => e.Name == "Weight").FirstOrDefaultAsync();*/
+        var tSensor =await sensorCollection.Find(e => e.Name == "AreaTemperature").FirstOrDefaultAsync();
+        var hSensor =await sensorCollection.Find(e => e.Name == "AreaHumidity").FirstOrDefaultAsync();
         
         var device = await context.Devices.OfType<ModbusDevice>()
             .Include(e => e.NetworkConfiguration)
@@ -1004,8 +1006,7 @@ public class CloneDatabase {
                 RecordInterval = device.ReadInterval,
                 SensorTypes = new List<ObjectId>() {
                     tSensor._id,
-                    wSensor._id,
-                    dSensor._id
+                    hSensor._id
                 },
                 CollectionNames = new Dictionary<string, string>() {
                     [nameof(AnalogItem)]="analog_items",

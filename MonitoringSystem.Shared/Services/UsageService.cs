@@ -53,7 +53,7 @@ public class UsageService {
         double threshold, AnalogItem? item1, AnalogItem? item2 = null, DateTime? startDate = null) {
         var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
         var count = await usageCollection.EstimatedDocumentCountAsync();
-        if (count == 0) {
+        if (count == 0) {//new
             var stopDate = DateTime.Now.Date;
             Dictionary<DateTime, List<ValueReturn>> days;
             List<AnalogReadings> readings;
@@ -122,7 +122,7 @@ public class UsageService {
             }
             await usageCollection.InsertManyAsync(dayRecords);
             return dayRecords.AsEnumerable();
-        } else {
+        } else {//Update
             var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
             var deltaHours = (DateTime.Now - latest.Date.AddDays(1)).TotalHours;
             var now = DateTime.Now.Date;
@@ -145,7 +145,7 @@ public class UsageService {
 
                 } else {
                     readings = await analogReadCollection.Find(e =>
-                            e.timestamp.AddHours(-5) >= start &&
+                            e.timestamp >= start.AddHours(5) &&
                             e.timestamp < stop)
                         .ToListAsync();
                     rawData = readings.Select(e => new ValueReturn() {
@@ -175,8 +175,8 @@ public class UsageService {
                     if (item2 != null) {
                         usageDayRecord.ChannelIds.Add(item2._id);
                     }
-                    var first = day.Value[0].value;
-                    var last = day.Value[day.Value.Count() - 1].value;
+                    var first = day.Value.First().value;
+                    var last = day.Value.Last().value;
                     var max = day.Value.Max(e=>e.value);
                     var min = day.Value.Min(e => e.value);
 
@@ -205,7 +205,7 @@ public class UsageService {
         double threshold,AnalogItem? item1, AnalogItem? item2 = null,DateTime? startDate=null) {
         var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
         var count = await usageCollection.EstimatedDocumentCountAsync();
-        if (count == 0) {
+        if (count == 0) {//Create
             var stopDate = DateTime.Now.Date.AddHours(-5);
             Dictionary<DateTime, List<ValueReturn>> days;
             List<AnalogReadings> readings;
@@ -228,11 +228,6 @@ public class UsageService {
                     };
                     rawData.Add(valueReturn);
                 }
-                /*rawData = readings.Select(e => new ValueReturn() {
-                    timestamp = e.timestamp,
-                    value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value +
-                             e.readings.FirstOrDefault(m => m.MonitorItemId == item2._id)!.Value)
-                }).ToList();*/
             } else {
                 rawData = readings.Select(e => new ValueReturn() {
                     timestamp = e.timestamp,
@@ -282,7 +277,7 @@ public class UsageService {
             await usageCollection.InsertManyAsync(dayRecords);
             return dayRecords.AsEnumerable();
             
-        } else {
+        } else {//Update
             var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
             var deltaHours = (DateTime.Now - latest.Date.AddDays(1)).TotalHours;
             var now = DateTime.Now.Date;
@@ -302,7 +297,6 @@ public class UsageService {
                         value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value +
                                  e.readings.FirstOrDefault(m => m.MonitorItemId == item2._id)!.Value)
                     }).ToList();
-
                 } else {
                     readings = await analogReadCollection.Find(e =>
                             e.timestamp >= start &&
