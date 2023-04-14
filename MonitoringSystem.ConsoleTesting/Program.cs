@@ -9,10 +9,12 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Net.Security;
+using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using MailKit.Net.Smtp;
 using MimeKit;
+using Modbus.Device;
 using MongoDB.Bson;
 using MonitoringConfig.Data.Model;
 using MonitoringSystem.ConfigApi.Mapping;
@@ -21,6 +23,7 @@ using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Services;
 using MonitoringSystem.Shared.Data.SettingsModel;
+using ModbusDevice = MonitoringConfig.Data.Model.ModbusDevice;
 
 namespace MonitoringSystem.ConsoleTesting {
     public class Program {
@@ -79,10 +82,24 @@ namespace MonitoringSystem.ConsoleTesting {
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
-            await WriteOutAnalogFile("epi1", new DateTime(2023, 3, 14), new DateTime(2023, 3,17), @"C:\MonitorFiles\n2_analog_2023-5.csv");
+            //await WriteOutAnalogFile("epi1", new DateTime(2023, 3, 14), new DateTime(2023, 3,17), @"C:\MonitorFiles\n2_analog_2023-5.csv");
             //var client = new MongoClient("mongodb:");*/
             //await RemoteAlertTesting();
             //await TestSmptEmail();
+
+            await TestModbus();
+        }
+
+        static async Task TestModbus() {
+            using var client = new TcpClient("172.20.5.202",502);
+            client.ReceiveTimeout = 500;
+            var modbus = ModbusIpMaster.CreateIp(client); 
+            var reg= await modbus.ReadHoldingRegistersAsync((byte)1, 0, 12);
+            foreach (var value in reg) {
+                Console.Write($"{(float)value/100},");
+            }
+            Console.WriteLine();
+            Console.WriteLine("Completed");
         }
         
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
