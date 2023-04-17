@@ -30,7 +30,7 @@ builder.Services.AddSingleton<IAlertService, AlertService>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(settings.ConnectionString));
 var serviceType = Environment.GetEnvironmentVariable("SERVICE_TYPE");
-//var serviceType = nameof(ServiceType.MonitorBox);
+//var serviceType = nameof(ServiceType.GenericModbus);
 Console.WriteLine($"ServiceType: {serviceType}");
 switch (serviceType) {
     case nameof(ServiceType.GenericModbus):
@@ -53,7 +53,7 @@ var app = builder.Build();
 var dataConfigProvider = app.Services.GetService<DataLogConfigProvider>();
 if (dataConfigProvider is not null) {
     var deviceName=Environment.GetEnvironmentVariable("DEVICEID");
-    //var deviceName = "epi2";
+    //var deviceName = "th";
     if (deviceName is not null) {
         dataConfigProvider.DeviceName = deviceName;
         await dataConfigProvider.Load();

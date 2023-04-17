@@ -82,21 +82,20 @@ namespace MonitoringSystem.ConsoleTesting {
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
-            //await WriteOutAnalogFile("epi1", new DateTime(2023, 3, 14), new DateTime(2023, 3,17), @"C:\MonitorFiles\n2_analog_2023-5.csv");
+            //await WriteOutAnalogFile("nh3", new DateTime(2022, 9, 1), DateTime.Now, @"C:\MonitorFiles\analogreadings4.csv");
             //var client = new MongoClient("mongodb:");*/
             //await RemoteAlertTesting();
-            //await TestSmptEmail();
-
             await TestModbus();
+
         }
 
         static async Task TestModbus() {
             using var client = new TcpClient("172.20.5.202",502);
             client.ReceiveTimeout = 500;
-            var modbus = ModbusIpMaster.CreateIp(client); 
-            var reg= await modbus.ReadHoldingRegistersAsync((byte)1, 0, 12);
+            var modbus = ModbusIpMaster.CreateIp(client);
+            var reg = await modbus.ReadHoldingRegistersAsync((byte)1,0,12);
             foreach (var value in reg) {
-                Console.Write($"{(float)value/100},");
+                Console.Write($"{(float)value/100.00}, ");
             }
             Console.WriteLine();
             Console.WriteLine("Completed");

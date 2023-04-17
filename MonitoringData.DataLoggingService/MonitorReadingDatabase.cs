@@ -26,9 +26,8 @@ namespace MonitoringData.DataLoggingService {
             using var cursor = await this._database.WatchAsync(cancellationToken: stoppingToken);
             foreach (var change in cursor.ToEnumerable()) {
                 var collectionName = change.CollectionNamespace.CollectionName;
-                var reload= collectionName=="analog_items" || collectionName=="discrete_items" || 
-                            collectionName=="alert_items" || collectionName=="virtual_items" ||
-                            collectionName=="action_item";
+                var reload= collectionName is "analog_items" or "discrete_items" or "alert_items" 
+                                            or "virtual_items" or "action_item";
                 if (reload) {
                    // this._applicationLifetime.StopApplication();
                     this._logger.LogCritical("Reloading...");
