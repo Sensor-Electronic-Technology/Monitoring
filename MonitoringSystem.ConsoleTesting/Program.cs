@@ -84,8 +84,8 @@ namespace MonitoringSystem.ConsoleTesting {
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
             //await WriteOutAnalogFile("nh3", new DateTime(2022, 9, 1), DateTime.Now, @"C:\MonitorFiles\analogreadings4.csv");
             //var client = new MongoClient("mongodb:");*/
-            //await RemoteAlertTesting();
-            await TestModbus();
+            await RemoteAlertTesting();
+            //await TestModbus();
 
         }
 
@@ -177,18 +177,6 @@ namespace MonitoringSystem.ConsoleTesting {
             await modservice.WriteCoil("172.20.5.201", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, false);
             Console.WriteLine("Test Done");
-            
-            /*bool state = false;
-            for (int i = 0; i < 20; i++) {
-                state = !state;
-                await modservice.WriteCoil("172.20.5.42", 502, 1, 0, state);
-                Console.WriteLine($"{DateTime.Now.ToString()}: {state}");
-                await Task.Delay(1000);
-            }
-            await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
-            await modservice.WriteCoil("172.20.5.42", 502, 1, 2, false);*/
-            
-            //Console.WriteLine("Check System");
         }
         
         static async Task TestSmptEmail() {

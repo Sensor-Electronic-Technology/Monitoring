@@ -103,7 +103,7 @@ public class CloneDatabase {
         //await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
         //Console.WriteLine();
        UsageService service = new UsageService();
-        //await service.GetH2Usage();
+        await service.GetH2Usage();
         //await service.GetN2Usage();
         //await service.GetNH3Usage();
         //await UsageH2Testing("H2 PSI");

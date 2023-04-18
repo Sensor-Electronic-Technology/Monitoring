@@ -2,6 +2,7 @@
 @using MonitoringWeb.WebApp.Services
 @using System.Drawing
 @using MongoDB.Driver
+@using ClosedXML.Excel
 @using MonitoringSystem.Shared.Data.LogModel
 @inject PlotDataService PlotService
 @inject ValueChanged<DateRange> DateRangeState
@@ -27,12 +28,6 @@
             <div id="loading-indicator">
                 
             </div>
-            @*<div class="container-xl text-center">
-                <button class="btn btn-light position-absolute top-50 start-50 translate-middle" disabled>
-                    <span class="spinner-border spinner-border-sm"></span>
-                    Loading...
-                </button>
-            </div>*@
         } else {
             <DxChart Data="@PlotData"
                      Width="100%"
@@ -83,7 +78,7 @@
                 <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
                     <div style="background-color: grey;">
                         <div class="font-weight-bold">
-                            t: @(((DateTime)context.Point.Argument).AddHours(-5).
+                            t: @(((DateTime)context.Point.Argument).AddHours(-4).
                                    ToString("g"))
                         </div>
                         <div>

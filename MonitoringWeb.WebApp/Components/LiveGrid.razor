@@ -21,7 +21,7 @@
                 </h4>
             </div>
             <div class="row text-center" style="padding:.05rem">
-                <p role="status">TimeStamp: @(this._monitorData?.TimeStamp.ToLocalTime().ToString(CultureInfo.InvariantCulture))</p>
+                <p role="status">TimeStamp: @(this._monitorData?.TimeStamp.AddHours(-4).ToString(CultureInfo.InvariantCulture))</p>
             </div>
             @if (this._monitorData?.analogData != null) {
                 @if (this._monitorData.analogData.Any()) {

@@ -1,0 +1,248 @@
+﻿@page "/thview"
+@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringWeb.WebApp.Data
+@using MonitoringWeb.WebApp.Services
+@using System.Drawing
+@using MongoDB.Bson
+@using Blazor.DownloadFileFast.Interfaces
+@using ClosedXML.Excel
+@inject PlotDataService PlotService
+@inject ValueChanged<DateRange> DateRangeState
+@inject WebsiteConfigurationProvider ConfigProvider
+@inject IBlazorDownloadFileService DownloadService
+@inject SpinnerService SpinnerService
+@implements IAsyncDisposable
+
+<h3 class="text-center">Epi1 Temperature and Humidity</h3>
+<Spinner></Spinner>
+<div class="container-fluid alert-container">
+    <div class="row text-center">
+        <div class="row text-center" style="padding:1rem">
+            <DxButton
+                Click="() => IsOpen = !IsOpen"
+                SizeMode="SizeMode.Medium"
+                RenderStyleMode="ButtonRenderStyleMode.Contained"
+                RenderStyle="@ButtonRenderStyle.Info">Show Floorplan</DxButton>
+        </div>
+        <DxDropDown
+            @bind-IsOpen="@IsOpen"
+            CloseOnOutsideClick="true"
+            PositionMode="DropDownPositionMode.Center"
+            PositionTarget=".alert-container"
+            RestrictionMode="DropDownRestrictionMode.Page"
+            PreventCloseOnPositionTargetClick="false"
+            CloseMode="@DropDownCloseMode.Hide"
+            FitToRestriction="true">
+            <div class="custom-flyout-body">
+                <img src="images/GasDetectorMap.png" />
+            </div>
+        </DxDropDown>
+    </div>
+    <div class="row" style="padding: 1rem">
+        <DxButton RenderStyle="ButtonRenderStyle.Primary"
+                  Text="Download"
+                  SizeMode="SizeMode.Medium"
+                  RenderStyleMode="ButtonRenderStyleMode.Contained"
+                  Click="@this.DownloadHandler"/>
+    </div>
+
+    <CustomRange @bind-StartDate="this._startDate" @bind-StopDate="@_stopDate"></CustomRange>
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col">
+                    @foreach (PlotRange range in Enum.GetValues(typeof(PlotRange)).Cast<PlotRange>().ToList()) {
+                        <DxButton RenderStyle="ButtonRenderStyle.Light"
+                                  Text="@Enum.GetName(range).Substring(1)"
+                                  Click="@(async Task (arg) => { await this.OnClick(range); })"/>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                @if (this.TempData == null) {
+                    <div id="loading-indicator">
+
+                    </div>
+                } else {
+                    <DxChart Data="@this.TempData"
+                             Width="100%"
+                             Height="100%">
+                        <DxChartLegend AllowToggleSeries="true"
+                                       Orientation="Orientation.Horizontal"
+                                       VerticalAlignment="VerticalEdge.Top"
+                                       HorizontalAlignment="HorizontalAlignment.Center"
+                                       Position="RelativePosition.Outside">
+                            <DxChartTitle Text="Detectors"> </DxChartTitle>
+                        </DxChartLegend>
+
+                        <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
+                                             ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
+                                             ValueField="@((AnalogReadingDto r) => (int)r.Value)">
+                            <SeriesTemplate Context="settings">
+                                <DxChartLineSeries Settings="@settings">
+                                    <DxChartSeriesLabel Visible="false"/>
+                                    <DxChartSeriesPoint Visible="true"/>
+                                    <DxChartAggregationSettings Enabled="true"
+                                                                Method="ChartAggregationMethod.Average"/>
+                                </DxChartLineSeries>
+                            </SeriesTemplate>
+                        </DxChartCommonSeries>
+                        <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime"
+                                             Type="ChartAxisType.Continuous">
+                            <DxChartAxisRange StartValue="@this._plotStart"
+                                              EndValue="@this._plotStop"/>
+
+                        </DxChartArgumentAxis>
+                        <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
+                            <DxChartAxisRange StartValue="@this._tempSensor.YAxisStart" 
+                                              EndValue="@this._tempSensor.YAxisStop" />
+                            <DxChartAxisTitle Text="@this._tempSensor.Units"/>
+                        </DxChartValueAxis>
+                        <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
+                        <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
+                                                  ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
+
+                        <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
+                            <div style="background-color: grey;">
+                                <div class="font-weight-bold">
+                                    t: @(((DateTime)context.Point.Argument).AddHours(-4).
+                                           ToString("g"))
+                                </div>
+                                <div>
+                                    value: @((context.Point.Value))
+                                </div>
+                            </div>
+                        </DxChartTooltip>
+                    </DxChart>
+                }
+            </div>
+            <div class="row">
+                @if (this.HumData == null) {
+                    <div id="loading-indicator">
+    
+                    </div>
+                } else {
+                    <DxChart Data="@this.HumData"
+                             Width="100%"
+                             Height="100%">
+                        <DxChartLegend AllowToggleSeries="true"
+                                       Orientation="Orientation.Horizontal"
+                                       VerticalAlignment="VerticalEdge.Top"
+                                       HorizontalAlignment="HorizontalAlignment.Center"
+                                       Position="RelativePosition.Outside">
+                            <DxChartTitle Text="Detectors"> </DxChartTitle>
+                        </DxChartLegend>
+                        <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
+                                             ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
+                                             ValueField="@((AnalogReadingDto r) => (int)r.Value)">
+                            <SeriesTemplate Context="settings">
+                                <DxChartLineSeries Settings="@settings">
+                                    <DxChartSeriesLabel Visible="false"/>
+                                    <DxChartSeriesPoint Visible="true"/>
+                                    <DxChartAggregationSettings Enabled="true"
+                                                                Method="ChartAggregationMethod.Average"/>
+                                </DxChartLineSeries>
+                            </SeriesTemplate>
+                        </DxChartCommonSeries>
+                        <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime"
+                                             Type="ChartAxisType.Continuous">
+                            <DxChartAxisRange StartValue="@this._plotStart"
+                                              EndValue="@this._plotStop"/>
+    
+                        </DxChartArgumentAxis>
+                        <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
+                            <DxChartAxisRange StartValue="@this._humSensor.YAxisStart" 
+                                              EndValue="@this._humSensor.YAxisStop" />
+                            <DxChartAxisTitle Text="@this._humSensor.Units" />
+                        </DxChartValueAxis>
+                        <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
+                        <DxChartScrollBarSettings ArgumentAxisScrollBarVisible="true"
+                                                  ArgumentAxisScrollBarPosition="ChartScrollBarPosition.Bottom"/>
+    
+                        <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
+                            <div style="background-color: grey;">
+                                <div class="font-weight-bold">
+                                    t: @(((DateTime)context.Point.Argument).AddHours(-4).
+                                           ToString("g"))
+                                </div>
+                                <div>
+                                    value: @((context.Point.Value))
+                                </div>
+                            </div>
+                        </DxChartTooltip>
+                    </DxChart>
+                }
+            </div>
+        
+        </div>
+    </div>
+</div>
+@code {
+    AccordionExpandCollapseAction ExpandCollapseAction { get; set; } = AccordionExpandCollapseAction.HeaderClick;
+    DateTime _startDate = DateTime.Now.AddDays(-1).ToLocalTime();
+    DateTime _stopDate = DateTime.Now.AddDays(1).ToLocalTime();
+    DateTime _plotStart;
+    DateTime _plotStop;
+    SensorType? _tempSensor;
+    SensorType? _humSensor;
+    bool IsOpen { get; set; } = false;
+    IEnumerable<AnalogReadingDto>? TempData { get; set; }
+    IEnumerable<AnalogReadingDto>? HumData { get; set; }
+    
+    protected override async Task OnInitializedAsync() {
+        this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
+        this._tempSensor = ConfigProvider.Sensors.FirstOrDefault(e => e.Name == "AreaTemperature");
+        this._humSensor = ConfigProvider.Sensors.FirstOrDefault(e => e.Name == "AreaHumidity");
+        await this.Load();
+    }
+    
+    private Task Submit() {
+        return Task.CompletedTask;
+    }
+    
+    private async Task OnDateRangeChanged() {
+        this._startDate = this.DateRangeState.Item.Start;
+        this._stopDate = this.DateRangeState.Item.Stop;
+        
+        await this.Load();
+    }
+    
+    private async Task OnClick(PlotRange range) {
+        this._startDate = DateTime.Now.AddDays(-(int)range);
+        this._stopDate = DateTime.Now.AddDays((int)range);
+
+        await this.Load();
+    }
+    
+    private async Task Load() {
+        this.TempData = null;
+        this.HumData = null;
+        await InvokeAsync(StateHasChanged);
+        var start = this._startDate;
+        var stop = this._stopDate;
+        this.TempData = await this.PlotService.GetDataBySensor("th_data", start, stop,this._tempSensor._id);
+        this.HumData = await this.PlotService.GetDataBySensor("th_data", start, stop, this._humSensor._id);
+        this._plotStart = this._startDate;
+        this._plotStop = this._stopDate;
+        this.DateRangeState.SetItemParent(new DateRange() {
+            Start=this._startDate,Stop = this._stopDate
+        });
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DownloadHandler() {
+        this.SpinnerService.Show();
+        var bytes=await this.PlotService.GetThDownloadData(this._startDate,this._stopDate);
+        await this.DownloadService.DownloadFileAsync("th_data.xlsx", bytes);
+        this.SpinnerService.Hide();
+    }
+    
+    
+    public ValueTask DisposeAsync() {
+        this.DateRangeState.OnChildChanged -= this.OnDateRangeChanged;
+        return ValueTask.CompletedTask;
+    }
+    
+}

@@ -1,4 +1,6 @@
-﻿using MongoDB.Bson;
+﻿using System.Text;
+using ClosedXML.Excel;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringWeb.WebApp.Data;
@@ -52,6 +54,43 @@ public class PlotDataService {
                 }
             }
             return analogReadings;
+        }
+
+        public async Task<byte[]> GetThDownloadData(DateTime start,DateTime stop) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("th_data");
+
+            var analogItems = database.GetCollection<AnalogItem>("analog_items").Find(e=>e.Display==true).ToList();
+            var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+            var aReadings = await analogReadings.Find(e => e.timestamp >= start && e.timestamp <= stop)
+                .ToListAsync();
+            var headers = analogItems.Select(e => e.Identifier).ToList();
+            var wb = new XLWorkbook();
+            var worksheet=wb.Worksheets.Add("Consumption");
+            worksheet.AddPicture(@"/app/wwwroot/images/GasDetectorMap.png").MoveTo(worksheet.Cell("O2"));
+            worksheet.Cell(1, 1).Value = "timestamp";
+            for (int i = 0; i < headers.Count(); i++) {
+                worksheet.Cell(1, i + 2).Value = headers[i];
+            }
+
+            
+            int colCount = 1;
+            int rowCount = 2;
+            foreach(var readings in aReadings) {
+                StringBuilder builder = new StringBuilder();
+                worksheet.Cell(rowCount, colCount).Value = readings.timestamp.ToLocalTime().ToString();
+                colCount += 1;
+                foreach(var reading in readings.readings) {
+                    worksheet.Cell(rowCount, colCount).Value = reading.Value;
+                    colCount += 1;
+                }
+                rowCount += 1;
+                colCount = 1;
+            }
+
+            var stream =new MemoryStream();
+            wb.SaveAs(stream);
+            return stream.ToArray();
         }
         
         public async Task<IEnumerable<AnalogReadingDto>> GetData(string deviceData,ObjectId sensorId,DateTime start, DateTime stop) {
