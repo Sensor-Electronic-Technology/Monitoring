@@ -38,6 +38,7 @@ builder.Services.AddSingleton<SelectionChanged<ChannelDto>>();
 builder.Services.AddSingleton<ValueChanged<DateRange>>();
 builder.Services.AddSingleton<ValueChanged<BulkGasType>>();
 builder.Services.AddSingleton<UsageService>();
+builder.Services.AddScoped<AmmoniaController>();
 builder.Services.AddBlazorDownloadFile();
 builder.Services.AddScoped<SpinnerService>();
 builder.Services.AddSingleton<FileHandlerService>();

@@ -130,7 +130,6 @@ public class AmmoniaController {
                 rawZeroValue = 0;
                 break;
             }
-                
         }
         await modbus.WriteSingleCoilAsync((byte)1, (ushort)1, true);
         return rawZeroValue;
