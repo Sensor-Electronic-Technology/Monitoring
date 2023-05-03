@@ -1,0 +1,138 @@
+﻿@page "/scalecal"
+@using MonitoringSystem.Shared.Data
+@using MonitoringSystem.Shared.Data.SettingsModel
+@using MonitoringSystem.Shared.Services
+@using MonitoringWeb.WebApp.Services
+@inject AmmoniaController AmmoniaController
+@inject WebsiteConfigurationProvider Provider;
+
+<div class="container-fluid w-50">
+    <div class="d-flex flex-row justify-content-center">
+        <div class="d-flex flex-row">
+            <div class="row" style="padding: .5rem;">
+                <DxSpinEdit @bind-Value="this._selectedScale" MinValue="1" MaxValue="4"/>
+            </div>
+            <div class="row" style="padding: .5rem;">
+                <DxButton Text="Fetch" Click="@FetchData" RenderStyle="ButtonRenderStyle.Info"/>
+            </div>
+        </div>
+        <div class="d-flex flex-col" style="padding: .5rem">
+            <DxCheckBox CheckType="CheckType.Switch"
+                        SizeMode="@SizeMode.Medium"
+                        LabelPosition="LabelPosition.Right"
+                        CheckedChanged="@(async (bool t) => await CheckedChanged(t))"
+                        Alignment="CheckBoxContentAlignment.Center">
+                Calibration Mode
+            </DxCheckBox>
+        </div>
+    </div>
+    <div class="d-flex flex-row justify-content-center text-center ">
+        <div class="card">
+                <div class="card-header text-center py-3">
+                    <h6>Ammonia Scale Calibration</h6>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="@Data"
+                              OnValidSubmit="@(async ()=>await SaveCalibration())"
+                              Context="EditFormContext">
+                        <DxFormLayout >
+                            <DxFormLayoutGroup Caption="Raw Sensor Values" ColSpanSm="12">
+                                <DxFormLayoutItem Caption="Raw Zero Value" CaptionPosition="CaptionPosition.Vertical"
+                                                  ColSpanSm="6">
+                                    <DxSpinEdit @bind-Value="@Data.ZeroRawValue"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Click to Capture Raw Zero Value" 
+                                                  CaptionPosition="CaptionPosition.Vertical"
+                                                  ColSpanSm="6">
+                                    <DxButton Text="Capture"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Raw NonZero Value" CaptionPosition="CaptionPosition.Vertical"
+                                                  ColSpanSm="6">
+                                    <DxSpinEdit @bind-Value="@Data.NonZeroRawValue"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Click to Capture Raw NonZero Value" 
+                                                  CaptionPosition="CaptionPosition.Vertical"
+                                                  ColSpanSm="6">
+                                    <DxButton Text="Capture"/>
+                                </DxFormLayoutItem>
+
+                            </DxFormLayoutGroup>
+                            <DxFormLayoutGroup Caption="Weight Values" ColSpanMd="12">
+                                <DxFormLayoutItem Caption="Zero Value"
+                                                  CaptionPosition="CaptionPosition.Vertical"
+                                                  ColSpanMd="6">
+                                    <DxSpinEdit @bind-Value="@Data.ZeroValue"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="NonZero Value"
+                                                  CaptionPosition="CaptionPosition.Vertical"
+                                                  ColSpanMd="6">
+                                    <DxSpinEdit @bind-Value="@Data.NonZeroValue"/>
+                                </DxFormLayoutItem>
+                            </DxFormLayoutGroup>
+                            <DxFormLayoutGroup Caption="Ammonia Tank Values" ColSpanMd="12">
+                                <DxFormLayoutItem Caption="Tare Weight"
+                                                  CaptionPosition="CaptionPosition.Vertical"
+                                                  ColSpanMd="6">
+                                    <DxSpinEdit @bind-Value="@Data.Tare"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Gas Weight"
+                                                  CaptionPosition="CaptionPosition.Vertical"
+                                                  ColSpanMd="6">
+                                    <DxSpinEdit @bind-Value="@Data.GasWeight"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Gross Weight"
+                                                  CaptionPosition="CaptionPosition.Vertical"
+                                                  ColSpanMd="6">
+                                    <DxSpinEdit @bind-Value="@Data.Combined"/>
+                                </DxFormLayoutItem>
+                            </DxFormLayoutGroup>
+                            <DxFormLayoutItem ColSpanMd="12">
+                                <DxButton CssClass="w-100"
+                                          RenderStyle="ButtonRenderStyle.Primary"
+                                          SubmitFormOnClick="true"
+                                          Text="Save Calibration" />
+                            </DxFormLayoutItem>
+                        </DxFormLayout>
+                    </EditForm>
+                </div>
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+    AmmoniaCalibrationData? Data=new AmmoniaCalibrationData();
+    int _selectedScale = 1;
+    ManagedDevice? _device;
+    bool _disabled = false;
+    
+
+    protected override Task OnInitializedAsync() {
+        this._device = this.Provider.Devices.FirstOrDefault(e => e.DeviceName == "nh3");
+        this._disabled = this._device == null;
+        return base.OnInitializedAsync();
+    }
+    
+    private async Task SaveCalibration() {
+        await this.AmmoniaController.SetCalibration(this._device.IpAddress,this.Data);
+    }
+
+    private async Task FetchData() {
+        this.Data = await this.AmmoniaController.GetTankCalibration(this._device.IpAddress, this._selectedScale);
+    }
+
+    private async Task Capture(bool zero) {
+        var data = await this.AmmoniaController.GetTankCalibration(this._device.IpAddress,this._selectedScale);
+        if (zero) {
+            this.Data.ZeroRawValue = data.ZeroRawValue;
+        } else {
+            this.Data.NonZeroRawValue = data.NonZeroRawValue;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CheckedChanged(bool t) {
+        await this.AmmoniaController.SetCalibrationMode(this._device.IpAddress, t);
+    }
+}

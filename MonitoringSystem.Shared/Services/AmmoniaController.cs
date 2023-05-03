@@ -94,8 +94,70 @@ public class AmmoniaController {
         return Task.FromResult(data);
     }
 
-    public async Task SetCalibration(AmmoniaCalibrationData calibration) {
-        
+    private async Task<int> GetZeroRawValue(string ip, int scale) {
+        using var client = new TcpClient(ip, 502);
+        client.ReceiveTimeout = 500;
+        var modbus = ModbusIpMaster.CreateIp(client);
+        await modbus.WriteSingleCoilAsync((byte)1, (ushort)1, true);
+        await Task.Delay(250);
+        int rawZeroValue = 0;
+        switch (scale) {
+            case 1: {
+                var registers=await modbus.ReadHoldingRegistersAsync((byte)1,0,(ushort)2);
+                rawZeroValue=BitConverter.ToInt32(BitConverter.GetBytes(registers[1])
+                    .Concat(BitConverter.GetBytes(registers[0])).ToArray(), 0);
+                break;
+            }
+            case 2: {
+                var registers=await modbus.ReadHoldingRegistersAsync((byte)1,2,(ushort)2);
+                rawZeroValue=BitConverter.ToInt32(BitConverter.GetBytes(registers[1])
+                    .Concat(BitConverter.GetBytes(registers[0])).ToArray(), 0);
+                break;
+            }
+            case 3: {
+                var registers=await modbus.ReadHoldingRegistersAsync((byte)1,4,(ushort)2);
+                rawZeroValue=BitConverter.ToInt32(BitConverter.GetBytes(registers[1])
+                    .Concat(BitConverter.GetBytes(registers[0])).ToArray(), 0);
+                break;
+            }
+            case 4: {
+                var registers=await modbus.ReadHoldingRegistersAsync((byte)1,6,(ushort)2);
+                rawZeroValue=BitConverter.ToInt32(BitConverter.GetBytes(registers[1])
+                    .Concat(BitConverter.GetBytes(registers[0])).ToArray(), 0);
+                break;
+            }
+            default: {
+                rawZeroValue = 0;
+                break;
+            }
+                
+        }
+        await modbus.WriteSingleCoilAsync((byte)1, (ushort)1, true);
+        return rawZeroValue;
+    }
+
+    public async Task SetCalibration(string ip,AmmoniaCalibrationData calibration) {
+        using var client = new TcpClient(ip, 502);
+        client.ReceiveTimeout = 500;
+        var modbus = ModbusIpMaster.CreateIp(client);
+        List<ushort> registersToWrite = new List<ushort>();
+        registersToWrite.AddRange(ToUshortArray(calibration.ZeroRawValue));
+        registersToWrite.AddRange(ToUshortArray(calibration.NonZeroRawValue));
+        registersToWrite.AddRange(ToUshortArray(calibration.ZeroValue));
+        registersToWrite.AddRange(ToUshortArray(calibration.NonZeroValue));
+        registersToWrite.AddRange(ToUshortArray(calibration.Combined));
+        registersToWrite.AddRange(ToUshortArray(calibration.GasWeight));
+        registersToWrite.Add((ushort)calibration.Scale);
+        await modbus.WriteMultipleRegistersAsync((byte)1, 70, registersToWrite.ToArray());
+        await modbus.WriteSingleCoilAsync((byte)1, (ushort)0, true);
+    }
+    
+    private ushort[] ToUshortArray(int value) {
+        ushort[] s = new ushort[2];
+        byte[] fBytes = BitConverter.GetBytes(value);
+        s[0] = BitConverter.ToUInt16(fBytes, 2);
+        s[1] = BitConverter.ToUInt16(fBytes, 0);
+        return s;
     }
 
     private void LogError(string message) {
