@@ -33,10 +33,12 @@ public class AmmoniaController {
         var modbus = ModbusIpMaster.CreateIp(client);
         var registers=await modbus.ReadHoldingRegistersAsync((byte)1,0,(ushort)70);
         AmmoniaCalibrationData calData = new AmmoniaCalibrationData();
+        calData.Scale = tank;
         switch (tank) {
             case 1: {
                 calData.CurrentWeight=BitConverter.ToInt32(BitConverter.GetBytes(registers[1])
                         .Concat(BitConverter.GetBytes(registers[0])).ToArray(), 0);
+                calData.Tare = registers[56];
                 var rawData = new ArraySegment<ushort>(registers, 8, 12).ToArray();
                 return await Convert(rawData,calData);
                 break;
@@ -44,6 +46,7 @@ public class AmmoniaController {
             case 2: {
                 calData.CurrentWeight=BitConverter.ToInt32(BitConverter.GetBytes(registers[3])
                     .Concat(BitConverter.GetBytes(registers[2])).ToArray(), 0);
+                calData.Tare = registers[57];
                 var rawData = new ArraySegment<ushort>(registers, 20, 12).ToArray();
                 return await Convert(rawData,calData);
                 break;
@@ -51,6 +54,7 @@ public class AmmoniaController {
             case 3: {
                 calData.CurrentWeight=BitConverter.ToInt32(BitConverter.GetBytes(registers[5])
                     .Concat(BitConverter.GetBytes(registers[4])).ToArray(), 0);
+                calData.Tare = registers[58];
                 var rawData = new ArraySegment<ushort>(registers, 32, 12).ToArray();
                 return await Convert(rawData,calData);
                 break;
@@ -58,6 +62,7 @@ public class AmmoniaController {
             case 4: {
                 calData.CurrentWeight=BitConverter.ToInt32(BitConverter.GetBytes(registers[7])
                     .Concat(BitConverter.GetBytes(registers[6])).ToArray(), 0);
+                calData.Tare = registers[59];
                 var rawData = new ArraySegment<ushort>(registers, 44, 12).ToArray();
                 return await Convert(rawData,calData);
                 break;

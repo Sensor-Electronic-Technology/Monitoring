@@ -12,6 +12,7 @@ using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using ConsoleTables;
 using MailKit.Net.Smtp;
 using MimeKit;
 using Modbus.Device;
@@ -84,13 +85,35 @@ namespace MonitoringSystem.ConsoleTesting {
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
             //await WriteOutAnalogFile("nh3", new DateTime(2022, 9, 1), DateTime.Now, @"C:\MonitorFiles\analogreadings4.csv");
             //var client = new MongoClient("mongodb:");*/
-            await RemoteAlertTesting();
+            //await RemoteAlertTesting();
             //await TestModbus();
+            AmmoniaController controller = new AmmoniaController();
+            ConsoleTable table = new ConsoleTable("Scale", "ZeroRaw", "NonZeroRaw", "Zero", "NonZero", "Combined",
+                "Tare", "GasWeight");
+            await TestAmmoniaController(1, controller,table);
+            await TestAmmoniaController(2, controller,table);
+            await TestAmmoniaController(3, controller,table);
+            await TestAmmoniaController(4, controller,table);
+            Console.WriteLine(table.ToString());
+        }
 
+        static async Task TestAmmoniaController(int scale,AmmoniaController controller,ConsoleTable table) {
+            var data=await controller.GetTankCalibration("172.21.100.29", scale);
+            table.AddRow(data.Scale, data.ZeroRawValue,data.NonZeroRawValue,data.ZeroValue,data.NonZeroValue,
+                data.Combined,data.Tare,data.GasWeight);
+            /*Console.WriteLine($"Scale: {data.Scale}");
+            Console.WriteLine($"ZeroRaw: {data.ZeroRawValue}");
+            Console.WriteLine($"NonZeroRaw: {data.NonZeroRawValue}");
+            Console.WriteLine($"Zero: {data.ZeroValue}");
+            Console.WriteLine($"NonZero: {data.NonZeroValue}");
+            Console.WriteLine($"Combined: {data.Combined}");
+            Console.WriteLine($"Tare: {data.Tare}");
+            Console.WriteLine();
+            Console.WriteLine();*/
         }
 
         static async Task TestModbus() {
-            using var client = new TcpClient("172.20.5.202",502);
+            using var client = new TcpClient("172.20.5.24",502);
             client.ReceiveTimeout = 500;
             var modbus = ModbusIpMaster.CreateIp(client);
             var reg = await modbus.ReadHoldingRegistersAsync((byte)1,0,12);
