@@ -2,6 +2,7 @@
 @using MonitoringSystem.Shared.SignalR
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Runtime.CompilerServices
+@using MonitoringWeb.WebApp.Shared
 @using System.Globalization
 @using MonitoringWeb.WebApp.Data
 @inject ILogger<LiveGrid> logger
@@ -21,7 +22,7 @@
                 </h4>
             </div>
             <div class="row text-center" style="padding:.05rem">
-                <p role="status">TimeStamp: @(this._monitorData?.TimeStamp.AddHours(-4).ToString(CultureInfo.InvariantCulture))</p>
+                <p role="status">TimeStamp: @this._monitorData.TimeStamp.DateTimeLocal()</p>
             </div>
             @if (this._monitorData?.analogData != null) {
                 @if (this._monitorData.analogData.Any()) {
@@ -151,6 +152,7 @@
             e.CssClass = "alarm-item";
         }
     }
+
     public async ValueTask DisposeAsync() {
         if (this._hubConnection is not null) {
             await this._hubConnection.DisposeAsync();

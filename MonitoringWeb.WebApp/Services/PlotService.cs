@@ -72,13 +72,16 @@ public class PlotDataService {
             for (int i = 0; i < headers.Count(); i++) {
                 worksheet.Cell(1, i + 2).Value = headers[i];
             }
-
-            
             int colCount = 1;
             int rowCount = 2;
             foreach(var readings in aReadings) {
                 StringBuilder builder = new StringBuilder();
-                worksheet.Cell(rowCount, colCount).Value = readings.timestamp.ToLocalTime().ToString();
+                if (readings.timestamp.IsDaylightSavingTime()) {
+                    worksheet.Cell(rowCount, colCount).Value = readings.timestamp.AddHours(-5).ToString();
+                } else {
+                    worksheet.Cell(rowCount, colCount).Value = readings.timestamp.AddHours(-4).ToString();
+                }
+                
                 colCount += 1;
                 foreach(var reading in readings.readings) {
                     worksheet.Cell(rowCount, colCount).Value = reading.Value;
