@@ -2,6 +2,7 @@
 @using MonitoringWeb.WebApp.Data
 @using MonitoringWeb.WebApp.Services
 @inject ValueChanged<BulkGasType> GasTypeChanged
+@inject NavigationManager uriHelper;
 
 <h3 class="text-center">@this.Header</h3>
 <DxTabs RenderMode="TabsRenderMode.Default" @bind-ActiveTabIndex="tabIndex">
@@ -39,6 +40,17 @@
         this.tabIndex = 0;
         return Task.CompletedTask;
     }
+    
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender){
+            var timer = new Timer(new TimerCallback(_ =>
+            {
+                uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+            }), null, 30000, 30000);
+        }
+    }
+    
     public override async Task SetParametersAsync(ParameterView parameters) {
         await base.SetParametersAsync(parameters);
         switch (this.GasType) {
