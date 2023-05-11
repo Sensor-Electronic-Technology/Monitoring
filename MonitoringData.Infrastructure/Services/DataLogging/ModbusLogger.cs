@@ -23,6 +23,8 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
         private Dictionary<ObjectId, double> _filters = new Dictionary<ObjectId, double>();
 
         private bool loggingEnabled = false;
+        private bool _isAmmonia = false;
+        private bool _recordData = true;
         private ManagedDevice _device;
         private IList<AlertRecord> _alerts;
         private DateTime lastRecord;
@@ -46,6 +48,11 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
         public async Task Read() {
             var result = await this._modbusService.Read(this._device.IpAddress, this._device.Port, 
                 this._device.ModbusConfiguration);
+            if (this._isAmmonia) {
+                this._recordData = !(await this._modbusService.ReadCoil(this._device.IpAddress, 
+                    this._device.Port, 1, 0));
+            }
+            
             if (result.Success) {
                 var now = DateTime.Now;
                 this._alerts = new List<AlertRecord>();
@@ -99,7 +106,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     LogError($"AnalogChannel: {aItem.Identifier} alert not found");
                 } 
             }
-            if (CheckSave(now, lastRecord)) {
+            if (CheckSave(now, lastRecord) && this._recordData) {
                 lastRecord = now;
                 await _dataService.InsertOneAsync(new AnalogReadings {
                     readings=readings.ToArray(),
@@ -121,6 +128,9 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             await this._dataService.LoadAsync();
             await this._alertService.Load();
             this._device = this._dataService.ManagedDevice;
+            if (this._device.DeviceName == "nh3") {
+                this._isAmmonia = true;
+            }
             var analogReading = await this._dataService.GetLastAnalogReading();
             foreach (var dev in this._dataService.AnalogItems) {
                 if (analogReading != null) {
