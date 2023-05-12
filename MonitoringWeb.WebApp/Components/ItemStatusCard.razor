@@ -1,0 +1,158 @@
+﻿@using MonitoringSystem.Shared.Data
+@using MonitoringSystem.Shared.SignalR
+@using MonitoringWeb.WebApp.Data
+@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringWeb.WebApp.Services
+@inject WebsiteConfigurationProvider ConfigurationProvider
+@implements IAsyncDisposable
+
+<div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+    <div class="container-md">
+        <div class="row text-center" style="padding: .5rem">
+            <h5>@this.ItemName</h5>
+        </div>
+        <div class="row">
+            @switch (StatusItem?.Status) {
+                case ActionType.Alarm: {
+                    <div class="bg-danger text-white text-center">
+                        <h5 style="padding: .05rem">Alarm</h5>
+                    </div>
+                    break;
+                }
+                case ActionType.Warning: {
+                    <div class="bg-warning text-dark text-center" >
+                        <h5 style="padding: .05rem">Warning</h5>
+                    </div>
+                    break;
+                }
+                case ActionType.SoftWarn: {
+                    <div class="bg-warning text-white text-center" >
+                        <h5 style="padding: .05rem">Soft-Warn</h5>
+                    </div>
+                    break;
+                }
+                case ActionType.Okay: {
+                    <div class="bg-success text-white text-center" >
+                        <h5 style="padding: .05rem">Okay</h5>
+                    </div>
+                    break;
+                }
+                default: {
+                    <div class="bg-success text-white text-center">
+                        <h5 style="padding: .05rem">Okay</h5>
+                    </div>
+                    break;
+                }
+            }
+        </div>
+    </div>
+    
+    <div class="container-md" style="padding:1rem">
+        <div class="row justify-content-center text-center" style="padding:.5rem">
+            <h3> Timestamp: @_current</h3>
+        </div>
+        <div class="row text-center">
+            <h3> Current Value: @this.StatusItem?.Value</h3>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public BulkGasType Type { get; set; }
+    
+    private StatusItem StatusItem { get; set; } = new StatusItem() { 
+        Item = "Loading", 
+        Status = ActionType.Okay,
+        Value = "0.00"
+    };
+
+    string? _current = DateTime.Now.ToString();
+    
+    string? ItemName => this.StatusItem.Item;
+    
+    private HubConnection? _hubConnection;
+    private MonitorData? _monitorData;
+
+    protected override async Task OnInitializedAsync() {
+        var device = this.ConfigurationProvider.Devices.FirstOrDefault(e => e.DeviceName == "Epi1");
+        if (device != null) {
+            var hub = device.HubAddress;
+            if (hub != null) {
+                this._hubConnection = new HubConnectionBuilder()
+                    .WithAutomaticReconnect(new TimeSpan[] {
+                        TimeSpan.FromSeconds(3),
+                        TimeSpan.FromSeconds(9),
+                        TimeSpan.FromSeconds(20),
+                        TimeSpan.FromSeconds(40),
+                        TimeSpan.FromSeconds(60),
+                        TimeSpan.FromSeconds(120),
+                        TimeSpan.FromSeconds(240)
+                    })
+                    .WithUrl(hub)
+                    .Build();
+                this._hubConnection.On<MonitorData>("ShowCurrent", this.OnShowCurrent);
+
+                this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+                this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+
+                try {
+                    await this._hubConnection.StartAsync();
+                    //this.Logger.LogInformation(hub + " Connected");
+                } catch {
+                    //this.Logger.LogError(hub + " hub connection failed");
+                }
+            }
+        }
+        //return base.OnInitializedAsync();
+    }
+    
+    async Task OnShowCurrent(MonitorData data) {
+        this._monitorData = data;
+        if (this.Type == BulkGasType.N2) {
+            var n2=this._monitorData.analogData.FirstOrDefault(e => e.Item == "Bulk N2(inH20)");
+            this._current = _monitorData.TimeStamp.DateTimeLocal();
+            if (n2 != null) {
+                this.StatusItem.Item = n2.Item;
+                this.StatusItem.Value = n2.Value.ToString(); 
+    //this.Logger.LogInformation($"N2: {n2.Value}");
+                try {
+                    this.StatusItem.Status = Enum.Parse<ActionType>(n2.State);
+                } catch {
+                    this.StatusItem.Status = ActionType.Okay;
+                }
+            } else {
+                //this.Logger.LogError("Error: Could not find N2");
+            }
+        }else if (this.Type == BulkGasType.H2) {
+            var h2=this._monitorData.analogData.FirstOrDefault(e => e.Item == "Bulk H2(PSI)");
+            this._current = _monitorData.TimeStamp.DateTimeLocal();
+            if (h2 != null) {
+                this.StatusItem.Item = h2.Item;
+                this.StatusItem.Value = h2.Value.ToString();
+               // this.Logger.LogInformation($"H2: {h2.Value}");
+                try {
+                    this.StatusItem.Status = Enum.Parse<ActionType>(h2.State);
+                } catch {
+                    this.StatusItem.Status = ActionType.Okay;
+                }
+            } else {
+                //this.Logger.LogError("Error: Could not find H2");
+            }
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override Task OnParametersSetAsync() {
+        return base.OnParametersSetAsync();
+    }
+
+
+    
+    public async ValueTask DisposeAsync() {
+        if (this._hubConnection is not null) {
+            await this._hubConnection.DisposeAsync();
+        }
+    }
+}

@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -87,14 +88,133 @@ namespace MonitoringSystem.ConsoleTesting {
             //var client = new MongoClient("mongodb:");*/
             //await RemoteAlertTesting();
             //await TestModbus();
-            AmmoniaController controller = new AmmoniaController();
+            /*AmmoniaController controller = new AmmoniaController();
             ConsoleTable table = new ConsoleTable("Scale", "ZeroRaw", "NonZeroRaw", "Zero", "NonZero", "Combined",
                 "Tare", "GasWeight");
             await TestAmmoniaController(1, controller,table);
             await TestAmmoniaController(2, controller,table);
             await TestAmmoniaController(3, controller,table);
             await TestAmmoniaController(4, controller,table);
-            Console.WriteLine(table.ToString());
+            Console.WriteLine(table.ToString());*/
+
+            await CreateBulkGasSettings();
+        }
+
+        static async Task CreateBulkGasSettings() {
+            IMongoClient client = new MongoClient("mongodb://172.20.3.41");
+            var e1Database = client.GetDatabase("epi1_data");
+            var settingsDatabase = client.GetDatabase("monitor_settings");
+            var settingsCollection = settingsDatabase.GetCollection<WebsiteBulkSettings>("bulk_settings");
+
+            var analogCollection = e1Database.GetCollection<AnalogItem>("analog_items");
+            var n2Channel = await analogCollection.Find(e => e.Identifier == "Bulk N2(inH20)").FirstOrDefaultAsync();
+            var h2Channel = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
+
+            WebsiteBulkSettings webBulkSettings = new WebsiteBulkSettings();
+            webBulkSettings.RefreshTime = 1800000;//30min
+            BulkGasSettings h2 = new BulkGasSettings();
+            h2.EnableAggregation = true;
+            h2.OkayLabel = "Okay";
+            h2.PointColor = KnownColor.Chartreuse;
+            h2.HoursAfter = 6;
+            h2.HoursBefore = 12;
+            BulkGasAlert h2soft = new BulkGasAlert();
+            h2soft.Label = ActionType.SoftWarn.ToString();
+            h2soft.ActionType = ActionType.SoftWarn;
+            h2soft.Default = true;
+            h2soft.SetPoint = (int)h2Channel.Level1SetPoint;
+            
+            BulkGasAlert h2warn = new BulkGasAlert();
+            h2warn.Label = ActionType.Warning.ToString();
+            h2warn.ActionType = ActionType.Warning;
+            h2warn.Default = true;
+            h2warn.SetPoint = (int)h2Channel.Level2SetPoint;
+
+            BulkGasAlert h2alarm = new BulkGasAlert();
+            h2alarm.Label = ActionType.Alarm.ToString();
+            h2alarm.ActionType = ActionType.Alarm;
+            h2alarm.Default = true;
+            h2alarm.SetPoint = (int)h2Channel.Level3SetPoint;
+
+            RefLine h2alarmLine = new RefLine();
+            h2alarmLine.Value = h2alarm.SetPoint;
+            h2alarmLine.Color = KnownColor.Red;
+            h2alarmLine.Label = "Halt Production";
+            
+            RefLine h2warnLine = new RefLine();
+            h2warnLine.Value = h2warn.SetPoint;
+            h2warnLine.Color = KnownColor.Yellow;
+            h2warnLine.Label = "Prepare To Halt";
+            
+            RefLine h2softLine = new RefLine();
+            h2softLine.Value = h2soft.SetPoint;
+            h2softLine.Color = KnownColor.Wheat;
+            h2softLine.Label = "Notify";
+
+            h2.SoftWarnAlert = h2soft;
+            h2.AlarmAlert = h2alarm;
+            h2.WarningAlert = h2warn;
+
+            h2.ReferenceLines = new List<RefLine>();
+            h2.ReferenceLines.Add(h2alarmLine);
+            h2.ReferenceLines.Add(h2warnLine);
+            h2.ReferenceLines.Add(h2softLine);
+            
+            
+            
+            BulkGasSettings n2 = new BulkGasSettings();
+            n2.EnableAggregation = true;
+            n2.OkayLabel = "Okay";
+            n2.PointColor = KnownColor.Chartreuse;
+            n2.HoursAfter = 6;
+            n2.HoursBefore = 12;
+            BulkGasAlert n2soft = new BulkGasAlert();
+            n2soft.Label = ActionType.SoftWarn.ToString();
+            n2soft.ActionType = ActionType.SoftWarn;
+            n2soft.Default = true;
+            n2soft.SetPoint = (int)n2Channel.Level1SetPoint;
+            
+            BulkGasAlert n2warn = new BulkGasAlert();
+            n2warn.Label = ActionType.Warning.ToString();
+            n2warn.ActionType = ActionType.Warning;
+            n2warn.Default = true;
+            n2warn.SetPoint = (int)n2Channel.Level2SetPoint;
+
+            BulkGasAlert n2alarm = new BulkGasAlert();
+            n2alarm.Label = ActionType.Alarm.ToString();
+            n2alarm.ActionType = ActionType.Alarm;
+            n2alarm.Default = true;
+            n2alarm.SetPoint = (int)h2Channel.Level3SetPoint;
+
+            RefLine n2alarmLine = new RefLine();
+            n2alarmLine.Value = n2alarm.SetPoint;
+            n2alarmLine.Color = KnownColor.Red;
+            n2alarmLine.Label = "Halt Production";
+            
+            RefLine n2warnLine = new RefLine();
+            n2warnLine.Value = n2warn.SetPoint;
+            n2warnLine.Color = KnownColor.Yellow;
+            n2warnLine.Label = "Prepare To Halt";
+            
+            RefLine n2softLine = new RefLine();
+            n2softLine.Value = n2soft.SetPoint;
+            n2softLine.Color = KnownColor.Wheat;
+            n2softLine.Label = "Notify";
+
+            n2.SoftWarnAlert = n2soft;
+            n2.AlarmAlert = n2alarm;
+            n2.WarningAlert = n2warn;
+
+            n2.ReferenceLines = new List<RefLine>();
+            n2.ReferenceLines.Add(n2alarmLine);
+            n2.ReferenceLines.Add(n2warnLine);
+            n2.ReferenceLines.Add(n2softLine);
+
+            webBulkSettings.H2Settings = h2;
+            webBulkSettings.N2Settings = n2;
+
+            await settingsCollection.InsertOneAsync(webBulkSettings);
+            Console.WriteLine("Check Database");
         }
 
         static async Task TestAmmoniaController(int scale,AmmoniaController controller,ConsoleTable table) {

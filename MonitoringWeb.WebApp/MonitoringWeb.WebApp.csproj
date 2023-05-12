@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.4" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
     <PackageReference Include="BlazorDownloadFileFast" Version="0.2.0" />
-    <PackageReference Include="Append.Blazor.Sidepanel" Version="6.2.0" />
+    <PackageReference Include="Append.Blazor.Sidepanel" Version="6.3.3" />
     <PackageReference Include="BlazorSpinner" Version="1.3.0" />
     <PackageReference Include="MongoDB.Driver.GridFS" Version="2.15.1" />
   </ItemGroup>

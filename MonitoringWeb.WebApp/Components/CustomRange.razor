@@ -5,7 +5,7 @@
 
 <DxAccordion>
     <Items>
-        <DxAccordionItem Text="Custom Date Range">
+        <DxAccordionItem Visible="@this.CustomDateVisible" Text="Custom Date Range">
             <ContentTemplate Context="info">
                 <DxFormLayout>
                     <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="6">
@@ -42,6 +42,9 @@
     public DateTime StartDate { get; set; }
     [Parameter]
     public DateTime StopDate { get; set; }
+
+    [Parameter] 
+    public bool CustomDateVisible { get; set; } = true;
     
     [Parameter]
     public EventCallback<DateTime> StartDateChanged { get; set; }

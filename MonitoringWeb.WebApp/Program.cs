@@ -1,3 +1,4 @@
+using Append.Blazor.Sidepanel;
 using BlazorSpinner;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components;
@@ -42,6 +43,7 @@ builder.Services.AddScoped<AmmoniaController>();
 builder.Services.AddBlazorDownloadFile();
 builder.Services.AddScoped<SpinnerService>();
 builder.Services.AddSingleton<FileHandlerService>();
+builder.Services.AddSidepanel();
 builder.Services.AddControllers();
 builder.WebHost.UseWebRoot("wwwroot");
 builder.WebHost.UseStaticWebAssets();

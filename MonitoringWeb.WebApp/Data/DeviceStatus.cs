@@ -8,3 +8,9 @@ public class DeviceStatus {
     public ActionType Status { get; set; }
     public IEnumerable<ItemStatus> ActiveAlerts { get; set; }
 }
+
+public class StatusItem {
+    public string? Item { get; set; }
+    public ActionType Status { get; set; }
+    public string? Value { get; set; }
+}

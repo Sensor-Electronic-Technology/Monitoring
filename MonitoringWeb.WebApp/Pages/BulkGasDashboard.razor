@@ -1,0 +1,66 @@
+﻿@page "/bulkdash"
+@using MonitoringWeb.WebApp.Data
+@using MonitoringSystem.Shared.SignalR
+@using MonitoringSystem.Shared.Data
+@using MonitoringWeb.WebApp.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@using Append.Blazor.Sidepanel
+@inject NavigationManager NavManager
+@inject NavigationManager NavigationManager
+@inject ISidepanelService SidepanelService
+@inject WebsiteConfigurationProvider ConfigurationProvider
+
+
+
+<div class="row float-end">
+    <DxButton Click="Callback" 
+              RenderStyle="ButtonRenderStyle.Primary"
+              Text="@this._buttonText"/>
+</div>
+<div class="row d-flex justify-content-center">
+    <ItemStatusCard Type="BulkGasType.H2"></ItemStatusCard>
+    <ItemStatusCard Type="BulkGasType.N2"></ItemStatusCard>
+</div>
+<div class="row">
+    <div class="col-6">
+        <BulkGasPlot GasType="BulkGasType.H2" 
+                     CustomDateVisible="false" 
+                     RangeSelectVisible="false"/>
+    </div>
+    <div class="col-6">
+        <BulkGasPlot GasType="BulkGasType.N2" 
+                     CustomDateVisible="false" 
+                     RangeSelectVisible="false"/>
+    </div>
+</div>
+
+
+@code {
+
+    private string _buttonText = "Open Settings";
+    
+    protected override Task OnInitializedAsync() {
+        
+        return base.OnInitializedAsync();
+    }
+    
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender){
+            var timer = new Timer(new TimerCallback(_ =>
+            {
+                NavManager.NavigateTo(NavManager.Uri, forceLoad: true);
+            }), null, 1800000, 1800000);
+        }
+    }
+
+    private void Callback() {
+        if (this.SidepanelService.IsOpen) {
+            this.SidepanelService.Close();
+            this._buttonText = "Open Settings";
+        } else {
+            this.SidepanelService.Open<BulkGasSettingsComponent>("Settings");
+            this._buttonText = "Close Settings";
+        }
+    }
+}

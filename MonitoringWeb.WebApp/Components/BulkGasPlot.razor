@@ -3,30 +3,34 @@
 @using System.Drawing
 @using MongoDB.Driver
 @using ClosedXML.Excel
+@using MonitoringSystem.Shared.Data
 @using MonitoringSystem.Shared.Data.LogModel
 @inject PlotDataService PlotService
 @inject ValueChanged<DateRange> DateRangeState
 @inject IJSRuntime JSRuntime;
+@inject WebsiteConfigurationProvider ConfigurationProvider
 @implements IAsyncDisposable
 
 <Spinner></Spinner>
-<CustomRange @bind-StartDate="this.StartDate" @bind-StopDate="@StopDate"></CustomRange>
+<CustomRange @bind-StartDate="this.StartDate" @bind-StopDate="@StopDate" CustomDateVisible="@this.CustomDateVisible"></CustomRange>
 <div class="card">
-    <div class="card-header">
-        <div class="row">
-            <div class="col">
-                @foreach (PlotRange range in Enum.GetValues(typeof(PlotRange)).Cast<PlotRange>().ToList()) {
-                    <DxButton RenderStyle="ButtonRenderStyle.Light"
-                              Text="@Enum.GetName(range).Substring(1)"
-                              Click="@(async Task (arg) => { await this.OnClick(range); })"/>
-                }
+    @if (this.RangeSelectVisible) {
+        <div class="card-header">
+            <div class="row">
+                <div class="col">
+                    @foreach (PlotRange range in Enum.GetValues(typeof(PlotRange)).Cast<PlotRange>().ToList()) {
+                        <DxButton RenderStyle="ButtonRenderStyle.Light"
+                                  Text="@Enum.GetName(range).Substring(1)"
+                                  Click="@(async Task (arg) => { await this.OnClick(range); })"/>
+                    }
+                </div>
             </div>
         </div>
-    </div>
+    }
     <div class="card-body">
         @if (this.PlotData == null) {
             <div id="loading-indicator">
-                
+
             </div>
         } else {
             <DxChart Data="@PlotData"
@@ -52,23 +56,47 @@
                                                             Method="ChartAggregationMethod.Min"/>
                             </DxChartLineSeries>
                         } else {
-                            <DxChartLineSeries Settings="@settings" Color="Color.Aqua">
-                                <DxChartSeriesLabel Visible="false"/>
-                                <DxChartSeriesPoint Visible="true"/>
-                                <DxChartAggregationSettings Enabled="true"
-                                                            Method="ChartAggregationMethod.Min"/>
-                            </DxChartLineSeries>
+                            @if (this._bulkGasSettings == null) {
+                                <DxChartLineSeries Settings="@settings" Color="Color.Aqua">
+                                    <DxChartSeriesLabel Visible="false"/>
+                                    <DxChartSeriesPoint Visible="true"/>
+                                    <DxChartAggregationSettings Enabled="true"
+                                                                Method="ChartAggregationMethod.Min"/>
+                                </DxChartLineSeries>
+                            } else {
+                                <DxChartLineSeries Settings="@settings" 
+                                                   Color="@Color.FromKnownColor(this._bulkGasSettings.PointColor)">
+                                    <DxChartSeriesLabel Visible="false"/>
+                                    <DxChartSeriesPoint Visible="true"/>
+                                    <DxChartAggregationSettings Enabled="@_bulkGasSettings.EnableAggregation"
+                                                                Method="ChartAggregationMethod.Min"/>
+                                </DxChartLineSeries>
+                            }
                         }
                     </SeriesTemplate>
                 </DxChartCommonSeries>
-                <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime" 
+                <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime"
                                      Type="ChartAxisType.Continuous">
                     <DxChartAxisRange StartValue="@this.PlotStart"
                                       EndValue="@this.PlotStop"/>
 
                 </DxChartArgumentAxis>
-                <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
-                    <DxChartAxisRange StartValue="@this.Sensor.YAxisStart" EndValue="@this.Sensor.YAxisStop"></DxChartAxisRange>
+                <DxChartValueAxis ValueType="ChartAxisDataType.Numeric" >
+
+                    @if (this._bulkGasSettings != null) {
+                        foreach (var refLine in this._bulkGasSettings.ReferenceLines) {
+                            <DxChartConstantLine Value="refLine.Value" Width="3" 
+                                                 DisplayBehindSeries="true"
+                                                 Color="@Color.FromKnownColor(refLine.Color)">
+                                <DxChartConstantLineLabel Text="@refLine.Label" HorizontalAlignment="HorizontalAlignment.Center"
+                                                          VerticalAlignment="VerticalAlignment.Center"
+                                                          Position="RelativePosition.Inside" />
+                            </DxChartConstantLine>
+                        }
+                    }
+                    <DxChartAxisRange StartValue="@this.Sensor.YAxisStart" 
+                                      EndValue="@this.Sensor.YAxisStop"/>
+
                     <DxChartAxisTitle Text="@this.Sensor.Units"/>
                 </DxChartValueAxis>
                 <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
@@ -93,9 +121,16 @@
     [Parameter]
     public BulkGasType GasType { get; set; }
     
+    [Parameter] 
+    public bool CustomDateVisible { get; set; } = true;
+
+    [Parameter] 
+    public bool RangeSelectVisible { get; set; } = true;
+
+    BulkGasSettings? _bulkGasSettings;
     AccordionExpandCollapseAction ExpandCollapseAction { get; set; } = AccordionExpandCollapseAction.HeaderClick;
     DateTime StartDate = DateTime.Now.AddDays(-1).ToLocalTime();
-    DateTime StopDate = DateTime.Now.AddDays(1).ToLocalTime();
+    DateTime StopDate = DateTime.Now.AddHours(6).ToLocalTime();
     DateTime PlotStart;
     DateTime PlotStop;
     SensorType Sensor;
@@ -104,6 +139,11 @@
 
     protected override async Task OnInitializedAsync() {
         this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
+        if (this.GasType == BulkGasType.H2) {
+            this._bulkGasSettings = this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
+        }else if (this.GasType == BulkGasType.N2) {
+            this._bulkGasSettings = this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
+        }
         await this.Load();
     }
 

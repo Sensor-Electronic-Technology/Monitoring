@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.Services;
@@ -10,6 +11,7 @@ namespace MonitoringWeb.WebApp.Services;
 public class WebsiteConfigurationProvider:IMonitorConfigurationProvider {
     private readonly IMongoCollection<ManagedDevice> _deviceCollection;
     private readonly IMongoCollection<SensorType> _sensorCollection;
+    private readonly IMongoCollection<WebsiteBulkSettings> _bulkSettingsCollection;
     private List<ManagedDevice> _devices;
     private List<SensorType> _sensors;
 
@@ -21,11 +23,13 @@ public class WebsiteConfigurationProvider:IMonitorConfigurationProvider {
     public IEnumerable<SensorType> Sensors => this._sensors.AsEnumerable();
     public IEnumerable<string> HubAddresses => this._devices.Select(e => e.HubAddress);
     public Dictionary<string,Tuple<string,IEnumerable<SensorType>>> DeviceLookup => this._deviceLookup;
+    public WebsiteBulkSettings WebsiteBulkSettings { get; set; }
 
     public WebsiteConfigurationProvider(IMongoClient client, IOptions<MonitorWebsiteSettings> settings) {
         var database = client.GetDatabase(settings.Value.DatabaseName);
         this._deviceCollection = database.GetCollection<ManagedDevice>(settings.Value.ManagedDeviceCollection);
         this._sensorCollection = database.GetCollection<SensorType>(settings.Value.SensorTypeCollection);
+        this._bulkSettingsCollection = database.GetCollection<WebsiteBulkSettings>(settings.Value.BulkSettingsCollection);
     }
 
     public ManagedDevice GetDevice(string key) {
@@ -44,6 +48,8 @@ public class WebsiteConfigurationProvider:IMonitorConfigurationProvider {
     public async Task Load() {
         this._devices = await this._deviceCollection.Find(_ => true).ToListAsync();
         this._sensors = await this._sensorCollection.Find(_ => true).ToListAsync();
+        this.WebsiteBulkSettings = await this._bulkSettingsCollection.Find(_ => true)
+            .FirstOrDefaultAsync();
         foreach(var device in this._devices) {
             List<SensorType> sensorTypes = new List<SensorType>();
             foreach (var id in device.SensorTypes) {

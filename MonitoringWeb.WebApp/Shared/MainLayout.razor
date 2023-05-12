@@ -2,10 +2,12 @@
 @using MonitoringWeb.WebApp.Components
 @inject NavigationManager NavigationManager
 
+
 <DxLayoutBreakpoint MaxWidth="1200"
                     @bind-IsActive="@IsMobileLayout" />
 
 <div class="page">
+    <Sidepanel/>
     <DxGridLayout CssClass="page-layout">
         <Rows>
             @if (IsMobileLayout) {
@@ -14,14 +16,14 @@
                 <DxGridLayoutRow Areas="content"/>
             } else {
                 <DxGridLayoutRow Areas="header header header" Height="auto"/>
-                if (IsSidebarExpanded && !this.controlPaneVisible) {
-                    <DxGridLayoutRow Areas="sidebar content content" />
-                }else if (IsSidebarExpanded && this.controlPaneVisible) {
-                    <DxGridLayoutRow Areas="sidebar content lsidepane" />
-                }else if (!IsSidebarExpanded && this.controlPaneVisible) {
-                    <DxGridLayoutRow Areas="content content lsidepane" />
+                if (IsSidebarExpanded && !this._controlPaneVisible) {
+                    <DxGridLayoutRow Areas="sidebar content content"/>
+                } else if (IsSidebarExpanded && this._controlPaneVisible) {
+                    <DxGridLayoutRow Areas="sidebar content lsidepane"/>
+                } else if (!IsSidebarExpanded && this._controlPaneVisible) {
+                    <DxGridLayoutRow Areas="content content lsidepane"/>
                 } else {
-                    <DxGridLayoutRow Areas="content content content" />
+                    <DxGridLayoutRow Areas="content content content"/>
                 }
                 @*<DxGridLayoutRow Areas="@(IsSidebarExpanded ? "sidebar content lsidepane" : "content content lsidepane")"/>*@
             }
@@ -35,7 +37,7 @@
         <Items>
             <DxGridLayoutItem Area="header" CssClass="layout-item">
                 <Template>
-                    <Header @bind-ToggleOn="@IsSidebarExpanded" @bind-Active=@controlPaneVisible />
+                    <Header @bind-ToggleOn="@IsSidebarExpanded" @bind-Active=@_controlPaneVisible/>
                 </Template>
             </DxGridLayoutItem>
             <DxGridLayoutItem Area="sidebar" CssClass="layout-item">
@@ -50,8 +52,8 @@
             </DxGridLayoutItem>
             <DxGridLayoutItem Area="lsidepane" CssClass="layout-item">
                 <Template>
-                    <div id="settingsbar"  class="@(controlPaneVisible ? "" : "hidden-settings-bar")">
-                        <ControlSidePane @bind-Visible="@controlPaneVisible" />
+                    <div id="settingsbar" class="@(_controlPaneVisible ? "" : "hidden-settings-bar")">
+                        <ControlSidePane @bind-Visible="@_controlPaneVisible"/>
                     </div>
                 </Template>
             </DxGridLayoutItem>
@@ -61,8 +63,9 @@
 
 @code{
     string? NavMenuCssClass { get; set; }
-    bool controlPaneVisible;
+    bool _controlPaneVisible;
     bool _isMobileLayout;
+    
     bool IsMobileLayout {
         get => _isMobileLayout;
         set {
@@ -84,12 +87,11 @@
 
     protected override void OnInitialized() {
         NavigationManager.LocationChanged += OnLocationChanged;
+        this.IsSidebarExpanded = false;
     }
     async void OnLocationChanged(object? sender, LocationChangedEventArgs args) {
-        if(IsMobileLayout) {
-            IsSidebarExpanded = false;
-            await InvokeAsync(StateHasChanged);
-        }
+        IsSidebarExpanded = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     public void Dispose() {
