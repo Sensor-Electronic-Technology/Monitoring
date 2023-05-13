@@ -1,14 +1,13 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.SignalR;
-using MonitoringSystem.Shared.Data;
-using MonitoringData.Infrastructure.Services.DataAccess;
-using MonitoringData.Infrastructure.Services.AlertServices;
 using Microsoft.Extensions.Logging;
 using MonitoringData.Infrastructure.Data;
+using MonitoringData.Infrastructure.Services.DataAccess;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.SignalR;
 
-namespace MonitoringData.Infrastructure.Services {
+namespace MonitoringData.Infrastructure.Services.AlertServices {
 
     public interface IAlertService {
         Task ProcessAlerts(IList<AlertRecord> items,DateTime now);

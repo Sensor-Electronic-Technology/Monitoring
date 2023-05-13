@@ -10,7 +10,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using MongoDB.Driver;
-using MonitoringSystem.DiscreteInputJson;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;

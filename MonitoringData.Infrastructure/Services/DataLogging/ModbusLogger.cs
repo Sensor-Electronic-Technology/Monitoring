@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MonitoringData.Infrastructure.Data;
 using MonitoringData.Infrastructure.Events;
+using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Services;
 using MonitoringData.Infrastructure.Services.DataAccess;

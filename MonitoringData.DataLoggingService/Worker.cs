@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
 using MonitoringData.Infrastructure.Events;
 using MonitoringData.Infrastructure.Services;
+using MonitoringData.Infrastructure.Services.DataLogging;
 
 namespace MonitoringData.DataLoggingService {
     public class Worker : IHostedService, IDisposable,IConsumer<ReloadConsumer>{

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MongoDB.Driver;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Services;
 using MonitoringWeb.WebApp.Data;

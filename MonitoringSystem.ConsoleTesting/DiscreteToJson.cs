@@ -1,8 +1,8 @@
-﻿namespace MonitoringSystem.DiscreteInputJson;
-
-using System.Globalization;
+﻿using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+
+namespace MonitoringSystem.ConsoleTesting;
 
 public partial class DiscreteJsonChannel
 {
@@ -60,12 +60,12 @@ public partial class Mra
 
 public partial class DiscreteJsonChannel
 {
-    public static DiscreteJsonChannel FromJson(string json) => JsonConvert.DeserializeObject<DiscreteJsonChannel>(json, DiscreteInputJson.Converter.Settings);
+    public static DiscreteJsonChannel FromJson(string json) => JsonConvert.DeserializeObject<DiscreteJsonChannel>(json, Converter.Settings);
 }
 
 public static class Serialize
 {
-    public static string ToJson(this DiscreteJsonChannel self) => JsonConvert.SerializeObject(self, DiscreteInputJson.Converter.Settings);
+    public static string ToJson(this DiscreteJsonChannel self) => JsonConvert.SerializeObject(self, Converter.Settings);
 }
 
 internal static class Converter

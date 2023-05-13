@@ -139,10 +139,10 @@
 
     protected override async Task OnInitializedAsync() {
         this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
-        if (this.GasType == BulkGasType.H2) {
-            this._bulkGasSettings = this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
-        }else if (this.GasType == BulkGasType.N2) {
-            this._bulkGasSettings = this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
+        if (this.GasType != BulkGasType.NH3) {
+            this._bulkGasSettings = this.ConfigurationProvider.WebsiteBulkSettings
+                .BulkGasSettings
+                .FirstOrDefault(e => e.BulkGasType == this.GasType);
         }
         await this.Load();
     }

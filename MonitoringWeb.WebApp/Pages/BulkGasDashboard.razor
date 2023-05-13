@@ -10,7 +10,21 @@
 @inject ISidepanelService SidepanelService
 @inject WebsiteConfigurationProvider ConfigurationProvider
 
+<SidepanelComponent @ref="this._sidepanel" Title="Settings" Backdrop="BackdropType.Overlay">
+    <BulkGasSettingsComponent BulkSettings="@this._bulkSettings"></BulkGasSettingsComponent>
+</SidepanelComponent>
 
+<div class="row">
+    <DxAccordion>
+        <Items>
+            <DxAccordionItem Text="Settings">
+                <ContentTemplate>
+                    <BulkGasSettingsComponent BulkSettings="@this._bulkSettings"></BulkGasSettingsComponent>
+                </ContentTemplate>
+            </DxAccordionItem>
+        </Items>
+    </DxAccordion>
+</div>
 
 <div class="row float-end">
     <DxButton Click="Callback" 
@@ -38,9 +52,12 @@
 @code {
 
     private string _buttonText = "Open Settings";
+    private WebsiteBulkSettings _bulkSettings;
+    private SidepanelComponent _sidepanel;
+    
     
     protected override Task OnInitializedAsync() {
-        
+        this._bulkSettings = ConfigurationProvider.WebsiteBulkSettings;
         return base.OnInitializedAsync();
     }
     
@@ -56,10 +73,12 @@
 
     private void Callback() {
         if (this.SidepanelService.IsOpen) {
-            this.SidepanelService.Close();
+            //this.SidepanelService.Close();
+            this._sidepanel.Close();
             this._buttonText = "Open Settings";
         } else {
-            this.SidepanelService.Open<BulkGasSettingsComponent>("Settings");
+            this._sidepanel.Open();
+            //this.SidepanelService.Open<BulkGasSettingsComponent>("Settings");
             this._buttonText = "Close Settings";
         }
     }

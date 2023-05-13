@@ -1,14 +1,14 @@
-﻿using ConsoleTables;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MonitoringData.Infrastructure.Data;
-using MonitoringSystem.Shared.Data;
+using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringData.Infrastructure.Services.DataAccess;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.Services;
 
-namespace MonitoringData.Infrastructure.Services {
+namespace MonitoringData.Infrastructure.Services.DataLogging {
     public class DeviceCheck {
         private static int FailLimit=20;
         private bool _offlineLatch;

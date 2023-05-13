@@ -1,13 +1,6 @@
-﻿using System;
-using System.Threading;
-using MassTransit;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using MonitoringData.Infrastructure.Services.DataAccess;
-using MonitoringSystem.Shared.Data;
+﻿using System.Threading.Tasks;
 
-namespace MonitoringSystem.ConsoleTesting; 
+namespace MonitoringSystem.ConsoleTesting.ProducerConsumer; 
 
 public class AlertProducer {
     public static async Task Main() {

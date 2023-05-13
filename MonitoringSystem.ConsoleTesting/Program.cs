@@ -113,6 +113,8 @@ namespace MonitoringSystem.ConsoleTesting {
             WebsiteBulkSettings webBulkSettings = new WebsiteBulkSettings();
             webBulkSettings.RefreshTime = 1800000;//30min
             BulkGasSettings h2 = new BulkGasSettings();
+            h2.BulkGasType = BulkGasType.H2;
+            h2.Name = h2Channel.Identifier;
             h2.EnableAggregation = true;
             h2.OkayLabel = "Okay";
             h2.PointColor = KnownColor.Chartreuse;
@@ -150,10 +152,11 @@ namespace MonitoringSystem.ConsoleTesting {
             h2softLine.Value = h2soft.SetPoint;
             h2softLine.Color = KnownColor.Wheat;
             h2softLine.Label = "Notify";
-
-            h2.SoftWarnAlert = h2soft;
-            h2.AlarmAlert = h2alarm;
-            h2.WarningAlert = h2warn;
+            
+            
+            h2.BulkGasAlerts.Add(h2soft);
+            h2.BulkGasAlerts.Add(h2alarm);
+            h2.BulkGasAlerts.Add(h2warn);
 
             h2.ReferenceLines = new List<RefLine>();
             h2.ReferenceLines.Add(h2alarmLine);
@@ -163,9 +166,11 @@ namespace MonitoringSystem.ConsoleTesting {
             
             
             BulkGasSettings n2 = new BulkGasSettings();
+            n2.BulkGasType = BulkGasType.N2;
+            n2.Name = n2Channel.Identifier;
             n2.EnableAggregation = true;
             n2.OkayLabel = "Okay";
-            n2.PointColor = KnownColor.Chartreuse;
+            n2.PointColor = KnownColor.Aqua;
             n2.HoursAfter = 6;
             n2.HoursBefore = 12;
             BulkGasAlert n2soft = new BulkGasAlert();
@@ -184,7 +189,7 @@ namespace MonitoringSystem.ConsoleTesting {
             n2alarm.Label = ActionType.Alarm.ToString();
             n2alarm.ActionType = ActionType.Alarm;
             n2alarm.Default = true;
-            n2alarm.SetPoint = (int)h2Channel.Level3SetPoint;
+            n2alarm.SetPoint = (int)n2Channel.Level3SetPoint;
 
             RefLine n2alarmLine = new RefLine();
             n2alarmLine.Value = n2alarm.SetPoint;
@@ -201,17 +206,17 @@ namespace MonitoringSystem.ConsoleTesting {
             n2softLine.Color = KnownColor.Wheat;
             n2softLine.Label = "Notify";
 
-            n2.SoftWarnAlert = n2soft;
-            n2.AlarmAlert = n2alarm;
-            n2.WarningAlert = n2warn;
-
+            n2.BulkGasAlerts.Add(n2soft);
+            n2.BulkGasAlerts.Add(n2alarm);
+            n2.BulkGasAlerts.Add(n2warn);
+            
             n2.ReferenceLines = new List<RefLine>();
             n2.ReferenceLines.Add(n2alarmLine);
             n2.ReferenceLines.Add(n2warnLine);
             n2.ReferenceLines.Add(n2softLine);
-
-            webBulkSettings.H2Settings = h2;
-            webBulkSettings.N2Settings = n2;
+            
+            webBulkSettings.BulkGasSettings.Add(h2);
+            webBulkSettings.BulkGasSettings.Add(n2);
 
             await settingsCollection.InsertOneAsync(webBulkSettings);
             Console.WriteLine("Check Database");

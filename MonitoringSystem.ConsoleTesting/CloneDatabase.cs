@@ -17,6 +17,7 @@ using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringData.Infrastructure.Services;
+using MonitoringData.Infrastructure.Services.DataLogging;
 using MonitoringSystem.Shared.Data.UsageModel;
 using MonitoringSystem.Shared.Services;
 using YamlDotNet.Core.Tokens;
