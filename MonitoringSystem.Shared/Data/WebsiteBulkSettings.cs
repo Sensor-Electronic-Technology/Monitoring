@@ -6,8 +6,8 @@ namespace MonitoringSystem.Shared.Data;
 public class WebsiteBulkSettings {
     public ObjectId _id { get; set; }
     public int RefreshTime { get; set; }
-
-    public List<BulkGasSettings> BulkGasSettings { get; set; } = new();
+    public BulkGasSettings H2Settings { get; set; }
+    public BulkGasSettings N2Settings { get; set; }
 }
 
 public class BulkGasSettings {
@@ -18,8 +18,14 @@ public class BulkGasSettings {
     public int HoursAfter { get; set; }
     public bool EnableAggregation { get; set; }
     public string? OkayLabel { get; set; }
-    public List<BulkGasAlert> BulkGasAlerts { get; set; } = new();
-    public List<RefLine> ReferenceLines { get; set; } = new();
+    
+    public BulkGasAlert AlrmAlert { get; set; }
+    public BulkGasAlert WarnAlert { get; set; }
+    public BulkGasAlert SoftAlert { get; set; }
+    
+    public RefLine AlrmRefLine { get; set; }
+    public RefLine WarnRefLine { get; set; }
+    public RefLine SoftRefLine { get; set; }
 }
 
 public class RefLine {

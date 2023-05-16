@@ -63,7 +63,6 @@ public class WebsiteConfigurationProvider:IMonitorConfigurationProvider {
         }
         this._loaded = true;
     }
-
     public Task Reload() {
         return Task.CompletedTask;
     }

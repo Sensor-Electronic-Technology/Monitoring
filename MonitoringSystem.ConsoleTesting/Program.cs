@@ -154,17 +154,17 @@ namespace MonitoringSystem.ConsoleTesting {
             h2softLine.Label = "Notify";
             
             
-            h2.BulkGasAlerts.Add(h2soft);
-            h2.BulkGasAlerts.Add(h2alarm);
-            h2.BulkGasAlerts.Add(h2warn);
+            h2.SoftAlert=h2soft;
+            h2.WarnAlert=h2warn;
+            h2.AlrmAlert=h2alarm;
 
-            h2.ReferenceLines = new List<RefLine>();
-            h2.ReferenceLines.Add(h2alarmLine);
-            h2.ReferenceLines.Add(h2warnLine);
-            h2.ReferenceLines.Add(h2softLine);
-            
-            
-            
+
+            h2.SoftRefLine = h2softLine;
+            h2.WarnRefLine = h2warnLine;
+            h2.AlrmRefLine = h2alarmLine;
+
+
+
             BulkGasSettings n2 = new BulkGasSettings();
             n2.BulkGasType = BulkGasType.N2;
             n2.Name = n2Channel.Identifier;
@@ -206,18 +206,17 @@ namespace MonitoringSystem.ConsoleTesting {
             n2softLine.Color = KnownColor.Wheat;
             n2softLine.Label = "Notify";
 
-            n2.BulkGasAlerts.Add(n2soft);
-            n2.BulkGasAlerts.Add(n2alarm);
-            n2.BulkGasAlerts.Add(n2warn);
-            
-            n2.ReferenceLines = new List<RefLine>();
-            n2.ReferenceLines.Add(n2alarmLine);
-            n2.ReferenceLines.Add(n2warnLine);
-            n2.ReferenceLines.Add(n2softLine);
-            
-            webBulkSettings.BulkGasSettings.Add(h2);
-            webBulkSettings.BulkGasSettings.Add(n2);
+            n2.SoftAlert=n2soft;
+            n2.WarnAlert=n2warn;
+            n2.AlrmAlert=n2alarm;
 
+
+            n2.SoftRefLine = n2softLine;
+            n2.WarnRefLine = n2warnLine;
+            n2.AlrmRefLine = n2alarmLine;
+            
+            webBulkSettings.H2Settings = h2;
+            webBulkSettings.N2Settings = n2;
             await settingsCollection.InsertOneAsync(webBulkSettings);
             Console.WriteLine("Check Database");
         }

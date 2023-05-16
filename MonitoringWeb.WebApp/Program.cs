@@ -44,6 +44,7 @@ builder.Services.AddScoped<AmmoniaController>();
 builder.Services.AddBlazorDownloadFile();
 builder.Services.AddScoped<SpinnerService>();
 builder.Services.AddSingleton<FileHandlerService>();
+builder.Services.AddScoped<BulkGasProvider>();
 builder.Services.AddSidepanel();
 builder.Services.AddControllers();
 builder.WebHost.UseWebRoot("wwwroot");

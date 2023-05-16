@@ -3,94 +3,62 @@
 @using MonitoringWeb.WebApp.Services
 @inject WebsiteConfigurationProvider ConfigurationProvider
 @inject ISidepanelService Sidepanel
-<h2>Testing</h2>
-<div class="row">
-    <DxFormLayout>
-            <DxFormLayoutItem Caption="Page Refresh">
-                <DxSpinEdit @bind-Value="@this.BulkSettings.RefreshTime"/>
+@inject BulkGasProvider BulkGasProvider
+<EditForm Model="@this.BulkSettings"
+          OnValidSubmit="@(async ()=>await this.HandleValidSubmit())"
+          Context="EditFormContext">
+    <div class="card-body">
+        <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+            <DxFormLayoutItem Caption="Refresh Time(min)" CaptionPosition="CaptionPosition.Vertical">
+                <DxSpinEdit @bind-Value="@this._refreshTime"/>
             </DxFormLayoutItem>
-            @foreach (var setting in this.BulkSettings.BulkGasSettings) {
-                <DxFormLayoutTabPage Caption="@setting.Name">
-                    <DxFormLayoutGroup Caption="General">
-
-                        <DxFormLayoutItem Caption="Series Color">
-                            <DxComboBox Data="@this.ColorList"
-                                        @bind-Value="@setting.PointColor"/>
-                        </DxFormLayoutItem>
-                        <DxFormLayoutGroup Caption="Time Range">
-                            <DxFormLayoutItem Caption="Hours Before">
-                                <DxSpinEdit @bind-Value="@setting.HoursBefore"/>
-                            </DxFormLayoutItem>
-                            <DxFormLayoutItem Caption="Hours After">
-                                <DxSpinEdit @bind-Value="@setting.HoursBefore"/>
-                            </DxFormLayoutItem>
-                        </DxFormLayoutGroup>
-                    </DxFormLayoutGroup>
-                    <DxFormLayoutGroup Caption="Display Alerts">
-                        @foreach (var alert in setting.BulkGasAlerts) {
-                            <DxFormLayoutGroup Caption="@alert.Label">
-                                <DxFormLayoutItem Caption="Label">
-                                    <DxTextBox @bind-Text="@alert.Label"/>
-                                </DxFormLayoutItem>
-                                <DxFormLayoutItem Caption="Set Point">
-                                    <DxSpinEdit @bind-Value="@alert.SetPoint"/>
-                                </DxFormLayoutItem>
-                                <DxFormLayoutItem Caption="Value Default">
-                                    <DxCheckBox CheckType="CheckType.Switch"
-                                                LabelPosition="LabelPosition.Left"
-                                                @bind-Checked="@alert.Default"
-                                                Alignment="CheckBoxContentAlignment.SpaceBetween">
-                                        Defualt
-                                    </DxCheckBox>
-                                </DxFormLayoutItem>
-                            </DxFormLayoutGroup>
-                        }
-                    </DxFormLayoutGroup>
-                    <DxFormLayoutGroup Caption="Reference Lines">
-                        @foreach (var refLine in setting.ReferenceLines) {
-                            <DxFormLayoutGroup Caption="@refLine.Label">
-                                <DxFormLayoutItem Caption="Label">
-                                    <DxTextBox @bind-Text="@refLine.Label"/>
-                                </DxFormLayoutItem>
-                                <DxFormLayoutItem Caption="Value">
-                                    <DxSpinEdit @bind-Value="@refLine.Value"/>
-                                </DxFormLayoutItem>
-                                <DxFormLayoutItem Caption="Color">
-                                    <DxComboBox Data="@this.ColorList"
-                                                @bind-Value="@refLine.Color"/>
-                                </DxFormLayoutItem>
-                            </DxFormLayoutGroup>
-                        }
-                    </DxFormLayoutGroup>
-                </DxFormLayoutTabPage>
-            }
+            <DxFormLayoutGroup Caption="Gas Settings">
+                <DxAccordion>
+                    <Items>
+                        <DxAccordionItem Text="H2 Settings" Expanded="true">
+                            <ContentTemplate>
+                                <BulkGasForm @bind-Settings="@this.BulkSettings.H2Settings"></BulkGasForm>
+                            </ContentTemplate>
+                        </DxAccordionItem>
+                        <DxAccordionItem Text="N2 Settings">
+                            <ContentTemplate>
+                                <BulkGasForm @bind-Settings="@this.BulkSettings.N2Settings"></BulkGasForm>
+                            </ContentTemplate>
+                        </DxAccordionItem>
+                    </Items>
+                </DxAccordion>
+            </DxFormLayoutGroup>
+            <DxFormLayoutItem ColSpanLg="12">
+                <DxButton Text="Save Changes"
+                          SubmitFormOnClick="true"
+                          RenderStyle="ButtonRenderStyle.Primary"/>
+            </DxFormLayoutItem>
         </DxFormLayout>
-</div>
-
-
+    </div>
+</EditForm>
 @code {
     [Parameter]
     public WebsiteBulkSettings BulkSettings { get; set; }
-
-    IEnumerable<KnownColor> ColorList = Enum.GetValues<KnownColor>();
-
+    
+    [Parameter]
+    public EventCallback Saved { get; set; }
+    
     int _refreshTime = 0;
 
     protected override Task OnInitializedAsync() {
-        //this.BulkSettings = this.ConfigurationProvider.WebsiteBulkSettings;
-        //this._refreshTime = this.BulkSettings.RefreshTime / 60 / 1000;
+        this._refreshTime = this.BulkSettings.RefreshTime / 60 / 1000;
         return base.OnInitializedAsync();
     }
 
     protected override Task OnParametersSetAsync() {
         this._refreshTime = this.BulkSettings.RefreshTime / 60 / 1000;
-        //InvokeAsync(StateHasChanged);
         return base.OnParametersSetAsync();
     }
 
-    private void HandleValidSubmit() {
-    // Process the valid form
+    private async Task HandleValidSubmit() {
+        this.BulkSettings.RefreshTime = this._refreshTime * 60 * 1000;
+        await this.BulkGasProvider.Update(this.BulkSettings);
+        await this.Saved.InvokeAsync();
         Sidepanel.Close();
     }
-    
 }

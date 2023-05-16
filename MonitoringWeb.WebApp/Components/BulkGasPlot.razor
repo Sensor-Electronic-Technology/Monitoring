@@ -43,7 +43,6 @@
                                Position="RelativePosition.Outside">
                     <DxChartTitle Text="Detectors"> </DxChartTitle>
                 </DxChartLegend>
-
                 <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
                                      ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
                                      ValueField="@((AnalogReadingDto r) => (int)r.Value)">
@@ -79,20 +78,31 @@
                                      Type="ChartAxisType.Continuous">
                     <DxChartAxisRange StartValue="@this.PlotStart"
                                       EndValue="@this.PlotStop"/>
-
                 </DxChartArgumentAxis>
                 <DxChartValueAxis ValueType="ChartAxisDataType.Numeric" >
-
                     @if (this._bulkGasSettings != null) {
-                        foreach (var refLine in this._bulkGasSettings.ReferenceLines) {
-                            <DxChartConstantLine Value="refLine.Value" Width="3" 
-                                                 DisplayBehindSeries="true"
-                                                 Color="@Color.FromKnownColor(refLine.Color)">
-                                <DxChartConstantLineLabel Text="@refLine.Label" HorizontalAlignment="HorizontalAlignment.Center"
-                                                          VerticalAlignment="VerticalAlignment.Center"
-                                                          Position="RelativePosition.Inside" />
-                            </DxChartConstantLine>
-                        }
+                        <DxChartConstantLine Value="@this._bulkGasSettings.AlrmRefLine.Value" Width="3" 
+                                             DisplayBehindSeries="false"
+                                             Color="@Color.FromKnownColor(this._bulkGasSettings.AlrmRefLine.Color)">
+                            <DxChartConstantLineLabel Text="@this._bulkGasSettings.AlrmRefLine.Label" 
+                                                      HorizontalAlignment="HorizontalAlignment.Center"
+                                                      VerticalAlignment="VerticalAlignment.Center"
+                                                      Position="RelativePosition.Inside" />
+                        </DxChartConstantLine>
+                        <DxChartConstantLine Value="@this._bulkGasSettings.WarnRefLine.Value" Width="3" 
+                                             DisplayBehindSeries="false"
+                                             Color="@Color.FromKnownColor(this._bulkGasSettings.WarnRefLine.Color)">
+                            <DxChartConstantLineLabel Text="@this._bulkGasSettings.WarnRefLine.Label" HorizontalAlignment="HorizontalAlignment.Center"
+                                                      VerticalAlignment="VerticalAlignment.Center"
+                                                      Position="RelativePosition.Inside" />
+                        </DxChartConstantLine>
+                        <DxChartConstantLine Value="@this._bulkGasSettings.SoftRefLine.Value" Width="3" 
+                                             DisplayBehindSeries="false"
+                                             Color="@Color.FromKnownColor(this._bulkGasSettings.SoftRefLine.Color)">
+                            <DxChartConstantLineLabel Text="@this._bulkGasSettings.SoftRefLine.Label" HorizontalAlignment="HorizontalAlignment.Center"
+                                                      VerticalAlignment="VerticalAlignment.Center"
+                                                      Position="RelativePosition.Inside" />
+                        </DxChartConstantLine>
                     }
                     <DxChartAxisRange StartValue="@this.Sensor.YAxisStart" 
                                       EndValue="@this.Sensor.YAxisStop"/>
@@ -139,10 +149,14 @@
 
     protected override async Task OnInitializedAsync() {
         this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
-        if (this.GasType != BulkGasType.NH3) {
-            this._bulkGasSettings = this.ConfigurationProvider.WebsiteBulkSettings
-                .BulkGasSettings
-                .FirstOrDefault(e => e.BulkGasType == this.GasType);
+        if (this.GasType == BulkGasType.H2) {
+            this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
+            this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+            this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+        }else if (this.GasType==BulkGasType.N2) {
+            this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
+            this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+            this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
         }
         await this.Load();
     }
@@ -162,7 +176,7 @@
         this.StopDate = DateTime.Now.AddDays((int)range);
         await this.Load();
     }
-    
+
     private async Task Load() {
         this.PlotData=null;
         await InvokeAsync(StateHasChanged);

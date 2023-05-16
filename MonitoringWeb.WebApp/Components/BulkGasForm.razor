@@ -1,0 +1,180 @@
+﻿@using MonitoringSystem.Shared.Data
+@using System.Drawing
+
+<style>
+    .dot {
+      height: 10px;
+      width: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      padding: .5rem;
+    }
+    .combobox-item-template {
+        display: flex;
+        align-items: center;
+    }
+    .combobox-item-template > img {
+        border-radius: 50%;
+        width: 2rem;
+        height: 2rem;
+    }
+    img + .combobox-item-template-text {
+        margin-left: 1rem;
+    }
+    .combobox-item-template-text {
+        display: flex;
+        flex-flow: column;
+    }
+</style>
+
+    <DxFormLayoutTabPages>
+        <DxFormLayoutTabPage Caption="General">
+            <DxFormLayoutItem Caption="Series Color">
+                <DxComboBox Data="@this.ColorList"
+                            @bind-Value="@this.Settings.PointColor">
+                    <ItemTemplate Context="itemcontext">
+                        <div class="combobox-item-template">
+                            <span style="padding: .5rem">@itemcontext</span>
+                            <span class="dot"
+                                  style="background-color: @ColorTranslator.ToHtml(Color.FromKnownColor(itemcontext))"></span>
+                        </div>
+                    </ItemTemplate>
+                </DxComboBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutGroup Caption="Time Range">
+                <DxFormLayoutItem Caption="Hours Before">
+                    <DxSpinEdit @bind-Value="@this.Settings.HoursBefore"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Hours After">
+                    <DxSpinEdit @bind-Value="@this.Settings.HoursAfter"/>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+        </DxFormLayoutTabPage>
+        <DxFormLayoutTabPage Caption="Display Alerts">
+            <DxFormLayoutGroup Caption="@this.Settings.AlrmAlert.Label">
+                <DxFormLayoutItem Caption="Label">
+                    <DxTextBox @bind-Text="@this.Settings.AlrmAlert.Label"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Set Point">
+                    <DxSpinEdit @bind-Value="@this.Settings.AlrmAlert.SetPoint"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Value Default">
+                    <DxCheckBox CheckType="CheckType.Switch"
+                                LabelPosition="LabelPosition.Left"
+                                @bind-Checked="@this.Settings.AlrmAlert.Default"
+                                Alignment="CheckBoxContentAlignment.SpaceBetween">
+                        Defualt
+                    </DxCheckBox>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutGroup Caption="@this.Settings.WarnAlert.Label">
+                <DxFormLayoutItem Caption="Label">
+                    <DxTextBox @bind-Text="@this.Settings.WarnAlert.Label"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Set Point">
+                    <DxSpinEdit @bind-Value="@this.Settings.WarnAlert.SetPoint"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Value Default">
+                    <DxCheckBox CheckType="CheckType.Switch"
+                                LabelPosition="LabelPosition.Left"
+                                @bind-Checked="@this.Settings.WarnAlert.Default"
+                                Alignment="CheckBoxContentAlignment.SpaceBetween">
+                        Defualt
+                    </DxCheckBox>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutGroup Caption="@this.Settings.SoftAlert.Label">
+                <DxFormLayoutItem Caption="Label">
+                    <DxTextBox @bind-Text="@this.Settings.SoftAlert.Label"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Set Point">
+                    <DxSpinEdit @bind-Value="@this.Settings.SoftAlert.SetPoint"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Value Default">
+                    <DxCheckBox CheckType="CheckType.Switch"
+                                LabelPosition="LabelPosition.Left"
+                                @bind-Checked="@this.Settings.SoftAlert.Default"
+                                Alignment="CheckBoxContentAlignment.SpaceBetween">
+                        Defualt
+                    </DxCheckBox>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+        </DxFormLayoutTabPage>
+        <DxFormLayoutTabPage Caption="Reference Lines">
+            <DxFormLayoutGroup Caption="@this.Settings.AlrmRefLine.Label">
+                <DxFormLayoutItem Caption="Label">
+                    <DxTextBox @bind-Text="@this.Settings.AlrmRefLine.Label"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Value">
+                    <DxSpinEdit @bind-Value="@this.Settings.AlrmRefLine.Value"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Color">
+                    <DxComboBox Data="@this.ColorList"
+                                @bind-Value="@this.Settings.AlrmRefLine.Color">
+                        <ItemTemplate Context="itemcontext">
+                            <div class="combobox-item-template">
+                                <span style="padding: .5rem">@itemcontext</span>
+                                <span class="dot"
+                                      style="background-color: @ColorTranslator.ToHtml(Color.FromKnownColor(itemcontext))"></span>
+                            </div>
+                        </ItemTemplate>
+                    </DxComboBox>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutGroup Caption="@this.Settings.WarnRefLine.Label">
+                <DxFormLayoutItem Caption="Label">
+                    <DxTextBox @bind-Text="@this.Settings.WarnRefLine.Label"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Value">
+                    <DxSpinEdit @bind-Value="@this.Settings.WarnRefLine.Value"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Color">
+                    <DxComboBox Data="@this.ColorList"
+                                @bind-Value="@this.Settings.WarnRefLine.Color">
+                        <ItemTemplate Context="itemcontext">
+                            <div class="combobox-item-template">
+                                <span style="padding: .5rem">@itemcontext</span>
+                                <span class="dot"
+                                      style="background-color: @ColorTranslator.ToHtml(Color.FromKnownColor(itemcontext))"></span>
+                            </div>
+                        </ItemTemplate>
+                    </DxComboBox>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutGroup Caption="@this.Settings.SoftRefLine.Label">
+                <DxFormLayoutItem Caption="Label">
+                    <DxTextBox @bind-Text="@this.Settings.SoftRefLine.Label"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Value">
+                    <DxSpinEdit @bind-Value="@this.Settings.SoftRefLine.Value"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Color">
+                    <DxComboBox Data="@this.ColorList"
+                                @bind-Value="@this.Settings.SoftRefLine.Color">
+                        <ItemTemplate Context="itemcontext">
+                            <div class="combobox-item-template">
+                                <span style="padding: .5rem">@itemcontext</span>
+                                <span class="dot"
+                                      style="background-color: @ColorTranslator.ToHtml(Color.FromKnownColor(itemcontext))"></span>
+                            </div>
+                        </ItemTemplate>
+                    </DxComboBox>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+        </DxFormLayoutTabPage>
+    </DxFormLayoutTabPages>
+
+
+@code {
+    [Parameter]
+    public BulkGasSettings Settings { get; set; }
+    
+    [Parameter]
+    public EventCallback<BulkGasSettings> SettingsChanged { get; set; }
+    
+    IEnumerable<KnownColor> ColorList = Enum.GetValues<KnownColor>();
+    
+    private void Callback() {
+        throw new NotImplementedException();
+    }
+}

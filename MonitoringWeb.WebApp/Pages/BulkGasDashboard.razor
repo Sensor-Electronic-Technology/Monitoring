@@ -10,21 +10,22 @@
 @inject ISidepanelService SidepanelService
 @inject WebsiteConfigurationProvider ConfigurationProvider
 
-<SidepanelComponent @ref="this._sidepanel" Title="Settings" Backdrop="BackdropType.Overlay">
-    <BulkGasSettingsComponent BulkSettings="@this._bulkSettings"></BulkGasSettingsComponent>
-</SidepanelComponent>
+<style>
+#sidepanel.is-open {
+    width: 70%;
+    background-color: #1f4671;
+}
 
-<div class="row">
-    <DxAccordion>
-        <Items>
-            <DxAccordionItem Text="Settings">
-                <ContentTemplate>
-                    <BulkGasSettingsComponent BulkSettings="@this._bulkSettings"></BulkGasSettingsComponent>
-                </ContentTemplate>
-            </DxAccordionItem>
-        </Items>
-    </DxAccordion>
-</div>
+@@media (min-width: 768px) {
+    #sidepanel.is-open {
+        width: 50%;
+    }
+}
+</style>
+
+<SidepanelComponent @ref="this._sidepanel" Title="Settings" Backdrop="BackdropType.Dismiss">
+    <BulkGasSettingsComponent BulkSettings="@this._bulkSettings" Saved="@this.SavedHandler"/>
+</SidepanelComponent>
 
 <div class="row float-end">
     <DxButton Click="Callback" 
@@ -69,6 +70,10 @@
                 NavManager.NavigateTo(NavManager.Uri, forceLoad: true);
             }), null, 1800000, 1800000);
         }
+    }
+
+    private async void SavedHandler() {
+        this._buttonText = "Open Settings";
     }
 
     private void Callback() {
