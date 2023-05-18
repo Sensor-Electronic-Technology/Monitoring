@@ -22,7 +22,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
         private readonly IEmailService _emailService;
         private readonly List<AlertRecord> _activeAlerts = new List<AlertRecord>();
         private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
-        
+
         public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,
             IHubContext<MonitorHub,IMonitorHub> monitorHub,
             IEmailService emailService) {
@@ -31,6 +31,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this._emailService = emailService;
             this._monitorHub = monitorHub;
         }
+
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
             IMessageBuilder messageBuilder = new MessageBuilder();
             messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName ?? "DeviceNameNotFound");
@@ -141,6 +142,9 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 if (sendEmail) {
                     await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
                         messageBuilder);
+                    var bulkH2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk H2(PSI)");
+                    var bulkN2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk N2(inH20)");
+                    await this.ProcessBulkGasExternalEmail(bulkN2, bulkH2,now);
                     this._logger.LogInformation("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         MonitorItemId = e.AlertId,
@@ -179,6 +183,51 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
         
         private bool CheckBypassReset(AlertRecord alert,DateTime now) {
             return (now - alert.TimeBypassed).Minutes >= alert.BypassResetTime;
+        }
+
+        private async Task ProcessBulkGasExternalEmail(AlertRecord? bulkN2,AlertRecord? bulkH2,DateTime now) {
+            if (bulkN2 != null) {
+                if (bulkN2.LastAlert == now) {
+                    switch (bulkN2.CurrentState) {
+                        case ActionType.Warning: {
+                            await this._emailService.SendExternalEmail("Nitrogen EMERGENCY Gas Refill Request", 
+                                "Nitrogen",
+                                bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
+                                "Immediately");
+                            break;
+                        }
+                        case ActionType.SoftWarn: {
+                            await this._emailService.SendExternalEmail("Nitrogen Gas Refill Request", 
+                                "Nitrogen",
+                                bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
+                                "within the next 24 Hrs");
+                            break;
+                        }
+                        default: break;//do nothing
+                    }
+                }
+            }
+            if (bulkH2 != null) {
+                if (bulkH2.LastAlert == now) {
+                    switch (bulkH2.CurrentState) {
+                        case ActionType.Warning: {
+                            await this._emailService.SendExternalEmail("Hydrogen Gas EMERGENCY Refill Request", 
+                                "Hydrogen",
+                                bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
+                                "Immediately");
+                            break;
+                        }
+                        case ActionType.SoftWarn: {
+                            await this._emailService.SendExternalEmail("Hydrogen Gas Refill Request", 
+                                "Hydrogen",
+                                bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
+                                "within the next 24 Hrs");
+                            break;
+                        }
+                        default: break;//do nothing
+                    }
+                }
+            }
         }
         
         public async Task Load() {

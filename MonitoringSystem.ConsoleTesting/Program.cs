@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -19,6 +20,7 @@ using MimeKit;
 using Modbus.Device;
 using MongoDB.Bson;
 using MonitoringConfig.Data.Model;
+using MonitoringData.Infrastructure.Data;
 using MonitoringSystem.ConfigApi.Mapping;
 using MonitoringData.Infrastructure.Services.AlertServices;
 using MonitoringSystem.Shared.Data.EntityDtos;
@@ -98,7 +100,8 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine(table.ToString());*/
 
             //await CreateBulkGasSettings();
-            await UpdateBulkSettings();
+            //await UpdateBulkSettings();
+            await TestExternalAlertEmail();
         }
 
         static async Task UpdateBulkSettings() {
@@ -262,6 +265,186 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine();*/
         }
 
+        public static async Task TestExternalAlertEmail() {
+            var n2Id = ObjectId.GenerateNewId();
+            var h2Id = ObjectId.GenerateNewId();
+            List<AlertRecord> activeAlerts = new List<AlertRecord>();
+            List<AlertRecord> alerts = new List<AlertRecord>() {
+                        new AlertRecord() {
+                            AlertId = h2Id,
+                            Bypassed = false,
+                            Enabled = true,
+                            CurrentState = ActionType.SoftWarn,
+                            DisplayName = "Bulk H2(PSI)",
+                            ChannelReading = 1000.0f,
+                            Latched = false
+                        },
+                        new AlertRecord() {
+                            AlertId = n2Id,
+                            Bypassed = false,
+                            Enabled = true,
+                            CurrentState = ActionType.SoftWarn,
+                            DisplayName = "Bulk N2(inH20)",
+                            ChannelReading = 74.0f,
+                            Latched = false
+                        }
+            };
+            activeAlerts=await ProcessAlerts(alerts, activeAlerts, DateTime.Now);
+            await Task.Delay(5000);
+
+            alerts = new List<AlertRecord>() {
+                new AlertRecord() {
+                    AlertId = h2Id,
+                    Bypassed = false,
+                    Enabled = true,
+                    CurrentState = ActionType.Warning,
+                    DisplayName = "Bulk H2(PSI)",
+                    ChannelReading = 500.0f,
+                    Latched = false
+                },
+                new AlertRecord() {
+                    AlertId = n2Id,
+                    Bypassed = false,
+                    Enabled = true,
+                    CurrentState = ActionType.Warning,
+                    DisplayName = "Bulk N2(inH20)",
+                    ChannelReading = 50.0f,
+                    Latched = false
+                }
+            };
+            activeAlerts=await ProcessAlerts(alerts, activeAlerts, DateTime.Now);
+            await Task.Delay(5000);
+        }
+
+        public static async Task<List<AlertRecord>> ProcessAlerts(List<AlertRecord> alerts,List<AlertRecord> activeAlerts,DateTime now) {
+            bool sendEmail = false;     
+            foreach (var alert in alerts) {
+                if (alert.Enabled) {
+                    var activeAlert = activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
+                    switch (alert.CurrentState) {
+                        case ActionType.Okay: {
+                                if (activeAlert != null) {
+                                    if (!activeAlert.Latched) {
+                                        activeAlert.Latched = true;
+                                        activeAlert.TimeLatched = now;
+                                    }
+                                }
+                                break;
+                            }
+                        case ActionType.Alarm:
+                        case ActionType.Warning:
+                        case ActionType.SoftWarn: {
+                                if (activeAlert != null) {
+                                    if (activeAlert.CurrentState != alert.CurrentState) {
+                                        activeAlert.CurrentState = alert.CurrentState;
+                                        activeAlert.ChannelReading = alert.ChannelReading;
+                                        activeAlert.AlertAction = alert.AlertAction;
+                                        activeAlert.LastAlert = now;
+                                        sendEmail = true;
+                                    } else {
+                                        if (activeAlert.Latched) {
+                                            activeAlert.Latched = false;
+                                            activeAlert.TimeLatched = now;
+                                        }
+                                    }
+                                } else {
+                                    alert.LastAlert = now;
+                                    activeAlerts.Add(alert.Clone());
+                                    sendEmail = true;
+                                }
+                                break;
+                            }
+                        case ActionType.Maintenance:
+                        case ActionType.Custom:
+                        default:
+                            //do nothing on maintenance,custom
+                            break;
+                    }
+                }
+            }
+            if (activeAlerts.Any()) {
+                if (sendEmail) {
+                    var bulkH2 = activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk H2(PSI)");
+                    var bulkN2 = activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk N2(inH20)");
+                    await ProcessBulkGasExternalEmail(bulkN2, bulkH2,now);
+                    Console.WriteLine("Email Sent");
+                }
+            }
+            return activeAlerts;
+        }
+        
+        private static async Task ProcessBulkGasExternalEmail(AlertRecord? bulkN2,AlertRecord? bulkH2,DateTime now) {
+            if (bulkN2 != null) {
+                if (bulkN2.LastAlert == now) {
+                    switch (bulkN2.CurrentState) {
+                        case ActionType.Warning: {
+                            await SendExternalEmail("Nitrogen EMERGENCY Gas Refill Request", 
+                                "Nitrogen",
+                                bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
+                                "Immediately");
+                            break;
+                        }
+                        case ActionType.SoftWarn: {
+                            await SendExternalEmail("Nitrogen Gas Refill Request", 
+                                "Nitrogen",
+                                bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
+                                "within the next 24 Hrs");
+                            break;
+                        }
+                        default: break;//do nothing
+                    }
+                }
+            }
+            if (bulkH2 != null) {
+                if (bulkH2.LastAlert == now) {
+                    switch (bulkH2.CurrentState) {
+                        case ActionType.Warning: {
+                            await SendExternalEmail("Hydrogen Gas EMERGENCY Refill Request", 
+                                "Hydrogen",
+                                bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
+                                "Immediately");
+                            break;
+                        }
+                        case ActionType.SoftWarn: {
+                            await SendExternalEmail("Hydrogen Gas Refill Request", 
+                                "Hydrogen",
+                                bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
+                                "within the next 24 Hrs");
+                            break;
+                        }
+                        default: break;//do nothing
+                    }
+                }
+            }
+        }
+        
+        static async Task SendExternalEmail(string subject,string gas,string currentValue,string units,string time) {
+            SmtpClient client = new SmtpClient();
+            client.CheckCertificateRevocation = false;
+            client.ServerCertificateValidationCallback = MyServerCertificateValidationCallback;
+            await client.ConnectAsync("10.92.3.215",25,false);
+            MimeMessage mailMessage = new MimeMessage();
+            BodyBuilder bodyBuilder = new BodyBuilder();
+            mailMessage.To.Add(new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Norman Culbertson","nculbertson@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Rakesh Jain","rakesh@s-et.com"));
+            mailMessage.From.Add(new MailboxAddress("Monitor Alerts","monitoring@s-et.com"));
+            mailMessage.Subject = subject;
+            mailMessage.Body = new TextPart("plain") {
+                    Text = @$"
+This is an automated message notifying AirGas that Sensor Electronic Technology’s {gas} tanks need a refill {time}
+
+Current {gas} Value: {currentValue} {units}
+
+Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
+
+"
+            };
+            await client.SendAsync(mailMessage);
+            await client.DisconnectAsync(true);
+            Console.WriteLine("Check Mail");
+        }
+
         static async Task TestModbus() {
             using var client = new TcpClient("172.20.5.24",502);
             client.ReceiveTimeout = 500;
@@ -398,10 +581,10 @@ namespace MonitoringSystem.ConsoleTesting {
                 Console.WriteLine($"Fingerprint: {fingerprint}");
                 Console.WriteLine($"Serial: {serial}");
                 Console.WriteLine($"Issuer: {issuer}");
-                return cn == "Exchange2016" && issuer == "CN=Exchange2016" &&
+                /*return cn == "Exchange2016" && issuer == "CN=Exchange2016" &&
                        serial == "3D2E6FBDF9CE1FAF46D9CC68B8D58BAB" &&
-                       fingerprint == "EC14ED8D2253824E6522D19EC815AD72CC767759";
-                //return true;
+                       fingerprint == "EC14ED8D2253824E6522D19EC815AD72CC767759";*/
+                return true;
             }
             return false;
         }

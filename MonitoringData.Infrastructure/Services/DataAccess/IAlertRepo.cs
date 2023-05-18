@@ -40,7 +40,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
             this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
         }
-        
+
         public async Task LogAlerts(AlertReadings alerts) {
             await this._alertReadings.InsertOneAsync(alerts);
         }
