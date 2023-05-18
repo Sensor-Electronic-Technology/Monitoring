@@ -4,6 +4,7 @@
 @inject WebsiteConfigurationProvider ConfigurationProvider
 @inject ISidepanelService Sidepanel
 @inject BulkGasProvider BulkGasProvider
+
 <EditForm Model="@this.BulkSettings"
           OnValidSubmit="@(async ()=>await this.HandleValidSubmit())"
           Context="EditFormContext">

@@ -12,5 +12,7 @@ public class DeviceStatus {
 public class StatusItem {
     public string? Item { get; set; }
     public ActionType Status { get; set; }
+    public string? Label { get; set; }
     public string? Value { get; set; }
+    public string? TimeStamp { get; set; }
 }

@@ -1,14 +1,11 @@
 ﻿@page "/bulkdash"
-@using MonitoringWeb.WebApp.Data
-@using MonitoringSystem.Shared.SignalR
 @using MonitoringSystem.Shared.Data
 @using MonitoringWeb.WebApp.Services
 @using Microsoft.AspNetCore.SignalR.Client
-@using Append.Blazor.Sidepanel
 @inject NavigationManager NavManager
-@inject NavigationManager NavigationManager
 @inject ISidepanelService SidepanelService
 @inject WebsiteConfigurationProvider ConfigurationProvider
+@implements IAsyncDisposable 
 
 <style>
 #sidepanel.is-open {
@@ -23,7 +20,7 @@
 }
 </style>
 
-<SidepanelComponent @ref="this._sidepanel" Title="Settings" Backdrop="BackdropType.Dismiss">
+<SidepanelComponent @ref="this._sidepanel" Title="Settings">
     <BulkGasSettingsComponent BulkSettings="@this._bulkSettings" Saved="@this.SavedHandler"/>
 </SidepanelComponent>
 
@@ -32,10 +29,11 @@
               RenderStyle="ButtonRenderStyle.Primary"
               Text="@this._buttonText"/>
 </div>
-<div class="row d-flex justify-content-center">
-    <ItemStatusCard Type="BulkGasType.H2"></ItemStatusCard>
+@*<div class="row d-flex justify-content-center">
     <ItemStatusCard Type="BulkGasType.N2"></ItemStatusCard>
-</div>
+    <ItemStatusCard Type="BulkGasType.H2"></ItemStatusCard>
+</div>*@
+<BulkStatus/>
 <div class="row">
     <div class="col-6">
         <BulkGasPlot GasType="BulkGasType.H2" 
@@ -56,35 +54,67 @@
     private WebsiteBulkSettings _bulkSettings;
     private SidepanelComponent _sidepanel;
     
+    private HubConnection? _hubConnection;
+    private bool _isSender = false;
     
-    protected override Task OnInitializedAsync() {
+    public bool IsConnected =>
+        this._hubConnection?.State == HubConnectionState.Connected;
+
+
+    protected override async Task OnInitializedAsync() {
         this._bulkSettings = ConfigurationProvider.WebsiteBulkSettings;
-        return base.OnInitializedAsync();
+        this._hubConnection=new HubConnectionBuilder()
+            .WithUrl(NavManager.ToAbsoluteUri("/bulkgashub"))
+            .Build();
+        this._hubConnection.On("ReceiveRefreshRequest",this.ReceiveRefreshRequest);
+        await this._hubConnection.StartAsync();
+        await base.OnInitializedAsync();
     }
     
-    protected override void OnAfterRender(bool firstRender)
-    {
+    protected override void OnAfterRender(bool firstRender) {
         if (firstRender){
             var timer = new Timer(new TimerCallback(_ =>
             {
                 NavManager.NavigateTo(NavManager.Uri, forceLoad: true);
-            }), null, 1800000, 1800000);
+            }), null, this._bulkSettings.RefreshTime,  this._bulkSettings.RefreshTime);
         }
     }
 
     private async void SavedHandler() {
         this._buttonText = "Open Settings";
+        await this.SendRefreshRequest();
+    }
+
+    private Task ReceiveRefreshRequest() {
+        if (this._isSender) {
+            this._isSender = false;
+        } else {
+            this.NavManager.NavigateTo(this.NavManager.Uri,forceLoad:true);
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task SendRefreshRequest() {
+        if (this.IsConnected) {
+            this._isSender = true;
+            await this._hubConnection.SendAsync("SendRefreshRequest");
+        }
     }
 
     private void Callback() {
         if (this.SidepanelService.IsOpen) {
-            //this.SidepanelService.Close();
             this._sidepanel.Close();
             this._buttonText = "Open Settings";
         } else {
             this._sidepanel.Open();
-            //this.SidepanelService.Open<BulkGasSettingsComponent>("Settings");
             this._buttonText = "Close Settings";
         }
     }
+
+    public async ValueTask DisposeAsync() {
+        if (this._hubConnection is not null) {
+            await this._hubConnection.DisposeAsync();
+        }
+    }
+
 }

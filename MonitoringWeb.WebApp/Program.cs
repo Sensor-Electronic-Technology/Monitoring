@@ -8,6 +8,7 @@ using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Services;
 using MonitoringWeb.WebApp.Data;
+using MonitoringWeb.WebApp.Hubs;
 using MonitoringWeb.WebApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,6 +71,7 @@ if (websiteConfigProvider is not null) {
 } else {
     throw new Exception("Error: could not resolve WebsiteConfigurationProvider");
 }
+app.MapHub<BulkGasHub>("/bulkgashub");
 app.MapFallbackToPage("/_Host");
 app.MapControllers();
 app.Run();

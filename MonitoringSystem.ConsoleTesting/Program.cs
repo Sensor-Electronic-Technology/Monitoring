@@ -97,7 +97,33 @@ namespace MonitoringSystem.ConsoleTesting {
             await TestAmmoniaController(4, controller,table);
             Console.WriteLine(table.ToString());*/
 
-            await CreateBulkGasSettings();
+            //await CreateBulkGasSettings();
+            await UpdateBulkSettings();
+        }
+
+        static async Task UpdateBulkSettings() {
+            IMongoClient client = new MongoClient("mongodb://172.20.3.41");
+            var e1Database = client.GetDatabase("epi1_data");
+            var settingsDatabase = client.GetDatabase("monitor_settings");
+            var settingsCollection = settingsDatabase.GetCollection<WebsiteBulkSettings>("bulk_settings");
+
+            var analogCollection = e1Database.GetCollection<AnalogItem>("analog_items");
+            var n2Channel = await analogCollection.Find(e => e.Identifier == "Bulk N2(inH20)").FirstOrDefaultAsync();
+            var h2Channel = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
+            
+            var settings=await settingsCollection.Find(_ => true)
+                .FirstOrDefaultAsync();
+            
+            var update = Builders<WebsiteBulkSettings>.Update
+                .Set(e => e.H2Settings.YAxisMin, 0)
+                .Set(e => e.H2Settings.YAxisMax, 3000)
+                .Set(e => e.N2Settings.YAxisMin, 0)
+                .Set(e => e.N2Settings.YAxisMax, 200);
+
+            await settingsCollection.UpdateOneAsync(e=>e._id==settings._id, update);
+            Console.WriteLine("Check Database");
+
+
         }
 
         static async Task CreateBulkGasSettings() {

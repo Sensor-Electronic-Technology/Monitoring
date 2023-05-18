@@ -16,6 +16,8 @@ public class BulkGasSettings {
     public KnownColor PointColor { get; set; }
     public int HoursBefore { get; set; }
     public int HoursAfter { get; set; }
+    public int YAxisMin { get; set; }
+    public int YAxisMax { get; set; }
     public bool EnableAggregation { get; set; }
     public string? OkayLabel { get; set; }
     

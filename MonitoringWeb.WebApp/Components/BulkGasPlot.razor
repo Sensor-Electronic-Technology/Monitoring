@@ -87,21 +87,21 @@
                             <DxChartConstantLineLabel Text="@this._bulkGasSettings.AlrmRefLine.Label" 
                                                       HorizontalAlignment="HorizontalAlignment.Center"
                                                       VerticalAlignment="VerticalAlignment.Center"
-                                                      Position="RelativePosition.Inside" />
+                                                      Position="RelativePosition.Outside" />
                         </DxChartConstantLine>
                         <DxChartConstantLine Value="@this._bulkGasSettings.WarnRefLine.Value" Width="3" 
                                              DisplayBehindSeries="false"
                                              Color="@Color.FromKnownColor(this._bulkGasSettings.WarnRefLine.Color)">
                             <DxChartConstantLineLabel Text="@this._bulkGasSettings.WarnRefLine.Label" HorizontalAlignment="HorizontalAlignment.Center"
                                                       VerticalAlignment="VerticalAlignment.Center"
-                                                      Position="RelativePosition.Inside" />
+                                                      Position="RelativePosition.Outside" />
                         </DxChartConstantLine>
                         <DxChartConstantLine Value="@this._bulkGasSettings.SoftRefLine.Value" Width="3" 
                                              DisplayBehindSeries="false"
                                              Color="@Color.FromKnownColor(this._bulkGasSettings.SoftRefLine.Color)">
                             <DxChartConstantLineLabel Text="@this._bulkGasSettings.SoftRefLine.Label" HorizontalAlignment="HorizontalAlignment.Center"
                                                       VerticalAlignment="VerticalAlignment.Center"
-                                                      Position="RelativePosition.Inside" />
+                                                      Position="RelativePosition.Outside" />
                         </DxChartConstantLine>
                     }
                     <DxChartAxisRange StartValue="@this.Sensor.YAxisStart" 
@@ -188,18 +188,23 @@
                 var ret=await this.PlotService.GetChannelDatav2("epi1_data", "Bulk N2(inH20)", start, stop);
                 this.PlotData = ret.Item2;
                 this.Sensor = ret.Item1;
+                this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
+                this.Sensor.YAxisStop = this._bulkGasSettings.YAxisMax;
                 break;
             case BulkGasType.H2:
                 this.Header = "Bulk H2";
                 var ret2 = await this.PlotService.GetChannelDatav2("epi1_data", "Bulk H2(PSI)", start, stop);
                 this.PlotData = ret2.Item2;
                 this.Sensor = ret2.Item1;
+                this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
+                this.Sensor.YAxisStop = this._bulkGasSettings.YAxisMax;
                 break;
             case BulkGasType.NH3:
                 this.Header = "Bulk NH3";
                 var ret3 = await this.PlotService.GetBulkNH3(this.StartDate, this.StopDate);
                 this.PlotData = ret3.Item2;
                 this.Sensor = ret3.Item1;
+                
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -214,6 +219,15 @@
     }
 
     public override async Task SetParametersAsync(ParameterView parameters) {
+        if (this.GasType == BulkGasType.H2) {
+            this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
+            this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+            this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+        }else if (this.GasType==BulkGasType.N2) {
+            this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
+            this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+            this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+        }
         await base.SetParametersAsync(parameters);
         await this.Load();
     }

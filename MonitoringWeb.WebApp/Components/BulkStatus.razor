@@ -1,0 +1,209 @@
+﻿@using MonitoringSystem.Shared.Data
+@using MonitoringSystem.Shared.SignalR
+@using MonitoringWeb.WebApp.Data
+@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringWeb.WebApp.Services
+@inject ILogger<BulkStatus> Logger
+@inject WebsiteConfigurationProvider ConfigurationProvider
+@implements IAsyncDisposable
+<div class="row d-flex justify-content-center">
+    <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+        <div class="container-md">
+            <div class="row text-center" style="padding: .5rem">
+                <h5>@this._h2.Item</h5>
+            </div>
+            <div class="row">
+                <div class=@this.GetCssClass(this._h2.Status)>
+                    <h5 style="padding: .05rem">@this._h2?.Label</h5>
+                </div>
+            </div>
+        </div>
+        <div class="container-md" style="padding:1rem">
+            <div class="row justify-content-center text-center" style="padding:.5rem">
+                <h5> Timestamp: @this._h2?.TimeStamp</h5>
+            </div>
+            <div class="row text-center">
+                <h3> Current Value: @this._h2?.Value</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+        <div class="container-md">
+            <div class="row text-center" style="padding: .5rem">
+                <h5>@this._n2?.Item</h5>
+            </div>
+            <div class="row">
+                <div class=@this.GetCssClass(this._n2.Status)>
+                    <h5 style="padding: .05rem">@this._n2?.Label</h5>
+                </div>
+            </div>
+        </div>
+        <div class="container-md" style="padding:1rem">
+            <div class="row justify-content-center text-center" style="padding:.5rem">
+                <h5> Timestamp: @this._n2?.TimeStamp</h5>
+            </div>
+            <div class="row text-center">
+                <h3> Current Value: @this._n2?.Value</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+
+    private BulkGasSettings? _h2Settings { get; set; }
+    private BulkGasSettings? _n2Settings { get; set; }
+    
+    private StatusItem _h2 { get; set; } = new StatusItem() { 
+        Item = "Loading", 
+        Status = ActionType.Okay,
+        Value = "0.00",
+        Label = "Okay"
+    };
+    
+    private StatusItem _n2 { get; set; } = new StatusItem() { 
+        Item = "Loading", 
+        Status = ActionType.Okay,
+        Value = "0.00",
+        Label = "Okay"
+    };
+    
+    private HubConnection? _hubConnection;
+    private MonitorData? _monitorData;
+
+    private bool IsConnected => 
+        this._hubConnection?.State==HubConnectionState.Connected;
+    
+
+    protected override async Task OnInitializedAsync() {
+        var device = this.ConfigurationProvider.Devices.FirstOrDefault(e => e.DeviceName == "Epi1");
+        if (device != null) {
+            this._h2Settings = this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
+            this._n2Settings = this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
+            this._h2.Item = this._h2Settings.Name;
+            this._n2.Item = this._n2Settings.Name;
+            var hub = device.HubAddress;
+            if (hub != null) {
+                this._hubConnection = new HubConnectionBuilder()
+                    .WithAutomaticReconnect(new TimeSpan[] {
+                        TimeSpan.FromSeconds(3),
+                        TimeSpan.FromSeconds(9),
+                        TimeSpan.FromSeconds(20),
+                        TimeSpan.FromSeconds(40),
+                        TimeSpan.FromSeconds(60),
+                        TimeSpan.FromSeconds(120),
+                        TimeSpan.FromSeconds(240)
+                    })
+                    .WithUrl(hub)
+                    .Build();
+                this._hubConnection.On<MonitorData>("ShowCurrent", this.OnShowCurrent);
+                this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+                this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+
+                try {
+                    await this._hubConnection.StartAsync();
+                    this.Logger.LogInformation(hub + " Connected");
+                } catch {
+                    this.Logger.LogError(hub + " hub connection failed");
+                }
+            }
+        }
+    }
+    
+    async Task OnShowCurrent(MonitorData data) {
+        this._monitorData = data;
+        var n2=this._monitorData.analogData.FirstOrDefault(e => e.Item == "Bulk N2(inH20)");
+        var current = this._monitorData.TimeStamp.DateTimeLocal();
+        if (n2 != null) {
+            StatusItem temp = new StatusItem();
+            temp.TimeStamp = this._monitorData.TimeStamp.DateTimeLocal();
+            this.ProcessStatus(n2,ref temp,this._n2Settings);
+            this._n2 = temp;
+            this.Logger.LogInformation(this._h2.Item+":"+"H2 Processed");
+        } else {
+            this.Logger.LogError("Error: Could not find N2");
+        }
+        var h2=this._monitorData.analogData.FirstOrDefault(e => e.Item == "Bulk H2(PSI)");
+        if (h2 != null) {
+            StatusItem temp = new StatusItem();
+            temp.TimeStamp = this._monitorData.TimeStamp.DateTimeLocal();
+            this.ProcessStatus(h2,ref temp,this._h2Settings);
+            this._h2 = temp;
+            this.Logger.LogInformation(this._h2.Item+":"+"H2 Processed");
+        } else {    
+            this.Logger.LogError("Error: Could not find H2");
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    
+    private void ProcessStatus(ItemStatus status,ref StatusItem item,BulkGasSettings? settings) {
+        if (settings != null) {
+            int value = 0;
+            string textValue = status.Value;
+            textValue = textValue.Replace(",", string.Empty);
+            try {
+                value = Convert.ToInt32(textValue);
+                this.Logger.LogInformation(settings.Name+":"+"Value: "+value.ToString());
+            } catch {
+                this.Logger.LogError("Conversion Error: Value"+ textValue);
+            }
+            
+            if (value <= settings.AlrmAlert.SetPoint) {
+                item.Item = status.Item;
+                item.Status = settings.AlrmAlert.ActionType;
+                item.Label = settings.AlrmAlert.Label;
+                item.Value = status.Value;
+            }else if (value <= settings.WarnAlert.SetPoint && value>settings.AlrmAlert.SetPoint) {
+                item.Item = status.Item;
+                item.Status = settings.WarnAlert.ActionType;
+                item.Label = settings.WarnAlert.Label;
+                item.Value = status.Value;
+            }else if (value <= settings.SoftAlert.SetPoint && value > settings.WarnAlert.SetPoint) {
+                item.Item = status.Item;
+                item.Status = settings.SoftAlert.ActionType;
+                item.Label = settings.SoftAlert.Label;
+                item.Value = status.Value;
+            } else {
+                item.Item = status.Item;
+                item.Status = ActionType.Okay;
+                item.Value = status.Value;
+                item.Label = settings.OkayLabel;
+            }
+        } else {
+            item.Item = "Error Reading Setting ";
+            item.Status = ActionType.Okay;
+            item.Value = status.Value;
+            item.Label = "Settings Error";
+            this.Logger.LogError(status.Item+" Settings Null");
+        }
+    }
+
+    private string GetCssClass(ActionType type) {
+        switch(type){
+            case ActionType.Alarm: {
+                return "bg-danger text-white text-center";
+            }
+            case ActionType.Warning: {
+                return "bg-warning text-dark text-center";
+            }
+            case ActionType.SoftWarn: {
+                return "bg-warning text-white text-center";
+            }
+            case ActionType.Okay: {
+                return "bg-success text-white text-center";
+            }
+            default: {
+                return "bg-success text-white text-center";
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync() {
+        if (this._hubConnection != null) {
+            await this._hubConnection.DisposeAsync();
+        }
+    }
+}
