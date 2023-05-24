@@ -6,4 +6,6 @@ public class MonitorEmailSettings {
     public int SmtpPort { get; set; }
     public string FromUser { get; set; }
     public string FromAddress { get; set; }
+    public string ExternalFromUser { get; set; }
+    public string ExternalFromAddress { get; set; }
 }

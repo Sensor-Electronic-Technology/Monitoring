@@ -20,6 +20,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
         private readonly IAlertRepo _alertRepo;
         private readonly ILogger<AlertService> _logger;
         private readonly IEmailService _emailService;
+        private readonly ExchangeEmailService _externalEmailService;
         private readonly List<AlertRecord> _activeAlerts = new List<AlertRecord>();
         private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
 
@@ -30,6 +31,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             this._logger = logger;
             this._emailService = emailService;
             this._monitorHub = monitorHub;
+            this._externalEmailService = new ExchangeEmailService();
         }
 
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
@@ -190,14 +192,14 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 if (bulkN2.LastAlert == now) {
                     switch (bulkN2.CurrentState) {
                         case ActionType.Warning: {
-                            await this._emailService.SendExternalEmail("Nitrogen EMERGENCY Gas Refill Request", 
+                            await this._externalEmailService.SendMessageAsync("Nitrogen EMERGENCY Gas Refill Request", 
                                 "Nitrogen",
                                 bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
                                 "Immediately");
                             break;
                         }
                         case ActionType.SoftWarn: {
-                            await this._emailService.SendExternalEmail("Nitrogen Gas Refill Request", 
+                            await this._externalEmailService.SendMessageAsync("Nitrogen Gas Refill Request", 
                                 "Nitrogen",
                                 bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
                                 "within the next 24 Hrs");
@@ -211,14 +213,14 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 if (bulkH2.LastAlert == now) {
                     switch (bulkH2.CurrentState) {
                         case ActionType.Warning: {
-                            await this._emailService.SendExternalEmail("Hydrogen Gas EMERGENCY Refill Request", 
+                            await this._externalEmailService.SendMessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
                                 "Immediately");
                             break;
                         }
                         case ActionType.SoftWarn: {
-                            await this._emailService.SendExternalEmail("Hydrogen Gas Refill Request", 
+                            await this._externalEmailService.SendMessageAsync("Hydrogen Gas Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
                                 "within the next 24 Hrs");

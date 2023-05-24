@@ -12,6 +12,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices;
 public class SmtpEmailService:IEmailService {
     private readonly ILogger<SmtpEmailService> _logger;
     private MailboxAddress _from;
+    private MailboxAddress _fromExternal;
     private readonly MonitorEmailSettings _settings;
     private readonly DataLogConfigProvider _configProvider;
     private IEnumerable<MailboxAddress> _recipients;
@@ -22,6 +23,7 @@ public class SmtpEmailService:IEmailService {
         this._logger = logger;
         this._settings = configProvider.MonitorEmailSettings;
         this._from = new MailboxAddress(this._settings.FromUser,this._settings.FromAddress);
+        this._fromExternal = new MailboxAddress(this._settings.ExternalFromUser, this._settings.ExternalFromAddress);
     }
     public async Task SendMessageAsync(string subject, IMessageBuilder messageBuilder) {
         var client = new SmtpClient();
@@ -54,9 +56,10 @@ public class SmtpEmailService:IEmailService {
             client.ServerCertificateValidationCallback = CertValidationCallback;
             await client.ConnectAsync(this._settings.SmtpHost, this._settings.SmtpPort,false);
             var message =new MimeMessage();
-            message.From.Add(this._from);
-            message.To.Add(new MailboxAddress("Ronnie Huffstetler","ronnie.huffstetler@airgas.com"));
-            message.Cc.Add(new MailboxAddress("Andrew Elmendorf", "aelmendorf@s-et.com"));
+            message.From.Add(new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com"));
+            //message.To.Add(new MailboxAddress("Ronnie Huffstetler","ronnie.huffstetler@airgas.com"));
+            message.To.Add(new MailboxAddress("Andrew Gmail","aelmendorf234@gmail.com"));
+            //message.Cc.Add(new MailboxAddress("Andrew Elmendorf", "aelmendorf@s-et.com"));
             message.Cc.Add(new MailboxAddress("Norman Culbertson","nculbertson@s-et.com"));
             message.Subject = subject;
             message.Body = new TextPart("plain") {

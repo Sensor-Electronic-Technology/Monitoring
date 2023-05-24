@@ -31,14 +31,10 @@ public class MonitorConfigDatabase:BackgroundService {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         using var cursor = await this._database.WatchAsync(cancellationToken: stoppingToken);
         foreach (var change in cursor.ToEnumerable()) {
-            this._applicationLifetime.StopApplication();
-            /*var collectionName = change.CollectionNamespace.CollectionName;
-            this._logger.LogCritical(collectionName);
-            if (collectionName == "website_images.files") {
-                await this.DownloadImage();
-            } else {
-                await this._mediator.Publish<ReloadConsumer>(new ReloadConsumer(), stoppingToken);
-            }*/
+            var collectionName = change.CollectionNamespace.CollectionName;
+            if (collectionName != "bulk_settings") {
+                this._applicationLifetime.StopApplication();
+            }
         }
     }
 
