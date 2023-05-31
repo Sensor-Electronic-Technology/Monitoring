@@ -137,13 +137,6 @@
             <DxFormLayoutItem Caption="Color">
                 <DxComboBox Data="@this.ColorList"
                             @bind-Value="@this.Settings.SoftRefLine.Color">
-                    <ItemTemplate Context="itemcontext">
-                        <div class="combobox-item-template">
-                            <span style="padding: .5rem">@itemcontext</span>
-                            <span class="dot"
-                                  style="background-color: @ColorTranslator.ToHtml(Color.FromKnownColor(itemcontext))"></span>
-                        </div>
-                    </ItemTemplate>
                 </DxComboBox>
             </DxFormLayoutItem>
         </DxFormLayoutGroup>
@@ -159,4 +152,5 @@
     public EventCallback<BulkGasSettings> SettingsChanged { get; set; }
     
     IEnumerable<KnownColor> ColorList = Enum.GetValues<KnownColor>();
+    
 }

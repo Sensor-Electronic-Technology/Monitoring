@@ -1,0 +1,61 @@
+﻿@using System.Collections.ObjectModel
+<DxFormLayoutItem Caption="@this.Caption">
+    <Template>
+        <DxTextBox @bind-Text="@this._addressEntry" NullText="Enter Address"/>
+        <DxListBox Data="@this._addressList" @bind-Value="@this._selectedItem"
+                   SelectionMode="ListBoxSelectionMode.Single"/>
+        <div class="d-flex flex-row">
+            <div class="d-flex flex-column" style="padding: 0.5rem">
+                <DxButton Text="Add Address" Click="AddToCallback" />
+            </div>
+            <div class="d-flex flex-column" style="padding: 0.5rem">
+                <DxButton Text="Remove Selected" Click="RemoveSelectedCallback"/>
+            </div>
+        </div>
+    </Template>
+</DxFormLayoutItem>
+
+@code {
+    [Parameter]
+    public string Caption { get; set; }
+    
+    [Parameter]
+    public List<string>? AddressList { get; set; }
+    
+    [Parameter]
+    public EventCallback<List<string>> AddressListChanged { get; set; }
+
+    private string? _addressEntry;
+
+    private string? _selectedItem;
+
+    public ObservableCollection<string>? _addressList = new();
+    
+    protected override Task OnInitializedAsync() {
+        if (this.AddressList!=null) {
+            if (this.AddressList.Any()) {
+                this._addressList = new ObservableCollection<String>(this.AddressList);
+            }
+        }
+        return base.OnInitializedAsync();
+    }
+    
+    private async Task AddToCallback() {
+        if (!string.IsNullOrEmpty(this._addressEntry)) {
+            this.AddressList?.Add(this._addressEntry);
+            this._addressList?.Add(this._addressEntry);
+            this._addressEntry = string.Empty;
+            await this.AddressListChanged.InvokeAsync(this.AddressList);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task RemoveSelectedCallback() {
+        if (!string.IsNullOrEmpty(this._selectedItem)) {
+            this.AddressList?.Remove(this._selectedItem);
+            this._addressList?.Remove(this._selectedItem);
+            await this.AddressListChanged.InvokeAsync(this.AddressList);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

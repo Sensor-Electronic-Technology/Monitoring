@@ -1,0 +1,14 @@
+﻿@using MonitoringSystem.Shared.Data
+<DxFormLayoutGroup Caption="Email Settings">
+    <BulkGasAddressList Caption="To Addresses" bind-AddressList="@this.EmailSettings.ToAddresses"/>
+    <BulkGasAddressList Caption="CC Addresses" bind-AddressList="@this.EmailSettings.CcAddresses"/>
+</DxFormLayoutGroup>
+
+@code {
+    [Parameter]
+    public BulkEmailSettings EmailSettings { get; set; }
+    
+    [Parameter]
+    public EventCallback<BulkEmailSettings> EmailSettingsChanged { get; set; }
+    
+}

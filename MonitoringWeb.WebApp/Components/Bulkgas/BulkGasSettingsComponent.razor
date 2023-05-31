@@ -13,6 +13,10 @@
             <DxFormLayoutItem Caption="Refresh Time(min)" CaptionPosition="CaptionPosition.Vertical">
                 <DxSpinEdit @bind-Value="@this._refreshTime"/>
             </DxFormLayoutItem>
+            <DxFormLayoutGroup Caption="Email Settings">
+                <BulkGasAddressList Caption="To Addresses" @bind-AddressList=this.BulkSettings.EmailSettings.ToAddresses />
+                <BulkGasAddressList Caption="CC Addresses" @bind-AddressList=this.BulkSettings.EmailSettings.CcAddresses />
+            </DxFormLayoutGroup>
             <DxFormLayoutGroup Caption="Gas Settings">
                 <DxAccordion>
                     <Items>

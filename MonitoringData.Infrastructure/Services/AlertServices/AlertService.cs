@@ -26,12 +26,12 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
 
         public AlertService(IAlertRepo alertRepo,ILogger<AlertService> logger,
             IHubContext<MonitorHub,IMonitorHub> monitorHub,
-            IEmailService emailService) {
+            IEmailService emailService,ExchangeEmailService externalEmailService) {
             this._alertRepo = alertRepo;
             this._logger = logger;
             this._emailService = emailService;
             this._monitorHub = monitorHub;
-            this._externalEmailService = new ExchangeEmailService();
+            this._externalEmailService = externalEmailService;
         }
 
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {

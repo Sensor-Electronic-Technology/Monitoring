@@ -102,9 +102,10 @@ namespace MonitoringSystem.ConsoleTesting {
             //await CreateBulkGasSettings();
             //await UpdateBulkSettings();
             //await TestExternalAlertEmail();
-            ExchangeEmailService emailService = new ExchangeEmailService();
+            //ExchangeEmailService emailService = new ExchangeEmailService();
             //await emailService.SendMessageAsync("Gas Refill","Nitrogen","74","inH20","Now");
-            await emailService.SendTestMessageAsync();
+            //await emailService.SendTestMessageAsync();
+            await UpdateBulkEmailSettings();
         }
 
         static async Task UpdateBulkSettings() {
@@ -128,8 +129,37 @@ namespace MonitoringSystem.ConsoleTesting {
 
             await settingsCollection.UpdateOneAsync(e=>e._id==settings._id, update);
             Console.WriteLine("Check Database");
+        }
+        
+        static async Task CreateEmailSettings() {
+            IMongoClient client = new MongoClient("mongodb://172.20.3.41");
+            var e1Database = client.GetDatabase("epi1_data");
+            var settingsDatabase = client.GetDatabase("monitor_settings");
+            var settingsCollection = settingsDatabase.GetCollection<BulkEmailSettings>("bulk_email_settings");
+            
+            var settings=await settingsCollection.Find(_ => true)
+                .FirstOrDefaultAsync();
+            
+            var recp = new List<string>() {
+                "ronnie.huffstetler@airgas.com",
+                "ANW.Planning.Group@airgas.com"
+            };
 
+            var cc = new List<string>() {
+                "nculbertson@s-et.com",
+                "aelmendorf@s-et.com"
+            };
 
+            BulkEmailSettings emailSettings = new BulkEmailSettings();
+            emailSettings.ToAddresses = recp;
+            emailSettings.CcAddresses = cc;
+            emailSettings.Message = "";
+
+            var update = Builders<WebsiteBulkSettings>.Update
+                .Set(e => e.EmailSettings, emailSettings);
+
+            await settingsCollection.UpdateOneAsync(e=>e._id==settings._id, update);
+            Console.WriteLine("Check Database");
         }
 
         static async Task CreateBulkGasSettings() {
