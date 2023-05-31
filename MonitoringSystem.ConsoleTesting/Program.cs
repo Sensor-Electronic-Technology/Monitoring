@@ -105,7 +105,8 @@ namespace MonitoringSystem.ConsoleTesting {
             //ExchangeEmailService emailService = new ExchangeEmailService();
             //await emailService.SendMessageAsync("Gas Refill","Nitrogen","74","inH20","Now");
             //await emailService.SendTestMessageAsync();
-            await UpdateBulkEmailSettings();
+           //await UpdateBulkEmailSettings();
+           await CreateBulkEmailSettings();
         }
 
         static async Task UpdateBulkSettings() {
@@ -131,11 +132,11 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Check Database");
         }
         
-        static async Task CreateEmailSettings() {
+        static async Task UpdateBulkEmailSettings() {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var e1Database = client.GetDatabase("epi1_data");
             var settingsDatabase = client.GetDatabase("monitor_settings");
-            var settingsCollection = settingsDatabase.GetCollection<BulkEmailSettings>("bulk_email_settings");
+            var settingsCollection = settingsDatabase.GetCollection<WebsiteBulkSettings>("bulk_settings");
             
             var settings=await settingsCollection.Find(_ => true)
                 .FirstOrDefaultAsync();
@@ -159,6 +160,33 @@ namespace MonitoringSystem.ConsoleTesting {
                 .Set(e => e.EmailSettings, emailSettings);
 
             await settingsCollection.UpdateOneAsync(e=>e._id==settings._id, update);
+            Console.WriteLine("Check Database");
+        }
+        
+        static async Task CreateBulkEmailSettings() {
+            IMongoClient client = new MongoClient("mongodb://172.20.3.41");
+            var settingsDatabase = client.GetDatabase("monitor_settings");
+            var settingsCollection = settingsDatabase.GetCollection<BulkEmailSettings>("bulk_email_settings");
+            
+            var settings=await settingsCollection.Find(_ => true)
+                .FirstOrDefaultAsync();
+            
+            var recp = new List<string>() {
+                "ronnie.huffstetler@airgas.com",
+                "ANW.Planning.Group@airgas.com"
+            };
+
+            var cc = new List<string>() {
+                "nculbertson@s-et.com",
+                "aelmendorf@s-et.com"
+            };
+
+            BulkEmailSettings emailSettings = new BulkEmailSettings();
+            emailSettings.ToAddresses = recp;
+            emailSettings.CcAddresses = cc;
+            emailSettings.Message = "";
+
+            await settingsCollection.InsertOneAsync(emailSettings);
             Console.WriteLine("Check Database");
         }
 

@@ -9,6 +9,7 @@ public class ExchangeEmailService {
     private readonly List<string> _toAddresses;
     private readonly List<string> _ccAddresses;
     private readonly DataLogConfigProvider _configProvider;
+    private WebsiteBulkSettings _bulkSettings;
 
     public ExchangeEmailService(DataLogConfigProvider configProvider) {
         this._exchange = new ExchangeService(ExchangeVersion.Exchange2016);
