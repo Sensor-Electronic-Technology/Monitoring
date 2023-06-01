@@ -132,7 +132,7 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Check Database");
         }
         
-        static async Task UpdateBulkEmailSettings() {
+        /*static async Task UpdateBulkEmailSettings() {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var e1Database = client.GetDatabase("epi1_data");
             var settingsDatabase = client.GetDatabase("monitor_settings");
@@ -161,7 +161,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
             await settingsCollection.UpdateOneAsync(e=>e._id==settings._id, update);
             Console.WriteLine("Check Database");
-        }
+        }*/
         
         static async Task CreateBulkEmailSettings() {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");

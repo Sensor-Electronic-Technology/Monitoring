@@ -22,7 +22,9 @@
 </style>
 
 <SidepanelComponent @ref="this._sidepanel" Title="Settings">
-    <BulkGasSettingsComponent BulkSettings="@this._bulkSettings" Saved="@this.SavedHandler"/>
+    <BulkGasSettingsComponent BulkSettings="@this._bulkSettings"
+                              BulkEmailSettings="@this._bulkEmailSettings"
+                              Saved="@this.SavedHandler"/>
 </SidepanelComponent>
 
 <div class="row float-end">
@@ -53,6 +55,7 @@
 
     private string _buttonText = "Open Settings";
     private WebsiteBulkSettings _bulkSettings;
+    private BulkEmailSettings _bulkEmailSettings;
     private SidepanelComponent _sidepanel;
     
     private HubConnection? _hubConnection;
@@ -64,6 +67,7 @@
 
     protected override async Task OnInitializedAsync() {
         this._bulkSettings = ConfigurationProvider.WebsiteBulkSettings;
+        this._bulkEmailSettings = ConfigurationProvider.BulkEmailSettings;
         this._hubConnection=new HubConnectionBuilder()
             .WithUrl(NavManager.ToAbsoluteUri("/bulkgashub"))
             .Build();

@@ -9,21 +9,17 @@ public class ExchangeEmailService {
     private readonly List<string> _toAddresses;
     private readonly List<string> _ccAddresses;
     private readonly DataLogConfigProvider _configProvider;
-    private WebsiteBulkSettings _bulkSettings;
 
     public ExchangeEmailService(DataLogConfigProvider configProvider) {
         this._exchange = new ExchangeService(ExchangeVersion.Exchange2016);
         this._configProvider = configProvider;
-        
+        this._ccAddresses = this._configProvider.BulkEmailSettings.CcAddresses;
+        this._toAddresses = this._configProvider.BulkEmailSettings.ToAddresses;
         WebCredentials credentials = new WebCredentials("facilityalerts", "Facility!1sskv", "sskep.com");
         this._exchange.Credentials = credentials;
         this._exchange.Url = new Uri(@"https://email.seoulsemicon.com/EWS/Exchange.asmx");
     }
-
-    public Task<bool> Load() {
-        throw new NotImplementedException();
-    }
-
+    
     public async Task SendMessageAsync(string subject,string gas,string currentValue,string units,string time) {
         EmailMessage message = new EmailMessage(this._exchange);
         
@@ -33,8 +29,8 @@ public class ExchangeEmailService {
         };*/
         
         message.From = new EmailAddress("SETi Monitor Alerts", "setimonitoralerts@s-et.com");
-        message.ToRecipients.AddRange(this._bulkSettings.EmailSettings.ToAddresses);
-        message.CcRecipients.AddRange(this._bulkSettings.EmailSettings.CcAddresses);
+        message.ToRecipients.AddRange(this._toAddresses);
+        message.CcRecipients.AddRange(this._ccAddresses);
         /*message.CcRecipients.Add("nculbertson@s-et.com");
         message.CcRecipients.Add("aelmendorf@s-et.com");*/
         message.Subject = subject;
@@ -56,8 +52,8 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
         EmailMessage message = new EmailMessage(this._exchange);
         
         message.From = new EmailAddress("SETi Monitor Alerts", "setimonitoralerts@s-et.com");
-        message.ToRecipients.AddRange(this._bulkSettings.EmailSettings.ToAddresses);
-        message.CcRecipients.AddRange(this._bulkSettings.EmailSettings.CcAddresses);
+        message.ToRecipients.AddRange(this._toAddresses);
+        message.CcRecipients.AddRange(this._ccAddresses);
         message.Subject = "SETi Gas Notification Test";
         MessageBody body = new MessageBody();
         body.BodyType = BodyType.Text;

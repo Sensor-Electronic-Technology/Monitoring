@@ -6,12 +6,12 @@ namespace MonitoringSystem.Shared.Data;
 public class WebsiteBulkSettings {
     public ObjectId _id { get; set; }
     public int RefreshTime { get; set; }
-    public BulkEmailSettings EmailSettings { get; set; }
     public BulkGasSettings H2Settings { get; set; }
     public BulkGasSettings N2Settings { get; set; }
 }
 
 public class BulkEmailSettings {
+    public ObjectId _id { get; set; }
     public string? Message { get; set; }
     public List<string> CcAddresses { get; set; } = new();
     public List<string> ToAddresses { get; set; } = new();

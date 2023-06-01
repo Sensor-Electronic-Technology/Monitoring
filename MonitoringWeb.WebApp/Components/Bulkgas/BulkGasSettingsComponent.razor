@@ -14,8 +14,8 @@
                 <DxSpinEdit @bind-Value="@this._refreshTime"/>
             </DxFormLayoutItem>
             <DxFormLayoutGroup Caption="Email Settings">
-                <BulkGasAddressList Caption="To Addresses" @bind-AddressList=this.BulkSettings.EmailSettings.ToAddresses />
-                <BulkGasAddressList Caption="CC Addresses" @bind-AddressList=this.BulkSettings.EmailSettings.CcAddresses />
+                <BulkGasAddressList Caption="To Addresses" @bind-AddressList=this.BulkEmailSettings.ToAddresses />
+                <BulkGasAddressList Caption="CC Addresses" @bind-AddressList=this.BulkEmailSettings.CcAddresses />
             </DxFormLayoutGroup>
             <DxFormLayoutGroup Caption="Gas Settings">
                 <DxAccordion>
@@ -46,6 +46,9 @@
     public WebsiteBulkSettings BulkSettings { get; set; }
     
     [Parameter]
+    public BulkEmailSettings BulkEmailSettings { get; set; }
+    
+    [Parameter]
     public EventCallback Saved { get; set; }
     
     int _refreshTime = 0;
@@ -63,6 +66,7 @@
     private async Task HandleValidSubmit() {
         this.BulkSettings.RefreshTime = this._refreshTime * 60 * 1000;
         await this.BulkGasProvider.Update(this.BulkSettings);
+        await this.BulkGasProvider.UpdateEmailSettings(this.BulkEmailSettings);
         await this.Saved.InvokeAsync();
         Sidepanel.Close();
     }
