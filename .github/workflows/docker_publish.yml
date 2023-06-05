@@ -1,17 +1,12 @@
 name: Docker Image CI
-
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: docker login
@@ -29,3 +24,10 @@ jobs:
           file: ./MonitoringData.DataLoggingService/Dockerfile
           push: true
           tags: ${{ secrets.Docker_Username}}/monitordataloggingactiontest:latest
+  deploy:
+    runs-on: 
+      group: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - run: cd workspace
+      - run: kubectl apply -f gbstream.yaml
