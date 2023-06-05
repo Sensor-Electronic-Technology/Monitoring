@@ -19,7 +19,7 @@ jobs:
         DOCKER_USER: ${{secrets.Docker_Username}}
         DOCKER_PASSWORD: ${{secrets.Docker_Password}}
       run: |
-        docker login -u $Docker_Username -p $Docker_Password 
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
     - name: Build and push
