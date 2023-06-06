@@ -6,4 +6,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: cd ~/workspace
-      - run: micok8s.kubectl rollout restart deployment gbstream
+      - run: microk8s.kubectl rollout restart deployment gbstream
