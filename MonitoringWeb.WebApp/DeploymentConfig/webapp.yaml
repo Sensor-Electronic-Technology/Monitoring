@@ -1,0 +1,35 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+        - name: webapp
+          image: aelmendorf234/monitorwebapp:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://*:80
+  selector:
+    matchLabels:
+      app: webapp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp
+spec:
+  loadBalancerIP: 172.20.4.200
+  type: LoadBalancer
+  ports:
+    - port: 80
+  selector:
+    app: webapp
