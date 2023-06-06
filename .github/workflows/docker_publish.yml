@@ -4,7 +4,7 @@ on:
     branches:
     - master
     paths:
-    - MonitoringData.DataLoggingService
+    - Monitoring/MonitoringData.DataLoggingService
 jobs:
   build:
     runs-on: ubuntu-latest
