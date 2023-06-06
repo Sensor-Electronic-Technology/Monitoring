@@ -1,5 +1,6 @@
 name: test-runner
 on: [push]
+
 jobs:
   check-bats-version:
     runs-on: setihost
