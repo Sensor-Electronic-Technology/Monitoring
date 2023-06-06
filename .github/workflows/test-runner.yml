@@ -5,5 +5,5 @@ jobs:
     runs-on: setihost
     steps:
       - uses: actions/checkout@v3
-      - run: cd workspace
+      - run: cd ~/workspace
       - run: micok8s.kubectl rollout restart deployment gbstream
