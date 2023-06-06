@@ -1,9 +1,11 @@
 name: Docker Image CI
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches:
+    - main
+    paths:
+    - MonitoringData.DataLoggingService
+    - MonitoringData.DataLoggingService
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,7 +27,12 @@ jobs:
           push: true
           tags: ${{ secrets.Docker_Username}}/monitordataloggingactiontest:latest
   deploy:
-    runs-on: self-hosted
+    needs: build
+    runs-on: setihost
     steps:
       - uses: actions/checkout@v3
-      - run: kubectl apply -f https://raw.githubusercontent.com/aelmendorf/Monitoring/master/gbstreaming.yaml
+      - run: cd ~/workspace
+      - run: microk8s.kubectl rollout restart deployment e2stream
+      - run: microk8s.kubectl rollout restart deployment gbstream
+      - run: microk8s.kubectl rollout restart deployment nhstream
+      
