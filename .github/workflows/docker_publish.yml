@@ -2,9 +2,8 @@ name: Docker Image CI
 on:
   push:
     branches:
-    - main
+    - master
     paths:
-    - MonitoringData.DataLoggingService
     - MonitoringData.DataLoggingService
 jobs:
   build:
