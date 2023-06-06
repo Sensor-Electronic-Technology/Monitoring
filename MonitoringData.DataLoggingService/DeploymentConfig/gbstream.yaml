@@ -1,0 +1,39 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gbstream
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: gbstream
+    spec:
+      containers:
+        - name: gbstream
+          image: aelmendorf234/monitoringdatadataloggingservice:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://*:80
+            - name: DEVICEID
+              value: gasbay
+            - name: SERVICE_TYPE
+              value: MonitorBox
+  selector:
+    matchLabels:
+      app: gbstream
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gbstream
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+  selector:
+    app: gbstream

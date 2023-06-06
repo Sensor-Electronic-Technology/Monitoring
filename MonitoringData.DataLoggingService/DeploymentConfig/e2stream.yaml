@@ -1,0 +1,38 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: e2stream
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: e2stream
+    spec:
+      containers:
+        - name: e2stream
+          image: aelmendorf234/monitoringdatadataloggingservice:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://*:80
+            - name: DEVICEID
+              value: epi2
+            - name: SERVICE_TYPE
+              value: MonitorBox
+  selector:
+    matchLabels:
+      app: e2stream
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: e2stream
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+  selector:
+    app: e2stream

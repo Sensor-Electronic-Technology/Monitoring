@@ -1,0 +1,38 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thstream
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: thstream
+    spec:
+      containers:
+        - name: thstream
+          image: aelmendorf234/monitoringdatadataloggingservice:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://*:80
+            - name: DEVICEID
+              value: th
+            - name: SERVICE_TYPE
+              value: GenericModbus
+  selector:
+    matchLabels:
+      app: thstream
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thstream
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+  selector:
+    app: thstream
