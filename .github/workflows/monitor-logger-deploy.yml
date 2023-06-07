@@ -27,7 +27,8 @@ jobs:
           tags: ${{ secrets.Docker_Username}}/monitordataloggingactiontest:latest
   deploy:
     needs: build
-    runs-on: setihost
+    runs-on:
+     group: setihost-group
     steps:
       - uses: actions/checkout@v3
       - run: microk8s.kubectl rollout restart deployment e2stream
