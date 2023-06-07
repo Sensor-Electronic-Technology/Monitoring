@@ -1,0 +1,38 @@
+name: Monitoring Streams Deployment
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+    - 'MonitoringData.Infrastructure/**'
+    - 'MonitoringData.DataLoggingService/**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: docker login
+      env:
+        DOCKER_USER: ${{secrets.Docker_Username}}
+        DOCKER_PASSWORD: ${{secrets.Docker_Password}}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+          context: .
+          file: ./MonitoringData.DataLoggingService/Dockerfile
+          push: true
+          tags: ${{ secrets.Docker_Username}}/monitordataloggingactiontest:latest
+  deploy:
+    needs: build
+    runs-on: setihost
+    steps:
+      - uses: actions/checkout@v3
+      - run: microk8s.kubectl rollout restart deployment e2stream
+      - run: microk8s.kubectl rollout restart deployment gbstream
+      - run: microk8s.kubectl rollout restart deployment nhstream
+      - run: microk8s.kubectl rollout restart deployment e1stream
+      - run: microk8s.kubectl rollout restart deployment thstream
+      
