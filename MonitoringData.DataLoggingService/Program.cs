@@ -32,7 +32,7 @@ builder.Services.AddSingleton<ExchangeEmailService>();
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(settings.ConnectionString));
 var serviceType = Environment.GetEnvironmentVariable("SERVICE_TYPE");
 //var serviceType = nameof(ServiceType.MonitorBox);
-//testing github actions 5
+//testing github actions 6
 Console.WriteLine($"ServiceType: {serviceType}");
 switch (serviceType) {
     case nameof(ServiceType.GenericModbus):
