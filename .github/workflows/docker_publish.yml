@@ -2,7 +2,9 @@ name: Docker Image CI
 on:
   push:
     branches: [ "master" ]
-    paths: [ 'MonitoringData.Infrastructure/*' , 'MonitoringData.DataLoggingService/*' ]
+    paths:
+    - 'MonitoringData.Infrastructure/*'
+    - 'MonitoringData.DataLoggingService/*'
 jobs:
   build:
     runs-on: ubuntu-latest
