@@ -3,10 +3,8 @@ on:
   push:
     branches:
     - master
-    paths:
-    - 'MonitoringData.Infrastructure/*'
-    - 'MonitoringData.DataLoggingService/*'
-jobs:
+    paths: [ 'MonitoringData.Infrastructure/*' , 'MonitoringData.DataLoggingService/*' ]
+jobs:,
   build:
     runs-on: ubuntu-latest
     steps:
