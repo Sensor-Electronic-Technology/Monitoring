@@ -1,9 +1,0 @@
-name: test-runner
-on: [push]
-jobs:
-  check-bats-version:
-    runs-on: setihost
-    steps:
-      - uses: actions/checkout@v3
-      - run: cd ~/workspace
-      - run: microk8s.kubectl rollout restart deployment gbstream
