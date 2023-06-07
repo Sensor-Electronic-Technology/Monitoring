@@ -4,7 +4,7 @@ on:
     branches:
     - master
     paths: [ 'MonitoringData.Infrastructure/*' , 'MonitoringData.DataLoggingService/*' ]
-jobs:,
+jobs:
   build:
     runs-on: ubuntu-latest
     steps:
