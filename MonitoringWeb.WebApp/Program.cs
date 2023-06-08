@@ -11,6 +11,7 @@ using MonitoringWeb.WebApp.Data;
 using MonitoringWeb.WebApp.Hubs;
 using MonitoringWeb.WebApp.Services;
 
+//github action deploy website test 1
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
