@@ -51,6 +51,7 @@ builder.Services.AddControllers();
 builder.WebHost.UseWebRoot("wwwroot");
 builder.WebHost.UseStaticWebAssets();
 
+//Test github deploy action 1
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
