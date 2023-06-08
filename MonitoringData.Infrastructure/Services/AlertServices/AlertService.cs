@@ -15,7 +15,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
         Task Load();
         Task Reload();
     }
-    //Testing github actions infrastructure 10
+    //Testing github actions infrastructure 11
     public class AlertService : IAlertService {
         private readonly IAlertRepo _alertRepo;
         private readonly ILogger<AlertService> _logger;
