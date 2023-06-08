@@ -5,6 +5,7 @@ on:
     paths:
     - 'MonitoringData.Infrastructure/**'
     - 'MonitoringData.DataLoggingService/**'
+    - '.github/workflows/monitor-logger-deploy.yml'
 jobs:
   build:
     runs-on: ubuntu-latest
