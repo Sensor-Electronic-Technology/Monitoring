@@ -226,7 +226,11 @@
         await InvokeAsync(StateHasChanged);
         var start = this._startDate;
         var stop = this._stopDate;
-        this.TempData = await this.PlotService.GetDataBySensor("th_data", start, stop,this._tempSensor._id);
+        var tempData = (await this.PlotService.GetDataBySensor("th_data", start, stop,this._tempSensor._id)).ToList();
+        foreach (var temp in tempData) {
+            temp.Value = (temp.Value * 9 / 5) + 32;
+        }
+        this.TempData = tempData;
         this.HumData = await this.PlotService.GetDataBySensor("th_data", start, stop, this._humSensor._id);
         this._plotStart = this._startDate;
         this._plotStop = this._stopDate;
