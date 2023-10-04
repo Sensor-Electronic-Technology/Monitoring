@@ -1,19 +1,17 @@
-﻿@page "/thview"
+﻿@page "/thdata/{Lab:int}"
+@using MonitoringSystem.Shared.Data
 @using MonitoringSystem.Shared.Data.LogModel
 @using MonitoringWeb.WebApp.Data
 @using MonitoringWeb.WebApp.Services
-@using System.Drawing
-@using MongoDB.Bson
 @using Blazor.DownloadFileFast.Interfaces
-@using ClosedXML.Excel
-@inject PlotDataService PlotService
 @inject ValueChanged<DateRange> DateRangeState
 @inject WebsiteConfigurationProvider ConfigProvider
 @inject IBlazorDownloadFileService DownloadService
 @inject SpinnerService SpinnerService
+@inject PlotDataService PlotService
 @implements IAsyncDisposable
 
-<h3 class="text-center">Epi1 Temperature and Humidity</h3>
+<h3 class="text-center">@this.Header</h3>
 <Spinner></Spinner>
 <div class="container-fluid alert-container">
     <div class="row text-center">
@@ -22,7 +20,7 @@
                 Click="() => IsOpen = !IsOpen"
                 SizeMode="SizeMode.Medium"
                 RenderStyleMode="ButtonRenderStyleMode.Contained"
-                RenderStyle="@ButtonRenderStyle.Info">Show Floorplan</DxButton>
+                RenderStyle="@ButtonRenderStyle.Info">Show Floor plan</DxButton>
         </div>
         <DxDropDown
             @bind-IsOpen="@IsOpen"
@@ -34,7 +32,7 @@
             CloseMode="@DropDownCloseMode.Hide"
             FitToRestriction="true">
             <div class="custom-flyout-body">
-                <img src="images/GasDetectorMap.png" />
+                <img src="images/GasDetectorMap.png"/>
             </div>
         </DxDropDown>
     </div>
@@ -183,7 +181,11 @@
         </div>
     </div>
 </div>
+
 @code {
+    [Parameter]
+    public Lab Lab { get; set; }
+    
     AccordionExpandCollapseAction ExpandCollapseAction { get; set; } = AccordionExpandCollapseAction.HeaderClick;
     DateTime _startDate = DateTime.Now.AddDays(-1).ToLocalTime();
     DateTime _stopDate = DateTime.Now.AddDays(1).ToLocalTime();
@@ -191,6 +193,8 @@
     DateTime _plotStop;
     SensorType? _tempSensor;
     SensorType? _humSensor;
+    string? Header = "";
+    
     bool IsOpen { get; set; } = false;
     IEnumerable<AnalogReadingDto>? TempData { get; set; }
     IEnumerable<AnalogReadingDto>? HumData { get; set; }
@@ -202,14 +206,25 @@
         await this.Load();
     }
     
-    private Task Submit() {
-        return Task.CompletedTask;
+    public override async Task SetParametersAsync(ParameterView parameters) {
+        await base.SetParametersAsync(parameters);
+        switch (this.Lab) {
+            case Lab.Epi1:
+                this.Header = "Epi1 Temperature and Humidity";
+                break;
+            case Lab.Epi2:
+                this.Header = "Epi2 Temperature and Humidity";
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        await this.Load();
+        await InvokeAsync(StateHasChanged);
     }
     
     private async Task OnDateRangeChanged() {
         this._startDate = this.DateRangeState.Item.Start;
         this._stopDate = this.DateRangeState.Item.Stop;
-        
         await this.Load();
     }
     
@@ -226,12 +241,14 @@
         await InvokeAsync(StateHasChanged);
         var start = this._startDate;
         var stop = this._stopDate;
-        var tempData = (await this.PlotService.GetDataBySensor("th_data", start, stop,this._tempSensor._id)).ToList();
+        var deviceData = (this.Lab == Lab.Epi1) ? "th_data" : "e2th_data";
+        
+        var tempData = (await this.PlotService.GetDataBySensor(deviceData, start, stop,this._tempSensor._id)).ToList();
         foreach (var temp in tempData) {
             temp.Value = (temp.Value * 9 / 5) + 32;
         }
         this.TempData = tempData;
-        this.HumData = await this.PlotService.GetDataBySensor("th_data", start, stop, this._humSensor._id);
+        this.HumData = await this.PlotService.GetDataBySensor(deviceData, start, stop, this._humSensor._id);
         this._plotStart = this._startDate;
         this._plotStop = this._stopDate;
         this.DateRangeState.SetItemParent(new DateRange() {
@@ -239,15 +256,15 @@
         });
         await InvokeAsync(StateHasChanged);
     }
-
+    
     private async Task DownloadHandler() {
         this.SpinnerService.Show();
-        var bytes=await this.PlotService.GetThDownloadData("th_data",this._startDate,this._stopDate);
-        await this.DownloadService.DownloadFileAsync("th_data.xlsx", bytes);
+        var deviceData = (this.Lab == Lab.Epi1) ? "th_data" : "e2th_data";
+        var bytes=await this.PlotService.GetThDownloadData(deviceData,this._startDate,this._stopDate);
+        await this.DownloadService.DownloadFileAsync($"{deviceData}.xlsx", bytes);
         this.SpinnerService.Hide();
     }
-    
-    
+
     public ValueTask DisposeAsync() {
         this.DateRangeState.OnChildChanged -= this.OnDateRangeChanged;
         return ValueTask.CompletedTask;

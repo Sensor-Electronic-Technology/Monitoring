@@ -73,7 +73,26 @@
         DeviceName = "Loading", 
         Status = ActionType.Okay 
     };
-    
-    string DeviceName => char.ToUpper(this.DeviceStatus.DeviceName[0])+this.DeviceStatus.DeviceName.Substring(1);
 
+    string DeviceName { get; set; }
+
+    protected override Task OnInitializedAsync() {
+        this.SetHeader();
+        return Task.CompletedTask;
+    }
+
+    void SetHeader() {
+        if (this.DeviceStatus.DeviceName != null) {
+            if (this.DeviceStatus.DeviceName == "nh3") {
+                this.DeviceName = this.DeviceStatus.DeviceName.ToUpper();
+            } else if(this.DeviceStatus.DeviceName=="th") {
+                this.DeviceName = "Epi1 TH";
+            } else if (this.DeviceStatus.DeviceName == "e2th") {
+                this.DeviceName = "Epi2 TH";
+            } else {
+                this.DeviceName = char.ToUpper(this.DeviceStatus.DeviceName[0])+this.DeviceStatus.DeviceName.Substring(1);
+            }
+        }
+    }
+    
 }

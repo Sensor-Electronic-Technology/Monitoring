@@ -12,13 +12,7 @@
         <div class="row">
             <div class="row text-center" style="padding:.05rem">
                 <h4>
-                    @if (DeviceName != null) {
-                        if (DeviceName == "nh3") {
-                            @DeviceName.ToUpper()
-                        } else {
-                            @(char.ToUpper(DeviceName[0]) + DeviceName.Substring(1))
-                        }
-                    }
+                    @this.Header;
                 </h4>
             </div>
             <div class="row text-center" style="padding:.05rem">
@@ -97,6 +91,8 @@
     
     string Message { get; set; }
     
+    string? Header { get; set; }
+    
     void OnWidthChanged(string NewValue) {
         Message = NewValue;
     }
@@ -129,6 +125,22 @@
                 this.logger.LogInformation(hub + " Connected");
             } catch {
                 this.logger.LogError(hub + " hub connection failed");
+            }
+            this.SetHeader();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    void SetHeader() {
+        if (DeviceName != null) {
+            if (DeviceName == "nh3") {
+                this.Header = DeviceName.ToUpper();
+            } else if(DeviceName=="th") {
+                this.Header = "Epi1 TH";
+            } else if (DeviceName == "e2th") {
+                this.Header = "Epi2 TH";
+            } else {
+                this.Header = (char.ToUpper(DeviceName[0]) + DeviceName.Substring(1));
             }
         }
     }

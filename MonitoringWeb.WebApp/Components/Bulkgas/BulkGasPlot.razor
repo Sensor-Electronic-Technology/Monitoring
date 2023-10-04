@@ -11,7 +11,8 @@
 @inject WebsiteConfigurationProvider ConfigurationProvider
 @implements IAsyncDisposable
 
-<Spinner></Spinner>
+<Spinner>
+</Spinner>
 <CustomRange @bind-StartDate="this.StartDate" @bind-StopDate="@StopDate" CustomDateVisible="@this.CustomDateVisible"></CustomRange>
 <div class="card">
     @if (this.RangeSelectVisible) {

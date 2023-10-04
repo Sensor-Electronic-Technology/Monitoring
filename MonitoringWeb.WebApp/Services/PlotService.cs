@@ -2,6 +2,7 @@
 using ClosedXML.Excel;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringWeb.WebApp.Data;
 
@@ -56,9 +57,9 @@ public class PlotDataService {
             return analogReadings;
         }
 
-        public async Task<byte[]> GetThDownloadData(DateTime start,DateTime stop) {
+        public async Task<byte[]> GetThDownloadData(string deviceData,DateTime start,DateTime stop) {
             var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase("th_data");
+            var database = client.GetDatabase(deviceData);
 
             var analogItems = database.GetCollection<AnalogItem>("analog_items").Find(e=>e.Display==true).ToList();
             var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
@@ -66,7 +67,7 @@ public class PlotDataService {
                 .ToListAsync();
             var headers = analogItems.Select(e => e.Identifier).ToList();
             var wb = new XLWorkbook();
-            var worksheet=wb.Worksheets.Add("Consumption");
+            var worksheet=wb.Worksheets.Add("TH Data");
             worksheet.AddPicture(@"/app/wwwroot/images/GasDetectorMap.png").MoveTo(worksheet.Cell("O2"));
             worksheet.Cell(1, 1).Value = "timestamp";
             for (int i = 0; i < headers.Count(); i++) {

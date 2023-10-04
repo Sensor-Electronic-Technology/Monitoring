@@ -19,10 +19,10 @@ namespace MonitoringSystem.ConsoleTesting {
             //await DeleteDevice();
             //await DeleteChannels();
 
-            //await CreateTempMonitorDevice();
-            //await CreateDeviceActions("th");
+            //await CreateTempMonitorDevice("e2th","e2thstream","e2thstreaming","172.20.5.32");
+            //await CreateDeviceActions("e2th");
             //await CreateTHSensors();
-            await CreateThChannels();
+            //await CreateThChannels("e2th");
         }
 
         
@@ -80,12 +80,12 @@ namespace MonitoringSystem.ConsoleTesting {
             await context.SaveChangesAsync();
         }
         
-        public static async Task CreateThChannels() {
+        public static async Task CreateThChannels(string deviceName) {
             var context = new MonitorContext();
             var device = context.Devices.OfType<ModbusDevice>()
                 .Include(e => e.Channels)
                 .AsTracking()
-                .FirstOrDefault(e => e.Name == "th");
+                .FirstOrDefault(e => e.Name == deviceName);
                 
             var deviceActions = context.DeviceActions
                 .Include(e=>e.FacilityAction)
@@ -271,16 +271,16 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Check Database");
         }
         
-        public static async Task CreateTempMonitorDevice() {
+        public static async Task CreateTempMonitorDevice(string deviceName,string container,string hub,string ip) {
             Console.WriteLine("Creating Device,Please wait");
             using var context = new MonitorContext();
             var device = new ModbusDevice();
-            device.Name = "th";
-            device.HubAddress = @"http:\\thmonitor\hubs\thstreaming";
-            device.HubName = "thstreaming";
+            device.Name = deviceName;
+            device.HubAddress = $@"http:\\{container}\hubs\{hub}";
+            device.HubName = hub;
 
             var netConfig = new NetworkConfiguration();
-            netConfig.IpAddress = "172.20.5.222";
+            netConfig.IpAddress = ip;
             netConfig.Port = 502;
             netConfig.Dns = "172.20.3.5";
             netConfig.Mac = "";

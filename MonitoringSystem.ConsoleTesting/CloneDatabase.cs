@@ -28,8 +28,6 @@ public class CloneDatabase {
 
     static async Task Main(string[] args) {
         //await UpdateSensors();
-        //await CreateManagedDevice("th");
-        //await CreateMongoDB("th");
         //await UpdateAlerts("gasbay");
         /*await UpdateAlertNames("epi1");
         await UpdateAlertNames("epi2");
@@ -103,12 +101,12 @@ public class CloneDatabase {
         Console.WriteLine($"Hours: {hours}");*/
         //await UsageNH3Testing("Tank1 Weight","Tank2 Weight");
         //Console.WriteLine();
-       UsageService service = new UsageService();
-        await service.GetH2Usage();
+       //UsageService service = new UsageService();
+        //await service.GetH2Usage();
         //await service.GetN2Usage();
         //await service.GetNH3Usage();
         //await UsageH2Testing("H2 PSI");
-        Console.WriteLine("Check Database");
+        //Console.WriteLine("Check Database");
        //await TestTimeCheck();
        //await CreateModules();
        //await ConfigureBoxModule();
@@ -120,6 +118,8 @@ public class CloneDatabase {
        foreach (var name in collections) {
            Console.WriteLine(name);
        }*/
+       //await CreateManagedDevice("e2th");
+       await CreateMongoDB("e2th");
     }
 
     static async Task TestGridFs() {

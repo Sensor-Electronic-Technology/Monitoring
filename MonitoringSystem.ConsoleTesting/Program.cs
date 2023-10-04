@@ -106,7 +106,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await emailService.SendMessageAsync("Gas Refill","Nitrogen","74","inH20","Now");
             //await emailService.SendTestMessageAsync();
            //await UpdateBulkEmailSettings();
-           await CreateBulkEmailSettings();
+           //await CreateBulkEmailSettings();
         }
 
         static async Task UpdateBulkSettings() {
