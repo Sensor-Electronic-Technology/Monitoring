@@ -71,7 +71,11 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         activeAlert.ChannelReading = alert.ChannelReading;
                                         activeAlert.AlertAction = alert.AlertAction;
                                         activeAlert.LastAlert = now;
-                                        sendEmail = true;
+                                        if (activeAlert.DisplayName == "Bulk H2(PSI)" || activeAlert.DisplayName == "Bulk N2(inH20)") {
+                                            sendEmail = activeAlert.CurrentState<alert.CurrentState;
+                                        } else {
+                                            sendEmail = true;
+                                        }
                                     } else {
                                         if (activeAlert.Latched) {
                                             activeAlert.Latched = false;
