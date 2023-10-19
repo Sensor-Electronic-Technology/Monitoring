@@ -36,6 +36,6 @@ jobs:
       - run: microk8s.kubectl rollout restart deployment gbstream
       - run: microk8s.kubectl rollout restart deployment nhstream
       - run: microk8s.kubectl rollout restart deployment e1stream
-      - run: microk8s.kubectl rollout restart deployment e1thstreaming
-      - run: microk8s.kubectl rollout restart deployment e2thstreaming
+      - run: microk8s.kubectl rollout restart deployment e1thstream
+      - run: microk8s.kubectl rollout restart deployment e2thstream
       
