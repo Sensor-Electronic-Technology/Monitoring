@@ -49,8 +49,14 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         activeAlert.Latched = true;
                                         activeAlert.TimeLatched = now;
                                     } else {
-                                        if ((now - activeAlert.TimeLatched).TotalSeconds >= 60) {
-                                            this._activeAlerts.Remove(activeAlert);
+                                        if (activeAlert.DisplayName == "Bulk H2(PSI)" || activeAlert.DisplayName == "Bulk N2(inH20)") {
+                                            if ((now - activeAlert.TimeLatched).TotalMinutes >= 5) {
+                                                this._activeAlerts.Remove(activeAlert);
+                                            }
+                                        } else {
+                                            if ((now - activeAlert.TimeLatched).TotalSeconds >= 60) {
+                                                this._activeAlerts.Remove(activeAlert);
+                                            }
                                         }
                                     }
                                 }//else do nothing, there is no activeAlert
@@ -191,11 +197,18 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             if (bulkN2 != null) {
                 if (bulkN2.LastAlert == now) {
                     switch (bulkN2.CurrentState) {
-                        case ActionType.Warning: {
+                        case ActionType.Alarm: {
                             await this._externalEmailService.SendMessageAsync("Nitrogen EMERGENCY Gas Refill Request", 
                                 "Nitrogen",
                                 bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
                                 "Immediately");
+                            break;
+                        }
+                        case ActionType.Warning: {
+                            await this._externalEmailService.SendMessageAsync("Nitrogen EMERGENCY Gas Refill Request", 
+                                "Nitrogen",
+                                bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
+                                "within the next 8 Hrs");
                             break;
                         }
                         case ActionType.SoftWarn: {
@@ -212,11 +225,18 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             if (bulkH2 != null) {
                 if (bulkH2.LastAlert == now) {
                     switch (bulkH2.CurrentState) {
-                        case ActionType.Warning: {
+                        case ActionType.Alarm: {
                             await this._externalEmailService.SendMessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
                                 "Immediately");
+                            break;
+                        }
+                        case ActionType.Warning: {
+                            await this._externalEmailService.SendMessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
+                                "Hydrogen",
+                                bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
+                                "within the next 5Hrs");
                             break;
                         }
                         case ActionType.SoftWarn: {
