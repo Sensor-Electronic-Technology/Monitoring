@@ -1,11 +1,8 @@
 ﻿@inherits LayoutComponentBase
 @using MonitoringWeb.WebApp.Components
 @inject NavigationManager NavigationManager
-
-
 <DxLayoutBreakpoint MaxWidth="1200"
                     @bind-IsActive="@IsMobileLayout" />
-
 <div class="page">
     <Sidepanel/>
     <DxGridLayout CssClass="page-layout">
@@ -37,7 +34,7 @@
         <Items>
             <DxGridLayoutItem Area="header" CssClass="layout-item">
                 <Template>
-                    <Header @bind-ToggleOn="@IsSidebarExpanded" @bind-Active=@_controlPaneVisible/>
+                    <Header @bind-ToggleOn="@IsSidebarExpanded" @bind-Active=@_controlPaneVisible></Header>
                 </Template>
             </DxGridLayoutItem>
             <DxGridLayoutItem Area="sidebar" CssClass="layout-item">
@@ -50,13 +47,13 @@
                     @Body
                 </Template>
             </DxGridLayoutItem>
-            <DxGridLayoutItem Area="lsidepane" CssClass="layout-item">
+            @*<DxGridLayoutItem Area="lsidepane" CssClass="layout-item">
                 <Template>
                     <div id="settingsbar" class="@(_controlPaneVisible ? "" : "hidden-settings-bar")">
                         <ControlSidePane @bind-Visible="@_controlPaneVisible"/>
                     </div>
                 </Template>
-            </DxGridLayoutItem>
+            </DxGridLayoutItem>*@
         </Items>
     </DxGridLayout>
 </div>

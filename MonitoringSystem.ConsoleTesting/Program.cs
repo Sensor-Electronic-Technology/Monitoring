@@ -107,6 +107,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await emailService.SendTestMessageAsync();
            //await UpdateBulkEmailSettings();
            //await CreateBulkEmailSettings();
+           await CreateNH3BulkGasSettings();
         }
 
         static async Task UpdateBulkSettings() {
@@ -189,7 +190,82 @@ namespace MonitoringSystem.ConsoleTesting {
             await settingsCollection.InsertOneAsync(emailSettings);
             Console.WriteLine("Check Database");
         }
+        static async Task CreateNH3BulkGasSettings() {
+            IMongoClient client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("nh3_data");
+            var settingsDatabase = client.GetDatabase("monitor_settings");
+            var settingsCollection = settingsDatabase.GetCollection<WebsiteBulkSettings>("bulk_settings");
 
+            var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+            var channel = await analogCollection
+                .Find(e => e.Identifier == "Tank1 Weight")
+                .FirstOrDefaultAsync();
+
+            var websiteBulkSettings = await settingsCollection.Find(_ => true).FirstAsync();
+                
+            BulkGasSettings nh3 = new BulkGasSettings();
+            nh3.BulkGasType = BulkGasType.H2;
+            nh3.Name = channel.Identifier;
+            nh3.DeviceName = "nh3_data";
+            nh3.EnableAggregation = true;
+            nh3.OkayLabel = "Okay";
+            nh3.PointColor = KnownColor.Chartreuse;
+            nh3.HoursAfter = 6;
+            nh3.HoursBefore = 12;
+            BulkGasAlert nh3Soft = new BulkGasAlert();
+            nh3Soft.Label = ActionType.SoftWarn.ToString();
+            nh3Soft.ActionType = ActionType.SoftWarn;
+            nh3Soft.Default = true;
+            nh3Soft.SetPoint = (int)channel.Level1SetPoint;
+            
+            BulkGasAlert nh3Warn = new BulkGasAlert();
+            nh3Warn.Label = ActionType.Warning.ToString();
+            nh3Warn.ActionType = ActionType.Warning;
+            nh3Warn.Default = true;
+            nh3Warn.SetPoint = (int)channel.Level2SetPoint;
+
+            BulkGasAlert nh3Alarm = new BulkGasAlert();
+            nh3Alarm.Label = ActionType.Alarm.ToString();
+            nh3Alarm.ActionType = ActionType.Alarm;
+            nh3Alarm.Default = true;
+            nh3Alarm.SetPoint = (int)channel.Level3SetPoint;
+
+            RefLine nh3AlarmLine = new RefLine();
+            nh3AlarmLine.Value = nh3Alarm.SetPoint;
+            nh3AlarmLine.Color = KnownColor.Red;
+            nh3AlarmLine.Label = "Halt Production";
+            
+            RefLine nh3WarnLine = new RefLine();
+            nh3WarnLine.Value = nh3Warn.SetPoint;
+            nh3WarnLine.Color = KnownColor.Yellow;
+            nh3WarnLine.Label = "Prepare To Halt";
+            
+            RefLine nh3SoftLine = new RefLine();
+            nh3SoftLine.Value = nh3Soft.SetPoint;
+            nh3SoftLine.Color = KnownColor.Wheat;
+            nh3SoftLine.Label = "Notify";
+            
+            
+            nh3.SoftAlert=nh3Soft;
+            nh3.WarnAlert=nh3Warn;
+            nh3.AlrmAlert=nh3Alarm;
+
+
+            nh3.SoftRefLine = nh3SoftLine;
+            nh3.WarnRefLine = nh3WarnLine;
+            nh3.AlrmRefLine = nh3AlarmLine;
+            
+            var update=Builders<WebsiteBulkSettings>.Update
+                .Set(e => e.NHSettings, nh3)
+                .Set(e=>e.N2Settings.ChannelName,"Bulk N2(inH20)")
+                .Set(e=>e.N2Settings.DeviceName,"epi1_data")
+                .Set(e=>e.H2Settings.ChannelName,"Bulk H2(PSI)")
+                .Set(e=>e.H2Settings.DeviceName,"epi1_data");
+            var filter=Builders<WebsiteBulkSettings>.Filter.Eq(e => e._id, websiteBulkSettings._id);
+
+            await settingsCollection.UpdateOneAsync(filter, update);
+            Console.WriteLine("Check Database");
+        }
         static async Task CreateBulkGasSettings() {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var e1Database = client.GetDatabase("epi1_data");

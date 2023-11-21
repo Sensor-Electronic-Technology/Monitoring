@@ -56,6 +56,12 @@
                 <DxSpinEdit @bind-Value="@this.Settings.YAxisMax"/>
             </DxFormLayoutItem>
         </DxFormLayoutGroup>
+        @if (this.GasType == BulkGasType.NH3) {
+            <DxFormLayoutItem>
+                <DxComboBox Data="@this.NhTanks"
+                            @bind-Value="@this.Settings.ChannelName"/>
+            </DxFormLayoutItem>
+        }
     </DxFormLayoutTabPage>
     <DxFormLayoutTabPage Caption="Display Alerts">
         <DxFormLayoutItem Caption="Okay Label">
@@ -149,8 +155,14 @@
     public BulkGasSettings Settings { get; set; }
     
     [Parameter]
+    public BulkGasType GasType { get; set; }
+    
+    [Parameter]
     public EventCallback<BulkGasSettings> SettingsChanged { get; set; }
     
     IEnumerable<KnownColor> ColorList = Enum.GetValues<KnownColor>();
-    
+    IEnumerable<string> NhTanks =new List<string>() {
+        "Tank1 Weight",
+        "Tank2 Weight"
+    };
 }

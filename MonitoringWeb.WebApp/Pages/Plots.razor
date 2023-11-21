@@ -34,7 +34,7 @@
             <DxFormLayoutItem Caption="Device" ColSpanLg="6">
                 <DxComboBox Data="@this.DeviceLookup.Select(e => e.Key).AsEnumerable()"
                             @bind-Value="@SelectedDevice"
-                            SelectedItemChanged="@SelectedItemChanged"
+                            SelectedItemChanged="@((string s) => SelectedItemChanged(s))"
                             CssClass="cw-480"/>
             </DxFormLayoutItem>
             <DxFormLayoutItem Caption="Detector Type" ColSpanLg="6">

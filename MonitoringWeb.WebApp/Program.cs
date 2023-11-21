@@ -16,7 +16,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddDevExpressBlazor();
-builder.Services.AddDevExpressBlazorWasmMasks();
 builder.Services.Configure<DevExpress.Blazor.Configuration.GlobalOptions>(options => {
     options.BootstrapVersion = DevExpress.Blazor.BootstrapVersion.v5;
 });
@@ -29,7 +28,7 @@ if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
         };
     });
 }
-builder.Services.AddSingleton<PlotDataService>();
+builder.Services.AddTransient<PlotDataService>();
 builder.Services.AddSingleton<LatestAlertService>();
 var connectionString = builder.Configuration.GetSection(nameof(MonitorWebsiteSettings))
     .Get<MonitorWebsiteSettings>()

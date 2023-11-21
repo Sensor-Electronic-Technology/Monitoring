@@ -21,6 +21,7 @@
 }
 </style>
 
+
 <SidepanelComponent @ref="this._sidepanel" Title="Settings">
     <BulkGasSettingsComponent BulkSettings="@this._bulkSettings"
                               BulkEmailSettings="@this._bulkEmailSettings"
@@ -32,21 +33,21 @@
               RenderStyle="ButtonRenderStyle.Primary"
               Text="@this._buttonText"/>
 </div>
-@*<div class="row d-flex justify-content-center">
-    <ItemStatusCard Type="BulkGasType.N2"></ItemStatusCard>
-    <ItemStatusCard Type="BulkGasType.H2"></ItemStatusCard>
-</div>*@
-<BulkStatus/>
+<div>
+    <BulkStatus></BulkStatus>
+</div>
 <div class="row">
     <div class="col-6">
-        <BulkGasPlot GasType="BulkGasType.H2" 
-                     CustomDateVisible="false" 
-                     RangeSelectVisible="false"/>
+        <BulkGasDashPlot GasType="BulkGasType.H2" />
     </div>
     <div class="col-6">
-        <BulkGasPlot GasType="BulkGasType.N2" 
-                     CustomDateVisible="false" 
-                     RangeSelectVisible="false"/>
+        <BulkGasDashPlot GasType="BulkGasType.N2"/>
+    </div>
+
+</div>
+<div class="row">
+    <div class="col-12">
+        <BulkGasDashPlot GasType="BulkGasType.NH3"/>
     </div>
 </div>
 
@@ -73,7 +74,6 @@
             .Build();
         this._hubConnection.On("ReceiveRefreshRequest",this.ReceiveRefreshRequest);
         await this._hubConnection.StartAsync();
-        await base.OnInitializedAsync();
     }
     
     protected override void OnAfterRender(bool firstRender) {
@@ -88,6 +88,7 @@
     private async void SavedHandler() {
         this._buttonText = "Open Settings";
         await this.SendRefreshRequest();
+        NavManager.NavigateTo(NavManager.Uri, forceLoad: true);
     }
 
     private Task ReceiveRefreshRequest() {

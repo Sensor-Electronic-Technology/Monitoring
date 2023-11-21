@@ -8,6 +8,7 @@ public class WebsiteBulkSettings {
     public int RefreshTime { get; set; }
     public BulkGasSettings H2Settings { get; set; }
     public BulkGasSettings N2Settings { get; set; }
+    public BulkGasSettings NHSettings { get; set; }
 }
 
 public class BulkEmailSettings {
@@ -19,6 +20,8 @@ public class BulkEmailSettings {
 
 public class BulkGasSettings {
     public string? Name { get; set; }
+    public string? DeviceName { get; set; }
+    public string? ChannelName { get; set; }
     public BulkGasType BulkGasType { get; set; }
     public KnownColor PointColor { get; set; }
     public int HoursBefore { get; set; }
@@ -35,6 +38,11 @@ public class BulkGasSettings {
     public RefLine AlrmRefLine { get; set; }
     public RefLine WarnRefLine { get; set; }
     public RefLine SoftRefLine { get; set; }
+}
+
+public enum NhTank:int {
+    Tank1=0,
+    Tank2
 }
 
 public class RefLine {

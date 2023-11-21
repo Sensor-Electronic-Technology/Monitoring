@@ -42,7 +42,26 @@
         this.tabIndex = 0;
         return Task.CompletedTask;
     }
-    
+
+    protected override async Task OnParametersSetAsync() {
+        await base.OnParametersSetAsync();
+        switch (this.GasType) {
+            case BulkGasType.N2:
+                this.Header = "Bulk N2 ";
+                break;
+            case BulkGasType.H2:
+                this.Header = "Bulk H2";
+                break;
+            case BulkGasType.NH3:
+                this.Header = "Bulk NH3";
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        this.tabIndex = 0;
+        StateHasChanged();
+    }
+
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender){
@@ -53,7 +72,7 @@
         }
     }
     
-    public override async Task SetParametersAsync(ParameterView parameters) {
+    /*public override async Task SetParametersAsync(ParameterView parameters) {
         await base.SetParametersAsync(parameters);
         switch (this.GasType) {
             case BulkGasType.N2:
@@ -70,6 +89,6 @@
         }
         this.tabIndex = 0;
         await InvokeAsync(StateHasChanged);
-    }
+    }*/
 
 }

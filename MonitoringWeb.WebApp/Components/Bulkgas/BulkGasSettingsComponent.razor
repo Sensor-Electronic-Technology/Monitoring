@@ -22,12 +22,20 @@
                     <Items>
                         <DxAccordionItem Text="H2 Settings" Expanded="true">
                             <ContentTemplate>
-                                <BulkGasForm @bind-Settings="@this.BulkSettings.H2Settings"></BulkGasForm>
+                                <BulkGasForm @bind-Settings="@this.BulkSettings.H2Settings" 
+                                             GasType="BulkGasType.H2"/>
                             </ContentTemplate>
                         </DxAccordionItem>
                         <DxAccordionItem Text="N2 Settings">
                             <ContentTemplate>
-                                <BulkGasForm @bind-Settings="@this.BulkSettings.N2Settings"></BulkGasForm>
+                                <BulkGasForm @bind-Settings="@this.BulkSettings.N2Settings" 
+                                             GasType="BulkGasType.N2"/>
+                            </ContentTemplate>
+                        </DxAccordionItem>
+                        <DxAccordionItem Text="NH3 Settings">
+                            <ContentTemplate>
+                                <BulkGasForm @bind-Settings="@this.BulkSettings.NHSettings" 
+                                             GasType="BulkGasType.NH3"/>
                             </ContentTemplate>
                         </DxAccordionItem>
                     </Items>
@@ -64,6 +72,7 @@
     }
 
     private async Task HandleValidSubmit() {
+        
         this.BulkSettings.RefreshTime = this._refreshTime * 60 * 1000;
         await this.BulkGasProvider.Update(this.BulkSettings);
         await this.BulkGasProvider.UpdateEmailSettings(this.BulkEmailSettings);

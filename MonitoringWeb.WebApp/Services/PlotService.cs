@@ -156,16 +156,16 @@ public class PlotDataService {
             this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
             this._analogItems = database.GetCollection<AnalogItem>("analog_items");
             List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
-            var h2psi = await this._analogItems.Find(e => e.Identifier == chName).FirstOrDefaultAsync();
-            var sensor = this._configProvider.Sensors.FirstOrDefault(e => e._id == h2psi.SensorId);
+            var channel = await this._analogItems.Find(e => e.Identifier == chName).FirstOrDefaultAsync();
+            var sensor = this._configProvider.Sensors.FirstOrDefault(e => e._id == channel.SensorId);
             using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
             while (await cursor.MoveNextAsync()){
                 var batch = cursor.Current;
                 foreach (var readings in batch){
-                    var reading =readings.readings.FirstOrDefault(e=>e.MonitorItemId==h2psi._id);
+                    var reading =readings.readings.FirstOrDefault(e=>e.MonitorItemId==channel._id);
                     if (reading != null) {
                         var aReading=new AnalogReadingDto(){
-                            Name=h2psi.Identifier,
+                            Name=channel.Identifier,
                             TimeStamp = readings.timestamp.ToLocalTime(),
                             Value=reading.Value
                         };

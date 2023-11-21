@@ -15,13 +15,13 @@ public class BulkGasProvider {
         var database = this._client.GetDatabase(options.Value.DatabaseName);
         this._settingsCollection = database.GetCollection<WebsiteBulkSettings>(options.Value.BulkSettingsCollection);
         this._emailSettingsCollection = database.GetCollection<BulkEmailSettings>(options.Value.BulkEmailSettingsCollection);
-
     }
 
     public async Task Update(WebsiteBulkSettings settings) {
         var update=Builders<WebsiteBulkSettings>.Update
             .Set(e => e.H2Settings, settings.H2Settings)
             .Set(e => e.N2Settings, settings.N2Settings)
+            .Set(e => e.NHSettings, settings.NHSettings)
             .Set(e => e.RefreshTime, settings.RefreshTime);
         await this._settingsCollection.UpdateOneAsync(e => e._id == settings._id, update);
     }
