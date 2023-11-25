@@ -32,7 +32,7 @@ builder.Services.AddTransient<PlotDataService>();
 builder.Services.AddSingleton<LatestAlertService>();
 var connectionString = builder.Configuration.GetSection(nameof(MonitorWebsiteSettings))
     .Get<MonitorWebsiteSettings>()
-    .ConnectionString;
+    ?.ConnectionString;
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
 builder.Services.AddSingleton<WebsiteConfigurationProvider>();
 builder.Services.AddScoped<ConfigApiClient>();
@@ -42,6 +42,7 @@ builder.Services.AddSingleton<ValueChanged<DateRange>>();
 builder.Services.AddSingleton<ValueChanged<BulkGasType>>();
 builder.Services.AddSingleton<UsageService>();
 builder.Services.AddScoped<AmmoniaController>();
+builder.Services.AddScoped<AmmoniaDataService>();
 builder.Services.AddBlazorDownloadFile();
 builder.Services.AddScoped<SpinnerService>();
 builder.Services.AddSingleton<FileHandlerService>();

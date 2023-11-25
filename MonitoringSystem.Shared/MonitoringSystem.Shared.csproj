@@ -1,24 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Contracts" />
-  </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Contracts" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.1.0" />
-    <PackageReference Include="MongoDB.Driver" Version="2.15.1" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.1.0" />
+        <PackageReference Include="MongoDB.Bson" Version="2.15.1" />
+        <PackageReference Include="MongoDB.Driver" Version="2.15.1" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="NModbus4">
-      <HintPath>..\Assembiles\NModbus4.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+    <ItemGroup>
+        <Reference Include="NModbus4">
+            <HintPath>..\Assembiles\NModbus4.dll</HintPath>
+        </Reference>
+    </ItemGroup>
 
 </Project>

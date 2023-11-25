@@ -90,14 +90,14 @@ namespace MonitoringSystem.ConsoleTesting {
             //var client = new MongoClient("mongodb:");*/
             //await RemoteAlertTesting();
             //await TestModbus();
-            /*AmmoniaController controller = new AmmoniaController();
+            AmmoniaController controller = new AmmoniaController();
             ConsoleTable table = new ConsoleTable("Scale", "ZeroRaw", "NonZeroRaw", "Zero", "NonZero", "Combined",
-                "Tare", "GasWeight");
+                "Tare", "GasWeight","CurrentWeight");
             await TestAmmoniaController(1, controller,table);
             await TestAmmoniaController(2, controller,table);
             await TestAmmoniaController(3, controller,table);
             await TestAmmoniaController(4, controller,table);
-            Console.WriteLine(table.ToString());*/
+            Console.WriteLine(table.ToString());
 
             //await CreateBulkGasSettings();
             //await UpdateBulkSettings();
@@ -107,7 +107,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await emailService.SendTestMessageAsync();
            //await UpdateBulkEmailSettings();
            //await CreateBulkEmailSettings();
-           await CreateNH3BulkGasSettings();
+           //await CreateNH3BulkGasSettings();
         }
 
         static async Task UpdateBulkSettings() {
@@ -390,7 +390,7 @@ namespace MonitoringSystem.ConsoleTesting {
         static async Task TestAmmoniaController(int scale,AmmoniaController controller,ConsoleTable table) {
             var data=await controller.GetTankCalibration("172.21.100.29", scale);
             table.AddRow(data.Scale, data.ZeroRawValue,data.NonZeroRawValue,data.ZeroValue,data.NonZeroValue,
-                data.Combined,data.Tare,data.GasWeight);
+                data.Combined,data.Tare,data.GasWeight,data.CurrentWeight);
             /*Console.WriteLine($"Scale: {data.Scale}");
             Console.WriteLine($"ZeroRaw: {data.ZeroRawValue}");
             Console.WriteLine($"NonZeroRaw: {data.NonZeroRawValue}");

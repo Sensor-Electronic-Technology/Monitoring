@@ -1,0 +1,194 @@
+﻿@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringSystem.Shared.Data.SettingsModel
+@using MonitoringSystem.Shared.Services
+@using MonitoringWeb.WebApp.Services
+@inject AmmoniaDataService AmmoniaDataService;
+@inject AmmoniaController AmmoniaController
+@inject WebsiteConfigurationProvider Provider;
+
+<DxPopup
+    @bind-Visible="@this._msgBoxVisible"
+    ShowFooter="true"
+    HeaderText="@this._msgHeader"
+    BodyText="@this._msgText">
+    <FooterContentTemplate Context="Context">
+        <DxButton CssClass="popup-button my-1 ms-2" RenderStyle="ButtonRenderStyle.Primary" 
+                  Text="OK" 
+                  Click="Context.CloseCallback" />
+    </FooterContentTemplate>
+</DxPopup>
+
+<div class="container-fluid w-50">
+    <div class="d-flex flex-row justify-content-center">
+        <div class="d-flex flex-row">
+            <div class="row" style="padding: .5rem;">
+                <DxSpinEdit @bind-Value="this._selectedScale" MinValue="1" MaxValue="4"/>
+            </div>
+            <div class="row" style="padding: .5rem;">
+                <DxButton Text="Fetch" Click="@FetchData" RenderStyle="ButtonRenderStyle.Info"/>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex flex-row justify-content-center text-center ">
+        <div class="card">
+                <div class="card-header text-center py-1">
+                    <h5>Tank Scale Calibrations</h5>
+                </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="card">
+                        <div class="card-header text-center py-1">
+                            <h5>Current Calibration</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" style="padding: .5rem">
+                                <DxButton CssClass="w-100"
+                                          RenderStyle="ButtonRenderStyle.Primary"
+                                          Click="CreateNew"
+                                          Text="Create New"/>
+                            </div>
+                            <div class="row" style="padding: .5rem">
+                                <EditForm Model="@_currentCalibration"
+                                          OnSubmit="@this.OnSubmitHandler"
+                                          Context="EditFormContext">
+                                    <DxFormLayout ReadOnly="@this._isReadOnly">
+                                        <DxFormLayoutItem Caption="Date">
+                                            <DxDateEdit @bind-Date="@this._currentCalibration.CalibrationDate"/>
+                                        </DxFormLayoutItem>
+                                        <DxFormLayoutGroup Caption="Raw Values" ColSpanMd="12" BeginRow="true">
+                                            <DxFormLayoutItem Caption="Raw Zero" ColSpanSm="6">
+                                                <DxSpinEdit @bind-Value="@this._currentCalibration.ZeroRawValue"/>
+                                            </DxFormLayoutItem>
+                                            <DxFormLayoutItem Caption="Raw Non-Zero" ColSpanSm="6">
+                                                <DxSpinEdit @bind-Value="@this._currentCalibration.NonZeroRawValue"/>
+                                            </DxFormLayoutItem>
+                                        </DxFormLayoutGroup>
+                                        <DxFormLayoutGroup Caption="Real Values" ColSpanMd="12" BeginRow="true">
+                                            <DxFormLayoutItem Caption="Actual Zero" ColSpanSm="6">
+                                                <DxSpinEdit @bind-Value="@this._currentCalibration.ZeroValue"/>
+                                            </DxFormLayoutItem>
+                                            <DxFormLayoutItem Caption="Actual Non-Zero" ColSpanSm="6">
+                                                <DxSpinEdit @bind-Value="@this._currentCalibration.NonZeroValue"/>
+                                            </DxFormLayoutItem>
+                                        </DxFormLayoutGroup>
+                                        
+                                        <DxFormLayoutGroup ColSpanMd="12"
+                                                           Visible="@(this._isReadOnly == false)"
+                                                           BeginRow="true">
+                                            <DxFormLayoutItem ColSpanMd="6">
+                                                <DxButton CssClass="w-100"
+                                                          RenderStyle="ButtonRenderStyle.Primary"
+                                                          SubmitFormOnClick="true"
+                                                          Text="Save Calibration"/>
+                                            </DxFormLayoutItem>
+                                            <DxFormLayoutItem ColSpanMd="6">
+                                                <DxButton CssClass="w-100"
+                                                          RenderStyle="ButtonRenderStyle.Secondary"
+                                                          Click="OnCancelHandler"
+                                                          Text="Cancel"/>
+                                            </DxFormLayoutItem>
+                                        </DxFormLayoutGroup>
+                                    </DxFormLayout>
+                                </EditForm>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="padding: .5rem">
+                    <div class="card">
+                        <div class="card-header text-center py-1">
+                            <h5>Calibration Log</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" style="padding: .5rem">
+                                <DxGrid Data="@this._selectedTankScale?.Calibrations">
+                                    <Columns>
+                                        <DxGridDataColumn FieldName="@nameof(Calibration.CalibrationDate)"/>
+                                        <DxGridDataColumn FieldName="@nameof(Calibration.ZeroRawValue)"/>
+                                        <DxGridDataColumn FieldName="@nameof(Calibration.NonZeroRawValue)"/>
+                                        <DxGridDataColumn FieldName="@nameof(Calibration.ZeroValue)"/>
+                                        <DxGridDataColumn FieldName="@nameof(Calibration.NonZeroValue)"/>
+                                        <DxGridDataColumn FieldName="@nameof(Calibration.IsCurrent)"/>
+                                    </Columns>
+                                </DxGrid>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int _selectedScale=1;
+    private bool _isReadOnly = true;
+    ManagedDevice? _device;
+
+    private TankScale? _selectedTankScale=new TankScale();
+    private Calibration? _currentCalibration=new Calibration();
+
+    private string? _msgHeader;
+    private string? _msgText;
+    private bool _msgBoxVisible;
+    
+    protected override Task OnInitializedAsync() {
+        this._device = this.Provider.Devices.FirstOrDefault(e => e.DeviceName == "nh3");
+        return base.OnInitializedAsync();
+    }
+    
+    private async Task FetchData() {
+        this._selectedTankScale = await this.AmmoniaDataService.GetTankScale(this._selectedScale);
+        this._currentCalibration = this._selectedTankScale?.Calibrations.FirstOrDefault(e => e.IsCurrent);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ShowMsgBox(string header, string message) {
+        this._msgHeader = header;
+        this._msgText = message;
+        this._msgBoxVisible = true;
+    }
+    
+    private async Task OnSubmitHandler() {
+        var success=await this.AmmoniaDataService
+            .AddNewCurrentCalibration(this._selectedTankScale, this._currentCalibration);
+        if (success) {
+            var deviceCalData= await this.AmmoniaController
+                .GetTankCalibration(this._device?.IpAddress, this._selectedScale);
+            deviceCalData.ZeroValue = this._currentCalibration.ZeroValue;
+            deviceCalData.NonZeroValue = this._currentCalibration.NonZeroValue;
+            deviceCalData.ZeroRawValue = this._currentCalibration.ZeroRawValue;
+            deviceCalData.NonZeroRawValue = this._currentCalibration.NonZeroRawValue;
+            await this.AmmoniaController.SetCalibration(this._device.IpAddress, deviceCalData);
+            this._selectedTankScale = await this.AmmoniaDataService.GetTankScale(this._selectedTankScale.ScaleId);
+            this._currentCalibration = this._selectedTankScale.Calibrations.FirstOrDefault(e => e.IsCurrent);
+            this._isReadOnly = true;
+            await InvokeAsync(StateHasChanged);
+            this.ShowMsgBox("Success","Calibration Saved and Uploaded");
+        } else {
+            this.ShowMsgBox("Error","Calibration data not saved.  Please try again");
+        }
+    }
+    
+    private async Task OnCancelHandler() {
+        this._selectedTankScale = await this.AmmoniaDataService
+            .GetTankScale(this._selectedTankScale.ScaleId);
+        this._currentCalibration = this._selectedTankScale?.Calibrations
+            .FirstOrDefault(e => e.IsCurrent);
+        this._isReadOnly = true;
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private async Task CreateNew() {
+        this._currentCalibration = new Calibration() {
+            CalibrationDate = DateTime.Now,
+            IsCurrent = true,
+            ZeroRawValue = 0,
+            NonZeroRawValue = 0,
+            ZeroValue = 0,
+            NonZeroValue = 0,
+        };
+        this._isReadOnly = false;
+        await InvokeAsync(StateHasChanged);
+    }
+}

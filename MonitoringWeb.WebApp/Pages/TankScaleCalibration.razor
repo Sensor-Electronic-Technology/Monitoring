@@ -1,0 +1,15 @@
+﻿@page "/scalecal"
+@using MonitoringWeb.WebApp.Components.TankScales
+<DxTabs RenderMode="TabsRenderMode.Default" @bind-ActiveTabIndex="this._tabIndex">
+    <DxTabPage Text="NH3 Tanks">
+        <h1>Coming Soon</h1>
+    </DxTabPage>
+    <DxTabPage Text="Scales">
+        <ScalesView />
+    </DxTabPage>
+</DxTabs>
+
+@code {
+    private int _tabIndex;
+
+}

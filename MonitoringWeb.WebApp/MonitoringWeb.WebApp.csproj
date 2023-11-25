@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
@@ -10,7 +10,7 @@
     <PackageReference Include="DevExpress.Blazor" Version="23.1.6" />
     <PackageReference Include="DevExpress.Blazor.Server.WebAssembly" Version="23.1.6" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
     <PackageReference Include="BlazorDownloadFileFast" Version="0.2.0" />
     <PackageReference Include="Append.Blazor.Sidepanel" Version="6.3.3" />
