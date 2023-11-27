@@ -51,7 +51,7 @@
         <div class="card-header">
             <div class="row">
                 <div class="col">
-                    @foreach (PlotRange range in Enum.GetValues(typeof(PlotRange)).Cast<PlotRange>().ToList()) {
+                    @foreach (PlotRangeDays range in Enum.GetValues(typeof(PlotRangeDays)).Cast<PlotRangeDays>().ToList()) {
                         <DxButton RenderStyle="ButtonRenderStyle.Light"
                                   Text="@Enum.GetName(range).Substring(1)"
                                   Click="@(async Task (arg) => { await this.OnClick(range); })"/>
@@ -213,9 +213,9 @@
         await this.Load();
     }
     
-    private async Task OnClick(PlotRange range) {
-        this._startDate = DateTime.Now.AddDays(-(int)range);
-        this._stopDate = DateTime.Now.AddDays((int)range);
+    private async Task OnClick(PlotRangeDays rangeDays) {
+        this._startDate = DateTime.Now.AddDays(-(int)rangeDays);
+        this._stopDate = DateTime.Now.AddDays((int)rangeDays);
 
         await this.Load();
     }

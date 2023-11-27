@@ -43,7 +43,7 @@
         return Task.CompletedTask;
     }
 
-    protected override async Task OnParametersSetAsync() {
+    protected async override Task OnParametersSetAsync() {
         await base.OnParametersSetAsync();
         switch (this.GasType) {
             case BulkGasType.N2:
@@ -68,7 +68,7 @@
             var timer = new Timer(new TimerCallback(_ =>
             {
                 uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
-            }), null, 30000, 30000);
+            }), null, 300000, 300000);
         }
     }
     

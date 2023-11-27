@@ -146,9 +146,9 @@
         return Task.CompletedTask;
     }
     
-    private async Task OnClick(PlotRange range) {
-        this.StartDate = DateTime.Now.AddDays(-(int)range);
-        this.StopDate = DateTime.Now.AddDays((int)range);
+    private async Task OnClick(PlotRangeDays rangeDays) {
+        this.StartDate = DateTime.Now.AddDays(-(int)rangeDays);
+        this.StopDate = DateTime.Now.AddDays((int)rangeDays);
         await this.Load();
     }
 

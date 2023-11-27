@@ -39,6 +39,16 @@ public class UsageService {
         return await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
     }
     
+    public async Task<IEnumerable<UsageDayRecord>> GetH2Usage(DateTime start,DateTime stop) {
+        var database = this._client.GetDatabase("epi1_data");
+        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
+        var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
+        var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
+        return (await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, item))
+            .Where(e => e.Date >= start && e.Date < stop);
+    }
+    
     public async Task<IEnumerable<UsageDayRecord>> GetN2Usage() {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");

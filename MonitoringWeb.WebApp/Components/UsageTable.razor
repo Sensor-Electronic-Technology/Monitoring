@@ -7,23 +7,30 @@
 @using ClosedXML.Excel
 @using System.Text
 @using MonitoringSystem.Shared.Data
+@using System.Globalization
 @inject UsageService UsageService
 @inject ValueChanged<BulkGasType> GasTypeChanged;
+@inject ValueChanged<DateRange> DateRangeChanged;
 @inject IBlazorDownloadFileService DownloadService
 @inject SpinnerService SpinnerService
+@implements IAsyncDisposable 
 
 <div class="row" style="padding: .5rem">
-    <DxGrid Data="@Records" AutoCollapseDetailRow="false" 
+    <DxGrid Data="@_records" 
+            AutoCollapseDetailRow="false" 
             AllowGroup="true" 
             ShowGroupPanel="true"
-            CustomizeSummaryDisplayText="Grid_CustomizeSummaryDisplayText"
+            AllowSort="true"
+            CustomGroup="@Grid_CustomGroup"
+            CustomizeGroupValueDisplayText="Grid_CustomizeGroupValueDisplayText"
+            CustomizeSummaryDisplayText="@Grid_CustomizeSummaryDisplayText"
             ShowAllRows="true">
         <Columns>
-            <DxGridDataColumn FieldName="Date" DisplayFormat="d" />
+            <DxGridDataColumn FieldName="Date" DisplayFormat="d"/>
             <DxGridDataColumn FieldName="DayOfWeek"/>
             <DxGridDataColumn FieldName="DayOfMonth"/>
-            <DxGridDataColumn FieldName="WeekOfYear" GroupIndex="2"/>
-            <DxGridDataColumn FieldName="MonthName" Caption="Month" GroupIndex="1"/>
+            <DxGridDataColumn FieldName="WeekOfYear" GroupIndex="2" />
+            <DxGridDataColumn FieldName="Month"  Caption="Month" GroupIndex="1" GroupInterval="GridColumnGroupInterval.Custom"/>
             <DxGridDataColumn FieldName="Year" GroupIndex="0"  DisplayFormat="D"/>
             <DxGridDataColumn FieldName="Usage" Caption="@this.PerDayCaption"/>
             <DxGridDataColumn FieldName="PerHour" Caption="@this.PerHourCaption"/>
@@ -40,26 +47,64 @@
               Click="@this.DownloadHandler"/>
 </div>
 <div class="row" style="padding: .5rem">
-    <DxChart @ref="chart" T="UsageDayRecord"
-             Data="@Records"
-             Width="100%">
-        <DxChartTitle Text="Consumption">
-            <DxChartSubTitle Text="Weekly Consumption"/>
-        </DxChartTitle>
-        <DxChartBarSeries Name="Week Of Year" 
-                          T="UsageDayRecord" 
-                          TValue="double" 
-                          TArgument="string" 
-                          SummaryMethod="Enumerable.Sum"
-                          ArgumentField="@((UsageDayRecord s) => s.WeekOfYear.ToString())"
-                          ValueField="@((UsageDayRecord s) => s.Usage)" />
-        <DxChartLegend Position="RelativePosition.Outside"
-                       HorizontalAlignment="HorizontalAlignment.Center"
-                       VerticalAlignment="VerticalEdge.Bottom" />
-        <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
-            <DxChartAxisTitle Text="@this.Units"/>
-        </DxChartValueAxis>
-    </DxChart>
+    
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <CustomRange @bind-StartDate="@this._startDate" @bind-StopDate="@this._stopDate" CustomDateVisible="true" />
+            </div>
+            <div class="row py-1">
+                <div class="col py-1 text-center">
+                    <h6>Plot Range: </h6>
+                    @foreach (PlotRangeMonths range in Enum.GetValues(typeof(PlotRangeMonths)).Cast<PlotRangeMonths>().ToList()) {
+                        <DxButton RenderStyle="ButtonRenderStyle.Light"
+                                  Text="@Enum.GetName(range).Substring(1)"
+                                  Click="@(async Task (arg) => { await this.OnClick(range); })"/>
+                    }
+                </div>
+                <div class="col py-1 text-center">
+                    <h6 >Group By: </h6>
+                    @foreach (GroupPlotBy groupBy in Enum.GetValues(typeof(GroupPlotBy)).Cast<GroupPlotBy>().ToList()) {
+                        <DxButton RenderStyle="ButtonRenderStyle.Light"
+                                  Text="@Enum.GetName(groupBy)"
+                                  Click="@((arg) => { this.OnGroupByClick(groupBy); })"/>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <DxChart @ref="chart" T="UsageDayRecord"
+                     Data="@this._chartRecords"
+                     Width="100%">
+                <DxChartTitle Text="Consumption">
+                    <DxChartSubTitle Text="Weekly Consumption"/>
+                </DxChartTitle>
+                <DxChartBarSeries Name="@this._legendTitle" 
+                                  T="UsageDayRecord" 
+                                  TValue="double" 
+                                  TArgument="string" 
+                                  SummaryMethod="Enumerable.Sum"
+                                  ArgumentField="@((UsageDayRecord s) => this.SetArg(s))"
+                                  ValueField="@((UsageDayRecord s) => s.Usage)" />
+                <DxChartLegend Position="RelativePosition.Outside"
+                               HorizontalAlignment="HorizontalAlignment.Center"
+                               VerticalAlignment="VerticalEdge.Bottom" />
+                <DxChartValueAxis ValueType="ChartAxisDataType.Numeric">
+                    <DxChartAxisTitle Text="@this.Units"/>
+                </DxChartValueAxis>
+                <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
+                    <div style="background-color: grey;">
+                        <div class="font-weight-bold">
+                             @(this._legendTitle+": "+(context.Point.Argument))
+                        </div>
+                        <div>
+                            Consumed: @(((double)context.Point.Value).ToString("F1")+" "+this.Units)
+                        </div>
+                    </div>
+                </DxChartTooltip>
+            </DxChart>
+        </div>
+    </div>
 </div>
 
 
@@ -69,15 +114,70 @@
     [Parameter]
     public BulkGasType GasType { get; set; }
 
-    IEnumerable<UsageDayRecord>? Records { get; set; }
+    IEnumerable<UsageDayRecord>? _records;
+    IEnumerable<UsageDayRecord>? _chartRecords;
+    
     string Units { get; set; }
     string PerDayCaption { get; set; }
     string PerHourCaption { get; set; }
+    private DateTime _startDate=DateTime.Now.AddMonths(-24);
+    private DateTime _stopDate=DateTime.Now;
+    private GroupPlotBy _groupPlotBy = GroupPlotBy.Weeks;
+    private string _legendTitle = "Year-Month-Week";
     
     DxChartBase chart;
     
-    async void ExportChart(ChartExportFormat format) {
-        await chart?.ExportAsync("BubbleChart", format);
+    
+    protected async override Task OnInitializedAsync() {
+        this.GasTypeChanged.OnParentChanged += this.OnGasTypeChanged;
+        this.DateRangeChanged.OnChildChanged += this.OnDateRangeChanged;
+        await this.Load();
+    }
+    
+    /*public async override Task SetParametersAsync(ParameterView parameters) {
+        await this.Load();
+        await base.SetParametersAsync(parameters);
+    }*/
+    protected async override Task OnParametersSetAsync() {
+        await this.Load();
+    }
+
+    private async Task OnGasTypeChanged() {
+        await this.Load();
+    }
+    
+    private async Task OnClick(PlotRangeMonths rangeMonths) {
+        this._startDate = DateTime.Now.AddMonths(-(int)rangeMonths);
+        this._stopDate = DateTime.Now;
+        await this.Load();
+    }
+
+    private async Task OnGroupByClick(GroupPlotBy groupPlotBy) {
+        this._groupPlotBy = groupPlotBy;
+        await this.Load();
+    }
+    
+    private async Task OnDateRangeChanged() {
+        this._startDate = this.DateRangeChanged.Item.Start;
+        this._stopDate = this.DateRangeChanged.Item.Stop;
+        await this.Load();
+    }
+
+    private string SetArg(UsageDayRecord record) {
+        switch (this._groupPlotBy) {
+            case GroupPlotBy.Weeks: {
+                return record.WeekOfYear.ToString()+"-"+record.Month.ToString() +"-"+record.Year.ToString();
+            }
+            case GroupPlotBy.Months: {
+                return record.Year.ToString() +"-"+ record.Month.ToString();
+            }
+            case GroupPlotBy.Days: {
+                return record.Date.ToString("M-d-yy");
+            }
+            default: {
+                return record.Year.ToString() + "-" +record.Month.ToString() +"-"+ record.WeekOfYear.ToString(); 
+            }
+        }
     }
     
     void Grid_CustomizeSummaryDisplayText(GridCustomizeSummaryDisplayTextEventArgs e) {
@@ -88,19 +188,30 @@
         }
         
     }
-
-    protected override async Task OnInitializedAsync() {
-        this.GasTypeChanged.OnParentChanged += this.OnGasTypeChanged;
-        await this.Load();
+    
+    void Grid_CustomizeGroupValueDisplayText(GridCustomizeGroupValueDisplayTextEventArgs e) {
+        if(e.FieldName == "Month") {
+            e.DisplayText = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName((int)e.Value);
+        }
     }
     
-    public override async Task SetParametersAsync(ParameterView parameters) {
-        await base.SetParametersAsync(parameters);
-        await this.Load();
+    void Grid_CustomGroup(GridCustomGroupEventArgs e) {
+        if(e.FieldName == "Month") {
+            e.SameGroup = Grid_CompareColumnValues(e.Value1, e.Value2) == 0;
+            e.Handled = true;
+        }
     }
-
-    private async Task OnGasTypeChanged() {
-        await this.Load();
+    
+    int Grid_CompareColumnValues(object value1, object value2) {
+        var res = System.Collections.Comparer.Default.Compare(value1, value2);
+        if (res < 0) {
+            res = -1;
+        }else if (res > 0) {
+            res = 1;
+        } else {
+            res = 0;
+        }
+        return res;
     }
 
     private async Task DownloadHandler() {
@@ -117,7 +228,7 @@
 
 
         int count = 2;
-        foreach (var item in this.Records) {
+        foreach (var item in this._records) {
             worksheet.Cell(count, 1).Value = item.Date;
             worksheet.Cell(count, 2).Value = item.Year;
             worksheet.Cell(count, 3).Value = item.Month;
@@ -132,7 +243,7 @@
         worksheet.Cell(1, 11).Value = "Avg. Daily";
         worksheet.Cell(1, 12).Value = "Week Total";
 
-        var weeks=this.Records.GroupBy(e => e.WeekOfYear, e => new {
+        var weeks=this._records.GroupBy(e => e.WeekOfYear, e => new {
             month = e.Month, day = e.Date.DayOfYear, hour = e.PerHour, daily = e.Usage
         }).ToDictionary(e => e.Key, e => e.ToArray());
         count = 2;
@@ -147,7 +258,7 @@
         worksheet.Cell(1, 15).Value = "Avg. Daily";
         worksheet.Cell(1, 16).Value = "Month Total";
 
-        var months=this.Records.GroupBy(e => e.Month, e => new {
+        var months=this._records.GroupBy(e => e.Month, e => new {
             month = e.Month, day = e.Date.DayOfYear, hour = e.PerHour, daily = e.Usage
         }).ToDictionary(e => e.Key, e => e.ToArray());
         count = 2;
@@ -163,31 +274,53 @@
         wb.SaveAs(stream);
         var bytes = stream.ToArray();
         await this.DownloadService.DownloadFileAsync("test.xlsx", bytes);
-        
         this.SpinnerService.Hide();
     }
 
     private async Task Load() {
         switch (this.GasType) {
             case BulkGasType.NH3: {
-                this.Records = await this.UsageService.GetNH3Usage();
+                this._records = await this.UsageService.GetNH3Usage();
                 this.Units = "lb";
                 break;
             }
             case BulkGasType.H2: {
-                this.Records = await this.UsageService.GetH2Usage();
+                this._records = await this.UsageService.GetH2Usage();
                 this.Units = "PSI";
                 break;
             }
             case BulkGasType.N2: {
-                this.Records = await this.UsageService.GetN2Usage();
+                this._records = await this.UsageService.GetN2Usage();
                 this.Units = "inH20";
                 break;
             }
         }
+        switch (this._groupPlotBy) {
+            case GroupPlotBy.Weeks: {
+                this._legendTitle = "Week-Month-Year";
+                break;
+            }
+            case GroupPlotBy.Months: {
+                this._legendTitle = "Month-Year";
+                break;
+            }
+            case GroupPlotBy.Days: {
+                this._legendTitle = "Month-Day-Year";
+                break;
+            }
+            default: {
+                this._legendTitle = "Week-Month-Year";
+                break;
+            }
+        }
+        this._chartRecords = this._records?.Where(e => e.Date >= this._startDate && e.Date <= this._stopDate);
         this.PerDayCaption = this.Units + "/day";
         this.PerHourCaption = this.Units + "/hr";
         await InvokeAsync(StateHasChanged);
     }
-
+    public ValueTask DisposeAsync() {
+        this.GasTypeChanged.OnParentChanged -= this.OnGasTypeChanged;
+        this.DateRangeChanged.OnChildChanged -= this.OnDateRangeChanged;
+        return ValueTask.CompletedTask;
+    }
 }
