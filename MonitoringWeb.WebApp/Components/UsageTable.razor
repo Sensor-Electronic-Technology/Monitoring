@@ -166,7 +166,7 @@
     private string SetArg(UsageDayRecord record) {
         switch (this._groupPlotBy) {
             case GroupPlotBy.Weeks: {
-                return record.WeekOfYear.ToString()+"-"+record.Month.ToString() +"-"+record.Year.ToString();
+                return record.WeekOfYear.ToString()+"-"+record.Year.ToString();
             }
             case GroupPlotBy.Months: {
                 return record.Year.ToString() +"-"+ record.Month.ToString();
@@ -296,7 +296,7 @@
         }
         switch (this._groupPlotBy) {
             case GroupPlotBy.Weeks: {
-                this._legendTitle = "Week-Month-Year";
+                this._legendTitle = "Week-Year";
                 break;
             }
             case GroupPlotBy.Months: {
@@ -308,7 +308,7 @@
                 break;
             }
             default: {
-                this._legendTitle = "Week-Month-Year";
+                this._legendTitle = "Week-Year";
                 break;
             }
         }
