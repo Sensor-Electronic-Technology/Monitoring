@@ -1,15 +1,52 @@
 ﻿@page "/scalecal"
 @using MonitoringWeb.WebApp.Components.TankScales
-<DxTabs RenderMode="TabsRenderMode.Default" @bind-ActiveTabIndex="this._tabIndex">
-    <DxTabPage Text="NH3 Tanks">
-        <h1>Coming Soon</h1>
-    </DxTabPage>
-    <DxTabPage Text="Scales">
-        <ScalesView />
-    </DxTabPage>
-</DxTabs>
+@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringSystem.Shared.Services
+@using MonitoringWeb.WebApp.Services
+@inject ValueChanged<TankScale> TankScaleChanged
+@inject AmmoniaDataService AmmoniaDataService
+@inject AmmoniaController AmmoniaController
+@inject WebsiteConfigurationProvider Provider
+@implements IAsyncDisposable
+
+<style>
+  .scale-container{
+    .justify-content-center;
+    .shadow-lg;
+    .col-3;
+    .p-3;
+    .py-1;
+    .mb-5;
+    .rounded;
+    width: 800px;
+  }
+</style>
+
+<div class="row justify-content-center">
+  @foreach (var scale in this._scales) {
+      <div class="scale-container">
+        <TankScaleView TankScale="@scale"/>
+      </div>
+  }
+</div>
+
 
 @code {
-    private int _tabIndex;
+  private int _tabIndex;
+  private IEnumerable<TankScale> _scales=Enumerable.Empty<TankScale>();
+  
+  protected override async Task OnInitializedAsync() {
+    this.TankScaleChanged.OnChildChanged += this.TankScaleChangedHandler;
+    this._scales = await this.AmmoniaDataService.GetTankScales();
+  }
 
+  private async Task TankScaleChangedHandler() {
+    this._scales = await this.AmmoniaDataService.GetTankScales();
+    await InvokeAsync(StateHasChanged);
+  }
+
+  public ValueTask DisposeAsync() {
+    this.TankScaleChanged.OnChildChanged -= this.TankScaleChangedHandler;
+    return ValueTask.CompletedTask;
+  }
 }

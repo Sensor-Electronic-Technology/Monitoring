@@ -78,12 +78,45 @@ public class NHLogTesting {
             NonZeroRawValue = 663909,
             IsCurrent = true
         };
-        scale1.Calibrations = new List<Calibration>();
-        scale1.Calibrations.Add(t1calibration);
+        var tank1 = new NH3Tank() {
+            _id = ObjectId.GenerateNewId(),
 
-        scale2.Calibrations = new List<Calibration>();
-        scale2.Calibrations.Add(t2calibration);
-
+            StartDate = new DateTime(2023,8,1),
+            TankState = TankState.InUse,
+            SerialNumber = "1234s",
+            StartWeight = 883,
+        };
+        var t1Measured = new TankWeight() {
+            Gas = 882,
+            Gross = 2614,
+            Tare = 1732
+        };
+        tank1.MeasuredWeight = t1Measured;
+        tank1.LabeledWeight = t1Measured;
+        
+        
+        var tank2 = new NH3Tank() {
+            _id = ObjectId.GenerateNewId(),
+            StartDate = new DateTime(2023,10,1),
+            TankState = TankState.IdleOnScaleMeasured,
+            SerialNumber = "0923s",
+            StartWeight = 883
+        };
+        
+        var t2Measured = new TankWeight() {
+            Gas = 884,
+            Gross = 2625,
+            Tare = 1741
+        };
+        tank2.MeasuredWeight = t2Measured;
+        tank2.LabeledWeight = t2Measured;
+        scale1.CurrentTank = tank1;
+        scale2.CurrentTank = tank2;
+        scale1.CurrentCalibration = t1calibration;
+        scale2.CurrentCalibration = t2calibration;
+        scale1.CalibrationLog.Add(t1calibration);
+        scale2.CalibrationLog.Add(t2calibration);
+        
         await scaleCollection.InsertOneAsync(scale1);
         await scaleCollection.InsertOneAsync(scale2);
         await scaleCollection.InsertOneAsync(scale3);
@@ -137,7 +170,7 @@ public class NHLogTesting {
         };
         var tank1 = new NH3Tank() {
             _id = ObjectId.GenerateNewId(),
-            TankScaleId = scale1._id,
+
             StartDate = new DateTime(2023,8,1),
             StopDate = new DateTime(2023,10,1),
             TankState = TankState.Consumed,
@@ -147,31 +180,11 @@ public class NHLogTesting {
         };
         var tank2 = new NH3Tank() {
             _id = ObjectId.GenerateNewId(),
-            TankScaleId = scale1._id,
+
             StartDate = new DateTime(2023,10,1),
             TankState = TankState.InUse,
             SerialNumber = "0923s",
             StartWeight = 883
-        };
-        var tank3 = new NH3Tank() {
-            _id = ObjectId.GenerateNewId(),
-            TankScaleId = scale2._id,
-            StartDate = new DateTime(2023,2,1),
-            StopDate = new DateTime(2023,3,1),
-            TankState = TankState.Consumed,
-            SerialNumber = "5432s",
-            StartWeight = 883,
-            StopWeight = 85
-        };
-        var tank4 = new NH3Tank() {
-            _id = ObjectId.GenerateNewId(),
-            TankScaleId = scale2._id,
-            StartDate = new DateTime(2023,4,1),
-            StopDate = new DateTime(2023,5,23),
-            TankState = TankState.Consumed,
-            SerialNumber = "1583s",
-            StartWeight = 883,
-            StopWeight = 85
         };
 
         await scaleCollection.InsertOneAsync(scale1);
@@ -179,8 +192,6 @@ public class NHLogTesting {
         
         await tankCollection.InsertOneAsync(tank1);
         await tankCollection.InsertOneAsync(tank2);
-        await tankCollection.InsertOneAsync(tank3);
-        await tankCollection.InsertOneAsync(tank4);
         Console.WriteLine("Check Database");
 
     }

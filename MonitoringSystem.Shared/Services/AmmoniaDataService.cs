@@ -11,6 +11,10 @@ public class AmmoniaDataService {
         this._tankScaleCollection = this._database.GetCollection<TankScale>("tank_scales");
     }
 
+    public async Task<IEnumerable<TankScale>> GetTankScales() {
+        return (await this._tankScaleCollection.FindAsync(_ => true)).ToEnumerable();
+    }
+
     public async Task<TankScale?> GetTankScale(int scale) {
         return await this._tankScaleCollection.Find(e => e.ScaleId == scale).FirstOrDefaultAsync();
     }
@@ -18,13 +22,15 @@ public class AmmoniaDataService {
     public async Task<bool> AddNewCurrentCalibration(TankScale scale,Calibration calibration) {
         var tankScale=await this.GetTankScale(scale.ScaleId);
         if (tankScale != null) {
-            var calibrations = tankScale.Calibrations;
+            var calibrations = tankScale.CalibrationLog;
             calibrations.ForEach(cal => {
                 cal.IsCurrent = false;
             });
             calibration.IsCurrent = true;
             calibrations.Add(calibration);
-            var update = Builders<TankScale>.Update.Set(e => e.Calibrations, calibrations);
+            var update = Builders<TankScale>.Update
+                .Set(e => e.CalibrationLog, calibrations)
+                .Set(e=>e.CurrentCalibration,calibration);
             var filter = Builders<TankScale>.Filter.Eq(e => e._id,scale._id);
             var updateResult=await this._tankScaleCollection.UpdateOneAsync(filter, update);
             return updateResult.IsAcknowledged;

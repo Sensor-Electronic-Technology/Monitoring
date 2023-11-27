@@ -12,22 +12,26 @@ public enum TankState {
 public class TankScale {
     public ObjectId _id { get; set; }
     public int ScaleId { get; set; }
-    public List<Calibration> Calibrations { get; set; } = new List<Calibration>();
-    
+    public bool HasTank { get; set; }
+    public NH3Tank? CurrentTank { get; set; }
+    public Calibration CurrentCalibration { get; set; }
+    public List<Calibration> CalibrationLog { get; set; } = new List<Calibration>();
+    public List<NH3Tank> Nh3TankLog { get; set; } = new List<NH3Tank>();
 }
 
 public class NH3Tank {
-    public ObjectId _id { get; set; }
-    public ObjectId TankScaleId { get; set; }
     public string? SerialNumber { get; set; }
     public TankState TankState { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime StopDate { get; set; }
+    private bool Measured { get; set; }
     public double StartWeight { get; set; }
     public double StopWeight { get; set; }
     public double Consumption { get; set; }
     public TankWeight? LabeledWeight { get; set; }
     public TankWeight? MeasuredWeight { get; set; }
+    
+    
 }
 
 public class Calibration {

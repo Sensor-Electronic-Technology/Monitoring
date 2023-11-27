@@ -1,0 +1,46 @@
+﻿@using MonitoringSystem.Shared.Data.LogModel
+
+  <div class="card">
+    <div class="card-header text-center py-1">
+      <h4>@this._header</h4>
+    </div>
+    <div class="card-body">
+      <div class="row py-1">
+        @if (this._hasTank) {
+          <h4>Has Tank</h4>
+        } else {
+          <h4>Has Tank</h4>
+        }
+      </div>
+      <div class="row py-1">
+        <DxAccordion>
+          <Items>
+            <DxAccordionItem Text="Scale Calibration">
+              <ContentTemplate Context="calContext">
+                <ScaleView TankScale="@this.TankScale"/>
+              </ContentTemplate>
+            </DxAccordionItem>
+          </Items>
+        </DxAccordion>
+      </div>
+    </div>
+  </div>
+
+@code {
+  [Parameter] 
+  public TankScale? TankScale { get; set; }
+
+  private string _header = "Scale ";
+  private NH3Tank? _loadedNh3Tank;
+    private Calibration? _currentCalibration;  
+  bool _hasTank = false;
+
+  protected override Task OnInitializedAsync() {
+    if (this.TankScale != null) {
+      this._header += this.TankScale.ScaleId;
+      this._loadedNh3Tank = this.TankScale.CurrentTank;
+      this._hasTank = this.TankScale.HasTank;
+    }
+    return base.OnInitializedAsync();
+  }
+}
