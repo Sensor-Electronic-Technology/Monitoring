@@ -144,7 +144,7 @@
             this.TankScale = await this.AmmoniaDataService.GetTankScale(this.TankScale.ScaleId);
             this._currentCalibration = this.TankScale?.CurrentCalibration;
             this._isReadOnly = true;
-            this.TankScaleChanged.SetItemChild(this.TankScale);
+            //this.TankScaleChanged.SetItemChild(this.TankScale);
             await InvokeAsync(StateHasChanged);
             this.ShowMsgBox("Success","Calibration Saved and Uploaded");
         } else {

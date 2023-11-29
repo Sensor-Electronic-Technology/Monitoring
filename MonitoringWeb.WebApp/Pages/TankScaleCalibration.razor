@@ -1,6 +1,6 @@
-﻿@page "/scale"
-@using MonitoringWeb.WebApp.Components.TankScales
+﻿@page "/scalecal"
 @using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringWeb.WebApp.Components.TankScales
 @using MonitoringSystem.Shared.Services
 @using MonitoringWeb.WebApp.Services
 @inject ValueChanged<TankScale> TankScaleChanged
@@ -9,44 +9,118 @@
 @inject WebsiteConfigurationProvider Provider
 @implements IAsyncDisposable
 
-<style>
-  .scale-container{
-    .justify-content-center;
-    .shadow-lg;
-    .col-3;
-    .p-3;
-    .py-1;
-    .mb-5;
-    .rounded;
-    width: 800px;
-  }
-</style>
-
-<div class="row justify-content-center">
-  @foreach (var scale in this._scales) {
-      <div class="scale-container">
-        <TankScaleView TankScale="@scale"/>
-      </div>
-  }
+<div class="cw-480">
+    <DxAccordion @ref="@this._accordion"
+                 SelectionMode="NavigationSelectionMode.Single"
+                 AnimationType="LayoutAnimationType.Slide">
+        <Items>
+            @foreach (var scale in this._scales) {
+                <DxAccordionItem>
+                    <HeaderTextTemplate>
+                        <div class="container-sm">
+                            @*<div class="row text-center py-1">
+                                <h5>Scale @scale.ScaleId :</h5>
+                            </div>*@
+                            <div class="row">
+                                <span class="fs-3">Scale @scale.ScaleId: </span>
+                                <div class=@this.GetCss(scale.TankScaleState)>
+                                    <h4 class="py-1">@this.GetLabel(scale.TankScaleState)</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </HeaderTextTemplate>
+                    <ContentTemplate>
+                        <div class="container-sm py-1" style="height: 800px;width: 800px">
+                            <DxTabs>
+                                <DxTabPage Text="Scale calibration">
+                                    <ScaleView TankScale="@scale"></ScaleView>
+                                </DxTabPage>
+                                <DxTabPage Text="Tank">
+                                    
+                                </DxTabPage>
+                            </DxTabs>
+                        </div>
+                    </ContentTemplate>
+                </DxAccordionItem>
+            }
+        </Items>
+    </DxAccordion>
 </div>
 
 
 @code {
-  private int _tabIndex;
-  private IEnumerable<TankScale> _scales=Enumerable.Empty<TankScale>();
+    private int _tabIndex;
+    private DxAccordion _accordion;
+    private IEnumerable<TankScale> _scales=Enumerable.Empty<TankScale>();
   
-  protected override async Task OnInitializedAsync() {
-    this.TankScaleChanged.OnChildChanged += this.TankScaleChangedHandler;
+    protected override async Task OnInitializedAsync() {
+    /*this.TankScaleChanged.OnChildChanged += this.TankScaleChangedHandler;*/
     this._scales = await this.AmmoniaDataService.GetTankScales();
-  }
+    }
 
-  private async Task TankScaleChangedHandler() {
-    this._scales = await this.AmmoniaDataService.GetTankScales();
-    await InvokeAsync(StateHasChanged);
-  }
+    private async Task TankScaleChangedHandler() {
+        this._scales = await this.AmmoniaDataService.GetTankScales();
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    void SelectionChanged(AccordionSelectionChangedEventArgs args) {
+        if(args.SelectedItems.Any()) {
+            /*SelectedItem = (FinancialProductInfo)args.SelectedItems.FirstOrDefault().DataItem;
+            DetailsPopupVisible = true;*/
+        } else {
+            //SelectedItem = null;
+        }
+            
+    }
+    
+    private string GetCss(TankScaleState state) {
+        switch(state){
+            case TankScaleState.InUse: {
+                return "bg-success text-white text-center";
+            }
+            case TankScaleState.Consumed: {
+                return "bg-danger text-dark text-center";
+            }
+            case TankScaleState.IdleOnScaleMeasured: {
+                return "bg-info text-white text-center";
+            }
+            case TankScaleState.IdleOnScaleNotMeasured: {
+                return "bg-warning text-white text-center";
+            }
+            case TankScaleState.NoTank: {
+                return "bg-secondary text-white text-center";
+            }
+            default: {
+                return "bg-secondary text-white text-center";
+            }
+        }
+    }
 
-  public ValueTask DisposeAsync() {
-    this.TankScaleChanged.OnChildChanged -= this.TankScaleChangedHandler;
-    return ValueTask.CompletedTask;
-  }
+    private string GetLabel(TankScaleState state) {
+        switch(state){
+            case TankScaleState.InUse: {
+                return "Consuming";
+            }
+            case TankScaleState.Consumed: {
+                return "Consumed";
+            }
+            case TankScaleState.IdleOnScaleMeasured: {
+                return "Ready";
+            }
+            case TankScaleState.IdleOnScaleNotMeasured: {
+                return "Tank Needs Measure";
+            }
+            case TankScaleState.NoTank: {
+                return "No Tank";
+            }
+            default: {
+                return "No Tank";
+            }
+        }
+    }
+
+    public ValueTask DisposeAsync() {
+        //this.TankScaleChanged.OnChildChanged -= this.TankScaleChangedHandler;
+        return ValueTask.CompletedTask;
+    }
 }

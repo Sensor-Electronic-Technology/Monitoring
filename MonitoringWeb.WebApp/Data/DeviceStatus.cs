@@ -1,4 +1,5 @@
 ﻿using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.SignalR;
 
 namespace MonitoringWeb.WebApp.Data; 
@@ -15,4 +16,13 @@ public class StatusItem {
     public string? Label { get; set; }
     public string? Value { get; set; }
     public string? TimeStamp { get; set; }
+}
+
+public class Nh3StatusItem {
+    public string? Item { get; set; }
+    public TankScaleState Status { get; set; }
+    public string? Label { get; set; }
+    public string? Value { get; set; }
+    public string? TimeStamp { get; set; }
+    public string? CssClass { get; set; }
 }

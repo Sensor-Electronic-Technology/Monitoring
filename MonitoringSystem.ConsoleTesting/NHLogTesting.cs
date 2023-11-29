@@ -43,26 +43,29 @@ public class NHLogTesting {
         Console.WriteLine("Create NH Database");
         var client = new MongoClient("mongodb://172.20.3.41");
         var database=client.GetDatabase("nh3_logs");
-        var tankCollection = database.GetCollection<NH3Tank>("nh3_tanks");
         var scaleCollection = database.GetCollection<TankScale>("tank_scales");
         
         var scale1 = new TankScale() {
             _id = ObjectId.GenerateNewId(),
             ScaleId = 1,
+            TankScaleState = TankScaleState.InUse
         };
         var scale2 = new TankScale() {
             _id = ObjectId.GenerateNewId(),
             ScaleId = 2,
+            TankScaleState = TankScaleState.IdleOnScaleMeasured
         };
         var scale3 = new TankScale() {
             _id = ObjectId.GenerateNewId(),
             ScaleId = 3,
+            TankScaleState = TankScaleState.NoTank
         };
         var scale4 = new TankScale() {
             _id = ObjectId.GenerateNewId(),
             ScaleId = 4,
+            TankScaleState = TankScaleState.IdleOnScaleNotMeasured
         };
-        var t1calibration = new Calibration() {
+        var scale1Calibration = new Calibration() {
             CalibrationDate = DateTime.Now.AddDays(-5),
             ZeroValue = 0,
             NonZeroValue = 100,
@@ -70,7 +73,7 @@ public class NHLogTesting {
             NonZeroRawValue = 658736,
             IsCurrent = true
         };
-        var t2calibration = new Calibration() {
+        var scale2Calibration = new Calibration() {
             CalibrationDate = DateTime.Now.AddDays(-5),
             ZeroValue = 0,
             NonZeroValue = 100,
@@ -78,44 +81,73 @@ public class NHLogTesting {
             NonZeroRawValue = 663909,
             IsCurrent = true
         };
-        var tank1 = new NH3Tank() {
-            _id = ObjectId.GenerateNewId(),
+        var scale3Calibration = new Calibration() {
+            CalibrationDate = DateTime.Now,
+            ZeroRawValue = 588465,
+            NonZeroRawValue = 610038,
+            ZeroValue = 0,
+            NonZeroValue = 30,
+            IsCurrent = true
+        };
 
+        var scale4Calibration = new Calibration() {
+            CalibrationDate = DateTime.Now,
+            ZeroRawValue = 1069977,
+            NonZeroRawValue = 1113364,
+            ZeroValue = 0,
+            NonZeroValue = 26,
+            IsCurrent = true
+        };
+        
+        scale1.CurrentCalibration = scale1Calibration;
+        scale2.CurrentCalibration = scale2Calibration;
+        scale3.CurrentCalibration = scale3Calibration;
+        scale4.CurrentCalibration = scale4Calibration;
+        
+        scale1.CalibrationLog.Add(scale1Calibration);
+        scale2.CalibrationLog.Add(scale2Calibration);
+        scale3.CalibrationLog.Add(scale3Calibration);
+        scale4.CalibrationLog.Add(scale4Calibration);
+        
+        var tank1 = new NH3Tank() {
             StartDate = new DateTime(2023,8,1),
-            TankState = TankState.InUse,
             SerialNumber = "1234s",
             StartWeight = 883,
         };
-        var t1Measured = new TankWeight() {
-            Gas = 882,
+        
+        var tank2 = new NH3Tank() {
+            StartDate = new DateTime(2023,10,1),
+            SerialNumber = "0923s",
+            StartWeight = 884
+        };
+        
+        var tank4 = new NH3Tank() {
+            StartDate = new DateTime(2023,10,1),
+            SerialNumber = "0923s",
+            StartWeight = 884,
+        };
+        
+        var tank1Measured = new TankWeight() {
+            Gas = 883,
             Gross = 2614,
             Tare = 1732
         };
-        tank1.MeasuredWeight = t1Measured;
-        tank1.LabeledWeight = t1Measured;
         
-        
-        var tank2 = new NH3Tank() {
-            _id = ObjectId.GenerateNewId(),
-            StartDate = new DateTime(2023,10,1),
-            TankState = TankState.IdleOnScaleMeasured,
-            SerialNumber = "0923s",
-            StartWeight = 883
-        };
-        
-        var t2Measured = new TankWeight() {
+        var tank2Measured = new TankWeight() {
             Gas = 884,
             Gross = 2625,
             Tare = 1741
         };
-        tank2.MeasuredWeight = t2Measured;
-        tank2.LabeledWeight = t2Measured;
+        
+        tank1.MeasuredWeight = tank1Measured;
+        tank1.LabeledWeight = tank1Measured;
+        
+        tank2.MeasuredWeight = tank2Measured;
+        tank2.LabeledWeight = tank2Measured;
+        
         scale1.CurrentTank = tank1;
         scale2.CurrentTank = tank2;
-        scale1.CurrentCalibration = t1calibration;
-        scale2.CurrentCalibration = t2calibration;
-        scale1.CalibrationLog.Add(t1calibration);
-        scale2.CalibrationLog.Add(t2calibration);
+        scale4.CurrentTank = tank4;
         
         await scaleCollection.InsertOneAsync(scale1);
         await scaleCollection.InsertOneAsync(scale2);
@@ -169,20 +201,20 @@ public class NHLogTesting {
             ScaleId = 1,
         };
         var tank1 = new NH3Tank() {
-            _id = ObjectId.GenerateNewId(),
+
 
             StartDate = new DateTime(2023,8,1),
             StopDate = new DateTime(2023,10,1),
-            TankState = TankState.Consumed,
+
             SerialNumber = "1234s",
             StartWeight = 883,
             StopWeight = 85
         };
         var tank2 = new NH3Tank() {
-            _id = ObjectId.GenerateNewId(),
+
 
             StartDate = new DateTime(2023,10,1),
-            TankState = TankState.InUse,
+
             SerialNumber = "0923s",
             StartWeight = 883
         };

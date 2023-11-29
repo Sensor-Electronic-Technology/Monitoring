@@ -89,8 +89,9 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 } else {
                     tempValue= raw[aItem.Register]/(double)aItem.Factor;
                 }
-                this._filters[aItem._id]+=(tempValue-this._filters[aItem._id])*fweight;
-                reading.Value = this._filters[aItem._id];
+                /*this._filters[aItem._id]+=(tempValue-this._filters[aItem._id])*fweight;
+                reading.Value = this._filters[aItem._id];*/
+                reading.Value = tempValue;
                 readings.Add(reading);
                 var alert=_dataService.MonitorAlerts.FirstOrDefault(e => e.ChannelId == aItem._id);
                 if (alert != null) {
@@ -132,8 +133,8 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             if (this._device.DeviceName == "nh3") {
                 this._isAmmonia = true;
             }
-            var analogReading = await this._dataService.GetLastAnalogReading();
-            foreach (var dev in this._dataService.AnalogItems) {
+            /*var analogReading = await this._dataService.GetLastAnalogReading();*/
+            /*foreach (var dev in this._dataService.AnalogItems) {
                 if (analogReading != null) {
                     var reading = analogReading.readings.FirstOrDefault(e => e.MonitorItemId == dev._id);
                     if (reading != null) {
@@ -144,7 +145,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 } else {
                     this._filters.Add(dev._id,0);
                 }
-            }
+            }*/
         }
 
         public async Task Reload() {

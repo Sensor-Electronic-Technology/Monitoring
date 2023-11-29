@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components.Web;
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
+using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Services;
 using MonitoringWeb.WebApp.Data;
 using MonitoringWeb.WebApp.Hubs;
@@ -40,6 +41,7 @@ builder.Services.AddSingleton<SelectionChanged<ModbusDeviceDto>>();
 builder.Services.AddSingleton<SelectionChanged<ChannelDto>>();
 builder.Services.AddSingleton<ValueChanged<DateRange>>();
 builder.Services.AddSingleton<ValueChanged<BulkGasType>>();
+builder.Services.AddSingleton<ValueChanged<TankScale>>();
 builder.Services.AddSingleton<UsageService>();
 builder.Services.AddScoped<AmmoniaController>();
 builder.Services.AddScoped<AmmoniaDataService>();
@@ -62,7 +64,7 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UseDevExpressBlazorWasmMasksStaticFiles();
+/*app.UseDevExpressBlazorWasmMasksStaticFiles();*/
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
