@@ -16,6 +16,7 @@ namespace MonitoringSystem.ConsoleTesting {
             //await CreateNHDevice();
             //await CreateDeviceActions();
             //await CreateNH3Channels();
+            await AddNH3Channels();
             //await DeleteDevice();
             //await DeleteChannels();
 
@@ -28,6 +29,26 @@ namespace MonitoringSystem.ConsoleTesting {
         
 
         public static async Task CreateNH3Channels() {
+            var context = new MonitorContext();
+            var device = context.Devices.OfType<ModbusDevice>()
+                .Include(e => e.Channels)
+                .AsTracking()
+                .FirstOrDefault(e => e.Name == "nh3");
+
+            var deviceActions = context.DeviceActions
+                .Include(e=>e.FacilityAction)
+                .Where(e => e.ModbusDeviceId == device.Id).ToList();
+
+            var weightSensor = await context.Sensors.FirstOrDefaultAsync(e => e.Name=="Weight");
+            var tempSensor = await context.Sensors.FirstOrDefaultAsync(e=>e.Name=="NH3 Tank Temp.");
+            var dutySensor = await context.Sensors.FirstOrDefaultAsync(e => e.Name == "Duty Cycle");
+            var inputs=CreateChannels(device, deviceActions,weightSensor,tempSensor,dutySensor);
+            context.AddRange(inputs);
+            await context.SaveChangesAsync();
+            Console.WriteLine("Check Database");
+        }
+        
+        public static async Task AddNH3Channels() {
             var context = new MonitorContext();
             var device = context.Devices.OfType<ModbusDevice>()
                 .Include(e => e.Channels)
@@ -104,13 +125,19 @@ namespace MonitoringSystem.ConsoleTesting {
             var warn = actions.FirstOrDefault(e => e.FacilityAction is { ActionType: ActionType.Warning });
             var alrm = actions.FirstOrDefault(e => e.FacilityAction is { ActionType: ActionType.Alarm });
 
-            var tank1 = CreateAnalogInput(device, "Tank1", 1, soft, warn, alrm, "Tank1 Weight", 0, 2, true, 200, 150, 100,wSensor);
-            var tank2 = CreateAnalogInput(device, "Tank2", 1, soft, warn, alrm, "Tank2 Weight",2, 2, true, 200, 150, 100,wSensor);
-            var temp1 = CreateAnalogInput(device, "Temp1", 1, soft, warn, alrm, "Tank1 Temp.", 60, 1, false, 0, 0, 0,tSensor);
-            var temp2 = CreateAnalogInput(device, "Temp2", 1, soft, warn, alrm, "Tank2 Temp.", 61, 1, false, 0, 0, 0,tSensor);
-            var h1 = CreateAnalogInput(device, "Heater1", 1, soft, warn, alrm, "Heater1 Duty Cycle", 66, 1, false, 0, 0, 0,dSensor);
-            var h2 = CreateAnalogInput(device, "Heater2", 1, soft, warn, alrm, "Heater1 Duty Cycle", 67, 1, false, 0, 0, 0,dSensor);
-            return new List<AnalogInput>() { tank1, tank2, temp1, temp2, h1, h2 };
+            /*var tank1 = CreateAnalogInput(device, "Tank1", 1, soft, warn, alrm, "Tank1 Weight", 0, 2, true, 200, 150, 100,wSensor);
+            var tank2 = CreateAnalogInput(device, "Tank2", 1, soft, warn, alrm, "Tank2 Weight",2, 2, true, 200, 150, 100,wSensor);*/
+            var tank3 = CreateAnalogInput(device, "Tank3", 1, soft, warn, alrm, "Tank3 Weight", 4, 2, true, 200, 150, 100,wSensor);
+            var tank4 = CreateAnalogInput(device, "Tank4", 1, soft, warn, alrm, "Tank4 Weight",6, 2, true, 200, 150, 100,wSensor);
+            /*var temp1 = CreateAnalogInput(device, "Temp1", 1, soft, warn, alrm, "Tank1 Temp.", 60, 1, false, 0, 0, 0,tSensor);
+            var temp2 = CreateAnalogInput(device, "Temp2", 1, soft, warn, alrm, "Tank2 Temp.", 61, 1, false, 0, 0, 0,tSensor);*/
+            var temp3 = CreateAnalogInput(device, "Temp3", 1, soft, warn, alrm, "Tank3 Temp.", 62, 1, false, 0, 0, 0,tSensor);
+            var temp4 = CreateAnalogInput(device, "Temp4", 1, soft, warn, alrm, "Tank4 Temp.", 63, 1, false, 0, 0, 0,tSensor);
+            /*var h1 = CreateAnalogInput(device, "Heater1", 1, soft, warn, alrm, "Heater1 Duty Cycle", 66, 1, false, 0, 0, 0,dSensor);
+            var h2 = CreateAnalogInput(device, "Heater2", 1, soft, warn, alrm, "Heater1 Duty Cycle", 67, 1, false, 0, 0, 0,dSensor);*/
+            var h3 = CreateAnalogInput(device, "Heater3", 1, soft, warn, alrm, "Heater3 Duty Cycle", 68, 1, false, 0, 0, 0,dSensor);
+            var h4 = CreateAnalogInput(device, "Heater4", 1, soft, warn, alrm, "Heater4 Duty Cycle", 69, 1, false, 0, 0, 0,dSensor);
+            return new List<AnalogInput>() { tank3, tank4, temp3, temp4, h3, h4 };
         }
         
         public static IList<AnalogInput> GenerateThChannels(ModbusDevice device,List<DeviceAction> actions,Sensor tSensor,Sensor hSensor) {

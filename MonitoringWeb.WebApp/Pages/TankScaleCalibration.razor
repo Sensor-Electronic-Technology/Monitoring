@@ -9,7 +9,22 @@
 @inject WebsiteConfigurationProvider Provider
 @implements IAsyncDisposable
 
-<div class="cw-480">
+<div class="row d-flex justify-content-center">
+    @foreach (var scale in this._scales) {
+        <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+            <TS_StatusCard TankScale="@scale" OnClick="@this.TankScaleClickHandler"/>
+        </div>
+    }
+</div>
+<div class="container-lg">
+    @if (this._selectedTankScale == null) {
+        <h3>No Tank Selected</h3>
+    } else {
+        <ScaleView TankScale="@this._selectedTankScale"/>
+    }
+</div>
+
+@*<div class="cw-480">
     <DxAccordion @ref="@this._accordion"
                  SelectionMode="NavigationSelectionMode.Single"
                  AnimationType="LayoutAnimationType.Slide">
@@ -17,17 +32,7 @@
             @foreach (var scale in this._scales) {
                 <DxAccordionItem>
                     <HeaderTextTemplate>
-                        <div class="container-sm">
-                            @*<div class="row text-center py-1">
-                                <h5>Scale @scale.ScaleId :</h5>
-                            </div>*@
-                            <div class="row">
-                                <span class="fs-3">Scale @scale.ScaleId: </span>
-                                <div class=@this.GetCss(scale.TankScaleState)>
-                                    <h4 class="py-1">@this.GetLabel(scale.TankScaleState)</h4>
-                                </div>
-                            </div>
-                        </div>
+                        <TS_StatusCard TankScale="@scale"/>
                     </HeaderTextTemplate>
                     <ContentTemplate>
                         <div class="container-sm py-1" style="height: 800px;width: 800px">
@@ -45,23 +50,30 @@
             }
         </Items>
     </DxAccordion>
-</div>
+</div>*@
 
 
 @code {
     private int _tabIndex;
     private DxAccordion _accordion;
-    private IEnumerable<TankScale> _scales=Enumerable.Empty<TankScale>();
+    private TankScale? _selectedTankScale;
+    private List<TankScale> _scales = new List<TankScale>();
+    
   
-    protected override async Task OnInitializedAsync() {
+    protected async override Task OnInitializedAsync() {
     /*this.TankScaleChanged.OnChildChanged += this.TankScaleChangedHandler;*/
-    this._scales = await this.AmmoniaDataService.GetTankScales();
+        this._scales = await this.AmmoniaDataService.GetTankScales();
     }
 
-    private async Task TankScaleChangedHandler() {
+    private Task TankScaleClickHandler(int tankScale) {
+        this._selectedTankScale=this._scales.FirstOrDefault(e => e.ScaleId == tankScale);
+        return Task.CompletedTask;
+    }
+
+    /*private async Task TankScaleChangedHandler() {
         this._scales = await this.AmmoniaDataService.GetTankScales();
         await InvokeAsync(StateHasChanged);
-    }
+    }*/
     
     void SelectionChanged(AccordionSelectionChangedEventArgs args) {
         if(args.SelectedItems.Any()) {
@@ -73,51 +85,7 @@
             
     }
     
-    private string GetCss(TankScaleState state) {
-        switch(state){
-            case TankScaleState.InUse: {
-                return "bg-success text-white text-center";
-            }
-            case TankScaleState.Consumed: {
-                return "bg-danger text-dark text-center";
-            }
-            case TankScaleState.IdleOnScaleMeasured: {
-                return "bg-info text-white text-center";
-            }
-            case TankScaleState.IdleOnScaleNotMeasured: {
-                return "bg-warning text-white text-center";
-            }
-            case TankScaleState.NoTank: {
-                return "bg-secondary text-white text-center";
-            }
-            default: {
-                return "bg-secondary text-white text-center";
-            }
-        }
-    }
 
-    private string GetLabel(TankScaleState state) {
-        switch(state){
-            case TankScaleState.InUse: {
-                return "Consuming";
-            }
-            case TankScaleState.Consumed: {
-                return "Consumed";
-            }
-            case TankScaleState.IdleOnScaleMeasured: {
-                return "Ready";
-            }
-            case TankScaleState.IdleOnScaleNotMeasured: {
-                return "Tank Needs Measure";
-            }
-            case TankScaleState.NoTank: {
-                return "No Tank";
-            }
-            default: {
-                return "No Tank";
-            }
-        }
-    }
 
     public ValueTask DisposeAsync() {
         //this.TankScaleChanged.OnChildChanged -= this.TankScaleChangedHandler;

@@ -86,8 +86,9 @@
         var n2=this._monitorData.analogData.FirstOrDefault(e => e.Item == this.Settings?.ChannelName);
         var current = this._monitorData.TimeStamp.DateTimeLocal();
         if (n2 != null) {
-            StatusItem temp = new StatusItem();
-            temp.TimeStamp = this._monitorData.TimeStamp.DateTimeLocal();
+            StatusItem temp = new StatusItem {
+                TimeStamp = this._monitorData.TimeStamp.DateTimeLocal()
+            };
             this.ProcessStatus(n2,ref temp,this.Settings);
             this._status = temp;
             this.Logger.LogInformation(this._status.Item+":"+" Processed");

@@ -11,8 +11,8 @@ public class AmmoniaDataService {
         this._tankScaleCollection = this._database.GetCollection<TankScale>("tank_scales");
     }
 
-    public async Task<IEnumerable<TankScale>> GetTankScales() {
-        return (await this._tankScaleCollection.FindAsync(_ => true)).ToEnumerable();
+    public async Task<List<TankScale>> GetTankScales() {
+        return await this._tankScaleCollection.Find(_ => true).ToListAsync();
     }
 
     public async Task<TankScale?> GetTankScale(int scale) {

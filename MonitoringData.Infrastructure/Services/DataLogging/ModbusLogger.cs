@@ -15,7 +15,7 @@ using MonitoringSystem.Shared.Data.SettingsModel;
 
 namespace MonitoringData.Infrastructure.Services.DataLogging {
     public class ModbusLogger : IDataLogger {
-        private const double fweight=.01;
+        private const double fweight=.1;
         private readonly IMonitorDataRepo _dataService;
         private readonly IModbusService _modbusService;
         private readonly IHubContext<MonitorHub, IMonitorHub> _monitorHub;
@@ -83,15 +83,14 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 var reading = new AnalogReading();
                 reading.MonitorItemId = aItem._id;
                 double tempValue=0;
-                
                 if (aItem.RegisterLength == 2) {
                     tempValue = Converters.ToInt32(raw[aItem.Register], raw[aItem.Register + 1])/(double)aItem.Factor;
                 } else {
                     tempValue= raw[aItem.Register]/(double)aItem.Factor;
                 }
-                /*this._filters[aItem._id]+=(tempValue-this._filters[aItem._id])*fweight;
-                reading.Value = this._filters[aItem._id];*/
-                reading.Value = tempValue;
+                this._filters[aItem._id]+=(tempValue-this._filters[aItem._id])*fweight;
+                reading.Value = this._filters[aItem._id];
+                //reading.Value = tempValue;
                 readings.Add(reading);
                 var alert=_dataService.MonitorAlerts.FirstOrDefault(e => e.ChannelId == aItem._id);
                 if (alert != null) {
@@ -133,8 +132,8 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             if (this._device.DeviceName == "nh3") {
                 this._isAmmonia = true;
             }
-            /*var analogReading = await this._dataService.GetLastAnalogReading();*/
-            /*foreach (var dev in this._dataService.AnalogItems) {
+            var analogReading = await this._dataService.GetLastAnalogReading();
+            foreach (var dev in this._dataService.AnalogItems) {
                 if (analogReading != null) {
                     var reading = analogReading.readings.FirstOrDefault(e => e.MonitorItemId == dev._id);
                     if (reading != null) {
@@ -145,7 +144,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 } else {
                     this._filters.Add(dev._id,0);
                 }
-            }*/
+            }
         }
 
         public async Task Reload() {

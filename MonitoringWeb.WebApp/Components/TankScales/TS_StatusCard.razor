@@ -1,0 +1,162 @@
+﻿@using MonitoringSystem.Shared.Data.LogModel
+@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringSystem.Shared.Data.SettingsModel
+@using MonitoringSystem.Shared.SignalR
+@using MonitoringWeb.WebApp.Services
+@inject WebsiteConfigurationProvider ConfigurationProvider
+@inject ILogger<TS_StatusCard> Logger
+
+<style>
+.container{
+        cursor: default;
+        user-select: none;
+    }
+    .container:hover{
+        opacity: 0.3;
+    }
+    .container:active {
+      background-color: #3dd5f3;
+      box-shadow: 0 5px #666;
+      transform: translateY(1px);
+      cursor: default;
+    }
+</style>
+
+<div class="container" @onclick="@this.OnClickHandler">
+    <div class="container-md">
+        @if (this.TankScale == null) {
+            <span class="fs-3">Loading </span>
+            <div class="bg-secondary text-white text-center">
+                <h4 class="py-1">Loading</h4>
+            </div>
+        } else {
+            <span class="fs-3 text-center">Scale @this.TankScale.ScaleId: </span>
+            <div class=@this.GetCss(this.TankScale.TankScaleState)>
+                <h4 class="py-1">@this.GetLabel(this.TankScale.TankScaleState)</h4>
+            </div>
+        }
+    </div>
+    <div class="container-md py-1">
+        <div class="row justify-content-center text-center" style="padding:.5rem">
+            @*<h5> Timestamp: @this._status.TimeStamp</h5>*@
+            <h5>@this._onClickText</h5>
+        </div>
+        <div class="row text-center">
+            @*<h3> Current Value: @this._status.Value</h3>*@
+        </div>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public TankScale? TankScale { get; set; }
+    
+    [Parameter]
+    public EventCallback<int> OnClick { get; set; }
+
+    private HubConnection? _hubConnection;
+    private string _onClickText="No Click";
+    private string _style = "";
+    private bool _clicked = false;
+
+    private bool _isConnection => this._hubConnection?.State == HubConnectionState.Connected;
+
+    protected override async Task OnInitializedAsync() {
+        var device = this.ConfigurationProvider.Devices.FirstOrDefault(e => e.DeviceName == "nh3");
+        if (device != null) {
+            await this.HubSetup(device);
+        }
+    }
+
+    private async Task HubSetup(ManagedDevice device) {
+        var hubAddress = device.HubAddress;
+        if (hubAddress != null) {
+            this._hubConnection = new HubConnectionBuilder()
+                .WithAutomaticReconnect(new TimeSpan[] {
+                    TimeSpan.FromSeconds(3),
+                    TimeSpan.FromSeconds(9),
+                    TimeSpan.FromSeconds(20),
+                    TimeSpan.FromSeconds(40),
+                    TimeSpan.FromSeconds(60),
+                    TimeSpan.FromSeconds(120),
+                    TimeSpan.FromSeconds(240)
+                })
+                .WithUrl(hubAddress)
+                .Build();
+            this._hubConnection.On<MonitorData>("ShowCurrent", this.OnShowCurrent);
+            this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+            this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+            try {
+                await this._hubConnection.StartAsync();
+                this.Logger.LogInformation(hubAddress + " Connection");
+            } catch {
+                this.Logger.LogError(hubAddress+" hub connection failed");
+            }
+        }
+    }
+
+    private async Task OnShowCurrent(MonitorData data) {
+        /*this._monitorData = data;
+        var n2=this._monitorData.analogData.FirstOrDefault(e => e.Item == this.Settings?.ChannelName);
+        var current = this._monitorData.TimeStamp.DateTimeLocal();
+        if (n2 != null) {
+            StatusItem temp = new StatusItem();
+            temp.TimeStamp = this._monitorData.TimeStamp.DateTimeLocal();
+            this.ProcessStatus(n2,ref temp,this.Settings);
+            this._status = temp;
+            this.Logger.LogInformation(this._status.Item+":"+" Processed");
+        } else {
+            this.Logger.LogError("Error: Could not find N2");
+        }
+        await InvokeAsync(StateHasChanged);*/
+    }
+
+    private void OnClickHandler() {
+        this.OnClick.InvokeAsync(this.TankScale?.ScaleId ?? 0);
+    }
+    
+    private string GetCss(TankScaleState state) {
+        switch(state){
+            case TankScaleState.InUse: {
+                return "bg-success text-white text-center";
+            }
+            case TankScaleState.Consumed: {
+                return "bg-danger text-dark text-center";
+            }
+            case TankScaleState.IdleOnScaleMeasured: {
+                return "bg-info text-white text-center";
+            }
+            case TankScaleState.IdleOnScaleNotMeasured: {
+                return "bg-warning text-white text-center";
+            }
+            case TankScaleState.NoTank: {
+                return "bg-secondary text-white text-center";
+            }
+            default: {
+                return "bg-secondary text-white text-center";
+            }
+        }
+    }
+
+    private string GetLabel(TankScaleState state) {
+        switch(state){
+            case TankScaleState.InUse: {
+                return "Consuming";
+            }
+            case TankScaleState.Consumed: {
+                return "Consumed";
+            }
+            case TankScaleState.IdleOnScaleMeasured: {
+                return "Ready";
+            }
+            case TankScaleState.IdleOnScaleNotMeasured: {
+                return "Tank Needs Measure";
+            }
+            case TankScaleState.NoTank: {
+                return "No Tank";
+            }
+            default: {
+                return "No Tank";
+            }
+        }
+    }
+}

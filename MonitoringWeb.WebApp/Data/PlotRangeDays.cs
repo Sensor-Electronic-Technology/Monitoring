@@ -24,11 +24,6 @@ public enum PlotRangeMonths {
     _24M=24
 }
 
-public enum PlotRangeWeeks {
-    
-}
-
-
 public enum GroupPlotBy {
     Months,
     Weeks,
