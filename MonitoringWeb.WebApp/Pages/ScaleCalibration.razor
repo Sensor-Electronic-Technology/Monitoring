@@ -96,26 +96,23 @@
 @code {
     AmmoniaData? Data=new AmmoniaData();
     int _selectedScale = 1;
-    ManagedDevice? _device;
     bool _disabled = false;
     
 
     protected override Task OnInitializedAsync() {
-        this._device = this.Provider.Devices.FirstOrDefault(e => e.DeviceName == "nh3");
-        this._disabled = this._device == null;
         return base.OnInitializedAsync();
     }
     
     private async Task SaveCalibration() {
-        await this.AmmoniaController.SetCalibration(this._device.IpAddress,this.Data);
+        await this.AmmoniaController.SetCalibration(this.Data);
     }
 
     private async Task FetchData() {
-        this.Data = await this.AmmoniaController.GetTankCalibration(this._device.IpAddress, this._selectedScale);
+        this.Data = await this.AmmoniaController.GetTankCalibration(this._selectedScale);
     }
 
     private async Task Capture(bool zero) {
-        var data = await this.AmmoniaController.GetTankCalibration(this._device.IpAddress,this._selectedScale);
+        var data = await this.AmmoniaController.GetTankCalibration(this._selectedScale);
         if (zero) {
             this.Data.ZeroRawValue = data.ZeroRawValue;
         } else {
@@ -125,6 +122,6 @@
     }
 
     private async Task CheckedChanged(bool t) {
-        await this.AmmoniaController.SetCalibrationMode(this._device.IpAddress, t);
+        await this.AmmoniaController.SetCalibrationMode(t);
     }
 }

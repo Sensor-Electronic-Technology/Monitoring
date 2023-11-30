@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
+using MonitoringSystem.Shared.Data;
 using MonitoringWeb.WebApp.Data;
 
 namespace MonitoringWeb.WebApp.Services; 

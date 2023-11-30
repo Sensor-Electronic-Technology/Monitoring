@@ -90,14 +90,14 @@ namespace MonitoringSystem.ConsoleTesting {
             //var client = new MongoClient("mongodb:");*/
             //await RemoteAlertTesting();
             //await TestModbus();
-            AmmoniaController controller = new AmmoniaController();
+            /*AmmoniaController controller = new AmmoniaController();
             ConsoleTable table = new ConsoleTable("Scale", "ZeroRaw", "NonZeroRaw", "Zero", "NonZero", "Combined",
-                "Tare", "GasWeight","CurrentWeight");
-            await TestAmmoniaController(1, controller,table);
+                "Tare", "GasWeight","CurrentWeight");*/
+            /*await TestAmmoniaController(1, controller,table);
             await TestAmmoniaController(2, controller,table);
             await TestAmmoniaController(3, controller,table);
-            await TestAmmoniaController(4, controller,table);
-            Console.WriteLine(table.ToString());
+            await TestAmmoniaController(4, controller,table);*/
+            /*Console.WriteLine(table.ToString());*/
 
             //await CreateBulkGasSettings();
             //await UpdateBulkSettings();
@@ -108,6 +108,24 @@ namespace MonitoringSystem.ConsoleTesting {
            //await UpdateBulkEmailSettings();
            //await CreateBulkEmailSettings();
            //await CreateNH3BulkGasSettings();
+           await TestPopList();
+        }
+
+        static Task TestPopList() {
+            List<int> values = new List<int>(capacity:5);
+            for (int i = 0; i < 10; i++) {
+                values.Add(i);
+                if (values.Count > 5) {
+                    values.RemoveAt(0);
+                }
+            }
+
+            Console.WriteLine($"Count: {values.Count}");
+            foreach (var value in values) {
+                Console.WriteLine($"{value}");
+            }
+
+            return Task.CompletedTask;
         }
 
         static async Task UpdateBulkSettings() {
@@ -387,7 +405,7 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine("Check Database");
         }
 
-        static async Task TestAmmoniaController(int scale,AmmoniaController controller,ConsoleTable table) {
+        /*static async Task TestAmmoniaController(int scale,AmmoniaController controller,ConsoleTable table) {
             var data=await controller.GetTankCalibration("172.21.100.29", scale);
             table.AddRow(data.Scale, data.ZeroRawValue,data.NonZeroRawValue,data.ZeroValue,data.NonZeroValue,
                 data.GrossWeight,data.Tare,data.GasWeight,data.CurrentWeight);
@@ -399,8 +417,8 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine($"Combined: {data.Combined}");
             Console.WriteLine($"Tare: {data.Tare}");
             Console.WriteLine();
-            Console.WriteLine();*/
-        }
+            Console.WriteLine();#1#
+        }*/
 
         public static async Task TestExternalAlertEmail() {
             var n2Id = ObjectId.GenerateNewId();

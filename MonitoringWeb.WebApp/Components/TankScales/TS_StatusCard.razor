@@ -1,6 +1,7 @@
 ﻿@using MonitoringSystem.Shared.Data.LogModel
 @using Microsoft.AspNetCore.SignalR.Client
 @using MonitoringSystem.Shared.Data.SettingsModel
+@using MonitoringSystem.Shared.Services
 @using MonitoringSystem.Shared.SignalR
 @using MonitoringWeb.WebApp.Hubs
 @using MonitoringWeb.WebApp.Services
@@ -65,7 +66,7 @@
 
     private bool _isConnection => this._hubConnection?.State == HubConnectionState.Connected;
 
-    protected override async Task OnInitializedAsync() {
+    protected async override Task OnInitializedAsync() {
         /*var device = this.ConfigurationProvider.Devices.FirstOrDefault(e => e.DeviceName == "nh3");*/
         await this.HubSetup();
     }
@@ -95,28 +96,14 @@
 
     private async Task HandleSendTankWeightsCommand(List<int> tankWeights) {
         if (this.TankScale != null) {
-            this._tankWeight = tankWeights[this.TankScale.ScaleId];
-            this._timeStamp = DateTime.Now;
-            await InvokeAsync(StateHasChanged);
+            if (TankScale.ScaleId > 0) {
+                this._tankWeight = tankWeights[this.TankScale.ScaleId-1];
+                this._timeStamp = DateTime.Now;
+                await InvokeAsync(StateHasChanged);
+            }
         }
     }
-
-    private async Task OnShowCurrent(MonitorData data) {
-        /*this._monitorData = data;
-        var n2=this._monitorData.analogData.FirstOrDefault(e => e.Item == this.Settings?.ChannelName);
-        var current = this._monitorData.TimeStamp.DateTimeLocal();
-        if (n2 != null) {
-            StatusItem temp = new StatusItem();
-            temp.TimeStamp = this._monitorData.TimeStamp.DateTimeLocal();
-            this.ProcessStatus(n2,ref temp,this.Settings);
-            this._status = temp;
-            this.Logger.LogInformation(this._status.Item+":"+" Processed");
-        } else {
-            this.Logger.LogError("Error: Could not find N2");
-        }
-        await InvokeAsync(StateHasChanged);*/
-    }
-
+    
     private void OnClickHandler() {
         this.OnClick.InvokeAsync(this.TankScale?.ScaleId ?? 0);
     }

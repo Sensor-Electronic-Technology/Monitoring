@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using MonitoringSystem.Shared.Data.SettingsModel;
+using MonitoringSystem.Shared.Services;
 using MonitoringSystem.Shared.SignalR;
 using MonitoringWeb.WebApp.Hubs;
 namespace MonitoringWeb.WebApp.Services; 
@@ -11,7 +12,7 @@ public class AmmoniaHubService:BackgroundService,IAsyncDisposable {
     private readonly IHubContext<AmmoniaHub, ISendTankWeightsCommand> _hubContext;
     private readonly ManagedDevice _device;
     private HubConnection? _hubConnection;
-    private Timer? _timer;
+    /*private Timer? _timer;*/
 
 
     public AmmoniaHubService(IHubContext<AmmoniaHub, ISendTankWeightsCommand> hubContext,
@@ -22,11 +23,11 @@ public class AmmoniaHubService:BackgroundService,IAsyncDisposable {
         this._device = configurationProvider.GetDevice("nh3");
     }
     
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-        //await this.HubSetup();
-        _timer = new Timer(FireSignalRAsync, null, TimeSpan.Zero,
+    protected async override Task ExecuteAsync(CancellationToken stoppingToken) {
+        await this.HubSetup();
+        /*_timer = new Timer(FireSignalRAsync, null, TimeSpan.Zero,
         TimeSpan.FromSeconds(1));
-        await Task.CompletedTask;
+        await Task.CompletedTask;*/
     }
 
     private async void FireSignalRAsync(object? state) {

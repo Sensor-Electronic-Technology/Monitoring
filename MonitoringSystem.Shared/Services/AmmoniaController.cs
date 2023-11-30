@@ -1,26 +1,36 @@
-﻿using System.Net.Sockets;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Modbus.Device;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
+using MonitoringSystem.Shared.Data.SettingsModel;
+using System.Net.Sockets;
 namespace MonitoringSystem.Shared.Services;
 
 public class AmmoniaController {
     private readonly ILogger<AmmoniaController> _logger;
+    private readonly ManagedDevice? _device;
+    private bool _initialized=false;
     private bool _loggingEnabled;
 
-    public AmmoniaController(ILogger<AmmoniaController> logger) {
+    public AmmoniaController(WebsiteConfigurationProvider configurationProvider,
+        ILogger<AmmoniaController> logger) {
         this._logger = logger;
         this._loggingEnabled = true;
+        this._device = configurationProvider.GetDevice("nh3");
+        this._initialized = this._device != null;
     }
 
     public AmmoniaController() {
         this._loggingEnabled = false;
     }
     
-    public async Task SetCalibrationMode(string ip,bool mode) {
+    public async Task SetCalibrationMode(bool mode) {
+        if (!this._initialized) {
+            this._logger.LogError("Error: AmmoniaController not initialized");
+            return;
+        }
         try {
-            using var client = new TcpClient(ip, 502);
+            using var client = new TcpClient(this._device.IpAddress, 502);
             var modbus = ModbusIpMaster.CreateIp(client);
             await modbus.WriteSingleCoilAsync((byte)1, (ushort)1, mode);
         } catch {
@@ -28,8 +38,12 @@ public class AmmoniaController {
         }
     }
 
-    public async Task<AmmoniaData?> GetTankCalibration(string ip,int tank) {
-        using var client = new TcpClient(ip, 502);
+    public async Task<AmmoniaData?> GetTankCalibration(int tank) {
+        if (!this._initialized) {
+            this._logger.LogError("Error: AmmoniaController not initialized");
+            return null;
+        }
+        using var client = new TcpClient(this._device.IpAddress, 502);
         client.ReceiveTimeout = 500;
         var modbus = ModbusIpMaster.CreateIp(client);
         var registers=await modbus.ReadHoldingRegistersAsync((byte)1,0,(ushort)70);
@@ -95,8 +109,12 @@ public class AmmoniaController {
         return Task.FromResult(data);
     }
 
-    private async Task<int> GetZeroRawValue(string ip, int scale) {
-        using var client = new TcpClient(ip, 502);
+    private async Task<int> GetZeroRawValue(int scale) {
+        if (!this._initialized) {
+            this._logger.LogError("Error: AmmoniaController not initialized");
+            return 0;
+        }
+        using var client = new TcpClient(this._device.IpAddress, 502);
         client.ReceiveTimeout = 500;
         var modbus = ModbusIpMaster.CreateIp(client);
         await modbus.WriteSingleCoilAsync((byte)1, (ushort)1, true);
@@ -136,8 +154,12 @@ public class AmmoniaController {
         return rawZeroValue;
     }
 
-    public async Task SetCalibration(string ip,AmmoniaData calibration) {
-        using var client = new TcpClient(ip, 502);
+    public async Task SetCalibration(AmmoniaData calibration) {
+        if (!this._initialized) {
+            this._logger.LogError("Error: AmmoniaController not initialized");
+            return;
+        }
+        using var client = new TcpClient(this._device.IpAddress, 502);
         client.ReceiveTimeout = 500;
         var modbus = ModbusIpMaster.CreateIp(client);
         List<ushort> registersToWrite = new List<ushort>();
@@ -152,14 +174,22 @@ public class AmmoniaController {
         await modbus.WriteSingleCoilAsync((byte)1, (ushort)0, true);
     }
 
-    public async Task ClearCalibration(string ip,int scale,Calibration calibration) {
+    public async Task ClearCalibration(int scale,Calibration calibration) {
+        if (!this._initialized) {
+            this._logger.LogError("Error: AmmoniaController not initialized");
+            return;
+        }
         AmmoniaData ammoniaData = new AmmoniaData(scale, calibration);
-        await this.SetCalibration(ip, ammoniaData);
+        await this.SetCalibration(ammoniaData);
     }
 
-    public async Task WriteCalibration(string ip, int scale, Calibration scaleCalibration, TankWeight tankWeight) {
+    public async Task WriteCalibration(int scale, Calibration scaleCalibration, TankWeight tankWeight) {
+        if (!this._initialized) {
+            this._logger.LogError("Error: AmmoniaController not initialized");
+            return;
+        }
         AmmoniaData ammoniaData = new AmmoniaData(scale, scaleCalibration, tankWeight);
-        await this.SetCalibration(ip, ammoniaData);
+        await this.SetCalibration(ammoniaData);
     }
     
     private ushort[] ToUshortArray(int value) {

@@ -3,10 +3,7 @@ using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.SettingsModel;
-using MonitoringSystem.Shared.Services;
-using MonitoringWeb.WebApp.Data;
-
-namespace MonitoringWeb.WebApp.Services; 
+namespace MonitoringSystem.Shared.Services; 
 
 public class WebsiteConfigurationProvider:IMonitorConfigurationProvider {
     private readonly IMongoCollection<ManagedDevice> _deviceCollection;

@@ -4,6 +4,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
+using MonitoringSystem.Shared.Services;
 using MonitoringWeb.WebApp.Data;
 
 namespace MonitoringWeb.WebApp.Services;

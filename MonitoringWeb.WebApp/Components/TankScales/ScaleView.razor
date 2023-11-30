@@ -135,12 +135,12 @@
             .AddNewCurrentCalibration(this.TankScale, this._currentCalibration);
         if (success) {
             var deviceCalData= await this.AmmoniaController
-                .GetTankCalibration(this._device?.IpAddress, this.TankScale.ScaleId);
-            deviceCalData.ZeroValue = this._currentCalibration.ZeroValue;
+                .GetTankCalibration(this.TankScale.ScaleId);
+            /*deviceCalData.ZeroValue = this._currentCalibration.ZeroValue;
             deviceCalData.NonZeroValue = this._currentCalibration.NonZeroValue;
             deviceCalData.ZeroRawValue = this._currentCalibration.ZeroRawValue;
-            deviceCalData.NonZeroRawValue = this._currentCalibration.NonZeroRawValue;
-            await this.AmmoniaController.SetCalibration(this._device.IpAddress, deviceCalData);
+            deviceCalData.NonZeroRawValue = this._currentCalibration.NonZeroRawValue;*/
+            //await this.AmmoniaController.Write(this.TankScale.ScaleId,this._currentCalibration);
             this.TankScale = await this.AmmoniaDataService.GetTankScale(this.TankScale.ScaleId);
             this._currentCalibration = this.TankScale?.CurrentCalibration;
             this._isReadOnly = true;

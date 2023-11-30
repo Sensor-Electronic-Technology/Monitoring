@@ -1,6 +1,5 @@
 ﻿using MonitoringSystem.Shared.Data.SettingsModel;
-
-namespace MonitoringWeb.WebApp.Data; 
+namespace MonitoringSystem.Shared.Data; 
 
 public class MonitorWebsiteSettings : MonitorSettings {
     public string? ManagedDeviceCollection { get; set; } = null!;

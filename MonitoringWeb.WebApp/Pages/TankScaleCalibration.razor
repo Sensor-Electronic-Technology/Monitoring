@@ -22,7 +22,7 @@
     } else {
         <div class="d-flex flex-row justify-content-evenly">
             <div class="pb-1" style="width: 800px">
-                <h4>Tank Scale</h4>
+                <TankView TankScale="@this._selectedTankScale"/>
             </div>
             <div class="pb-1" style="width: 800px;">
                 <ScaleView TankScale="@this._selectedTankScale"/>
@@ -64,8 +64,6 @@
         }
             
     }
-    
-
 
     public ValueTask DisposeAsync() {
         //this.TankScaleChanged.OnChildChanged -= this.TankScaleChangedHandler;
