@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using MonitoringSystem.Shared.Data.SettingsModel
 @using MonitoringSystem.Shared.SignalR
+@using MonitoringWeb.WebApp.Hubs
 @using MonitoringWeb.WebApp.Services
 @inject WebsiteConfigurationProvider ConfigurationProvider
 @inject ILogger<TS_StatusCard> Logger
@@ -38,11 +39,11 @@
     </div>
     <div class="container-md py-1">
         <div class="row justify-content-center text-center" style="padding:.5rem">
-            @*<h5> Timestamp: @this._status.TimeStamp</h5>*@
-            <h5>@this._onClickText</h5>
+            <h5> Timestamp: @this._timeStamp</h5>
+            @*<h5>@this._onClickText</h5>*@
         </div>
         <div class="row text-center">
-            @*<h3> Current Value: @this._status.Value</h3>*@
+            <h5> Current Value: @this._tankWeight</h5>
         </div>
     </div>
 </div>
@@ -52,45 +53,51 @@
     
     [Parameter]
     public EventCallback<int> OnClick { get; set; }
+    
+    [Inject] NavigationManager NavigationManager { get; set; }
 
     private HubConnection? _hubConnection;
     private string _onClickText="No Click";
     private string _style = "";
     private bool _clicked = false;
+    private int _tankWeight;
+    private DateTime _timeStamp;
 
     private bool _isConnection => this._hubConnection?.State == HubConnectionState.Connected;
 
     protected override async Task OnInitializedAsync() {
-        var device = this.ConfigurationProvider.Devices.FirstOrDefault(e => e.DeviceName == "nh3");
-        if (device != null) {
-            await this.HubSetup(device);
+        /*var device = this.ConfigurationProvider.Devices.FirstOrDefault(e => e.DeviceName == "nh3");*/
+        await this.HubSetup();
+    }
+
+    private async Task HubSetup() {
+        var hubAddress = NavigationManager.ToAbsoluteUri("/tank-weights");
+        this._hubConnection = new HubConnectionBuilder()
+            .WithAutomaticReconnect(new TimeSpan[] {
+                TimeSpan.FromSeconds(3),
+                TimeSpan.FromSeconds(9),
+                TimeSpan.FromSeconds(20)
+            })
+            .WithUrl(hubAddress)
+            .Build();
+        this._hubConnection.On<List<int>>(
+            nameof(ISendTankWeightsCommand.SendTankWeights),
+            this.HandleSendTankWeightsCommand);
+        this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+        this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+        try {
+            await this._hubConnection.StartAsync();
+            this.Logger.LogInformation(hubAddress + " Connection");
+        } catch {
+            this.Logger.LogError(hubAddress+" hub connection failed");
         }
     }
 
-    private async Task HubSetup(ManagedDevice device) {
-        var hubAddress = device.HubAddress;
-        if (hubAddress != null) {
-            this._hubConnection = new HubConnectionBuilder()
-                .WithAutomaticReconnect(new TimeSpan[] {
-                    TimeSpan.FromSeconds(3),
-                    TimeSpan.FromSeconds(9),
-                    TimeSpan.FromSeconds(20),
-                    TimeSpan.FromSeconds(40),
-                    TimeSpan.FromSeconds(60),
-                    TimeSpan.FromSeconds(120),
-                    TimeSpan.FromSeconds(240)
-                })
-                .WithUrl(hubAddress)
-                .Build();
-            this._hubConnection.On<MonitorData>("ShowCurrent", this.OnShowCurrent);
-            this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
-            this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
-            try {
-                await this._hubConnection.StartAsync();
-                this.Logger.LogInformation(hubAddress + " Connection");
-            } catch {
-                this.Logger.LogError(hubAddress+" hub connection failed");
-            }
+    private async Task HandleSendTankWeightsCommand(List<int> tankWeights) {
+        if (this.TankScale != null) {
+            this._tankWeight = tankWeights[this.TankScale.ScaleId];
+            this._timeStamp = DateTime.Now;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

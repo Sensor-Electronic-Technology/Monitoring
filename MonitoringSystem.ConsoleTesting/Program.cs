@@ -390,7 +390,7 @@ namespace MonitoringSystem.ConsoleTesting {
         static async Task TestAmmoniaController(int scale,AmmoniaController controller,ConsoleTable table) {
             var data=await controller.GetTankCalibration("172.21.100.29", scale);
             table.AddRow(data.Scale, data.ZeroRawValue,data.NonZeroRawValue,data.ZeroValue,data.NonZeroValue,
-                data.Combined,data.Tare,data.GasWeight,data.CurrentWeight);
+                data.GrossWeight,data.Tare,data.GasWeight,data.CurrentWeight);
             /*Console.WriteLine($"Scale: {data.Scale}");
             Console.WriteLine($"ZeroRaw: {data.ZeroRawValue}");
             Console.WriteLine($"NonZeroRaw: {data.NonZeroRawValue}");

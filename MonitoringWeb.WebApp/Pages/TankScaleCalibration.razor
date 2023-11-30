@@ -20,37 +20,17 @@
     @if (this._selectedTankScale == null) {
         <h3>No Tank Selected</h3>
     } else {
-        <ScaleView TankScale="@this._selectedTankScale"/>
+        <div class="d-flex flex-row justify-content-evenly">
+            <div class="pb-1" style="width: 800px">
+                <h4>Tank Scale</h4>
+            </div>
+            <div class="pb-1" style="width: 800px;">
+                <ScaleView TankScale="@this._selectedTankScale"/>
+            </div>
+        </div>
+
     }
 </div>
-
-@*<div class="cw-480">
-    <DxAccordion @ref="@this._accordion"
-                 SelectionMode="NavigationSelectionMode.Single"
-                 AnimationType="LayoutAnimationType.Slide">
-        <Items>
-            @foreach (var scale in this._scales) {
-                <DxAccordionItem>
-                    <HeaderTextTemplate>
-                        <TS_StatusCard TankScale="@scale"/>
-                    </HeaderTextTemplate>
-                    <ContentTemplate>
-                        <div class="container-sm py-1" style="height: 800px;width: 800px">
-                            <DxTabs>
-                                <DxTabPage Text="Scale calibration">
-                                    <ScaleView TankScale="@scale"></ScaleView>
-                                </DxTabPage>
-                                <DxTabPage Text="Tank">
-                                    
-                                </DxTabPage>
-                            </DxTabs>
-                        </div>
-                    </ContentTemplate>
-                </DxAccordionItem>
-            }
-        </Items>
-    </DxAccordion>
-</div>*@
 
 
 @code {

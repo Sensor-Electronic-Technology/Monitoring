@@ -1,0 +1,46 @@
+﻿@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringSystem.Shared.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringSystem.Shared.Data.SettingsModel
+@using MonitoringSystem.Shared.SignalR
+@inject AmmoniaController AmmoniaController
+@inject AmmoniaDataService AmmoniaDataService
+@inject ILogger<TankView> Logger
+
+@*Start Tank Calibration*@
+<DxButton Text="Start Tank Calibration"></DxButton>
+
+@*Tank Calibration Sequence*@
+<DxButton Text="Clear Old Tank Cal" Enabled="@this._enabled" Click="@this.ClearTankCalibration"/>
+<DxButton Text="Capture Weight" Enabled="@this._enabled" />
+<DxButton Text="Save Calibration" Enabled="@this._enabled"/>
+
+<div>
+    <DxTextBox DisplayFormat=""></DxTextBox>
+</div>
+
+@code {
+    [Parameter]
+    public TankScale? TankScale { get; set; }
+    private NH3Tank? _currentTank;
+    private bool _enabled => this.TankScale != null;
+    
+    private HubConnection _hubConnection;
+    
+    
+    
+
+
+
+    private async Task ClearTankCalibration() {
+        
+    }
+
+    private async Task StartCaptureWeight() {
+        
+        
+    }
+
+
+    
+}

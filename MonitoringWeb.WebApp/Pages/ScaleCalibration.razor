@@ -75,7 +75,7 @@
                                 <DxFormLayoutItem Caption="Gross Weight"
                                                   CaptionPosition="CaptionPosition.Vertical"
                                                   ColSpanMd="6">
-                                    <DxSpinEdit @bind-Value="@Data.Combined"/>
+                                    <DxSpinEdit @bind-Value="@Data.GrossWeight"/>
                                 </DxFormLayoutItem>
                             </DxFormLayoutGroup>
                             <DxFormLayoutItem ColSpanMd="12">
@@ -94,7 +94,7 @@
 
 
 @code {
-    AmmoniaCalibrationData? Data=new AmmoniaCalibrationData();
+    AmmoniaData? Data=new AmmoniaData();
     int _selectedScale = 1;
     ManagedDevice? _device;
     bool _disabled = false;

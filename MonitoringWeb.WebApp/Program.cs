@@ -20,7 +20,8 @@ builder.Services.AddDevExpressBlazor();
 builder.Services.Configure<DevExpress.Blazor.Configuration.GlobalOptions>(options => {
     options.BootstrapVersion = DevExpress.Blazor.BootstrapVersion.v5;
 });
-builder.Services.Configure<MonitorWebsiteSettings>(builder.Configuration.GetSection(nameof(MonitorWebsiteSettings)));
+builder.Services.AddHostedService<AmmoniaHubService>();
+#region API Configuration
 if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
     builder.Services.AddScoped<HttpClient>(s => {
         var uriHelper = s.GetRequiredService<NavigationManager>();
@@ -29,32 +30,45 @@ if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
         };
     });
 }
-builder.Services.AddTransient<PlotDataService>();
-builder.Services.AddSingleton<LatestAlertService>();
+builder.Services.AddScoped<ConfigApiClient>();
+#endregion
+#region WebsiteConfiguration
+builder.Services.Configure<MonitorWebsiteSettings>(builder.Configuration.GetSection(nameof(MonitorWebsiteSettings)));
+builder.Services.AddSingleton<WebsiteConfigurationProvider>();
 var connectionString = builder.Configuration.GetSection(nameof(MonitorWebsiteSettings))
     .Get<MonitorWebsiteSettings>()
     ?.ConnectionString;
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
-builder.Services.AddSingleton<WebsiteConfigurationProvider>();
-builder.Services.AddScoped<ConfigApiClient>();
+#endregion
+#region ValueChanged UI Services
 builder.Services.AddSingleton<SelectionChanged<ModbusDeviceDto>>();
 builder.Services.AddSingleton<SelectionChanged<ChannelDto>>();
 builder.Services.AddSingleton<ValueChanged<DateRange>>();
 builder.Services.AddSingleton<ValueChanged<BulkGasType>>();
 builder.Services.AddSingleton<ValueChanged<TankScale>>();
+#endregion
+#region BulkGas Services
 builder.Services.AddSingleton<UsageService>();
-builder.Services.AddScoped<AmmoniaController>();
-builder.Services.AddScoped<AmmoniaDataService>();
-builder.Services.AddBlazorDownloadFile();
-builder.Services.AddScoped<SpinnerService>();
-builder.Services.AddSingleton<FileHandlerService>();
 builder.Services.AddScoped<BulkGasProvider>();
-builder.Services.AddSidepanel();
+#endregion
+#region AmmoniaServices
+builder.Services.AddSingleton<AmmoniaController>();
+builder.Services.AddSingleton<AmmoniaDataService>();
+#endregion
+#region File Services
+builder.Services.AddSingleton<FileHandlerService>();
 builder.Services.AddControllers();
+builder.Services.AddBlazorDownloadFile();
+#endregion
+#region General Services
+builder.Services.AddTransient<PlotDataService>();
+builder.Services.AddSingleton<LatestAlertService>();
+builder.Services.AddScoped<SpinnerService>();
+builder.Services.AddSidepanel();
+#endregion
+
 builder.WebHost.UseWebRoot("wwwroot");
 builder.WebHost.UseStaticWebAssets();
-
-//Test github deploy action 1
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -76,6 +90,7 @@ if (websiteConfigProvider is not null) {
     throw new Exception("Error: could not resolve WebsiteConfigurationProvider");
 }
 app.MapHub<BulkGasHub>("/bulkgashub");
+app.MapHub<AmmoniaHub>("/tank-weights");
 app.MapFallbackToPage("/_Host");
 app.MapControllers();
 app.Run();

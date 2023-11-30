@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Modbus.Device;
 using MonitoringSystem.Shared.Data;
+using MonitoringSystem.Shared.Data.LogModel;
 namespace MonitoringSystem.Shared.Services;
 
 public class AmmoniaController {
@@ -27,12 +28,12 @@ public class AmmoniaController {
         }
     }
 
-    public async Task<AmmoniaCalibrationData?> GetTankCalibration(string ip,int tank) {
+    public async Task<AmmoniaData?> GetTankCalibration(string ip,int tank) {
         using var client = new TcpClient(ip, 502);
         client.ReceiveTimeout = 500;
         var modbus = ModbusIpMaster.CreateIp(client);
         var registers=await modbus.ReadHoldingRegistersAsync((byte)1,0,(ushort)70);
-        AmmoniaCalibrationData calData = new AmmoniaCalibrationData();
+        AmmoniaData calData = new AmmoniaData();
         calData.Scale = tank;
         switch (tank) {
             case 1: {
@@ -72,7 +73,7 @@ public class AmmoniaController {
         }
     }
 
-    private Task<AmmoniaCalibrationData?> Convert(ushort[] raw,AmmoniaCalibrationData data) {
+    private Task<AmmoniaData?> Convert(ushort[] raw,AmmoniaData data) {
         data.ZeroRawValue=BitConverter.ToInt32(BitConverter.GetBytes(raw[1])
             .Concat(BitConverter.GetBytes(raw[0])).ToArray(), 0);
         
@@ -85,7 +86,7 @@ public class AmmoniaController {
         data.NonZeroValue=BitConverter.ToInt32(BitConverter.GetBytes(raw[7])
             .Concat(BitConverter.GetBytes(raw[6])).ToArray(), 0);
         
-        data.Combined=BitConverter.ToInt32(BitConverter.GetBytes(raw[9])
+        data.GrossWeight=BitConverter.ToInt32(BitConverter.GetBytes(raw[9])
             .Concat(BitConverter.GetBytes(raw[8])).ToArray(), 0);
         
         data.GasWeight=BitConverter.ToInt32(BitConverter.GetBytes(raw[11])
@@ -135,7 +136,7 @@ public class AmmoniaController {
         return rawZeroValue;
     }
 
-    public async Task SetCalibration(string ip,AmmoniaCalibrationData calibration) {
+    public async Task SetCalibration(string ip,AmmoniaData calibration) {
         using var client = new TcpClient(ip, 502);
         client.ReceiveTimeout = 500;
         var modbus = ModbusIpMaster.CreateIp(client);
@@ -144,11 +145,21 @@ public class AmmoniaController {
         registersToWrite.AddRange(ToUshortArray(calibration.NonZeroRawValue));
         registersToWrite.AddRange(ToUshortArray(calibration.ZeroValue));
         registersToWrite.AddRange(ToUshortArray(calibration.NonZeroValue));
-        registersToWrite.AddRange(ToUshortArray(calibration.Combined));
+        registersToWrite.AddRange(ToUshortArray(calibration.GrossWeight));
         registersToWrite.AddRange(ToUshortArray(calibration.GasWeight));
         registersToWrite.Add((ushort)calibration.Scale);
         await modbus.WriteMultipleRegistersAsync((byte)1, 70, registersToWrite.ToArray());
         await modbus.WriteSingleCoilAsync((byte)1, (ushort)0, true);
+    }
+
+    public async Task ClearCalibration(string ip,int scale,Calibration calibration) {
+        AmmoniaData ammoniaData = new AmmoniaData(scale, calibration);
+        await this.SetCalibration(ip, ammoniaData);
+    }
+
+    public async Task WriteCalibration(string ip, int scale, Calibration scaleCalibration, TankWeight tankWeight) {
+        AmmoniaData ammoniaData = new AmmoniaData(scale, scaleCalibration, tankWeight);
+        await this.SetCalibration(ip, ammoniaData);
     }
     
     private ushort[] ToUshortArray(int value) {

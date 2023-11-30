@@ -44,7 +44,7 @@ public class Calibration {
 }
 
 public class TankWeight {
-    public double Gross { get; set; }
-    public double Tare { get; set; }
-    public double Gas { get; set; }
+    public int Gross { get; set; }
+    public int Tare { get; set; }
+    public int Gas { get; set; }
 }
