@@ -6,7 +6,7 @@
 @using MonitoringWeb.WebApp.Components.Bulkgas
 @inject NavigationManager NavManager
 @inject ISidepanelService SidepanelService
-@inject WebsiteConfigurationProvider ConfigurationProvider
+@inject BulkGasProvider BulkGasProvider
 @implements IAsyncDisposable 
 
 <style>
@@ -22,43 +22,55 @@
 }
 </style>
 
+@if (this._bulkSettings !=null && this._bulkEmailSettings != null){
+    <SidepanelComponent @ref="this._sidepanel" Title="Settings">
+        <BulkGasSettingsComponent BulkSettings="@this._bulkSettings"
+                                  BulkEmailSettings="@this._bulkEmailSettings"
+                                  Saved="@this.SavedHandler"/>
+    </SidepanelComponent>
 
-<SidepanelComponent @ref="this._sidepanel" Title="Settings">
-    <BulkGasSettingsComponent BulkSettings="@this._bulkSettings"
-                              BulkEmailSettings="@this._bulkEmailSettings"
-                              Saved="@this.SavedHandler"/>
-</SidepanelComponent>
+    <div class="row float-end">
+        <DxButton Click="Callback" 
+                  RenderStyle="ButtonRenderStyle.Primary"
+                  Text="@this._buttonText"/>
+    </div>
+    <div>
+        <BulkStatus 
+            H2Settings="@this._bulkSettings.H2Settings"
+            N2Settings="@this._bulkSettings.N2Settings"
+            NH3Settings="@this._bulkSettings.NHSettings"/>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <BulkGasDashPlot GasType="BulkGasType.H2" />
+        </div>
+        <div class="col-6">
+            <BulkGasDashPlot GasType="BulkGasType.N2"/>
+        </div>
 
-<div class="row float-end">
-    <DxButton Click="Callback" 
-              RenderStyle="ButtonRenderStyle.Primary"
-              Text="@this._buttonText"/>
-</div>
-<div>
-    <BulkStatus></BulkStatus>
-</div>
-<div class="row">
-    <div class="col-6">
-        <BulkGasDashPlot GasType="BulkGasType.H2" />
     </div>
-    <div class="col-6">
-        <BulkGasDashPlot GasType="BulkGasType.N2"/>
+    <div class="row">
+        <div class="col-12">
+            <BulkGasDashPlot GasType="BulkGasType.NH3"/>
+        </div>
     </div>
+} @*else {
+    <div class="w-100 d-flex flex-row justify-content-center">
+        <h1>Error Loading.  Contact Andrew Elmendorf at 843-687-6812</h1>
+    </div>
+}*@
 
-</div>
-<div class="row">
-    <div class="col-12">
-        <BulkGasDashPlot GasType="BulkGasType.NH3"/>
-    </div>
-</div>
+
 
 
 @code {
 
     private string _buttonText = "Open Settings";
-    private WebsiteBulkSettings _bulkSettings;
-    private BulkEmailSettings _bulkEmailSettings;
+    private WebsiteBulkSettings? _bulkSettings;
+    private BulkEmailSettings? _bulkEmailSettings;
     private SidepanelComponent _sidepanel;
+    private bool _isLoading=true;
+    private Timer? _timer;
     
     private HubConnection? _hubConnection;
     private bool _isSender = false;
@@ -68,23 +80,35 @@
 
 
     protected override async Task OnInitializedAsync() {
-        this._bulkSettings = ConfigurationProvider.WebsiteBulkSettings;
-        this._bulkEmailSettings = ConfigurationProvider.BulkEmailSettings;
-        this._hubConnection=new HubConnectionBuilder()
-            .WithUrl(NavManager.ToAbsoluteUri("/bulkgashub"))
-            .Build();
-        this._hubConnection.On("ReceiveRefreshRequest",this.ReceiveRefreshRequest);
-        await this._hubConnection.StartAsync();
+        this._bulkSettings = await this.BulkGasProvider.GetSettings();
+        this._bulkEmailSettings = await this.BulkGasProvider.GetEmailSettings();
+        if (this._bulkSettings != null && this._bulkEmailSettings != null) {
+            this._timer = new Timer(this.OnTimerAsync,
+                null, 
+                this._bulkSettings.RefreshTime, 
+                this._bulkSettings.RefreshTime);
+            this._hubConnection=new HubConnectionBuilder()
+                .WithUrl(NavManager.ToAbsoluteUri("/bulkgashub"))
+                .Build();
+            this._hubConnection.On("ReceiveRefreshRequest",this.ReceiveRefreshRequest);
+            await this._hubConnection.StartAsync();
+            this._isLoading = false;
+        }
     }
     
-    protected override void OnAfterRender(bool firstRender) {
+    /*protected override void OnAfterRender(bool firstRender) {
         if (firstRender){
             var timer = new Timer(new TimerCallback(_ =>
             {
                 NavManager.NavigateTo(NavManager.Uri, forceLoad: true);
             }), null, this._bulkSettings.RefreshTime,  this._bulkSettings.RefreshTime);
         }
+    }*/
+    
+    private async void OnTimerAsync(object? state) {
+        NavManager.NavigateTo(NavManager.Uri, forceLoad: true);
     }
+    
 
     private async void SavedHandler() {
         this._buttonText = "Open Settings";
@@ -121,6 +145,9 @@
     public async ValueTask DisposeAsync() {
         if (this._hubConnection is not null) {
             await this._hubConnection.DisposeAsync();
+        }
+        if (this._timer is not null) {
+            await this._timer.DisposeAsync();
         }
     }
 

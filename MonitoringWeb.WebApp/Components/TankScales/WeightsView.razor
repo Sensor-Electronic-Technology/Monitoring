@@ -1,0 +1,61 @@
+﻿@using MonitoringSystem.Shared.Data.LogModel
+
+@if (this.CurrentTank != null) {
+    <DxFormLayout
+        CaptionPosition="CaptionPosition.Vertical">
+        @if (this.CurrentTank?.LabeledWeight != null) {
+            <DxFormLayoutGroup Caption="Labeled Weights"
+                                   BeginRow="true"
+                                   ColSpanMd="12"
+                                   CaptionPosition="CaptionPosition.Vertical"
+                                   CaptionCssClass="text-center">
+                    <DxFormLayoutItem Caption="Gas Weight" ColSpanMd="4">
+                        <DxSpinEdit @bind-Value="@this.CurrentTank.LabeledWeight.Gas" 
+                                    ReadOnly="@this.IsReadOnly"
+                                    Mask="D"/>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="Gross Weight" ColSpanMd="4">
+                        <DxSpinEdit @bind-Value="@this.CurrentTank.LabeledWeight.Gross" 
+                                    ReadOnly="@this.IsReadOnly"
+                                    Mask="D"/>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="Tare" ColSpanMd="4">
+                        <DxSpinEdit @bind-Value="@this.CurrentTank.LabeledWeight.Tare"
+                                    Mask="D" 
+                                    ReadOnly="@this.IsReadOnly"/>
+                    </DxFormLayoutItem>
+                </DxFormLayoutGroup>
+        }
+        @if (this.CurrentTank?.MeasuredWeight != null) {
+            <DxFormLayoutGroup Caption="Measured Weights"
+                               BeginRow="true"
+                               ColSpanMd="12"
+                               ReadOnly="true"
+                               CaptionPosition="CaptionPosition.Vertical"
+                               CaptionCssClass="text-center">
+                <DxFormLayoutItem Caption="Gas Weight" ColSpanMd="4">
+                    <DxSpinEdit @bind-Value="@this.CurrentTank.MeasuredWeight.Gas" 
+                                ReadOnly="@this.IsReadOnly"
+                                Mask="D"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Gross Weight" ColSpanMd="4">
+                    <DxSpinEdit @bind-Value="@this.CurrentTank.MeasuredWeight.Gross" 
+                                ReadOnly="@this.IsReadOnly"
+                                Mask="D"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Tare" ColSpanMd="4">
+                    <DxSpinEdit @bind-Value="@this.CurrentTank.MeasuredWeight.Tare"
+                                ReadOnly="@this.IsReadOnly"
+                                Mask="D" />
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+        }
+    </DxFormLayout>
+}
+
+@code {
+    [Parameter]
+    public NH3Tank? CurrentTank { get; set; }
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+}

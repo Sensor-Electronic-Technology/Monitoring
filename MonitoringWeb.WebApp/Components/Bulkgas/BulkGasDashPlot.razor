@@ -5,7 +5,7 @@
 @using MonitoringWeb.WebApp.Services
 @using System.Drawing
 @inject PlotDataService PlotService
-@inject WebsiteConfigurationProvider ConfigurationProvider
+@inject BulkGasProvider BulkGasProvider
 @inject ILogger<BulkGasPlot> Logger
 @implements IAsyncDisposable
 
@@ -18,7 +18,7 @@
                    VerticalAlignment="VerticalEdge.Top"
                    HorizontalAlignment="HorizontalAlignment.Center"
                    Position="RelativePosition.Outside">
-        <DxChartTitle Text="Detectors"> </DxChartTitle>
+        <DxChartTitle Text="Detectors"></DxChartTitle>
     </DxChartLegend>
     <DxChartCommonSeries NameField="@((AnalogReadingDto r) => r.Name)"
                          ArgumentField="@((AnalogReadingDto r) => r.TimeStamp)"
@@ -29,7 +29,7 @@
                     <DxChartSeriesLabel Visible="false"/>
                     <DxChartSeriesPoint Visible="true"/>
                     <DxChartAggregationSettings Enabled="true"
-                                                Method="ChartAggregationMethod.Min"/>
+                                                Method="ChartAggregationMethod.Average"/>
                 </DxChartLineSeries>
             } else {
                 @if (this._bulkGasSettings == null) {
@@ -44,7 +44,7 @@
                                        Color="@Color.FromKnownColor(this._bulkGasSettings.PointColor)">
                         <DxChartSeriesLabel Visible="false"/>
                         <DxChartSeriesPoint Visible="true"/>
-                        <DxChartAggregationSettings Enabled="@_bulkGasSettings.EnableAggregation"
+                        <DxChartAggregationSettings Enabled="@this._bulkGasSettings.EnableAggregation"
                                                     Method="ChartAggregationMethod.Min"/>
                     </DxChartLineSeries>
                 }
@@ -69,21 +69,22 @@
             <DxChartConstantLine Value="@this._bulkGasSettings.WarnRefLine.Value" Width="3" 
                                  DisplayBehindSeries="false"
                                  Color="@Color.FromKnownColor(this._bulkGasSettings.WarnRefLine.Color)">
-                <DxChartConstantLineLabel Text="@this._bulkGasSettings.WarnRefLine.Label" HorizontalAlignment="HorizontalAlignment.Center"
+                <DxChartConstantLineLabel Text="@this._bulkGasSettings.WarnRefLine.Label" 
+                                          HorizontalAlignment="HorizontalAlignment.Center"
                                           VerticalAlignment="VerticalAlignment.Center"
                                           Position="RelativePosition.Outside" />
             </DxChartConstantLine>
             <DxChartConstantLine Value="@this._bulkGasSettings.SoftRefLine.Value" Width="3" 
                                  DisplayBehindSeries="false"
                                  Color="@Color.FromKnownColor(this._bulkGasSettings.SoftRefLine.Color)">
-                <DxChartConstantLineLabel Text="@this._bulkGasSettings.SoftRefLine.Label" HorizontalAlignment="HorizontalAlignment.Center"
+                <DxChartConstantLineLabel Text="@this._bulkGasSettings.SoftRefLine.Label" 
+                                          HorizontalAlignment="HorizontalAlignment.Center"
                                           VerticalAlignment="VerticalAlignment.Center"
                                           Position="RelativePosition.Outside" />
             </DxChartConstantLine>
         }
         <DxChartAxisRange StartValue="@this.Sensor.YAxisStart" 
                           EndValue="@this.Sensor.YAxisStop"/>
-
         <DxChartAxisTitle Text="@this.Sensor.Units"/>
     </DxChartValueAxis>
     <DxChartZoomAndPanSettings ArgumentAxisZoomAndPanMode="ChartAxisZoomAndPanMode.Both"/>
@@ -119,21 +120,22 @@
     bool loaded = false;
 
     protected override async Task OnInitializedAsync() {
+        var bulkSettings = await this.BulkGasProvider.GetSettings();
         switch (this.GasType) {
             case BulkGasType.H2: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
+                this._bulkGasSettings = bulkSettings.H2Settings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
                 this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.N2: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
+                this._bulkGasSettings=bulkSettings.N2Settings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
                 this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.NH3: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.NHSettings;
+                this._bulkGasSettings=bulkSettings.NHSettings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
                 this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
@@ -142,6 +144,31 @@
         await this.Load();
         this.loaded = true;
     }
+
+    /*protected override async Task OnParametersSetAsync() {
+        var bulkSettings = await this.BulkGasProvider.GetSettings();
+        switch (this.GasType) {
+            case BulkGasType.H2: {
+                this._bulkGasSettings = bulkSettings.H2Settings;
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+                break;
+            }
+            case BulkGasType.N2: {
+                this._bulkGasSettings=bulkSettings.N2Settings;
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+                break;
+            }
+            case BulkGasType.NH3: {
+                this._bulkGasSettings=bulkSettings.NHSettings;
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+                break;
+            }
+        }
+        await this.Load();
+    }*/
 
     private Task Submit() {
         return Task.CompletedTask;
@@ -158,56 +185,35 @@
         StateHasChanged();
         var start= this.StartDate;
         var stop = this.StopDate;
-        var ret=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
-                this._bulkGasSettings.ChannelName, start, stop);
-        this.PlotData = ret.Item2;
-        this.Sensor = ret.Item1;
-        this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
-        this.Sensor.YAxisStop = this._bulkGasSettings.YAxisMax;
+        PlotData plotData = new PlotData();
+
+
         switch (this.GasType) {
             case BulkGasType.N2:
                 this.Header = "Bulk N2";
+                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                    this._bulkGasSettings.ChannelName, start, stop);
                 break;
             case BulkGasType.H2:
                 this.Header = "Bulk H2";
+                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                    this._bulkGasSettings.ChannelName, start, stop);
                 break;
             case BulkGasType.NH3:
                 this.Header = "Bulk NH3";
+                plotData=await this.PlotService.GetNH3Data(start, stop);
                 break;
-            default:
-                throw new ArgumentOutOfRangeException();
         }
+        this.PlotData = plotData.AnalogReadings;
+        this.Sensor = plotData.SensorType;
+        this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
+        this.Sensor.YAxisStop = this._bulkGasSettings.YAxisMax;
         this.PlotStart = this.StartDate;
         this.PlotStop = this.StopDate;
         this.StateHasChanged();
         this.Logger.LogInformation($"{DateTime.Now}: {this._bulkGasSettings.DeviceName} Plot Loaded.  " +
                                    $"Channel: {this._bulkGasSettings.ChannelName}");
     }
-
-    /*protected override async Task OnParametersSetAsync() {
-        switch (this.GasType) {
-            case BulkGasType.H2: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
-                break;
-            }
-            case BulkGasType.N2: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
-                break;
-            }
-            case BulkGasType.NH3: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.NHSettings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
-                break;
-            }
-        }
-        await this.Load();
-        StateHasChanged();
-    }*/
     
     public ValueTask DisposeAsync() {
         return ValueTask.CompletedTask;

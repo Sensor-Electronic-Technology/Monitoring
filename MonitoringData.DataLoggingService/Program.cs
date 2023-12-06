@@ -49,12 +49,18 @@ switch (serviceType) {
 builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<MonitorReadingDatabase>();
 builder.Services.AddHostedService<MonitorConfigDatabase>();
+var deviceName=Environment.GetEnvironmentVariable("DEVICEID");
+if (deviceName is not null) {
+    if (deviceName == "nh3") {
+        builder.Services.AddHostedService<MonitorTankScales>();
+    }
+}
+
 builder.Services.AddSignalR();
 var app = builder.Build();
 
 var dataConfigProvider = app.Services.GetService<DataLogConfigProvider>();
 if (dataConfigProvider is not null) {
-    var deviceName=Environment.GetEnvironmentVariable("DEVICEID");
     //var deviceName = "epi1";
     if (deviceName is not null) {
         dataConfigProvider.DeviceName = deviceName;

@@ -7,28 +7,38 @@
 @inject AmmoniaDataService AmmoniaDataService
 @inject AmmoniaController AmmoniaController
 @inject WebsiteConfigurationProvider Provider
+@inject NavigationManager NavigationManager
 @implements IAsyncDisposable
+
+<style>
+    .icon-css{
+        font-size: 100px;
+    }
+</style>
 
 <div class="row d-flex justify-content-center">
     @foreach (var scale in this._scales) {
-        <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+        <div class="col-3 shadow-lg p-2 mb-5 rounded">
             <TS_StatusCard TankScale="@scale" OnClick="@this.TankScaleClickHandler"/>
         </div>
     }
 </div>
-<div class="container-lg">
+<div class="row">
     @if (this._selectedTankScale == null) {
         <h3>No Tank Selected</h3>
     } else {
-        <div class="d-flex flex-row justify-content-evenly">
-            <div class="pb-1" style="width: 800px">
-                <TankView TankScale="@this._selectedTankScale"/>
-            </div>
-            <div class="pb-1" style="width: 800px;">
-                <ScaleView TankScale="@this._selectedTankScale"/>
-            </div>
-        </div>
-
+        <DxTabs TabsPosition="TabsPosition.Top">
+            <DxTabPage Text="NH3 Tank">
+                <div class="w-75 position-relative top-50 start-50 translate-middle p-2">
+                    <TankView TankScale="@this._selectedTankScale"/>
+                </div>
+            </DxTabPage>
+            <DxTabPage Text="Scale">
+                <div class="w-75 position-relative top-50 start-50 translate-middle p-2">
+                    <ScaleView TankScale="@this._selectedTankScale"/>
+                </div>
+            </DxTabPage>
+        </DxTabs>
     }
 </div>
 
@@ -40,8 +50,8 @@
     private List<TankScale> _scales = new List<TankScale>();
     
   
-    protected async override Task OnInitializedAsync() {
-    /*this.TankScaleChanged.OnChildChanged += this.TankScaleChangedHandler;*/
+    protected override async Task OnInitializedAsync() {
+        this.TankScaleChanged.OnChildChanged += this.TankScaleChangedHandler;
         this._scales = await this.AmmoniaDataService.GetTankScales();
     }
 
@@ -50,23 +60,15 @@
         return Task.CompletedTask;
     }
 
-    /*private async Task TankScaleChangedHandler() {
+    private async Task TankScaleChangedHandler() {
+        //this.NavigationManager.NavigateTo(this.NavigationManager.Uri,forceLoad:true);
         this._scales = await this.AmmoniaDataService.GetTankScales();
         await InvokeAsync(StateHasChanged);
-    }*/
-    
-    void SelectionChanged(AccordionSelectionChangedEventArgs args) {
-        if(args.SelectedItems.Any()) {
-            /*SelectedItem = (FinancialProductInfo)args.SelectedItems.FirstOrDefault().DataItem;
-            DetailsPopupVisible = true;*/
-        } else {
-            //SelectedItem = null;
-        }
-            
     }
+    
 
     public ValueTask DisposeAsync() {
-        //this.TankScaleChanged.OnChildChanged -= this.TankScaleChangedHandler;
+        this.TankScaleChanged.OnChildChanged -= this.TankScaleChangedHandler;
         return ValueTask.CompletedTask;
     }
 }

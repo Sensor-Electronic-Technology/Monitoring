@@ -6,4 +6,6 @@ public class MonitorWebsiteSettings : MonitorSettings {
     public string? SensorTypeCollection { get; set; } = null!;
     public string? BulkSettingsCollection { get; set; } = null!;
     public string? BulkEmailSettingsCollection { get; set; } = null!;
+    public string? NH3LogDatabase { get; set; } = null!;
+    public string? TankScaleCollection { get; set; } = null!;
 }

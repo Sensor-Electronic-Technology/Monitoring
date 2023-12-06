@@ -7,6 +7,7 @@
 @using MonitoringWeb.WebApp.Services
 @inject WebsiteConfigurationProvider ConfigurationProvider
 @inject ILogger<TS_StatusCard> Logger
+@implements IAsyncDisposable
 
 <style>
 .container{
@@ -19,7 +20,7 @@
     .container:active {
       background-color: #3dd5f3;
       box-shadow: 0 5px #666;
-      transform: translateY(1px);
+      transform: translateY(10px);
       cursor: default;
     }
 </style>
@@ -66,7 +67,7 @@
 
     private bool _isConnection => this._hubConnection?.State == HubConnectionState.Connected;
 
-    protected async override Task OnInitializedAsync() {
+    protected override async Task OnInitializedAsync() {
         /*var device = this.ConfigurationProvider.Devices.FirstOrDefault(e => e.DeviceName == "nh3");*/
         await this.HubSetup();
     }
@@ -151,6 +152,11 @@
             default: {
                 return "No Tank";
             }
+        }
+    }
+    public async ValueTask DisposeAsync() {
+        if (this._hubConnection != null) {
+            await this._hubConnection.DisposeAsync();
         }
     }
 }

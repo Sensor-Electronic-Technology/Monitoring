@@ -1,0 +1,337 @@
+﻿@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringSystem.Shared.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringSystem.Shared.Data.SettingsModel
+@using MonitoringSystem.Shared.SignalR
+@using MathNet.Numerics
+@using MathNet.Numerics.Statistics
+@using MonitoringWeb.WebApp.Data
+@using MonitoringWeb.WebApp.Hubs
+@using MonitoringWeb.WebApp.Services
+@inject WebsiteConfigurationProvider ConfigurationProvider;
+@inject AmmoniaController AmmoniaController
+@inject AmmoniaDataService AmmoniaDataService
+@inject NavigationManager NavigationManager
+@inject ILogger<TankAddView> Logger
+
+<DxPopup
+    @bind-Visible="@this._msgBoxVisible"
+    ShowFooter="true"
+    HeaderText="@this._msgHeader"
+    BodyText="@this._msgText">
+    <FooterContentTemplate Context="Context">
+        <DxButton CssClass="popup-button my-1 ms-2" 
+                  RenderStyle="ButtonRenderStyle.Primary" 
+                  Text="OK" 
+                  Click="@this.PopUpButtonHandler" />
+    </FooterContentTemplate>
+</DxPopup>
+
+
+<div class="row" hidden="@(!this.Visible)">
+    <div class="d-flex flex-row p-2 justify-content-center">
+        <DxButton Text="Cancel Add Tank" 
+                  RenderStyle="ButtonRenderStyle.Danger"
+                  Click="@this.CancelHandler" CssClass="w-100" />
+    </div>
+    <div class="row p-2">
+        <DxAccordion>
+            <Items>
+                <DxAccordionItem Text="Video">
+                    <ContentTemplate>
+                        <div class="p-2">
+                            <video width="800" controls>
+                                <source src="Videos/add_tank.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </ContentTemplate>
+                </DxAccordionItem>
+            </Items>
+        </DxAccordion>
+    </div>
+    <div class="row p-2">
+        <div class="col w-25">
+            <div class="row">
+                @*<DxMemo @bind-Text="@this._instructions" Rows="6"/>*@
+                <h5 class="text-center">Instructions</h5>
+                <ol class="list-group list-group-numbered text-lg-start">
+                    @foreach (var instruction in this._addInstructions) {
+                        <li class="list-group-item">@instruction</li>
+                    }
+                </ol>
+            </div>
+            <div class="row">
+                <img src="images/NH3TagV2.jpg"/>
+            </div>
+        </div>
+        <div class="col w-75">
+            <DxFormLayout>
+                <DxFormLayoutTabPages CaptionPosition="CaptionPosition.Vertical" @bind-ActiveTabIndex="@this._tabIndex">
+                    <DxFormLayoutTabPage Caption="Step 1: Enter Labeled Values"
+                                         CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem Caption="Serial Number" ColSpanMd="12">
+                            <DxTextBox @bind-Text="@this._serialNumber" NullText="Serial Number"/>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutGroup Caption="Labeled Weights"
+                                           BeginRow="true"
+                                           ColSpanMd="12"
+                                           CaptionPosition="CaptionPosition.Vertical">
+                            <DxFormLayoutItem Caption="Gas Weight" ColSpanMd="4">
+                                <DxSpinEdit @bind-Value="@this._labeledWeight.Gas" Mask="D"/>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="Gross Weight" ColSpanMd="4">
+                                <DxSpinEdit @bind-Value="@this._labeledWeight.Gross" Mask="D"/>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="Tare" ColSpanMd="4">
+                                <DxSpinEdit @bind-Value="@this._labeledWeight.Tare" Mask="D"/>
+                            </DxFormLayoutItem>
+                        </DxFormLayoutGroup>
+                        <DxFormLayoutItem Caption="Press Submit To Proceed"
+                                          BeginRow="true"
+                                          ColSpanMd="12">
+                            <DxButton Text="Submit" CssClass="w-100" Click="@this.OnLabeledWeightsSubmit"/>
+                        </DxFormLayoutItem>
+                    </DxFormLayoutTabPage>
+                    <DxFormLayoutTabPage Caption="Step 2: Calibrate" CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem Caption="Press To Clear Current Tank and Start Calibration"
+                                          BeginRow="true"
+                                          ColSpanMd="12">
+                            <DxButton Text="Start Calibration"
+                                      CssClass="w-100"
+                                      Click="@this.OnStartCalibrate"/>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutGroup Caption="Current Weight and Stdev">
+                            <DxFormLayoutItem ColSpanMd="12">
+                                <DxMemo Text="Capture button will be enabled once Stdev<=0.1" Rows="1"/>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="Current" ColSpanMd="6">
+                                <DxSpinEdit @bind-Value="@this._liveTankWeight" Mask="D"
+                                            ShowSpinButtons="false"/>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="Standard Deviation" ColSpanMd="6">
+                                <DxSpinEdit @bind-Value="@this._stdev" 
+                                            Mask="F3"
+                                            ShowSpinButtons="false"/>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="Capture"
+                                              BeginRow="true"
+                                              ColSpanMd="12"
+                                              CssClass="py-2"
+                                              Enabled="@this.CanCalibrate()">
+                                <DxButton Text="Capture"
+                                          RenderStyle="ButtonRenderStyle.Info"
+                                          CssClass="w-100"
+                                          Enabled="@this.CanCalibrate()"
+                                          Click="@this.OnCapture"/>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="Gas Weight Using Captured Value">
+                                <DxSpinEdit @bind-Value="@(this._calculatedWeight)" 
+                                            ShowSpinButtons="false"/>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="Next" BeginRow="true" ColSpanMd="12">
+                                <DxButton Text="Next->Upload" 
+                                          RenderStyle="ButtonRenderStyle.Light"
+                                          Click="@this.OnNextUpload" 
+                                          CssClass="w-100"/>
+                            </DxFormLayoutItem>
+                        </DxFormLayoutGroup>
+                    </DxFormLayoutTabPage>
+                    <DxFormLayoutTabPage Caption="Step 3: Upload" CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem>
+                            <DxMemo Text="Check Measured Values then Press the Upload Button"/>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutGroup Caption="Measured Weights"
+                                           BeginRow="true"
+                                           ColSpanMd="12"
+                                           ReadOnly="true"
+                                           CaptionPosition="CaptionPosition.Vertical"
+                                           CaptionCssClass="text-center">
+                            <DxFormLayoutItem Caption="Gas Weight" ColSpanMd="4">
+                                <DxSpinEdit @bind-Value="@this._measuredWeight.Gas" Mask="D"/>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="Gross Weight" ColSpanMd="4">
+                                <DxSpinEdit @bind-Value="@this._measuredWeight.Gross" Mask="D" ReadOnly="true"/>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="Tare" ColSpanMd="4">
+                                <DxSpinEdit @bind-Value="@this._measuredWeight.Tare" Mask="D" ReadOnly="true"/>
+                            </DxFormLayoutItem>
+                        </DxFormLayoutGroup>
+                        <DxFormLayoutItem Caption="Upload to Controller" ColSpanMd="12">
+                            <DxButton Text="Upload" 
+                                      RenderStyle="ButtonRenderStyle.Success" 
+                                      Click="@this.OnUploadAndSave"
+                                      CssClass="w-100"/>
+                        </DxFormLayoutItem>
+                    </DxFormLayoutTabPage>
+                </DxFormLayoutTabPages>
+            </DxFormLayout>
+        </div>
+    </div>
+</div>
+
+@code{
+    [Parameter]
+    public bool Visible { get; set;}
+    
+    [Parameter]
+    public TankScale? TankScale { get; set; }
+    
+    [Parameter]
+    public EventCallback OnTankAdded { get; set; }
+    
+    [Parameter]
+    public EventCallback OnTankAddCancel { get; set; }
+    
+    private NH3Tank? _currentTank=new NH3Tank();
+    private TankWeight _labeledWeight=new TankWeight();
+    private TankWeight _measuredWeight=new TankWeight();
+    private string _serialNumber = "";
+    private HubConnection? _hubConnection;
+    private double _stdev;
+    private bool _monitoringWeight = false;
+    private int _liveTankWeight;
+    private List<double> _weights=new List<double>();
+    private int _tabIndex = 0;
+    private bool _hubConnected => this._hubConnection?.State == HubConnectionState.Connected;
+    private int _calculatedWeight = 0; 
+    private string? _msgHeader;
+    private string? _msgText;
+    private bool _msgBoxVisible;
+    private bool _saveSuccess = false;
+    private List<string> _addInstructions = new List<String>() {
+        "Enter Labeled SN and Weights then press \"Submit\"",
+        "Press \"Start Calibration\" and wait for weight to stabilize",
+        "Wait for stdev to be <=.1 then press \"Capture\".  Press \"Next->Upload\" when finsihed",
+        "Check measured weights then press Upload to finish"
+    };
+
+    protected override Task OnParametersSetAsync() {
+        this._tabIndex = 0;
+        this._labeledWeight = new TankWeight();
+        this._measuredWeight = new TankWeight();
+        this._currentTank = new NH3Tank();
+        this._stdev = 0.00;
+        this._liveTankWeight = 0;
+        this._weights = new List<double>();
+        return base.OnParametersSetAsync();
+    }
+
+    private void ShowMsgBox(string header, string message) {
+        this._msgHeader = header;
+        this._msgText = message;
+        this._msgBoxVisible = true;
+    }
+    
+    private async Task HubStart() {
+        var hubAddress = NavigationManager.ToAbsoluteUri("/tank-weights");
+        this._hubConnection = new HubConnectionBuilder()
+            .WithAutomaticReconnect(new TimeSpan[] {
+                TimeSpan.FromSeconds(3),
+                TimeSpan.FromSeconds(9),
+                TimeSpan.FromSeconds(20)
+            })
+            .WithUrl(hubAddress)
+            .Build();
+        this._hubConnection.On<List<int>>(
+            nameof(ISendTankWeightsCommand.SendTankWeights),
+            this.HandleSendTankWeightsCommand);
+        this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+        this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+        try {
+            await this._hubConnection.StartAsync();
+            this.Logger.LogInformation(hubAddress + " Connection");
+        } catch {
+            this.Logger.LogError(hubAddress+" hub connection failed");
+        }
+    }
+    
+    private async Task HubClose() {
+        if (this._hubConnection != null) {
+            if (this._hubConnected) {
+                await this._hubConnection.StopAsync();
+            }
+        }
+    }
+    
+    private bool CanCalibrate() {
+        return this._stdev <= .1 && this._monitoringWeight;
+    }
+    
+    private async Task HandleSendTankWeightsCommand(List<int> tankWeights) {
+        if (this.TankScale != null) {
+            if (this.TankScale.ScaleId > 0) {
+                this._liveTankWeight = tankWeights[this.TankScale.ScaleId-1];
+                if (this._monitoringWeight) {
+                    this._weights.Add(this._liveTankWeight);
+                    if (this._weights.Count > 5) {
+                        this._weights.RemoveAt(0);
+                    }
+                    this._stdev=this._weights.StandardDeviation();
+                }
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+    
+    //Step 1
+    private async Task OnLabeledWeightsSubmit() {
+        this._measuredWeight.Gas = this._labeledWeight.Gas;
+        this._tabIndex = 1;
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    //Step 2
+    private async Task OnStartCalibrate() {
+        await this.HubStart();
+        this._monitoringWeight = true;
+        this._weights = new List<double>();
+    }
+    
+    //Step 3
+    private async Task OnCapture() {
+        this._measuredWeight.Gross = this._liveTankWeight;
+        this._measuredWeight.Gas = this._labeledWeight.Gas;
+        this._measuredWeight.Tare = this._measuredWeight.Gross - this._measuredWeight.Gas;
+        this._calculatedWeight = this._measuredWeight.Gross - this._measuredWeight.Tare;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnNextUpload() {
+        this._monitoringWeight = false;
+        this._weights.Clear();
+        await this.HubClose();
+        this._tabIndex = 2;
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private async Task OnUploadAndSave() {
+        await this.AmmoniaController.WriteCalibration(this.TankScale.ScaleId,
+            this.TankScale.CurrentCalibration,this._measuredWeight);
+        this._currentTank.SerialNumber = this._serialNumber;
+        this._currentTank.StartDate = DateTime.Now;
+        this._currentTank.StartWeight = this._measuredWeight.Gas;
+        this._currentTank.MeasuredWeight = this._measuredWeight;
+        this._currentTank.LabeledWeight = this._labeledWeight;
+        var okay=await this.AmmoniaDataService.AddCurrentTank(this.TankScale.ScaleId, this._currentTank);
+        if (okay) {
+            this.ShowMsgBox("Success","Success: Tank Added");
+            this._saveSuccess = true;
+        } else {
+            this.ShowMsgBox("Error","Error: Failed to add tank, please contact administrator");
+            this._saveSuccess = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task PopUpButtonHandler() {
+        this._msgBoxVisible = false;
+        if (this._saveSuccess) {
+            await this.OnTankAdded.InvokeAsync();
+        }
+    }
+
+    private async Task CancelHandler() {
+        await this.HubClose();
+        await this.OnTankAddCancel.InvokeAsync();
+    }
+}

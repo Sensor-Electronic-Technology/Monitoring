@@ -16,12 +16,10 @@
     <PackageReference Include="Append.Blazor.Sidepanel" Version="6.3.3" />
     <PackageReference Include="BlazorSpinner" Version="1.3.0" />
     <PackageReference Include="MongoDB.Driver.GridFS" Version="2.15.1" />
+    <PackageReference Include="NWaves" Version="0.9.6" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="wwwroot\images\" />
   </ItemGroup>
   <ItemGroup>
     <Content Update="wwwroot\images\GasDetectorMap.png">
@@ -29,6 +27,33 @@
     </Content>
     <Content Include="..\.dockerignore">
       <Link>.dockerignore</Link>
+    </Content>
+    <Content Update="wwwroot\images\website.mp4">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\Video\remove_tank.mp4">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\Icons\icons8-gas-tank-67.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\Icons\icons8-gas-tank-68.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\Icons\icons8-scale-48.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\Icons\icons8-scale-64.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\NH3TagV2.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\Videos\add_tank.mp4">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\Videos\remove_tank_v2.mp4">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>

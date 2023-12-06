@@ -6,30 +6,33 @@
 @using MonitoringSystem.Shared.Services
 @using MonitoringWeb.WebApp.Services
 @inject ILogger<BulkStatus> Logger
-@inject WebsiteConfigurationProvider ConfigurationProvider
+
 
 <div class="row d-flex justify-content-center">
     <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
-        <BulkGasStatusCard Settings="@this._h2Settings" />
+        <BulkGasStatusCard Settings="@this.H2Settings" />
     </div>
     <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
-        <BulkGasStatusCard Settings="@this._n2Settings" />
+        <BulkGasStatusCard Settings="@this.N2Settings" />
     </div>
     <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
-        <BulkGasStatusCard Settings="@this._nhSettings" />
+        <BulkGasStatusCard Settings="@this.NH3Settings" />
     </div>    
 </div>
 
 
 
 @code {
-    private BulkGasSettings? _h2Settings { get; set; }
-    private BulkGasSettings? _n2Settings { get; set; }
-    private BulkGasSettings? _nhSettings { get; set; }
+    [Parameter]
+    public BulkGasSettings? H2Settings { get; set; }
+    [Parameter]
+    public BulkGasSettings? N2Settings { get; set; }
+    [Parameter]
+    public BulkGasSettings? NH3Settings { get; set; }
     
     protected override async Task OnInitializedAsync() {
-        this._h2Settings = this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
+        /*this.H2Settings = this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
         this._n2Settings = this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
-        this._nhSettings = this.ConfigurationProvider.WebsiteBulkSettings.NHSettings;
+        this.NH3Settings = this.ConfigurationProvider.WebsiteBulkSettings.NHSettings;*/
     }
 }

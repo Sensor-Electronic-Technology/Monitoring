@@ -13,12 +13,14 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         List<VirtualItem> VirtualItems { get; }
         List<MonitorAlert> MonitorAlerts { get; }
         List<ActionItem> ActionItems { get; }
+        List<TankScale> TankScales { get; }
         ManagedDevice ManagedDevice { get; }
 
         Task InsertOneAsync(AlertReadings readings);
         Task InsertOneAsync(AnalogReadings? readings);
         Task InsertOneAsync(DiscreteReadings? readings);
         Task InsertOneAsync(VirtualReadings? readings);
+        Task InsertWeightReading(WeightReading weightReading);
         Task<AnalogReadings?> GetLastAnalogReading();
         Task LoadAsync();
         Task ReloadAsync();
@@ -36,6 +38,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         public List<VirtualItem> VirtualItems { get; private set; } = new List<VirtualItem>();
         public List<MonitorAlert> MonitorAlerts { get; private set; } = new List<MonitorAlert>();
         public List<ActionItem> ActionItems { get; private set; } = new List<ActionItem>();
+        public List<TankScale> TankScales { get; private set; } = new List<TankScale>();
 
         private IMongoCollection<MonitorAlert> _monitorAlerts;
         private IMongoCollection<AnalogItem> _analogItems;
@@ -43,11 +46,13 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         private IMongoCollection<OutputItem> _outputItems;
         private IMongoCollection<VirtualItem> _virtualItems;
         private IMongoCollection<ActionItem> _actionItems;
+        private IMongoCollection<TankScale> _tankScales;
 
         private IMongoCollection<AnalogReadings?> _analogReadings;
         private IMongoCollection<DiscreteReadings?> _discreteReadings;
         private IMongoCollection<VirtualReadings?> _virtualReadings;
         private IMongoCollection<AlertReadings> _alertReadings;
+        private IMongoCollection<WeightReading> _weightReadings;
 
         public MonitorDataService(IMongoClient client,DataLogConfigProvider configProvider,
             ILogger<MonitorDataService> logger) {
@@ -66,6 +71,9 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._virtualItems = database.GetCollection<VirtualItem>(this._device.CollectionNames[nameof(VirtualItem)]);
             this._outputItems = database.GetCollection<OutputItem>(this._device.CollectionNames[nameof(OutputItem)]);
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
+            var tankScaleDatabase = this._client.GetDatabase("nh3_logs");
+            this._tankScales = tankScaleDatabase.GetCollection<TankScale>("tank_scales");
+            this._weightReadings = tankScaleDatabase.GetCollection<WeightReading>("weight_readings");
         }
         
         public async Task InsertOneAsync(AlertReadings readings) {
@@ -83,6 +91,9 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
         public async Task InsertOneAsync(VirtualReadings? readings) {
             await this._virtualReadings.InsertOneAsync(readings);
         }
+        public async Task InsertWeightReading(WeightReading weightReading) {
+            await this._weightReadings.InsertOneAsync(weightReading);
+        }
 
         public async Task<AnalogReadings?> GetLastAnalogReading() {
             SortDefinition<AnalogReadings?> sort="{ timestamp: -1 }";
@@ -96,6 +107,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this.VirtualItems = await this._virtualItems.Find(_ => true).ToListAsync();
             this.ActionItems = await this._actionItems.Find(_ => true).ToListAsync();
             this.MonitorAlerts = await this._monitorAlerts.Find(_ => true).ToListAsync();
+            this.TankScales = await this._tankScales.Find(_ => true).ToListAsync();
         }
 
         public async Task ReloadAsync() {
@@ -113,12 +125,16 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._virtualItems = database.GetCollection<VirtualItem>(this._device.CollectionNames[nameof(VirtualItem)]);
             this._outputItems = database.GetCollection<OutputItem>(this._device.CollectionNames[nameof(OutputItem)]);
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
+            var tankScaleDatabase = this._client.GetDatabase("nh3_logs");
+            this._tankScales = tankScaleDatabase.GetCollection<TankScale>("tank_scales");
+            this._weightReadings = tankScaleDatabase.GetCollection<WeightReading>("weight_readings");
             this.AnalogItems = await this._analogItems.Find(_ => true).ToListAsync();
             this.DiscreteItems = await this._discreteItems.Find(_ => true).ToListAsync();
             this.OutputItems = await this._outputItems.Find(_ => true).ToListAsync();
             this.VirtualItems = await this._virtualItems.Find(_ => true).ToListAsync();
             this.ActionItems = await this._actionItems.Find(_ => true).ToListAsync();
             this.MonitorAlerts = await this._monitorAlerts.Find(_ => true).ToListAsync();
+            this.TankScales = await this._tankScales.Find(_ => true).ToListAsync();
         }
     }
 }

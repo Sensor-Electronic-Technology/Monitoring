@@ -43,7 +43,7 @@
         return Task.CompletedTask;
     }
 
-    protected async override Task OnParametersSetAsync() {
+    protected override async Task OnParametersSetAsync() {
         await base.OnParametersSetAsync();
         switch (this.GasType) {
             case BulkGasType.N2:

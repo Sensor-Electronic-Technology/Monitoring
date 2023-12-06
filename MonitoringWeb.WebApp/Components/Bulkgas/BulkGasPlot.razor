@@ -8,12 +8,10 @@
 @using MonitoringSystem.Shared.Services
 @inject PlotDataService PlotService
 @inject ValueChanged<DateRange> DateRangeState
-@inject WebsiteConfigurationProvider ConfigurationProvider
+@inject BulkGasProvider BulkGasProvider
 @inject ILogger<BulkGasPlot> Logger
 @implements IAsyncDisposable
 
-@*<Spinner>
-</Spinner>*@
 <CustomRange @bind-StartDate="this.StartDate" @bind-StopDate="@StopDate" CustomDateVisible="@this.CustomDateVisible"/>
 <div class="card">
     @if (this.RangeSelectVisible) {
@@ -54,7 +52,7 @@
                                 <DxChartSeriesLabel Visible="false"/>
                                 <DxChartSeriesPoint Visible="true"/>
                                 <DxChartAggregationSettings Enabled="true"
-                                                            Method="ChartAggregationMethod.Min"/>
+                                                            Method="ChartAggregationMethod.Average"/>
                             </DxChartLineSeries>
                         } else {
                             @if (this._bulkGasSettings == null) {
@@ -149,23 +147,24 @@
     IEnumerable<AnalogReadingDto>? PlotData { get; set; }
     string Header = "";
 
-    protected async override Task OnInitializedAsync() {
+    protected override async Task OnInitializedAsync() {
         this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
+        var settings = await this.BulkGasProvider.GetSettings();
         switch (this.GasType) {
             case BulkGasType.H2: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
+                this._bulkGasSettings=settings.H2Settings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
                 this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.N2: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
+                this._bulkGasSettings=settings.N2Settings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
                 this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.NH3: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.NHSettings;
+                this._bulkGasSettings=settings.NHSettings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
                 this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
@@ -191,30 +190,31 @@
     }
 
     private async Task Load() {
-        //this.PlotData=null;
-        //StateHasChanged();
         var start= this.StartDate;
         var stop = this.StopDate;
-        var ret=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
-                this._bulkGasSettings.ChannelName, start, stop);
-        this.PlotData = ret.Item2;
-        this.Sensor = ret.Item1;
-        this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
-        this.Sensor.YAxisStop = this._bulkGasSettings.YAxisMax;
+        PlotData plotData = new PlotData();
         switch (this.GasType) {
             case BulkGasType.N2:
                 this.Header = "Bulk N2";
+                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                    this._bulkGasSettings.ChannelName, start, stop);
                 break;
             case BulkGasType.H2:
                 this.Header = "Bulk H2";
+                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                    this._bulkGasSettings.ChannelName, start, stop);
                 break;
             case BulkGasType.NH3:
                 this.Header = "Bulk NH3";
+                plotData=await this.PlotService.GetNH3Data(start, stop);
+                
                 break;
-            default:
-                throw new ArgumentOutOfRangeException();
         }
+        this.PlotData = plotData.AnalogReadings;
+        this.Sensor = plotData.SensorType;
         
+        this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
+        this.Sensor.YAxisStop = this._bulkGasSettings.YAxisMax;
         this.PlotStart = this.StartDate;
         this.PlotStop = this.StopDate;
         this.DateRangeState.SetItemParent(new DateRange() {
@@ -225,21 +225,22 @@
 
     protected override async Task OnParametersSetAsync() {
         this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
+        var settings = await this.BulkGasProvider.GetSettings();
         switch (this.GasType) {
             case BulkGasType.H2: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;
+                this._bulkGasSettings=settings.H2Settings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
                 this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.N2: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.N2Settings;
+                this._bulkGasSettings=settings.N2Settings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
                 this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.NH3: {
-                this._bulkGasSettings=this.ConfigurationProvider.WebsiteBulkSettings.NHSettings;
+                this._bulkGasSettings=settings.NHSettings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
                 this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;

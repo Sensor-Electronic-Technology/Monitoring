@@ -151,7 +151,7 @@ public class PlotDataService {
             return analogReadings;
         }
         
-        public async Task<Tuple<SensorType,IEnumerable<AnalogReadingDto>>> GetChannelDatav2(string deviceData,string chName,DateTime start, DateTime stop) {
+        public async Task<PlotData> GetChannelDatav2(string deviceData,string chName,DateTime start, DateTime stop) {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase(deviceData);
             this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
@@ -175,7 +175,29 @@ public class PlotDataService {
                     }
                 }
             }
-            return new Tuple<SensorType, IEnumerable<AnalogReadingDto>>(sensor,analogReadings);
+            return new PlotData(sensor,analogReadings);
+        }
+        
+        public async Task<PlotData> GetNH3Data(DateTime start, DateTime stop) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var logDatabase = client.GetDatabase("nh3_logs");
+            var weightCollection = logDatabase.GetCollection<WeightReading>("weight_readings");
+            List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
+            var sensor = this._configProvider.Sensors.FirstOrDefault(e => e.Name=="Weight");
+            using var cursor = await weightCollection.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
+            while (await cursor.MoveNextAsync()){
+                var batch = cursor.Current;
+                foreach (var readings in batch){
+                        var aReading=new AnalogReadingDto(){
+                            Name="Toner Weight",
+                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            Value=readings.Value
+                        };
+                        aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
+                        analogReadings.Add(aReading);
+                }
+            }
+            return new PlotData(sensor,analogReadings);
         }
         
         public async Task<Tuple<SensorType,IEnumerable<AnalogReadingDto>>> GetBulkNH3(DateTime start, DateTime stop) {

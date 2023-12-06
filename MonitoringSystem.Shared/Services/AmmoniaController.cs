@@ -23,7 +23,6 @@ public class AmmoniaController {
     public AmmoniaController() {
         this._loggingEnabled = false;
     }
-    
     public async Task SetCalibrationMode(bool mode) {
         if (!this._initialized) {
             this._logger.LogError("Error: AmmoniaController not initialized");
@@ -37,7 +36,6 @@ public class AmmoniaController {
             this.LogError("Exception writing to single coil in ModbusService.WriteCoil");
         }
     }
-
     public async Task<AmmoniaData?> GetTankCalibration(int tank) {
         if (!this._initialized) {
             this._logger.LogError("Error: AmmoniaController not initialized");
@@ -86,7 +84,6 @@ public class AmmoniaController {
                 return null;
         }
     }
-
     private Task<AmmoniaData?> Convert(ushort[] raw,AmmoniaData data) {
         data.ZeroRawValue=BitConverter.ToInt32(BitConverter.GetBytes(raw[1])
             .Concat(BitConverter.GetBytes(raw[0])).ToArray(), 0);
@@ -108,7 +105,6 @@ public class AmmoniaController {
         
         return Task.FromResult(data);
     }
-
     private async Task<int> GetZeroRawValue(int scale) {
         if (!this._initialized) {
             this._logger.LogError("Error: AmmoniaController not initialized");
@@ -153,7 +149,6 @@ public class AmmoniaController {
         await modbus.WriteSingleCoilAsync((byte)1, (ushort)1, true);
         return rawZeroValue;
     }
-
     public async Task SetCalibration(AmmoniaData calibration) {
         if (!this._initialized) {
             this._logger.LogError("Error: AmmoniaController not initialized");
@@ -173,14 +168,14 @@ public class AmmoniaController {
         await modbus.WriteMultipleRegistersAsync((byte)1, 70, registersToWrite.ToArray());
         await modbus.WriteSingleCoilAsync((byte)1, (ushort)0, true);
     }
-
-    public async Task ClearCalibration(int scale,Calibration calibration) {
+    public async Task<bool> RemoveTankCalibration(int scale,Calibration calibration) {
         if (!this._initialized) {
             this._logger.LogError("Error: AmmoniaController not initialized");
-            return;
+            return false;
         }
         AmmoniaData ammoniaData = new AmmoniaData(scale, calibration);
         await this.SetCalibration(ammoniaData);
+        return true;
     }
 
     public async Task WriteCalibration(int scale, Calibration scaleCalibration, TankWeight tankWeight) {

@@ -6,13 +6,11 @@ using MonitoringWeb.WebApp.Data;
 namespace MonitoringWeb.WebApp.Services; 
 
 public class BulkGasProvider {
-    private readonly IMongoClient _client;
-    private IMongoCollection<WebsiteBulkSettings> _settingsCollection;
+    private readonly IMongoCollection<WebsiteBulkSettings> _settingsCollection;
     private readonly IMongoCollection<BulkEmailSettings> _emailSettingsCollection;
-
+    
     public BulkGasProvider(IMongoClient client,IOptions<MonitorWebsiteSettings> options) {
-        this._client = client;
-        var database = this._client.GetDatabase(options.Value.DatabaseName);
+        var database = client.GetDatabase(options.Value.DatabaseName);
         this._settingsCollection = database.GetCollection<WebsiteBulkSettings>(options.Value.BulkSettingsCollection);
         this._emailSettingsCollection = database.GetCollection<BulkEmailSettings>(options.Value.BulkEmailSettingsCollection);
     }

@@ -2,6 +2,7 @@
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using System;
+
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -108,7 +109,11 @@ namespace MonitoringSystem.ConsoleTesting {
            //await UpdateBulkEmailSettings();
            //await CreateBulkEmailSettings();
            //await CreateNH3BulkGasSettings();
-           await TestPopList();
+           //await TestPopList();
+        }
+
+        static async Task OutputNH3() {
+
         }
 
         static Task TestPopList() {

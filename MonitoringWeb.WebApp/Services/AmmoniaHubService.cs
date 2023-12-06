@@ -12,7 +12,6 @@ public class AmmoniaHubService:BackgroundService,IAsyncDisposable {
     private readonly IHubContext<AmmoniaHub, ISendTankWeightsCommand> _hubContext;
     private readonly ManagedDevice _device;
     private HubConnection? _hubConnection;
-    /*private Timer? _timer;*/
 
 
     public AmmoniaHubService(IHubContext<AmmoniaHub, ISendTankWeightsCommand> hubContext,
@@ -23,7 +22,7 @@ public class AmmoniaHubService:BackgroundService,IAsyncDisposable {
         this._device = configurationProvider.GetDevice("nh3");
     }
     
-    protected async override Task ExecuteAsync(CancellationToken stoppingToken) {
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         await this.HubSetup();
         /*_timer = new Timer(FireSignalRAsync, null, TimeSpan.Zero,
         TimeSpan.FromSeconds(1));

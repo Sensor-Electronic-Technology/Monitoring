@@ -1,0 +1,276 @@
+﻿@using MonitoringSystem.Shared.Data.LogModel
+@using Microsoft.AspNetCore.SignalR.Client
+@using MonitoringSystem.Shared.Services
+@using MonitoringWeb.WebApp.Hubs
+@using MathNet.Numerics.Statistics
+@inject AmmoniaController AmmoniaController
+@inject AmmoniaDataService AmmoniaDataService
+@inject NavigationManager NavigationManager
+@inject ILogger<TankRemoveView> Logger
+
+<DxPopup
+    @bind-Visible="@this._msgBoxVisible"
+    ShowFooter="true"
+    HeaderText="@this._msgHeader"
+    BodyText="@this._msgText">
+    <FooterContentTemplate Context="Context">
+        <DxButton CssClass="popup-button my-1 ms-2" RenderStyle="ButtonRenderStyle.Primary" 
+                  Text="OK" 
+                  Click="@this.PopUpButtonHandler" />
+    </FooterContentTemplate>
+</DxPopup>
+
+<div class="row" hidden="@(!this.Visible)">
+    <div class="row p-2">
+        <DxButton Text="Cancel Remove Tank"
+                  Click="@this.OnCancel"
+                  RenderStyle="ButtonRenderStyle.Danger"
+                  CssClass="w-100"/>
+    </div>
+    <div class="col w-25">
+        <div class="row">
+            @*<DxMemo @bind-Text="@this._instructions" Rows="6"/>*@
+            <h5 class="text-center">Instructions</h5>
+            <ol class="list-group list-group-numbered text-lg-start">
+                @foreach (var instruction in this._removeInstructions) {
+                    <li class="list-group-item">@instruction</li>
+                }
+            </ol>
+        </div>
+            <div class="row">
+                <DxAccordion>
+                    <Items>
+                        <DxAccordionItem Text="Video Demonstration">
+                            <ContentTemplate>
+                                <div class="p-2">
+                                    <video width="500" controls>
+                                        <source src="Videos/remove_tank_v2.mp4" type="video/mp4">
+                                    </video>
+                                </div>
+                            </ContentTemplate>
+                        </DxAccordionItem>
+                    </Items>
+                </DxAccordion>
+            </div>
+    </div>
+    <div class="col w-75">
+        <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+            <DxFormLayoutGroup Caption="Labeled Weights"
+                               BeginRow="true"
+                               ColSpanMd="12"
+                               ReadOnly="true"
+                               CaptionPosition="CaptionPosition.Vertical"
+                               CaptionCssClass="text-center">
+                <DxFormLayoutItem Caption="Serial Number" ColSpanMd="12">
+                    <DxTextBox Text="@this._currentTank.SerialNumber" ReadOnly="true"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Gas Weight" ColSpanMd="4">
+                    <DxSpinEdit @bind-Value="@this._labeledWeight.Gas" Mask="D" ReadOnly="true"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Gross Weight" ColSpanMd="4">
+                    <DxSpinEdit @bind-Value="@this._labeledWeight.Gross" Mask="D" ReadOnly="true"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Tare" ColSpanMd="4">
+                    <DxSpinEdit @bind-Value="@this._labeledWeight.Tare" Mask="D" ReadOnly="true"/>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutGroup Caption="Measured Weights"
+                               BeginRow="true"
+                               ColSpanMd="12"
+                               ReadOnly="true"
+                               CaptionPosition="CaptionPosition.Vertical"
+                               CaptionCssClass="text-center">
+                <DxFormLayoutItem Caption="Gas Weight" ColSpanMd="4">
+                    <DxSpinEdit @bind-Value="@this._measuredWeight.Gas" Mask="D" ReadOnly="true"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Gross Weight" ColSpanMd="4">
+                    <DxSpinEdit @bind-Value="@this._measuredWeight.Gross" Mask="D" ReadOnly="true"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Tare" ColSpanMd="4">
+                    <DxSpinEdit @bind-Value="@this._measuredWeight.Tare" Mask="D" ReadOnly="true"/>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutItem Caption="Press to measure weight"
+                              BeginRow="true"
+                              ColSpanMd="12">
+                <DxButton Text="Start Weight Measurement"
+                          CssClass="w-100"
+                          Click="@this.StartCapture"/>
+            </DxFormLayoutItem>
+            <DxFormLayoutGroup Caption="Current Weight and Stdev">
+                <DxFormLayoutItem ColSpanMd="12">
+                    <DxMemo Text="Capture button will be enabled once Stdev<=0.1" Rows="1"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Current" ColSpanMd="6">
+                    <DxSpinEdit @bind-Value="@this._liveTankWeight" Mask="D"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Standard Deviation" ColSpanMd="6">
+                    <DxSpinEdit @bind-Value="@this._stdev"/>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Capture"
+                                  BeginRow="true"
+                                  ColSpanMd="12"
+                                  CssClass="py-2">
+                    <DxButton Text="Capture"
+                              RenderStyle="ButtonRenderStyle.Info"
+                              CssClass="w-100"
+                              Enabled="@this.CanCapture()"
+                              Click="@this.OnCapture"/>
+                </DxFormLayoutItem>
+            </DxFormLayoutGroup>
+            <DxFormLayoutItem Caption="Finish Remove Tank" ColSpanMd="12">
+                <DxButton Text="Remove Tank"
+                          Click="@this.OnFinalize"
+                          CssClass="w-100"/>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+    [Parameter]
+    public TankScale? TankScale { get; set; }
+    [Parameter]
+    public EventCallback OnTankRemoved { get; set; }
+    [Parameter]
+    public EventCallback OnTankRemoveCanceled { get; set; }
+
+    private bool _hubConnected => this._hubConnection?.State == HubConnectionState.Connected;
+    private NH3Tank? _currentTank = new NH3Tank();
+    private TankWeight? _labeledWeight = new TankWeight();
+    private TankWeight? _measuredWeight = new TankWeight();
+    private bool _weightCaptured = false;
+    private int _captureWeight = 0;
+    private bool _monitoringWeight = false;
+    private int _liveTankWeight;
+    private bool _saveSuccess = false;
+    private double _stdev;
+    private List<double> _weights=new List<double>();
+    private HubConnection? _hubConnection;
+    private string? _msgHeader;
+    private string? _msgText;
+    private bool _msgBoxVisible;
+    
+    private readonly List<string> _removeInstructions = new List<String>() {
+        "Press Start Capture to log the last weight",
+        "Once Stdev is <=0.1 press Capture to continue",
+        "Check final values then press finalize"
+    };
+
+    protected override Task OnParametersSetAsync() {
+        if (this.TankScale?.CurrentTank != null) {
+            this._currentTank = this.TankScale.CurrentTank;
+            if (this._currentTank?.LabeledWeight!=null) {
+                this._labeledWeight = this._currentTank.LabeledWeight;
+            }
+            if (this._currentTank?.MeasuredWeight!=null) {
+                this._measuredWeight = this._currentTank.MeasuredWeight;
+            }
+
+        } else {
+            this._currentTank = new NH3Tank();
+            this._labeledWeight = new TankWeight();
+            this._measuredWeight = new TankWeight();
+        }
+        return base.OnParametersSetAsync();
+    }
+    
+    private void ShowMsgBox(string header, string message) {
+        this._msgHeader = header;
+        this._msgText = message;
+        this._msgBoxVisible = true;
+    }
+
+    private async Task HubStart() {
+        var hubAddress = NavigationManager.ToAbsoluteUri("/tank-weights");
+        this._hubConnection = new HubConnectionBuilder()
+            .WithAutomaticReconnect(new TimeSpan[] {
+                TimeSpan.FromSeconds(3),
+                TimeSpan.FromSeconds(9),
+                TimeSpan.FromSeconds(20)
+            })
+            .WithUrl(hubAddress)
+            .Build();
+        this._hubConnection.On<List<int>>(
+            nameof(ISendTankWeightsCommand.SendTankWeights),
+            this.HandleSendTankWeightsCommand);
+        this._hubConnection.HandshakeTimeout = new TimeSpan(0, 0, 3);
+        this._hubConnection.ServerTimeout = new TimeSpan(0, 0, 3);
+        try {
+            await this._hubConnection.StartAsync();
+            this.Logger.LogInformation(hubAddress + " Connection");
+        } catch {
+            this.Logger.LogError(hubAddress+" hub connection failed");
+        }
+    }
+    
+    private async Task HubClose() {
+        if (this._hubConnection != null) {
+            if (this._hubConnected) {
+                await this._hubConnection.StopAsync();
+            }
+        }
+    }
+    
+    private async Task HandleSendTankWeightsCommand(List<int> tankWeights) {
+        if (this.TankScale?.ScaleId > 0) {
+            this._liveTankWeight = tankWeights[this.TankScale.ScaleId-1];
+            if (this._monitoringWeight) {
+                this._weights.Add(this._liveTankWeight);
+                if (this._weights.Count > 5) {
+                    this._weights.RemoveAt(0);
+                }
+                this._stdev=this._weights.StandardDeviation();
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    //Step 1
+    private async Task StartCapture() {
+        this._weights.Clear();
+        this._monitoringWeight = true;
+        await this.HubStart();
+    }
+    //Step 2
+    private async Task OnCapture() {
+        this._weightCaptured = true;
+        this._monitoringWeight = false;
+        this._captureWeight = this._liveTankWeight;
+    }
+    
+    private bool CanCapture() {
+        return this._stdev <= 0.1 && this._monitoringWeight;
+    }
+    //Step 3
+    private async Task OnFinalize() {
+        var success=await this.AmmoniaDataService.RemoveCurrentTank(this.TankScale.ScaleId,this._captureWeight);
+        if (success) {
+            success&=await this.AmmoniaController.RemoveTankCalibration(this.TankScale.ScaleId, 
+                this.TankScale.CurrentCalibration);
+            if (success) {
+                this.ShowMsgBox("Success","Success: NH3 Tank Removed");
+                this._saveSuccess = true;
+            } else {
+                this.ShowMsgBox("Error","Error: NH3 Tank Removal Failed.\n Please contact administrator");
+                this._saveSuccess = false;
+            }
+        }
+        await this.HubClose();
+    }
+    
+    private async Task PopUpButtonHandler() {
+        this._msgBoxVisible = false;
+        if (this._saveSuccess) {
+            await this.OnTankRemoved.InvokeAsync();
+        }
+    }
+    
+    private async Task OnCancel() {
+        this._weights.Clear();
+        this._monitoringWeight = false;
+        await this.HubClose();
+        await this.OnTankRemoveCanceled.InvokeAsync();
+    }
+}
