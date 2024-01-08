@@ -202,21 +202,21 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 if (bulkN2.LastAlert == now) {
                     switch (bulkN2.CurrentState) {
                         case ActionType.Alarm: {
-                            await this._externalEmailService.SendMessageAsync("Nitrogen EMERGENCY Gas Refill Request", 
+                            await this._externalEmailService.SendN2MessageAsync("Nitrogen EMERGENCY Gas Refill Request", 
                                 "Nitrogen",
                                 bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
                                 "Immediately");
                             break;
                         }
                         case ActionType.Warning: {
-                            await this._externalEmailService.SendMessageAsync("Nitrogen EMERGENCY Gas Refill Request", 
+                            await this._externalEmailService.SendN2MessageAsync("Nitrogen EMERGENCY Gas Refill Request", 
                                 "Nitrogen",
                                 bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
                                 "within the next 8 Hrs");
                             break;
                         }
                         case ActionType.SoftWarn: {
-                            await this._externalEmailService.SendMessageAsync("Nitrogen Gas Refill Request", 
+                            await this._externalEmailService.SendN2MessageAsync("Nitrogen Gas Refill Request", 
                                 "Nitrogen",
                                 bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
                                 "within the next 24 Hrs");
