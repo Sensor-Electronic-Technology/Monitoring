@@ -58,6 +58,7 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
         
         message.From = new EmailAddress("SETi Monitor Alerts", "setimonitoralerts@s-et.com");
         //message.ToRecipients.AddRange(this._toAddresses);
+        message.ToRecipients.AddRange(recp);
         message.CcRecipients.AddRange(this._ccAddresses);
         /*message.CcRecipients.Add("nculbertson@s-et.com");
         message.CcRecipients.Add("aelmendorf@s-et.com");*/
