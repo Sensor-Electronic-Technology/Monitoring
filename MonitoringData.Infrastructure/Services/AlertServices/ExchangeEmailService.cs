@@ -66,7 +66,7 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
         MessageBody body = new MessageBody();
         body.BodyType = BodyType.Text;
         body.Text =@$"
-This is an automated message notifying Messer that Sensor Electronic Technology’s {gas} tanks need a refill {time}
+This is an automated message notifying Messer that Sensor Electronic Technology’s(ACCN: 2766261) {gas} tanks need a refill {time}
 
 Current {gas} Value: {currentValue} {units}
 
