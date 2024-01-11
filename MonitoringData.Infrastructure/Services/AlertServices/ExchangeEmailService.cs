@@ -52,8 +52,8 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
         EmailMessage message = new EmailMessage(this._exchange);
         
         var recp = new List<string>() {
-            "Ask.messer@messer-us.com",
-            "adam.lane@messer-us.com"
+            "adam.lane@messer-us.com",
+            "SouthAtlantic.Planning@messer-us.com"
         };
         
         message.From = new EmailAddress("SETi Monitor Alerts", "setimonitoralerts@s-et.com");
