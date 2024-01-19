@@ -188,8 +188,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                     Value="Offline"
                 }
             };
-            await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
-                messageBuilder);
+            await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", messageBuilder);
             await this._monitorHub.Clients.All.ShowCurrent(monitorData);
         }
         
@@ -230,21 +229,21 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 if (bulkH2.LastAlert == now) {
                     switch (bulkH2.CurrentState) {
                         case ActionType.Alarm: {
-                            await this._externalEmailService.SendMessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
+                            await this._externalEmailService.SendN2MessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
                                 "Immediately");
                             break;
                         }
                         case ActionType.Warning: {
-                            await this._externalEmailService.SendMessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
+                            await this._externalEmailService.SendN2MessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
                                 "within the next 5Hrs");
                             break;
                         }
                         case ActionType.SoftWarn: {
-                            await this._externalEmailService.SendMessageAsync("Hydrogen Gas Refill Request", 
+                            await this._externalEmailService.SendN2MessageAsync("Hydrogen Gas Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
                                 "within the next 24 Hrs");

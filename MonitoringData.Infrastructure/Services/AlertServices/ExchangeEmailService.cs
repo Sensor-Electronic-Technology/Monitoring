@@ -41,7 +41,7 @@ This is an automated message notifying AirGas that Sensor Electronic Technologyâ
 
 Current {gas} Value: {currentValue} {units}
 
-Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
+Please send the delivery schedule to Ryan Nowell at ryan.nowell@s-et.com
 
 ";
         message.Body = body;
@@ -70,7 +70,7 @@ This is an automated message notifying Messer that Sensor Electronic Technologyâ
 
 Current {gas} Value: {currentValue} {units}
 
-Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
+Please send the delivery schedule to Ryan Nowell at ryan.nowell@s-et.com
 
 ";
         message.Body = body;
