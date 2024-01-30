@@ -229,24 +229,24 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 if (bulkH2.LastAlert == now) {
                     switch (bulkH2.CurrentState) {
                         case ActionType.Alarm: {
-                            await this._externalEmailService.SendN2MessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
+                            await this._externalEmailService.SendH2MessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
                                 "Immediately");
                             break;
                         }
                         case ActionType.Warning: {
-                            await this._externalEmailService.SendN2MessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
+                            await this._externalEmailService.SendH2MessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
-                                "within the next 5Hrs");
+                                "within the next 24Hrs");
                             break;
                         }
                         case ActionType.SoftWarn: {
-                            await this._externalEmailService.SendN2MessageAsync("Hydrogen Gas Refill Request", 
+                            await this._externalEmailService.SendH2MessageAsync("Hydrogen Gas Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
-                                "within the next 24 Hrs");
+                                "within the next 48 Hrs");
                             break;
                         }
                         default: break;//do nothing

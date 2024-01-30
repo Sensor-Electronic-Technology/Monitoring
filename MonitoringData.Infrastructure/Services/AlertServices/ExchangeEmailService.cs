@@ -77,6 +77,34 @@ Please send the delivery schedule to Ryan Nowell at ryan.nowell@s-et.com
         await message.SendAndSaveCopy();
     }
     
+    public async Task SendH2MessageAsync(string subject,string gas,string currentValue,string units,string time) {
+        EmailMessage message = new EmailMessage(this._exchange);
+        var recp = new List<string>() {
+            "jodi.frick@messer-us.com"
+        };
+        
+        message.From = new EmailAddress("SETi Monitor Alerts", "setimonitoralerts@s-et.com");
+        //message.ToRecipients.AddRange(this._toAddresses);
+        message.ToRecipients.AddRange(recp);
+        this._ccAddresses.Add("shennon.bush@messer-us.com");
+        message.CcRecipients.AddRange(this._ccAddresses);
+        /*message.CcRecipients.Add("nculbertson@s-et.com");
+        message.CcRecipients.Add("aelmendorf@s-et.com");*/
+        message.Subject = subject;
+        MessageBody body = new MessageBody();
+        body.BodyType = BodyType.Text;
+        body.Text =@$"
+This is an automated message notifying Messer that Sensor Electronic Technology’s(ACCN: 2766261) {gas} tanks need a refill {time}
+
+Current {gas} Value: {currentValue} {units}
+
+Please send the delivery schedule to Ryan Nowell at ryan.nowell@s-et.com
+
+";
+        message.Body = body;
+        await message.SendAndSaveCopy();
+    }
+    
     public async Task SendTestMessageAsync() {
         EmailMessage message = new EmailMessage(this._exchange);
         var recp = new List<string>() {
