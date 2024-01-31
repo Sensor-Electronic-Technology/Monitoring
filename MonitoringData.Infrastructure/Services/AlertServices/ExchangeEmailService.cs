@@ -86,8 +86,8 @@ Please send the delivery schedule to Ryan Nowell at ryan.nowell@s-et.com
         message.From = new EmailAddress("SETi Monitor Alerts", "setimonitoralerts@s-et.com");
         //message.ToRecipients.AddRange(this._toAddresses);
         message.ToRecipients.AddRange(recp);
-        this._ccAddresses.Add("shennon.bush@messer-us.com");
         message.CcRecipients.AddRange(this._ccAddresses);
+        message.CcRecipients.Add("shennon.bush@messer-us.com");
         /*message.CcRecipients.Add("nculbertson@s-et.com");
         message.CcRecipients.Add("aelmendorf@s-et.com");*/
         message.Subject = subject;
