@@ -37,7 +37,8 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
         public async Task ProcessAlerts(IList<AlertRecord> alerts,DateTime now) {
             IMessageBuilder messageBuilder = new MessageBuilder();
             messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName ?? "DeviceNameNotFound");
-            bool sendEmail = false;     
+            bool sendEmail = false;
+            bool sendExEmail = false;
             foreach (var alert in alerts) {
                 if (alert.Enabled) {
                     var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
@@ -72,10 +73,12 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         activeAlert.AlertAction = alert.AlertAction;
                                         activeAlert.LastAlert = now;
                                         if (activeAlert.DisplayName == "Bulk H2(PSI)" || activeAlert.DisplayName == "Bulk N2(inH20)") {
-                                            sendEmail = activeAlert.CurrentState<alert.CurrentState;
+                                            sendExEmail = true;
+                                            sendEmail = true;
                                         } else {
                                             sendEmail = true;
                                         }
+                                        
                                     } else {
                                         if (activeAlert.Latched) {
                                             activeAlert.Latched = false;
@@ -87,6 +90,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                 activeAlert.LastAlert = now;
                                                 activeAlert.ChannelReading = alert.ChannelReading;
                                                 sendEmail = true;
+                                                sendExEmail = false;
                                             } else {
                                                 activeAlert.ChannelReading = alert.ChannelReading;
                                             }
@@ -154,9 +158,13 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 if (sendEmail) {
                     await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
                         messageBuilder);
-                    var bulkH2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk H2(PSI)");
-                    var bulkN2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk N2(inH20)");
-                    await this.ProcessBulkGasExternalEmail(bulkN2, bulkH2,now);
+
+                    if (sendExEmail) {
+                        var bulkH2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk H2(PSI)");
+                        var bulkN2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk N2(inH20)");
+                        await this.ProcessBulkGasExternalEmail(bulkN2, bulkH2,now);
+                    }
+                    
                     this._logger.LogInformation("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
                         MonitorItemId = e.AlertId,
