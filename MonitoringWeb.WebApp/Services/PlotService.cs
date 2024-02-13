@@ -6,6 +6,7 @@ using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Services;
 using MonitoringWeb.WebApp.Data;
+using MonitoringWeb.WebApp.Shared;
 
 namespace MonitoringWeb.WebApp.Services;
 public class PlotDataService {
@@ -167,7 +168,7 @@ public class PlotDataService {
                     if (reading != null) {
                         var aReading=new AnalogReadingDto(){
                             Name=channel.Identifier,
-                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            TimeStamp = readings.timestamp.DateTimeLocal(),
                             Value=reading.Value
                         };
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
@@ -190,7 +191,7 @@ public class PlotDataService {
                 foreach (var readings in batch){
                         var aReading=new AnalogReadingDto(){
                             Name="Toner Weight",
-                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            TimeStamp = readings.timestamp.DateTimeLocal(),
                             Value=readings.Value
                         };
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
@@ -218,7 +219,7 @@ public class PlotDataService {
                     if (reading1 != null && reading2!=null) {
                         var aReading1=new AnalogReadingDto(){
                             Name=tank1.Identifier,
-                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            TimeStamp = readings.timestamp.DateTimeLocal(),
                             Value=reading1.Value>=0 ? reading1.Value:0 
                         };
                         aReading1.Time = double.Parse(aReading1.TimeStamp.ToString("yyyyMMddHHmmss"));
@@ -226,7 +227,7 @@ public class PlotDataService {
                         
                         var aReading2=new AnalogReadingDto(){
                             Name=tank2.Identifier,
-                            TimeStamp = readings.timestamp.ToLocalTime(),
+                            TimeStamp = readings.timestamp.DateTimeLocal(),
                             Value=reading2.Value>=0 ? reading2.Value:0 
                         };
                         aReading2.Time = double.Parse(aReading2.TimeStamp.ToString("yyyyMMddHHmmss"));

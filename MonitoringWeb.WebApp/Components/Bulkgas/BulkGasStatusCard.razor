@@ -85,10 +85,10 @@
     async Task OnShowCurrent(MonitorData data) {
         this._monitorData = data;
         var n2=this._monitorData.analogData.FirstOrDefault(e => e.Item == this.Settings?.ChannelName);
-        var current = this._monitorData.TimeStamp.DateTimeLocal();
+        var current = this._monitorData.TimeStamp.DateTimeLocalStr();
         if (n2 != null) {
             StatusItem temp = new StatusItem {
-                TimeStamp = this._monitorData.TimeStamp.DateTimeLocal()
+                TimeStamp = this._monitorData.TimeStamp.DateTimeLocalStr()
             };
             this.ProcessStatus(n2,ref temp,this.Settings);
             this._status = temp;
