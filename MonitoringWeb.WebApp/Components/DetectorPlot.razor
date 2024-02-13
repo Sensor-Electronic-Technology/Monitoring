@@ -97,7 +97,7 @@
                 <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
                     <div style="background-color: grey;">
                         <div class="font-weight-bold">
-                            t: @(((DateTime)context.Point.Argument).DateTimeLocalStr())
+                            t: @(((DateTime)context.Point.Argument).DateTimeLocal())
                         </div>
                         <div>
                             device: @context.Point.SeriesName

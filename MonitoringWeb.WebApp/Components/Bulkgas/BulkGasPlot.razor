@@ -116,7 +116,7 @@
                 <DxChartTooltip Enabled="true" Position="RelativePosition.Outside">
                     <div style="background-color: grey;">
                         <div class="font-weight-bold">
-                            t: @(((DateTime)context.Point.Argument).DateTimeLocalStr())
+                            t: @(((DateTime)context.Point.Argument).DateTimeLocal())
                         </div>
                         <div>
                             value: @((context.Point.Value))
@@ -139,8 +139,8 @@
 
     BulkGasSettings? _bulkGasSettings;
     AccordionExpandCollapseAction ExpandCollapseAction { get; set; } = AccordionExpandCollapseAction.HeaderClick;
-    DateTime StartDate = DateTime.Now.AddDays(-1).DateTimeLocal();
-    DateTime StopDate = DateTime.Now.AddHours(6).DateTimeLocal();
+    DateTime StartDate = DateTime.Now.AddDays(-1).ToLocalTime();
+    DateTime StopDate = DateTime.Now.AddHours(6).ToLocalTime();
     DateTime PlotStart;
     DateTime PlotStop;
     SensorType Sensor;
@@ -153,20 +153,20 @@
         switch (this.GasType) {
             case BulkGasType.H2: {
                 this._bulkGasSettings=settings.H2Settings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).DateTimeLocal();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).DateTimeLocal();
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.N2: {
                 this._bulkGasSettings=settings.N2Settings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).DateTimeLocal();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).DateTimeLocal();
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.NH3: {
                 this._bulkGasSettings=settings.NHSettings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).DateTimeLocal();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).DateTimeLocal();
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
         }
@@ -178,14 +178,14 @@
     }
 
     private async Task OnDateRangeChanged() {
-        this.StartDate = this.DateRangeState.Item.Start.DateTimeLocal();
-        this.StopDate = this.DateRangeState.Item.Stop.DateTimeLocal();
+        this.StartDate = this.DateRangeState.Item.Start;
+        this.StopDate = this.DateRangeState.Item.Stop;
         await this.Load();
     }
     
     private async Task OnClick(PlotRangeDays rangeDays) {
-        this.StartDate = DateTime.Now.AddDays(-(int)rangeDays).DateTimeLocal();
-        this.StopDate = DateTime.Now.AddDays((int)rangeDays).DateTimeLocal();
+        this.StartDate = DateTime.Now.AddDays(-(int)rangeDays);
+        this.StopDate = DateTime.Now.AddDays((int)rangeDays);
         await this.Load();
     }
 
@@ -229,20 +229,20 @@
         switch (this.GasType) {
             case BulkGasType.H2: {
                 this._bulkGasSettings=settings.H2Settings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).DateTimeLocal();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).DateTimeLocal();
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.N2: {
                 this._bulkGasSettings=settings.N2Settings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore * -1).DateTimeLocal();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).DateTimeLocal();
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
             case BulkGasType.NH3: {
                 this._bulkGasSettings=settings.NHSettings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).DateTimeLocal();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).DateTimeLocal();
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
                 break;
             }
         }
