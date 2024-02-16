@@ -102,6 +102,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                     alert.LastAlert = now;
                                     this._activeAlerts.Add(alert.Clone());
                                     sendEmail = true;
+                                    sendExEmail = true;
                                 }
                                 break;
                             }
