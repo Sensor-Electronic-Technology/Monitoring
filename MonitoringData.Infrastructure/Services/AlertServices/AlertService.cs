@@ -90,7 +90,6 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                 activeAlert.LastAlert = now;
                                                 activeAlert.ChannelReading = alert.ChannelReading;
                                                 sendEmail = true;
-                                                sendExEmail = false;
                                             } else {
                                                 activeAlert.ChannelReading = alert.ChannelReading;
                                             }
