@@ -46,6 +46,10 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                     switch (alert.CurrentState) {
                         case ActionType.Okay: {
                                 if (activeAlert != null) {
+                                    if (activeAlert.AlertLatched) {
+                                        activeAlert.AlertLatched = false;
+                                        activeAlert.TimeAlertLatched = now;
+                                    }
                                     if (!activeAlert.Latched) {
                                         activeAlert.Latched = true;
                                         activeAlert.TimeLatched = now;
@@ -68,17 +72,23 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                         case ActionType.SoftWarn: {
                                 if (activeAlert != null) {
                                     if (activeAlert.CurrentState != alert.CurrentState) {
-                                        activeAlert.CurrentState = alert.CurrentState;
-                                        activeAlert.ChannelReading = alert.ChannelReading;
-                                        activeAlert.AlertAction = alert.AlertAction;
-                                        activeAlert.LastAlert = now;
-                                        if (activeAlert.DisplayName == "Bulk H2(PSI)" || activeAlert.DisplayName == "Bulk N2(inH20)") {
-                                            sendExEmail = true;
-                                            sendEmail = true;
+                                        if (!activeAlert.AlertLatched) {
+                                            activeAlert.AlertLatched = true;
+                                            activeAlert.TimeAlertLatched = now;
                                         } else {
-                                            sendEmail = true;
+                                            if ((now - activeAlert.TimeAlertLatched).TotalSeconds >= 30) {
+                                                activeAlert.CurrentState = alert.CurrentState;
+                                                activeAlert.ChannelReading = alert.ChannelReading;
+                                                activeAlert.AlertAction = alert.AlertAction;
+                                                activeAlert.LastAlert = now;
+                                                if (activeAlert.DisplayName == "Bulk H2(PSI)" || activeAlert.DisplayName == "Bulk N2(inH20)") {
+                                                    sendExEmail = true;
+                                                    sendEmail = true;
+                                                } else {
+                                                    sendEmail = true;
+                                                }
+                                            }
                                         }
-                                        
                                     } else {
                                         if (activeAlert.Latched) {
                                             activeAlert.Latched = false;
@@ -247,7 +257,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                             await this._externalEmailService.SendH2MessageAsync("Hydrogen Gas EMERGENCY Refill Request", 
                                 "Hydrogen",
                                 bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
-                                "within the next 24Hrs");
+                                "within the next 12Hrs");
                             break;
                         }
                         case ActionType.SoftWarn: {

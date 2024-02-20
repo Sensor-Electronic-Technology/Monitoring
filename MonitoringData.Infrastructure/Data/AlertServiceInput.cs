@@ -23,7 +23,9 @@ public class AlertRecord {
     public DateTime LastAlert { get; set; }
     public bool Bypassed { get; set; }
     public bool Latched { get; set; }
+    public bool AlertLatched { get; set; }
     public DateTime TimeLatched { get; set; }
+    public DateTime TimeAlertLatched { get; set; }
     public DateTime TimeBypassed { get; set; }
     public int BypassResetTime { get; set; }
     public float ChannelReading { get; set; }
@@ -40,6 +42,7 @@ public class AlertRecord {
         this.ChannelReading = 0.00f;
         this.Latched = false;
         this.Display = alert.Display;
+        this.AlertLatched = false;
     }
 
     public AlertRecord(MonitorAlert alert, float reading, ActionType state) {
@@ -53,6 +56,7 @@ public class AlertRecord {
         this.ChannelReading = reading;
         this.Latched = false;
         this.Display = alert.Display;
+        this.AlertLatched = false;
     }
 
     public AlertRecord() {
@@ -66,6 +70,7 @@ public class AlertRecord {
         this.ItemType = AlertItemType.Discrete;
         this.Latched = false;
         this.Display = false;
+        this.AlertLatched = false;
     }
 
     public AlertRecord Clone() {

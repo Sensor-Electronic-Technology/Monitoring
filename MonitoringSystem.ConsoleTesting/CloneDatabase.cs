@@ -121,7 +121,7 @@ public class CloneDatabase {
        //await CreateManagedDevice("e2th");
        //await CreateMongoDB("e2th");
        //await UpdateRegisters("nh3");
-       await AddAnalogChannels("nh3");
+       //await AddAnalogChannels("nh3");
     }
     
     public static async Task AddAnalogChannels(string deviceName) {
