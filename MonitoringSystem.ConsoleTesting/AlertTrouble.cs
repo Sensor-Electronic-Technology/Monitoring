@@ -41,7 +41,7 @@ public class AlertTrouble {
                 Enabled = true,
                 CurrentState = ActionType.Okay,
                 DisplayName = "Bulk H2(PSI)",
-                ChannelReading = 805,
+                ChannelReading = 750,
                 Latched = false
             };
             var n2Alert= new AlertRecord() {
@@ -53,10 +53,12 @@ public class AlertTrouble {
                 ChannelReading = 100.0f,
                 Latched = false
             };
+            bool time = false;
+            DateTime start = DateTime.Now;
             while (!token.IsCancellationRequested) {
-                if (h2Alert.ChannelReading <= 800) {
+                if (h2Alert.ChannelReading <= 550) {
                     h2Alert.CurrentState = ActionType.Alarm;
-                }else if (h2Alert.ChannelReading <= 1200) {
+                }else if (h2Alert.ChannelReading <= 750) {
                     h2Alert.CurrentState = ActionType.Warning;
                 }else if (h2Alert.ChannelReading <= 1400) {
                     h2Alert.CurrentState = ActionType.SoftWarn;
@@ -70,12 +72,16 @@ public class AlertTrouble {
                 };
                 activeAlerts=ProcessAlerts(alerts, activeAlerts, DateTime.Now).GetAwaiter().GetResult();
                 Thread.Sleep(500);
-                /*if (h2Alert.ChannelReading >= 800) {
-                    h2Alert.ChannelReading = 701;
-                } else {
-                    h2Alert.ChannelReading=801;
-                }*/
-                h2Alert.ChannelReading--;
+                DateTime now=DateTime.Now;
+                if((now-start).Seconds>=2) {
+                    start = now;
+                    if (h2Alert.ChannelReading >= 755) {
+                        h2Alert.ChannelReading=745;
+                    } else {
+                        h2Alert.ChannelReading=755;
+                    }
+                    
+                }
                 Console.WriteLine($"H2: {h2Alert.ChannelReading} PSI");
             }
         } else {
@@ -118,15 +124,15 @@ public class AlertTrouble {
                                             activeAlert.AlertLatched = true;
                                             activeAlert.TimeAlertLatched = now;
                                         } else {
-                                            if ((now - activeAlert.TimeAlertLatched).TotalSeconds >=30) {
+                                            if ((now - activeAlert.TimeAlertLatched).TotalSeconds >=2) {
                                                 activeAlert.AlertLatched = false;
                                                 activeAlert.CurrentState = alert.CurrentState;
                                                 activeAlert.ChannelReading = alert.ChannelReading;
                                                 activeAlert.AlertAction = alert.AlertAction;
                                                 activeAlert.LastAlert = now;
                                                 if (activeAlert.DisplayName == "Bulk H2(PSI)" || activeAlert.DisplayName == "Bulk N2(inH20)") {
-                                                    sendExEmail = true;
-                                                    sendEmail = true;
+                                                    sendExEmail = activeAlert.CurrentState<alert.CurrentState;
+                                                    sendEmail = activeAlert.CurrentState<alert.CurrentState;
                                                 } else {
                                                     sendEmail = true;
                                                 }

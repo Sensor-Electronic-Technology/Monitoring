@@ -87,7 +87,7 @@ namespace MonitoringSystem.ConsoleTesting {
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);*/
-            await WriteOutAnalogFile("epi1", new DateTime(2024, 2, 17), DateTime.Now, @"C:\MonitorFiles\analogreadingsEpi1.csv");
+            /*await WriteOutAnalogFile("epi1", new DateTime(2024, 2, 17), DateTime.Now, @"C:\MonitorFiles\analogreadingsEpi1.csv");*/
             //var client = new MongoClient("mongodb:");*/
             //await RemoteAlertTesting();
             //await TestModbus();
@@ -110,7 +110,7 @@ namespace MonitoringSystem.ConsoleTesting {
            //await CreateBulkEmailSettings();
            //await CreateNH3BulkGasSettings();
            //await TestPopList();
-           await WriteOutAnalogFile("epi1", new DateTime(2024, 2, 17), DateTime.Now, @"C:\MonitorFiles\analogreadingsEpi1.csv");
+           await WriteOutAnalogFile("epi1", new DateTime(2024, 2,27 ), DateTime.Now, @"C:\MonitorFiles\analogreadingsEpi1-3.csv");
         }
 
         static async Task OutputNH3() {
