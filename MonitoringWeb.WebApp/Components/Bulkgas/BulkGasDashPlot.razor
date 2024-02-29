@@ -206,8 +206,13 @@
         }
         this.PlotData = plotData.AnalogReadings;
         this.Sensor = plotData.SensorType;
-        this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
-        this.Sensor.YAxisStop = this._bulkGasSettings.YAxisMax;
+        if(this.GasType == BulkGasType.NH3) {
+            this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
+            this.Sensor.YAxisStop = (int)plotData.AnalogReadings.Max(e=>e.Value);
+        } else {
+            this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
+            this.Sensor.YAxisStop = this._bulkGasSettings.YAxisMax;
+        }
         this.PlotStart = this.StartDate;
         this.PlotStop = this.StopDate;
         this.StateHasChanged();
