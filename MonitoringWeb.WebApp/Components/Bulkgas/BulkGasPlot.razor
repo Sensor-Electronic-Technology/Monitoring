@@ -206,6 +206,9 @@
     private async Task Load() {
         var start= this.StartDate;
         var stop = this.StopDate;
+        start = start.IsDaylightSavingTime() ? start.AddHours(4):start.AddHours(5);
+        stop = stop.IsDaylightSavingTime() ? stop.AddHours(4):stop.AddHours(5);
+        
         PlotData plotData = new PlotData();
         switch (this.GasType) {
             case BulkGasType.N2:
