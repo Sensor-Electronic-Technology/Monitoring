@@ -79,9 +79,9 @@ public class PlotDataService {
             foreach(var readings in aReadings) {
                 StringBuilder builder = new StringBuilder();
                 if (readings.timestamp.IsDaylightSavingTime()) {
-                    worksheet.Cell(rowCount, colCount).Value = readings.timestamp.AddHours(-5).ToString();
-                } else {
                     worksheet.Cell(rowCount, colCount).Value = readings.timestamp.AddHours(-4).ToString();
+                } else {
+                    worksheet.Cell(rowCount, colCount).Value = readings.timestamp.AddHours(-5).ToString();
                 }
                 
                 colCount += 1;
@@ -108,9 +108,9 @@ public class PlotDataService {
             foreach(var readings in plotData) {
                 StringBuilder builder = new StringBuilder();
                 if (readings.TimeStamp.IsDaylightSavingTime()) {
-                    worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.AddHours(-5).ToString();
-                } else {
                     worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.AddHours(-4).ToString();
+                } else {
+                    worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.AddHours(-5).ToString();
                 }
                 worksheet.Cell(rowCount,2).Value= readings.Value;
                 rowCount += 1;
@@ -193,7 +193,7 @@ public class PlotDataService {
                             TimeStamp = readings.timestamp.ToLocalTime(),
                             Value=reading.Value
                         };
-                        if (aReading.TimeStamp.IsDaylightSavingTime()) {
+                        if (!aReading.TimeStamp.IsDaylightSavingTime()) {
                             aReading.TimeStamp = aReading.TimeStamp.AddHours(-1);
                         }
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
@@ -219,7 +219,7 @@ public class PlotDataService {
                             TimeStamp = readings.timestamp.ToLocalTime(),
                             Value=readings.Value
                         };
-                        if (aReading.TimeStamp.IsDaylightSavingTime()) {
+                        if (!aReading.TimeStamp.IsDaylightSavingTime()) {
                             aReading.TimeStamp = aReading.TimeStamp.AddHours(-1);
                         }
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
