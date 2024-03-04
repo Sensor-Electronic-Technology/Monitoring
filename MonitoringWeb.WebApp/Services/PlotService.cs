@@ -112,7 +112,6 @@ public class PlotDataService {
                 } else {
                     worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.AddHours(-4).ToString();
                 }
-                worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.ToString();
                 worksheet.Cell(rowCount,2).Value= readings.Value;
                 rowCount += 1;
             }
