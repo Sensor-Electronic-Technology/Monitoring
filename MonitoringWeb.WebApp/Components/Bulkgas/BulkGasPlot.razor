@@ -23,7 +23,7 @@
               RenderStyleMode="ButtonRenderStyleMode.Contained"
               Click="@this.DownloadHandler"/>
 </div>
-<CustomRange @bind-StartDate="this.StartDate" @bind-StopDate="@StopDate" CustomDateVisible="@this.CustomDateVisible"/>
+<CustomRange StartDate="this.StartDate" StopDate="@StopDate" CustomDateVisible="@this.CustomDateVisible"/>
 <div class="card">
     @if (this.RangeSelectVisible) {
         <div class="card-header">
@@ -189,9 +189,12 @@
     }
 
     private async Task OnDateRangeChanged() {
+        this.SpinnerService.Show();
         this.StartDate = this.DateRangeState.Item.Start;
         this.StopDate = this.DateRangeState.Item.Stop;
-        await this.Load();
+        await this.ReLoad();
+        this.SpinnerService.Hide();
+        await InvokeAsync(StateHasChanged);
     }
     
     private async Task OnClick(PlotRangeDays rangeDays) {
@@ -209,16 +212,18 @@
                 this.Header = "Bulk N2";
                 plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
                     this._bulkGasSettings.ChannelName, start, stop);
+                this.Logger.LogInformation("Loaded N2 Data");
                 break;
             case BulkGasType.H2:
                 this.Header = "Bulk H2";
                 plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
                     this._bulkGasSettings.ChannelName, start, stop);
+                this.Logger.LogInformation("Loaded H2 Data");
                 break;
             case BulkGasType.NH3:
                 this.Header = "Bulk NH3";
                 plotData=await this.PlotService.GetNH3Data(start, stop);
-                
+                this.Logger.LogInformation("Loaded NH3 Data");
                 break;
         }
         this.PlotData = plotData.AnalogReadings;
@@ -238,33 +243,44 @@
         });
        this.Logger.LogInformation($"{this._bulkGasSettings.DeviceName} Plot Loaded.  Channel: {this._bulkGasSettings.ChannelName}");
     }
-
-    protected override async Task OnParametersSetAsync() {
-        this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
-        var settings = await this.BulkGasProvider.GetSettings();
+    
+    private async Task ReLoad() {
+        var start= this.StartDate;
+        var stop = this.StopDate;
+        PlotData plotData = new PlotData();
         switch (this.GasType) {
-            case BulkGasType.H2: {
-                this._bulkGasSettings=settings.H2Settings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+            case BulkGasType.N2:
+                this.Header = "Bulk N2";
+                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                this._bulkGasSettings.ChannelName, start, stop);
                 break;
-            }
-            case BulkGasType.N2: {
-                this._bulkGasSettings=settings.N2Settings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+            case BulkGasType.H2:
+                this.Header = "Bulk H2";
+                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                this._bulkGasSettings.ChannelName, start, stop);
                 break;
-            }
-            case BulkGasType.NH3: {
-                this._bulkGasSettings=settings.NHSettings;
-                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
-                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+            case BulkGasType.NH3:
+                this.Header = "Bulk NH3";
+                plotData=await this.PlotService.GetNH3Data(start, stop);
+                
                 break;
-            }
         }
-        await this.Load();
+        this.PlotData = plotData.AnalogReadings;
+        this.Sensor = plotData.SensorType;
+        
+        if(this.GasType == BulkGasType.NH3) {
+            this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
+            this.Sensor.YAxisStop = (int)plotData.AnalogReadings.Max(e=>e.Value);
+        } else {
+            this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
+            this.Sensor.YAxisStop = this._bulkGasSettings.YAxisMax;
+        }
+        this.PlotStart = this.StartDate;
+        this.PlotStop = this.StopDate;
+        this.Logger.LogInformation($"{this._bulkGasSettings.DeviceName} Plot Loaded.  Channel: {this._bulkGasSettings.ChannelName}");
+        
     }
-
+    
     private async Task DownloadHandler() {
         this.SpinnerService.Show();
         
