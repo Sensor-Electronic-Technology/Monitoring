@@ -6,12 +6,23 @@
 @using MonitoringSystem.Shared.Data
 @using MonitoringSystem.Shared.Data.LogModel
 @using MonitoringSystem.Shared.Services
+@using Blazor.DownloadFileFast.Interfaces
 @inject PlotDataService PlotService
 @inject ValueChanged<DateRange> DateRangeState
 @inject BulkGasProvider BulkGasProvider
+@inject SpinnerService SpinnerService
+@inject IBlazorDownloadFileService DownloadService
 @inject ILogger<BulkGasPlot> Logger
 @implements IAsyncDisposable
 
+<Spinner></Spinner>
+<div class="row" style="padding: 1rem">
+    <DxButton RenderStyle="ButtonRenderStyle.Primary"
+              Text="Download"
+              SizeMode="SizeMode.Medium"
+              RenderStyleMode="ButtonRenderStyleMode.Contained"
+              Click="@this.DownloadHandler"/>
+</div>
 <CustomRange @bind-StartDate="this.StartDate" @bind-StopDate="@StopDate" CustomDateVisible="@this.CustomDateVisible"/>
 <div class="card">
     @if (this.RangeSelectVisible) {
@@ -252,6 +263,14 @@
             }
         }
         await this.Load();
+    }
+
+    private async Task DownloadHandler() {
+        this.SpinnerService.Show();
+        
+        var bytes=await this.PlotService.GetBulkGasDownloadData(this.PlotData,this.GasType);
+        await this.DownloadService.DownloadFileAsync($"{this.GasType.ToString()}_Data.xlsx", bytes);
+        this.SpinnerService.Hide();
     }
     
     public ValueTask DisposeAsync() {

@@ -110,7 +110,7 @@ namespace MonitoringSystem.ConsoleTesting {
            //await CreateBulkEmailSettings();
            //await CreateNH3BulkGasSettings();
            //await TestPopList();
-           await WriteOutAnalogFile("epi1", new DateTime(2024, 2,27 ), DateTime.Now, @"C:\MonitorFiles\analogreadingsEpi1-3.csv");
+           await WriteOutAnalogFile("epi1", new DateTime(2024, 2,1), DateTime.Now, @"C:\MonitorFiles\Epi1_Norman.csv");
         }
 
         static async Task OutputNH3() {

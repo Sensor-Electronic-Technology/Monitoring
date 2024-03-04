@@ -98,6 +98,30 @@ public class PlotDataService {
             return stream.ToArray();
         }
         
+        public async Task<byte[]> GetBulkGasDownloadData(IEnumerable<AnalogReadingDto>? plotData,BulkGasType gasType) {
+            var wb = new XLWorkbook();
+            var worksheet=wb.Worksheets.Add(gasType.ToString()+"_Data");
+            worksheet.Cell(1, 1).Value = "timestamp";
+            worksheet.Cell(1, 2).Value = gasType.ToString();
+            int colCount = 1;
+            int rowCount = 2;
+            foreach(var readings in plotData) {
+                StringBuilder builder = new StringBuilder();
+                if (readings.TimeStamp.IsDaylightSavingTime()) {
+                    worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.AddHours(-5).ToString();
+                } else {
+                    worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.AddHours(-4).ToString();
+                }
+                worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.ToString();
+                worksheet.Cell(rowCount,2).Value= readings.Value;
+                rowCount += 1;
+            }
+
+            var stream =new MemoryStream();
+            wb.SaveAs(stream);
+            return stream.ToArray();
+        }
+        
         public async Task<IEnumerable<AnalogReadingDto>> GetData(string deviceData,ObjectId sensorId,DateTime start, DateTime stop) {
             var database = this._client.GetDatabase(deviceData);
             this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
@@ -170,6 +194,9 @@ public class PlotDataService {
                             TimeStamp = readings.timestamp.ToLocalTime(),
                             Value=reading.Value
                         };
+                        if (aReading.TimeStamp.IsDaylightSavingTime()) {
+                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-1);
+                        }
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading);
                     }
@@ -193,6 +220,9 @@ public class PlotDataService {
                             TimeStamp = readings.timestamp.ToLocalTime(),
                             Value=readings.Value
                         };
+                        if (aReading.TimeStamp.IsDaylightSavingTime()) {
+                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-1);
+                        }
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading);
                 }
