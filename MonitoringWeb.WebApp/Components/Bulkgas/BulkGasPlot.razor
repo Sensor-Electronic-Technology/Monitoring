@@ -206,8 +206,10 @@
     private async Task Load() {
         var start= this.StartDate;
         var stop = this.StopDate;
-        start = start.IsDaylightSavingTime() ? start.AddHours(4):start.AddHours(5);
-        stop = stop.IsDaylightSavingTime() ? stop.AddHours(4):stop.AddHours(5);
+        //Adding 8 hours to account for the time zone difference, daylight savings time, and plot cutoff
+        // 4 hours for standard time, 5 hours for daylight savings time, and 4 hours for plot cutoff
+        start = start.IsDaylightSavingTime() ? start.AddHours(8):start.AddHours(9);
+        stop = stop.IsDaylightSavingTime() ? stop.AddHours(8):stop.AddHours(9);
         
         PlotData plotData = new PlotData();
         switch (this.GasType) {
@@ -250,6 +252,10 @@
     private async Task ReLoad() {
         var start= this.StartDate;
         var stop = this.StopDate;
+        //Adding 8 hours to account for the time zone difference, daylight savings time, and plot cutoff
+        // 4 hours for standard time, 5 hours for daylight savings time, and 4 hours for plot cutoff
+        start = start.IsDaylightSavingTime() ? start.AddHours(8):start.AddHours(9);
+        stop = stop.IsDaylightSavingTime() ? stop.AddHours(8):stop.AddHours(9);
         PlotData plotData = new PlotData();
         switch (this.GasType) {
             case BulkGasType.N2:
