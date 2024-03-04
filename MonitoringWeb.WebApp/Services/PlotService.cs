@@ -107,11 +107,12 @@ public class PlotDataService {
             int rowCount = 2;
             foreach(var readings in plotData) {
                 StringBuilder builder = new StringBuilder();
-                if (readings.TimeStamp.IsDaylightSavingTime()) {
+                worksheet.Cell(rowCount, 1).Value = readings.TimeStamp;
+                /*if (readings.TimeStamp.IsDaylightSavingTime()) {
                     worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.AddHours(-4).ToString();
                 } else {
                     worksheet.Cell(rowCount, 1).Value = readings.TimeStamp.AddHours(-5).ToString();
-                }
+                }*/
                 worksheet.Cell(rowCount,2).Value= readings.Value;
                 rowCount += 1;
             }
@@ -190,11 +191,12 @@ public class PlotDataService {
                     if (reading != null) {
                         var aReading=new AnalogReadingDto(){
                             Name=channel.Identifier,
-                            TimeStamp = readings.timestamp.ToLocalTime(),
                             Value=reading.Value
                         };
-                        if (!aReading.TimeStamp.IsDaylightSavingTime()) {
-                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-1);
+                        if (aReading.TimeStamp.IsDaylightSavingTime()) {
+                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-4);
+                        } else {
+                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-5);
                         }
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading);
@@ -216,11 +218,12 @@ public class PlotDataService {
                 foreach (var readings in batch){
                         var aReading=new AnalogReadingDto(){
                             Name="Toner Weight",
-                            TimeStamp = readings.timestamp.ToLocalTime(),
                             Value=readings.Value
                         };
-                        if (!aReading.TimeStamp.IsDaylightSavingTime()) {
-                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-1);
+                        if (aReading.TimeStamp.IsDaylightSavingTime()) {
+                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-4);
+                        } else {
+                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-5);
                         }
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading);
