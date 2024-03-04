@@ -194,9 +194,9 @@ public class PlotDataService {
                             Value=reading.Value
                         };
                         if (aReading.TimeStamp.IsDaylightSavingTime()) {
-                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-4);
+                            aReading.TimeStamp = readings.timestamp.AddHours(-4);
                         } else {
-                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-5);
+                            aReading.TimeStamp = readings.timestamp.AddHours(-5);
                         }
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading);
@@ -221,9 +221,9 @@ public class PlotDataService {
                             Value=readings.Value
                         };
                         if (aReading.TimeStamp.IsDaylightSavingTime()) {
-                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-4);
+                            aReading.TimeStamp = readings.timestamp.AddHours(-4);
                         } else {
-                            aReading.TimeStamp = aReading.TimeStamp.AddHours(-5);
+                            aReading.TimeStamp = readings.timestamp.AddHours(-5);
                         }
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading);
