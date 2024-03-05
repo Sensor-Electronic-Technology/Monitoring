@@ -12,8 +12,8 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.1.0" />
-        <PackageReference Include="MongoDB.Bson" Version="2.15.1" />
-        <PackageReference Include="MongoDB.Driver" Version="2.15.1" />
+        <PackageReference Include="MongoDB.Bson" Version="2.24.0" />
+        <PackageReference Include="MongoDB.Driver" Version="2.24.0" />
         <PackageReference Include="NWaves" Version="0.9.6" />
     </ItemGroup>
 
