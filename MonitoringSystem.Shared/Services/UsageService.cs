@@ -58,15 +58,14 @@ public class UsageService {
     }
 
     private async Task<IEnumerable<UsageDayRecord>> GetNh3UsageRecords(IMongoCollection<UsageDayRecord> usageCollection,
-        IMongoCollection<WeightReading> weightReadingCollection,
-        int window) {
+        IMongoCollection<WeightReading> weightReadingCollection, int window) {
         var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
         var count = await usageCollection.EstimatedDocumentCountAsync();
         if (count == 0) {//new
             var stopDate = DateTime.Now.Date;
             Dictionary<DateTime, List<ValueReturn>> days;
             List<WeightReading> readings;
-            readings = await weightReadingCollection.Find(e => e.timestamp < stopDate)
+            readings = await weightReadingCollection.Find(e => e.timestamp < stopDate && e.Value<=900)
                 .ToListAsync();
             List<ValueReturn> rawData = new List<ValueReturn>();
             /*rawData = readings.Select(e => new ValueReturn() {
@@ -155,11 +154,6 @@ public class UsageService {
                         value = filteredValues[i]
                     });
                 }
-                /*rawData = readings.Select(e => new ValueReturn() {
-                    timestamp = e.timestamp.AddHours(-5),
-                    value =  (e.Value >= 0.00 ? e.Value : 0.00)
-                }).ToList();*/
-                
                 days = rawData.GroupBy(e =>
                         e.timestamp.Date)
                     .ToDictionary(e => e.Key, e => e.ToList());

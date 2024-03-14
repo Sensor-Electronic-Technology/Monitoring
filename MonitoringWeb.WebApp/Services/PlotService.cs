@@ -212,7 +212,7 @@ public class PlotDataService {
             var weightCollection = logDatabase.GetCollection<WeightReading>("weight_readings");
             List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
             var sensor = this._configProvider.Sensors.FirstOrDefault(e => e.Name=="Weight");
-            using var cursor = await weightCollection.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
+            using var cursor = await weightCollection.FindAsync(e => e.timestamp >= start && e.timestamp <= stop && e.Value<=900);
             while (await cursor.MoveNextAsync()){
                 var batch = cursor.Current;
                 foreach (var readings in batch){
