@@ -43,8 +43,8 @@
         return Task.CompletedTask;
     }
 
-    protected override async Task OnParametersSetAsync() {
-        await base.OnParametersSetAsync();
+    protected override Task OnParametersSetAsync() {
+        
         switch (this.GasType) {
             case BulkGasType.N2:
                 this.Header = "Bulk N2 ";
@@ -59,7 +59,8 @@
                 throw new ArgumentOutOfRangeException();
         }
         this.tabIndex = 0;
-        StateHasChanged();
+        //InvokeAsync(StateHasChanged);
+        return base.OnParametersSetAsync();
     }
 
     protected override void OnAfterRender(bool firstRender)

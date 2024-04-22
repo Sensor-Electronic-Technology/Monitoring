@@ -160,6 +160,11 @@
 
     protected override async Task OnInitializedAsync() {
         this.DateRangeState.OnChildChanged += this.OnDateRangeChanged;
+
+    }
+
+    protected override async Task OnParametersSetAsync() {
+        this.PlotData = null;
         var settings = await this.BulkGasProvider.GetSettings();
         switch (this.GasType) {
             case BulkGasType.H2: {
@@ -182,6 +187,7 @@
             }
         }
         await this.Load();
+        await base.OnParametersSetAsync();
     }
 
     private Task Submit() {
