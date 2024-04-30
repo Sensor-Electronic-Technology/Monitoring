@@ -134,25 +134,35 @@
                 item.Status = settings.AlrmAlert.ActionType;
                 item.Label = settings.AlrmAlert.Label;
                 item.Value = status.Value;
-                this._timer.Interval = 1000;
-                this._timer.AutoReset = true;
-                this._timer.Start();
+                if (this._status.Status != ActionType.Alarm) {
+                    this._timer.Stop();
+                    this._timer.Interval = 1000;
+                    this._timer.AutoReset = true;
+                    this._timer.Start();
+                }
+
             }else if (value <= settings.WarnAlert.SetPoint && value > settings.AlrmAlert.SetPoint) {
                 item.Item = status.Item;
                 item.Status = settings.WarnAlert.ActionType;
                 item.Label = settings.WarnAlert.Label;
                 item.Value = status.Value;
-                this._timer.Interval = 1000;
-                this._timer.AutoReset = true;
-                this._timer.Start();
+                if (this._status.Status != ActionType.Warning) {
+                    this._timer.Stop();
+                    this._timer.Interval = 1000;
+                    this._timer.AutoReset = true;
+                    this._timer.Start();
+                }
             }else if (value <= settings.SoftAlert.SetPoint && value > settings.WarnAlert.SetPoint) {
                 item.Item = status.Item;
                 item.Status = settings.SoftAlert.ActionType;
                 item.Label = settings.SoftAlert.Label;
                 item.Value = status.Value;
-                this._timer.Interval = 1000;
-                this._timer.AutoReset = true;
-                this._timer.Start();
+                if (this._status.Status != ActionType.SoftWarn) {
+                    this._timer.Stop();
+                    this._timer.Interval = 1000;
+                    this._timer.AutoReset = true;
+                    this._timer.Start();
+                }
             } else {
                 item.Item = status.Item;
                 item.Status = ActionType.Okay;
