@@ -16,7 +16,7 @@
                 </h4>
             </div>
             <div class="row text-center" style="padding:.05rem">
-                <p role="status">TimeStamp: @this._monitorData.TimeStamp.DateTimeLocal()</p>
+                <p role="status">TimeStamp: @this._monitorData.TimeStamp.ToString("MM/dd/yy hh:mm:ss tt")</p>
             </div>
             @if (this._monitorData?.analogData != null) {
                 @if (this._monitorData.analogData.Any()) {
