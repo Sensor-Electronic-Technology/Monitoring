@@ -74,6 +74,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             var tankScaleDatabase = this._client.GetDatabase("nh3_logs");
             this._tankScales = tankScaleDatabase.GetCollection<TankScale>("tank_scales");
             this._weightReadings = tankScaleDatabase.GetCollection<WeightReading>("weight_readings");
+            
         }
         
         public async Task InsertOneAsync(AlertReadings readings) {

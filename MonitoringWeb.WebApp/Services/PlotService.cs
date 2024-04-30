@@ -193,11 +193,12 @@ public class PlotDataService {
                             Name=channel.Identifier,
                             Value=reading.Value
                         };
-                        if (aReading.TimeStamp.IsDaylightSavingTime()) {
+                        aReading.TimeStamp = readings.timestamp;
+                        /*if (aReading.TimeStamp.IsDaylightSavingTime()) {
                             aReading.TimeStamp = readings.timestamp.AddHours(-4);
                         } else {
                             aReading.TimeStamp = readings.timestamp.AddHours(-5);
-                        }
+                        }*/
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading);
                     }
@@ -220,11 +221,12 @@ public class PlotDataService {
                             Name="Toner Weight",
                             Value=readings.Value
                         };
-                        if (aReading.TimeStamp.IsDaylightSavingTime()) {
+                        aReading.TimeStamp= readings.timestamp.ToLocalTime();
+                        /*if (aReading.TimeStamp.IsDaylightSavingTime()) {
                             aReading.TimeStamp = readings.timestamp.AddHours(-4);
                         } else {
                             aReading.TimeStamp = readings.timestamp.AddHours(-5);
-                        }
+                        }*/
                         aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
                         analogReadings.Add(aReading);
                 }

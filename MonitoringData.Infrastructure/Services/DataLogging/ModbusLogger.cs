@@ -105,18 +105,25 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 reading.Value = this._filters[aItem._id];
                 //reading.Value = tempValue;
                 readings.Add(reading);
+                bool channelInUse=false;
                 if (aItem.Identifier == weightReading.ChannelName) {
                     weightReading.Value = reading.Value;
+                    channelInUse = true;
                 }
                 var alert=_dataService.MonitorAlerts.FirstOrDefault(e => e.ChannelId == aItem._id);
                 if (alert != null) {
                     ActionType state=ActionType.Okay;
-                    if ((int)reading.Value <= aItem.Level3SetPoint) {
-                        state = aItem.Level3Action;
-                    } else if ((int)reading.Value <= aItem.Level2SetPoint) {
-                        state = aItem.Level2Action;
-                    } else if ((int)reading.Value <= aItem.Level1SetPoint) {
-                        state = aItem.Level1Action;
+                    
+                    if (channelInUse) {
+                        alert.Enabled = true;
+                        if ((int)reading.Value <= aItem.Level2SetPoint) {
+                            state = ActionType.Warning;
+                        } else if ((int)reading.Value <= aItem.Level1SetPoint) {
+                            state = ActionType.Alarm;
+                        }
+                    } else {
+                        alert.Enabled = false;
+                        state = ActionType.Okay;
                     }
                     _alerts.Add(new AlertRecord(alert,(float)reading.Value,state));
                 } else {
