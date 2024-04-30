@@ -113,13 +113,12 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 var alert=_dataService.MonitorAlerts.FirstOrDefault(e => e.ChannelId == aItem._id);
                 if (alert != null) {
                     ActionType state=ActionType.Okay;
-                    
                     if (channelInUse) {
                         alert.Enabled = true;
-                        if ((int)reading.Value <= aItem.Level2SetPoint) {
-                            state = ActionType.Warning;
-                        } else if ((int)reading.Value <= aItem.Level1SetPoint) {
+                        if ((int)reading.Value <= aItem.Level3SetPoint) {
                             state = ActionType.Alarm;
+                        } else if ((int)reading.Value <= aItem.Level2SetPoint && (int)reading.Value > aItem.Level3SetPoint) {
+                            state = ActionType.Warning;
                         }
                     } else {
                         alert.Enabled = false;
