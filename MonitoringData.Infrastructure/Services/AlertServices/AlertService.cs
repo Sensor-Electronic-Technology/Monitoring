@@ -54,7 +54,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         activeAlert.Latched = true;
                                         activeAlert.TimeLatched = now;
                                     } else {
-                                        if (activeAlert.DisplayName == "Bulk H2(PSI)" || activeAlert.DisplayName == "Bulk N2(inH20)" || activeAlert.DisplayName=="Silane") {
+                                        if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane") {
                                             if ((now - activeAlert.TimeLatched).TotalMinutes >= 5) {
                                                 this._activeAlerts.Remove(activeAlert);
                                             }
@@ -82,7 +82,9 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                 activeAlert.AlertAction = alert.AlertAction;
                                                 activeAlert.LastAlert = now;
                                                 if (activeAlert.DisplayName == "Bulk H2(PSI)" || activeAlert.DisplayName == "Bulk N2(inH20)" || activeAlert.DisplayName=="Silane") {
-                                                    sendExEmail = activeAlert.CurrentState<alert.CurrentState;
+                                                    if (activeAlert.DisplayName != "Silane") {
+                                                        sendExEmail = activeAlert.CurrentState<alert.CurrentState;
+                                                    }
                                                     sendEmail = activeAlert.CurrentState<alert.CurrentState;
                                                 } else {
                                                     sendEmail = true;
@@ -97,9 +99,14 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         if (actionItem != null) {
                                             var emailPeriod = actionItem.EmailPeriod<=0 ? 30 : actionItem.EmailPeriod;
                                             if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
-                                                activeAlert.LastAlert = now;
-                                                activeAlert.ChannelReading = alert.ChannelReading;
-                                                sendEmail = true;
+                                                if (activeAlert.DisplayName != "Bulk H2(PSI)" ||
+                                                    activeAlert.DisplayName != "Bulk N2(inH20)" ||
+                                                    activeAlert.DisplayName != "Silane") {
+                                                    
+                                                    activeAlert.LastAlert = now;
+                                                    activeAlert.ChannelReading = alert.ChannelReading;
+                                                    sendEmail = true;
+                                                }
                                             } else {
                                                 activeAlert.ChannelReading = alert.ChannelReading;
                                             }
