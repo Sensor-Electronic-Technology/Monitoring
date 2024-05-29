@@ -82,10 +82,11 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                 activeAlert.AlertAction = alert.AlertAction;
                                                 activeAlert.LastAlert = now;
                                                 if (activeAlert.DisplayName == "Bulk H2(PSI)" || activeAlert.DisplayName == "Bulk N2(inH20)" || activeAlert.DisplayName=="Silane") {
-                                                    if (activeAlert.DisplayName != "Silane") {
+                                                    if (activeAlert.DisplayName == "Silane") {
+                                                        sendEmail = activeAlert.CurrentState<alert.CurrentState;
+                                                    } else {
                                                         sendExEmail = activeAlert.CurrentState<alert.CurrentState;
                                                     }
-                                                    sendEmail = activeAlert.CurrentState<alert.CurrentState;
                                                 } else {
                                                     sendEmail = true;
                                                 }
@@ -97,18 +98,20 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                             activeAlert.TimeLatched = now;
                                         }
                                         if (actionItem != null) {
-                                            var emailPeriod = actionItem.EmailPeriod<=0 ? 30 : actionItem.EmailPeriod;
-                                            if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
-                                                if (activeAlert.DisplayName != "Bulk H2(PSI)" ||
-                                                    activeAlert.DisplayName != "Bulk N2(inH20)" ||
-                                                    activeAlert.DisplayName != "Silane") {
-                                                    
+                                            if (activeAlert.DisplayName == "Bulk H2(PSI)" ||
+                                                activeAlert.DisplayName == "Bulk N2(inH20)" ||
+                                                activeAlert.DisplayName == "Silane") {
+                                                activeAlert.ChannelReading = alert.ChannelReading;
+                                            } else {
+                                                var emailPeriod = actionItem.EmailPeriod<=0 ? 30 : actionItem.EmailPeriod;
+                                                if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
                                                     activeAlert.LastAlert = now;
                                                     activeAlert.ChannelReading = alert.ChannelReading;
                                                     sendEmail = true;
+                                                
+                                                } else {
+                                                    activeAlert.ChannelReading = alert.ChannelReading;
                                                 }
-                                            } else {
-                                                activeAlert.ChannelReading = alert.ChannelReading;
                                             }
                                         } else {
                                             this._logger.LogError("ActiveAlert not found in Alarm/Warning/SoftWarn");
