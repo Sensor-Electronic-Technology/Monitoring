@@ -115,18 +115,18 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     ActionType state=ActionType.Okay;
                     if (channelInUse) {
                         alert.Enabled = true;
-                        /*if ((int)reading.Value <= aItem.Level3SetPoint) {
+                        if ((int)reading.Value <= aItem.Level3SetPoint) {
                             state = ActionType.Alarm;
                         } else if ((int)reading.Value <= aItem.Level2SetPoint && (int)reading.Value > aItem.Level3SetPoint) {
                             state = ActionType.Warning;
-                        }*/
-                        if ((int)reading.Value <= aItem.Level3SetPoint) {
+                        }
+                        /*if ((int)reading.Value <= aItem.Level3SetPoint) {
                             state = ActionType.Alarm;
                         } else if ((int)reading.Value <= aItem.Level2SetPoint && (int)reading.Value > aItem.Level3SetPoint){
                             state = ActionType.Warning;
                         } else if ((int)reading.Value <= aItem.Level1SetPoint && (int)reading.Value > aItem.Level2SetPoint) {
                             state = ActionType.SoftWarn;
-                        }
+                        }*/
                     } else {
                         alert.Enabled = false;
                         state = ActionType.Okay;
