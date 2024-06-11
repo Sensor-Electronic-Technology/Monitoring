@@ -54,6 +54,11 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         activeAlert.Latched = true;
                                         activeAlert.TimeLatched = now;
                                     } else {
+                                        /*if (activeAlert.DisplayName is "Tank1 Weight" or "Tank2 Weight") {
+                                            if ((now - activeAlert.TimeLatched).TotalMinutes >= 10) {
+                                                this._activeAlerts.Remove(activeAlert);
+                                            }
+                                        }else*/ 
                                         if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
                                             if ((now - activeAlert.TimeLatched).TotalMinutes >= 5) {
                                                 this._activeAlerts.Remove(activeAlert);
@@ -76,18 +81,28 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                             activeAlert.AlertLatched = true;
                                             activeAlert.TimeAlertLatched = now;
                                         } else {
-                                            if ((now - activeAlert.TimeAlertLatched).TotalSeconds >= 30) {
+                                            if (activeAlert.DisplayName is "Tank1 Weight" or "Tank2 Weight") {
+                                                if ((now - activeAlert.TimeAlertLatched).TotalMinutes >= 2) {
+                                                    activeAlert.CurrentState = alert.CurrentState;
+                                                    activeAlert.ChannelReading = alert.ChannelReading;
+                                                    activeAlert.AlertAction = alert.AlertAction;
+                                                    activeAlert.LastAlert = now;
+                                                    sendEmail = activeAlert.CurrentState < alert.CurrentState;
+                                                    this._logger.LogInformation("Bulk Alert({Alert}) Email Check.  2minutes",activeAlert.DisplayName);
+                                                }       
+                                            }else if ((now - activeAlert.TimeAlertLatched).TotalSeconds >= 30) {
                                                 activeAlert.CurrentState = alert.CurrentState;
                                                 activeAlert.ChannelReading = alert.ChannelReading;
                                                 activeAlert.AlertAction = alert.AlertAction;
                                                 activeAlert.LastAlert = now;
-                                                if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
-                                                    if (activeAlert.DisplayName is "Silane" or "Tank1 Weight" or "Tank2 Weight") {
+                                                if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane") {
+                                                    if (activeAlert.DisplayName is "Silane") {
                                                         sendEmail = activeAlert.CurrentState<alert.CurrentState;
                                                     } else {
                                                         sendEmail = activeAlert.CurrentState<alert.CurrentState;
                                                         sendExEmail = activeAlert.CurrentState<alert.CurrentState;
                                                     }
+                                                    this._logger.LogInformation("Bulk Alert({Alert}) Email Check. 30secons",activeAlert.DisplayName);
                                                 } else {
                                                     sendEmail = true;
                                                 }
@@ -101,6 +116,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         if (actionItem != null) {
                                             if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
                                                 activeAlert.ChannelReading = alert.ChannelReading;
+                                                this._logger.LogInformation("Bulk Alert: {Alert}",activeAlert.DisplayName);
                                             } else {
                                                 var emailPeriod = actionItem.EmailPeriod<=0 ? 30 : actionItem.EmailPeriod;
                                                 if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
