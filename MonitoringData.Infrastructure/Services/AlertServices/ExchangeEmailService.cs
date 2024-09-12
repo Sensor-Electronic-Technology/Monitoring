@@ -41,7 +41,7 @@ This is an automated message notifying AirGas that Sensor Electronic Technologyâ
 
 Current {gas} Value: {currentValue} {units}
 
-Please send the delivery schedule to Ryan Nowell at ryan.nowell@s-et.com
+Please send the delivery schedule to Joseph Williams at joseph.williams@s-et.com
 
 ";
         message.Body = body;
@@ -70,7 +70,7 @@ This is an automated message notifying Messer that Sensor Electronic Technologyâ
 
 Current {gas} Value: {currentValue} {units}
 
-Please send the delivery schedule to Ryan Nowell at ryan.nowell@s-et.com
+Please send the delivery schedule to Joseph Williams at joseph.williams@s-et.com
 
 ";
         message.Body = body;
@@ -98,30 +98,7 @@ This is an automated message notifying Messer that Sensor Electronic Technologyâ
 
 Current {gas} Value: {currentValue} {units}
 
-Please send the delivery schedule to Ryan Nowell at ryan.nowell@s-et.com
-
-";
-        message.Body = body;
-        await message.SendAndSaveCopy();
-    }
-    
-    public async Task SendTestMessageAsync() {
-        EmailMessage message = new EmailMessage(this._exchange);
-        var recp = new List<string>() {
-            "Ask.messer@messer-us.com",
-            "adam.lane@messer-us.com"
-        };
-        message.From = new EmailAddress("SETi Monitor Alerts", "setimonitoralerts@s-et.com");
-        message.ToRecipients.AddRange(recp);
-        message.CcRecipients.AddRange(this._ccAddresses);
-        message.Subject = "SETi Gas Notification Test";
-        MessageBody body = new MessageBody();
-        body.BodyType = BodyType.Text;
-        body.Text =@$"
-This is a test email from Sensor Electronic Technology.  We will be using this email address to send automated
-gas refill notifications 
-
-Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
+Please send the delivery schedule to Joseph Williams at joseph.williams@s-et.com
 
 ";
         message.Body = body;
