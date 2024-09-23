@@ -8,7 +8,7 @@
 @inject ILogger<BulkStatus> Logger
 
 
-<div class="row d-flex justify-content-center">
+<div class="row d-flex justify-content-center" style="margin-right: 5rem;">
     <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
         <BulkGasStatusCard Settings="@this.H2Settings" />
     </div>
@@ -17,7 +17,10 @@
     </div>
     <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
         <BulkGasStatusCard Settings="@this.NH3Settings" />
-    </div>    
+    </div>
+    <div class="col-3 shadow-lg p-3 mb-5 rounded" style="padding:1rem">
+        <BulkGasStatusCard Settings="@this.SiSettings" />
+    </div>
 </div>
 
 
@@ -29,6 +32,8 @@
     public BulkGasSettings? N2Settings { get; set; }
     [Parameter]
     public BulkGasSettings? NH3Settings { get; set; }
+    [Parameter]
+    public BulkGasSettings? SiSettings { get; set; }
     
     protected override async Task OnInitializedAsync() {
         /*this.H2Settings = this.ConfigurationProvider.WebsiteBulkSettings.H2Settings;

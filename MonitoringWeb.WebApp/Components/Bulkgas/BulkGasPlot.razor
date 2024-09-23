@@ -89,6 +89,7 @@
                                      Type="ChartAxisType.Continuous">
                     <DxChartAxisRange StartValue="@this.PlotStart"
                                       EndValue="@this.PlotStop"/>
+                    <DxChartAxisGridLines Visible="true"/>
                 </DxChartArgumentAxis>
                 <DxChartValueAxis ValueType="ChartAxisDataType.Numeric" >
                     @if (this._bulkGasSettings != null) {
@@ -167,6 +168,12 @@
         this.PlotData = null;
         var settings = await this.BulkGasProvider.GetSettings();
         switch (this.GasType) {
+            case BulkGasType.SI: {
+                this._bulkGasSettings=settings.SiSettings;
+                this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
+                this.StopDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursAfter).ToLocalTime();
+                break;
+            }
             case BulkGasType.H2: {
                 this._bulkGasSettings=settings.H2Settings;
                 this.StartDate = DateTime.Now.AddHours(this._bulkGasSettings.HoursBefore*-1).ToLocalTime();
@@ -219,6 +226,12 @@
         
         PlotData plotData = new PlotData();
         switch (this.GasType) {
+            case BulkGasType.SI:
+                this.Header = "Bulk SI";
+                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                    this._bulkGasSettings.ChannelName, start, stop);
+                this.Logger.LogInformation("Loaded SI Data");
+                break;
             case BulkGasType.N2:
                 this.Header = "Bulk N2";
                 plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
@@ -240,7 +253,7 @@
         this.PlotData = plotData.AnalogReadings;
         this.Sensor = plotData.SensorType;
         
-        if(this.GasType == BulkGasType.NH3) {
+        if(this.GasType == BulkGasType.NH3 || this.GasType == BulkGasType.SI) {
             this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
             this.Sensor.YAxisStop = (int)plotData.AnalogReadings.Max(e=>e.Value);
         } else {
@@ -264,6 +277,12 @@
         stop = stop.IsDaylightSavingTime() ? stop.AddHours(8):stop.AddHours(9);
         PlotData plotData = new PlotData();
         switch (this.GasType) {
+            case BulkGasType.SI:
+                this.Header = "Bulk SI";
+                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                    this._bulkGasSettings.ChannelName, start, stop);
+                this.Logger.LogInformation("Loaded Si Data");
+                break;
             case BulkGasType.N2:
                 this.Header = "Bulk N2";
                 plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
@@ -283,7 +302,7 @@
         this.PlotData = plotData.AnalogReadings;
         this.Sensor = plotData.SensorType;
         
-        if(this.GasType == BulkGasType.NH3) {
+        if(this.GasType == BulkGasType.NH3 || this.GasType == BulkGasType.SI) {
             this.Sensor.YAxisStart = this._bulkGasSettings.YAxisMin;
             this.Sensor.YAxisStop = (int)plotData.AnalogReadings.Max(e=>e.Value);
         } else {

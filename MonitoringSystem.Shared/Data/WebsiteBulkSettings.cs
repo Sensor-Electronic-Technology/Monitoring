@@ -9,6 +9,7 @@ public class WebsiteBulkSettings {
     public BulkGasSettings H2Settings { get; set; }
     public BulkGasSettings N2Settings { get; set; }
     public BulkGasSettings NHSettings { get; set; }
+    public BulkGasSettings SiSettings { get; set; }
 }
 
 public class BulkEmailSettings {

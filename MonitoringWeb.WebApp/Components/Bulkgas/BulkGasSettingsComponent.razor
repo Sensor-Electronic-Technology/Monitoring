@@ -15,8 +15,8 @@
                 <DxSpinEdit @bind-Value="@this._refreshTime"/>
             </DxFormLayoutItem>
             <DxFormLayoutGroup Caption="Email Settings">
-                <BulkGasAddressList Caption="To Addresses" @bind-AddressList=this.BulkEmailSettings.ToAddresses />
-                <BulkGasAddressList Caption="CC Addresses" @bind-AddressList=this.BulkEmailSettings.CcAddresses />
+                <BulkGasAddressList Caption="To Addresses" @bind-AddressList="@this.BulkEmailSettings.ToAddresses" />
+                <BulkGasAddressList Caption="CC Addresses" @bind-AddressList="@this.BulkEmailSettings.CcAddresses" />
             </DxFormLayoutGroup>
             <DxFormLayoutGroup Caption="Gas Settings">
                 <DxAccordion>
@@ -37,6 +37,12 @@
                             <ContentTemplate>
                                 <BulkGasForm @bind-Settings="@this.BulkSettings.NHSettings" 
                                              GasType="BulkGasType.NH3"/>
+                            </ContentTemplate>
+                        </DxAccordionItem>
+                        <DxAccordionItem Text="Si Settings">
+                            <ContentTemplate>
+                                <BulkGasForm @bind-Settings="@this.BulkSettings.SiSettings"
+                                             GasType="BulkGasType.SI"/>
                             </ContentTemplate>
                         </DxAccordionItem>
                     </Items>
@@ -73,7 +79,6 @@
     }
 
     private async Task HandleValidSubmit() {
-        
         this.BulkSettings.RefreshTime = this._refreshTime * 60 * 1000;
         await this.BulkGasProvider.Update(this.BulkSettings);
         await this.BulkGasProvider.UpdateEmailSettings(this.BulkEmailSettings);

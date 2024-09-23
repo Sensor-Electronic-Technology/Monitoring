@@ -28,32 +28,36 @@
                                   BulkEmailSettings="@this._bulkEmailSettings"
                                   Saved="@this.SavedHandler"/>
     </SidepanelComponent>
+        <div class="row float-end">
+            <DxButton Click="Callback"
+                      RenderStyle="ButtonRenderStyle.Primary"
+                      Text="@this._buttonText"/>
+        </div>
+        <div>
+            <BulkStatus
+                H2Settings="@this._bulkSettings.H2Settings"
+                N2Settings="@this._bulkSettings.N2Settings"
+                NH3Settings="@this._bulkSettings.NHSettings"
+                SiSettings="@this._bulkSettings.SiSettings"/>
+        </div>
+        <div class="row" style="margin-right: 5rem;">
+            <div class="col-6">
+                <BulkGasDashPlot GasType="BulkGasType.H2" />
+            </div>
+            <div class="col-6">
+                <BulkGasDashPlot GasType="BulkGasType.N2"/>
+            </div>
 
-    <div class="row float-end">
-        <DxButton Click="Callback" 
-                  RenderStyle="ButtonRenderStyle.Primary"
-                  Text="@this._buttonText"/>
-    </div>
-    <div>
-        <BulkStatus 
-            H2Settings="@this._bulkSettings.H2Settings"
-            N2Settings="@this._bulkSettings.N2Settings"
-            NH3Settings="@this._bulkSettings.NHSettings"/>
-    </div>
-    <div class="row">
-        <div class="col-6">
-            <BulkGasDashPlot GasType="BulkGasType.H2" />
         </div>
-        <div class="col-6">
-            <BulkGasDashPlot GasType="BulkGasType.N2"/>
+        <div class="row" style="margin-right: 5rem;">
+            <div class="col-6">
+                <BulkGasDashPlot GasType="BulkGasType.NH3"/>
+            </div>
+            <div class="col-6">
+                <BulkGasDashPlot GasType="BulkGasType.SI"/>
+            </div>
         </div>
 
-    </div>
-    <div class="row">
-        <div class="col-12">
-            <BulkGasDashPlot GasType="BulkGasType.NH3"/>
-        </div>
-    </div>
 } @*else {
     <div class="w-100 d-flex flex-row justify-content-center">
         <h1>Error Loading.  Contact Andrew Elmendorf at 843-687-6812</h1>

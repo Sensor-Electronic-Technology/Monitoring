@@ -1,5 +1,4 @@
-﻿
-@using MonitoringWeb.WebApp.Components
+﻿@using MonitoringWeb.WebApp.Components
 @using MonitoringWeb.WebApp.Data
 @using MonitoringSystem.Shared.Data
 @inject NavigationManager NavigationManager
@@ -29,6 +28,7 @@
                     <DxTreeViewNode Text="Hydrogen" NavigateUrl="@h2gas"/>
                     <DxTreeViewNode Text="Nitrogen" NavigateUrl="@n2gas"/>
                     <DxTreeViewNode Text="Ammonia" NavigateUrl="@nh3gas"/>
+                    <DxTreeViewNode Text="Silane" NavigateUrl="@sigas"/>
                 </Nodes>
             </DxTreeViewNode>
             <DxTreeViewNode Name="Admin" Text="Admin" Expanded="false">
@@ -45,6 +45,7 @@
     string h2gas = $"bulkgas/{(int)BulkGasType.H2}";
     string n2gas = $"bulkgas/{(int)BulkGasType.N2}";
     string nh3gas = $"bulkgas/{(int)BulkGasType.NH3}";
+    string sigas = $"bulkgas/{(int)BulkGasType.SI}";
     string e1th = $"thdata/{(int)Lab.Epi1}";
     string e2th = $"thdata/{(int)Lab.Epi2}";
 }

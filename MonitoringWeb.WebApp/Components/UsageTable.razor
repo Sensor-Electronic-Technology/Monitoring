@@ -275,10 +275,14 @@
 
     private async Task Load() {
         switch (this.GasType) {
+            case BulkGasType.SI: {
+                this._records = await this.UsageService.GetSiUsage();
+                this.Units = "PSI";
+                break;
+            }
             case BulkGasType.NH3: {
                 this._records = await this.UsageService.GetNH3Usage();
                 this.Units = "lb";
-                
                 break;
             }
             case BulkGasType.H2: {

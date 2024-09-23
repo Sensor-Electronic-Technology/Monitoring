@@ -27,6 +27,9 @@
 
     protected override Task OnInitializedAsync() {
         switch (this.GasType) {
+            case BulkGasType.SI:
+                this.Header = "Bulk Si ";
+                break;
             case BulkGasType.N2:
                 this.Header = "Bulk N2 ";
                 break;
@@ -46,6 +49,9 @@
     protected override Task OnParametersSetAsync() {
         
         switch (this.GasType) {
+            case BulkGasType.SI:
+                this.Header = "Bulk Si ";
+                break;
             case BulkGasType.N2:
                 this.Header = "Bulk N2 ";
                 break;
@@ -66,8 +72,7 @@
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender){
-            var timer = new Timer(new TimerCallback(_ =>
-            {
+            var timer = new Timer(new TimerCallback(_ => {
                 uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
             }), null, 300000, 300000);
         }

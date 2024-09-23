@@ -20,6 +20,7 @@ public class BulkGasProvider {
             .Set(e => e.H2Settings, settings.H2Settings)
             .Set(e => e.N2Settings, settings.N2Settings)
             .Set(e => e.NHSettings, settings.NHSettings)
+            .Set(e=>e.SiSettings,settings.SiSettings)
             .Set(e => e.RefreshTime, settings.RefreshTime);
         await this._settingsCollection.UpdateOneAsync(e => e._id == settings._id, update);
     }

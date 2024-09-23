@@ -38,6 +38,15 @@ public class UsageService {
         return await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
     }
     
+    public async Task<IEnumerable<UsageDayRecord>> GetSiUsage() {
+        var database = this._client.GetDatabase("epi1_data");
+        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
+        var usageCollection = database.GetCollection<UsageDayRecord>("si_usage");
+        var item = await analogCollection.Find(e => e.Identifier == "Silane").FirstOrDefaultAsync();
+        return await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item,startDate:new DateTime(2024,6,1));
+    }
+    
     public async Task<IEnumerable<UsageDayRecord>> GetH2Usage(DateTime start,DateTime stop) {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
@@ -68,10 +77,6 @@ public class UsageService {
             readings = await weightReadingCollection.Find(e => e.timestamp < stopDate && e.Value<=900)
                 .ToListAsync();
             List<ValueReturn> rawData = new List<ValueReturn>();
-            /*rawData = readings.Select(e => new ValueReturn() {
-                timestamp = e.timestamp.AddHours(-5),
-                value = (e.Value >= 0.00 ? e.Value : 0.00)
-            }).ToList();*/
             List<float> floats = new List<float>();
             foreach (var reading in readings) {
                 floats.Add(Convert.ToSingle(reading.Value));
@@ -79,11 +84,6 @@ public class UsageService {
             var filter = new MedianFilter2(window);
             var filteredValues=filter.ApplyTo(new DiscreteSignal(1, floats));
             for (int i = 0; i < readings.Count; i++) {
-                /*if (i == 0) {
-                    var current = filteredValues[i];
-                    var next = filteredValues[i + 1];
-                    if(current>=)
-                }*/
                 rawData.Add(new ValueReturn() {
                     timestamp = readings[i].timestamp,
                     value = filteredValues[i]
