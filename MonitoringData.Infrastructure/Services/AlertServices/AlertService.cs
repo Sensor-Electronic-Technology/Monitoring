@@ -54,11 +54,6 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         activeAlert.Latched = true;
                                         activeAlert.TimeLatched = now;
                                     } else {
-                                        /*if (activeAlert.DisplayName is "Tank1 Weight" or "Tank2 Weight") {
-                                            if ((now - activeAlert.TimeLatched).TotalMinutes >= 10) {
-                                                this._activeAlerts.Remove(activeAlert);
-                                            }
-                                        }else*/ 
                                         if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
                                             if ((now - activeAlert.TimeLatched).TotalMinutes >= 5) {
                                                 this._activeAlerts.Remove(activeAlert);
@@ -82,7 +77,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                             activeAlert.TimeAlertLatched = now;
                                         } else {
                                             if (activeAlert.DisplayName is "Tank1 Weight" or "Tank2 Weight") {
-                                                if ((now - activeAlert.TimeAlertLatched).TotalMinutes >= 2) {
+                                                if ((now - activeAlert.TimeAlertLatched).TotalMinutes >= 10) {
                                                     activeAlert.CurrentState = alert.CurrentState;
                                                     activeAlert.ChannelReading = alert.ChannelReading;
                                                     activeAlert.AlertAction = alert.AlertAction;
@@ -102,7 +97,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                         sendEmail = activeAlert.CurrentState<alert.CurrentState;
                                                         sendExEmail = activeAlert.CurrentState<alert.CurrentState;
                                                     }
-                                                    this._logger.LogInformation("Bulk Alert({Alert}) Email Check. 30secons",activeAlert.DisplayName);
+                                                    this._logger.LogInformation("Bulk Alert({Alert}) Email Check. 30seconds",activeAlert.DisplayName);
                                                 } else {
                                                     sendEmail = true;
                                                 }
