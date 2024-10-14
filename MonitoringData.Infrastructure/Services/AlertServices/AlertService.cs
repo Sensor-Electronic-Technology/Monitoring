@@ -81,6 +81,10 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                 this._logger.LogInformation("Alert: {Alert} Latched",newAlert.DisplayName);
                             } else {
                                 if (activeAlert.CurrentState != alert.CurrentState) {
+                                    if (activeAlert.Latched) {
+                                        activeAlert.Latched = false;
+                                        activeAlert.TimeLatched = now;
+                                    }
                                     if (!activeAlert.AlertLatched) {
                                         activeAlert.AlertLatched = true;
                                         activeAlert.TimeAlertLatched = now;
@@ -130,15 +134,18 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         }
                                     }
                                 } else {
+                                    if (activeAlert.AlertLatched) {
+                                        activeAlert.AlertLatched = false;
+                                        activeAlert.TimeAlertLatched = now;
+                                        this._logger.LogInformation("Alert: {Alert} un-latched",activeAlert.DisplayName);
+                                    }
                                     if (activeAlert.Latched) {
                                         activeAlert.Latched = false;
                                         activeAlert.TimeLatched = now;
-                                        this._logger.LogInformation("Alert: {Alert} un-latched",activeAlert.DisplayName);
                                     }
                                     if (actionItem != null) {
                                         if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
                                             activeAlert.ChannelReading = alert.ChannelReading;
-                                            /*this._logger.LogInformation("Bulk Alert: {Alert}",activeAlert.DisplayName);*/
                                         } else {
                                             var emailPeriod = actionItem.EmailPeriod<=0 ? 30 : actionItem.EmailPeriod;
                                             if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
@@ -198,13 +205,11 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                     monitorData.DeviceState = ActionType.SoftWarn;
                 }
                 foreach (var alert in this._activeAlerts) {
-                    if(alert.CurrentState!=ActionType.Okay) {
-                        monitorData.activeAlerts.Add(new ItemStatus() {
-                            Item=alert.DisplayName,
-                            State=alert.CurrentState.ToString(),
-                            Value = alert.ChannelReading.ToString(CultureInfo.InvariantCulture)
-                        });
-                    }
+                    monitorData.activeAlerts.Add(new ItemStatus() {
+                        Item = alert.DisplayName,
+                        State = (alert.CurrentState==ActionType.Okay) ? ActionType.SoftWarn.ToString() : alert.CurrentState.ToString(),
+                        Value = alert.ChannelReading.ToString(CultureInfo.InvariantCulture)
+                    });
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), 
                         alert.ChannelReading.ToString("N1"));
                 }
