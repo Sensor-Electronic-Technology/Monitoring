@@ -30,7 +30,8 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
         private IList<AlertRecord> _alerts;
         private DateTime lastRecord;
         private bool firstRecord;
-        private TimeSpan _warmUp = new TimeSpan(0, 10, 0);
+        private DateTime _nh3WarmupStart;
+        private TimeSpan _warmUp = new TimeSpan(0, 2, 0);
 
         public ModbusLogger(IMonitorDataRepo dataService,
             ILogger<ModbusLogger> logger,
@@ -44,6 +45,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             this._logger = logger;
             this.loggingEnabled=true;
             this.firstRecord = true;
+            this._nh3WarmupStart = DateTime.Now;
         }
         
         public async Task Read() {
@@ -78,7 +80,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                             State=e.CurrentState.ToString(),
                             Value= e.ChannelReading.ToString("N1")
                         }).ToList();
-                    await this._alertService.ProcessAlerts(this._alerts,now);
+                        await this._alertService.ProcessAlerts(this._alerts,now);
                 }
             } else {
                 this.LogError("Modbus read failed");
@@ -115,10 +117,17 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     ActionType state=ActionType.Okay;
                     if (channelInUse) {
                         alert.Enabled = true;
-                        if ((int)reading.Value <= aItem.Level3SetPoint) {
-                            state = ActionType.Alarm;
-                        } else if ((int)reading.Value <= aItem.Level2SetPoint && (int)reading.Value > aItem.Level3SetPoint) {
-                            state = ActionType.Warning;
+                        state=ActionType.Okay;
+                        if ((now - this._nh3WarmupStart) >= this._warmUp) {
+                            if ((int)reading.Value <= aItem.Level3SetPoint) {
+                                state = ActionType.Alarm;
+                            } else if ((int)reading.Value <= aItem.Level2SetPoint && (int)reading.Value > aItem.Level3SetPoint) {
+                                state = ActionType.Warning;
+                            }else if ((int)reading.Value <= aItem.Level1SetPoint && (int)reading.Value > aItem.Level2SetPoint) {
+                                state = ActionType.SoftWarn;
+                            }
+                        } else {
+                            this._logger.LogInformation("{Item} warmup time not reached",aItem.Identifier);
                         }
                     } else {
                         alert.Enabled = false;
