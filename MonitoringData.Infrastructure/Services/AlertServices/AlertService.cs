@@ -72,79 +72,91 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                         case ActionType.Alarm:
                         case ActionType.Warning:
                         case ActionType.SoftWarn: {
-                                if (activeAlert != null) {
-                                    if (activeAlert.CurrentState != alert.CurrentState) {
-                                        if (!activeAlert.AlertLatched) {
-                                            activeAlert.AlertLatched = true;
-                                            activeAlert.TimeAlertLatched = now;
-                                            this._logger.LogInformation("Alert: {Alert} Latched",activeAlert.DisplayName);
-                                        } else {
-                                            if (activeAlert.DisplayName is "Tank1 Weight" or "Tank2 Weight") {
-                                                if ((now - activeAlert.TimeAlertLatched).TotalMinutes >= 5) {
-                                                    activeAlert.CurrentState = alert.CurrentState;
-                                                    activeAlert.ChannelReading = alert.ChannelReading;
-                                                    activeAlert.AlertAction = alert.AlertAction;
-                                                    activeAlert.LastAlert = now;
+                            if (activeAlert == null) {
+                                var newAlert = alert.Clone();
+                                newAlert.AlertLatched = true;
+                                newAlert.TimeAlertLatched = now;
+                                newAlert.CurrentState = ActionType.Okay;
+                                this._activeAlerts.Add(newAlert);
+                                this._logger.LogInformation("Alert: {Alert} Latched",newAlert.DisplayName);
+                            } else {
+                                if (activeAlert.CurrentState != alert.CurrentState) {
+                                    if (!activeAlert.AlertLatched) {
+                                        activeAlert.AlertLatched = true;
+                                        activeAlert.TimeAlertLatched = now;
+                                        this._logger.LogInformation("Alert: {Alert} Latched",activeAlert.DisplayName);
+                                    } else {
+                                        if (activeAlert.DisplayName is "Tank1 Weight" or "Tank2 Weight") {
+                                            if ((now - activeAlert.TimeAlertLatched).TotalMinutes >= 5) {
+                                                activeAlert.ChannelReading = alert.ChannelReading;
+                                                activeAlert.AlertAction = alert.AlertAction;
+                                                activeAlert.LastAlert = now;
+                                                if (activeAlert.CurrentState == ActionType.Okay) {
+                                                    sendEmail = true;
+                                                } else {
                                                     sendEmail = activeAlert.CurrentState < alert.CurrentState;
-                                                    this._logger.LogInformation("Bulk Alert({Alert}) Email Check.  10minutes",activeAlert.DisplayName);
                                                 }
-                                            }else if (activeAlert.DisplayName != "Tank1 Weight" &&
-                                                      activeAlert.DisplayName != "Tank2 Weight") {
-                                                if ((now - activeAlert.TimeAlertLatched).TotalSeconds >= 30) {
-                                                    activeAlert.CurrentState = alert.CurrentState;
-                                                    activeAlert.ChannelReading = alert.ChannelReading;
-                                                    activeAlert.AlertAction = alert.AlertAction;
-                                                    activeAlert.LastAlert = now;
-                                                    if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane") {
-                                                        if (activeAlert.DisplayName is "Silane") {
-                                                            sendEmail = activeAlert.CurrentState<alert.CurrentState;
+                                                activeAlert.CurrentState = alert.CurrentState;
+                                                this._logger.LogInformation("Bulk Alert({Alert}) Email Check.  5minutes",activeAlert.DisplayName);
+                                            }
+                                        }else if (activeAlert.DisplayName != "Tank1 Weight" &&
+                                                  activeAlert.DisplayName != "Tank2 Weight") {
+                                            if ((now - activeAlert.TimeAlertLatched).TotalSeconds >= 30) {
+                                                activeAlert.ChannelReading = alert.ChannelReading;
+                                                activeAlert.AlertAction = alert.AlertAction;
+                                                activeAlert.LastAlert = now;
+                                                if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane") {
+                                                    if (activeAlert.DisplayName is "Silane") {
+                                                        if (activeAlert.CurrentState == ActionType.Okay) {
+                                                            sendEmail = true;
                                                         } else {
-                                                            sendEmail = activeAlert.CurrentState<alert.CurrentState;
-                                                            sendExEmail = activeAlert.CurrentState<alert.CurrentState;
+                                                            sendEmail = activeAlert.CurrentState < alert.CurrentState;
                                                         }
                                                     } else {
-                                                        sendEmail = true;
+                                                        if (activeAlert.CurrentState == ActionType.Okay) {
+                                                            sendEmail = true;
+                                                            sendExEmail = sendEmail;
+                                                        } else {
+                                                            sendEmail = activeAlert.CurrentState < alert.CurrentState;
+                                                            sendExEmail = sendEmail;
+                                                        }
                                                     }
-                                                    this._logger.LogInformation("Alert({Alert}) Email Check. 30seconds",activeAlert.DisplayName);
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        if (activeAlert.Latched) {
-                                            activeAlert.Latched = false;
-                                            activeAlert.TimeLatched = now;
-                                            this._logger.LogInformation("Alert: {Alert} un-latched",activeAlert.DisplayName);
-                                        }
-                                        if (actionItem != null) {
-                                            if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
-                                                activeAlert.ChannelReading = alert.ChannelReading;
-                                                this._logger.LogInformation("Bulk Alert: {Alert}",activeAlert.DisplayName);
-                                            } else {
-                                                var emailPeriod = actionItem.EmailPeriod<=0 ? 30 : actionItem.EmailPeriod;
-                                                if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
-                                                    activeAlert.LastAlert = now;
-                                                    activeAlert.ChannelReading = alert.ChannelReading;
-                                                    sendEmail = true;
-                                                
                                                 } else {
-                                                    activeAlert.ChannelReading = alert.ChannelReading;
+                                                    sendEmail = true;
                                                 }
+                                                activeAlert.CurrentState = alert.CurrentState;
+                                                this._logger.LogInformation("Alert({Alert}) Email Check. 30seconds",activeAlert.DisplayName);
                                             }
-                                        } else {
-                                            this._logger.LogError("ActiveAlert not found in Alarm/Warning/SoftWarn");
                                         }
                                     }
                                 } else {
-                                    var newAlert = alert.Clone();
-                                    newAlert.AlertLatched = true;
-                                    newAlert.TimeAlertLatched = now;
-                                    newAlert.CurrentState = ActionType.Okay;
-                                    this._activeAlerts.Add(newAlert);
-                                    /*sendEmail = true;
-                                    sendExEmail = true;*/
+                                    if (activeAlert.Latched) {
+                                        activeAlert.Latched = false;
+                                        activeAlert.TimeLatched = now;
+                                        this._logger.LogInformation("Alert: {Alert} un-latched",activeAlert.DisplayName);
+                                    }
+                                    if (actionItem != null) {
+                                        if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
+                                            activeAlert.ChannelReading = alert.ChannelReading;
+                                            /*this._logger.LogInformation("Bulk Alert: {Alert}",activeAlert.DisplayName);*/
+                                        } else {
+                                            var emailPeriod = actionItem.EmailPeriod<=0 ? 30 : actionItem.EmailPeriod;
+                                            if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
+                                                activeAlert.LastAlert = now;
+                                                activeAlert.ChannelReading = alert.ChannelReading;
+                                                sendEmail = true;
+                                                this._logger.LogInformation("Resend Alert: {Alert}",activeAlert.DisplayName);
+                                            } else {
+                                                activeAlert.ChannelReading = alert.ChannelReading;
+                                            }
+                                        }
+                                    } else {
+                                        this._logger.LogError("ActiveAlert not found in Alarm/Warning/SoftWarn");
+                                    }
                                 }
-                                break;
                             }
+                            break;
+                        }
                         case ActionType.Maintenance:
                         case ActionType.Custom:
                         default:
@@ -182,15 +194,17 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                     monitorData.DeviceState = ActionType.Alarm;
                 }else if (this._activeAlerts.FirstOrDefault(e => e.CurrentState == ActionType.Warning) != null) {
                     monitorData.DeviceState = ActionType.Warning;
-                } else if (this._activeAlerts.FirstOrDefault(e => e.CurrentState == ActionType.SoftWarn) != null) {
+                } else if (this._activeAlerts.FirstOrDefault(e => e.CurrentState == ActionType.SoftWarn || e.CurrentState==ActionType.Okay) != null) {
                     monitorData.DeviceState = ActionType.SoftWarn;
                 }
                 foreach (var alert in this._activeAlerts) {
-                    monitorData.activeAlerts.Add(new ItemStatus() {
-                        Item=alert.DisplayName,
-                        State=alert.CurrentState.ToString(),
-                        Value = alert.ChannelReading.ToString(CultureInfo.InvariantCulture)
-                    });
+                    if(alert.CurrentState!=ActionType.Okay) {
+                        monitorData.activeAlerts.Add(new ItemStatus() {
+                            Item=alert.DisplayName,
+                            State=alert.CurrentState.ToString(),
+                            Value = alert.ChannelReading.ToString(CultureInfo.InvariantCulture)
+                        });
+                    }
                     messageBuilder.AppendAlert(alert.DisplayName, alert.CurrentState.ToString(), 
                         alert.ChannelReading.ToString("N1"));
                 }
