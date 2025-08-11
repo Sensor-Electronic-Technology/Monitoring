@@ -32,6 +32,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
         private bool firstRecord;
         private DateTime _nh3WarmupStart;
         private TimeSpan _warmUp = new TimeSpan(0, 2, 0);
+        private DeviceCheck _deviceCheck=new DeviceCheck();
 
         public ModbusLogger(IMonitorDataRepo dataService,
             ILogger<ModbusLogger> logger,
@@ -55,8 +56,10 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 this._recordData = !(await this._modbusService.ReadCoil(this._device.IpAddress, 
                     this._device.Port, 1, 1));
             }
+            var now = DateTime.Now;
             if (result.Success) {
-                var now = DateTime.Now;
+                this._deviceCheck.Clear();
+                
                 this._alerts = new List<AlertRecord>();
                 if (result.HoldingRegisters != null) {
                     var analogRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._device.ChannelMapping.AnalogStart, 
@@ -83,6 +86,10 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         await this._alertService.ProcessAlerts(this._alerts,now);
                 }
             } else {
+                if (this._deviceCheck.CheckTime(now)) {
+                    await this._alertService.DeviceOfflineAlert();
+                    this.LogInformation("Device Offline Email Sent");
+                }
                 this.LogError("Modbus read failed");
             }
         }
