@@ -24,16 +24,16 @@ jobs:
           file: ./MonitoringData.DataLoggingService/Dockerfile
           push: true
           tags: ${{ secrets.Docker_Username}}/monitoringdatadataloggingservice:dev
-  deploy:
-    needs: build
-    runs-on:
-     group: setihost-group
-    steps:
-      - uses: actions/checkout@v3
-      - run: microk8s.kubectl rollout restart deployment e2stream
-      - run: microk8s.kubectl rollout restart deployment gbstream
-      - run: microk8s.kubectl rollout restart deployment nhstream
-      - run: microk8s.kubectl rollout restart deployment e1stream
-      - run: microk8s.kubectl rollout restart deployment e1thstream
-      - run: microk8s.kubectl rollout restart deployment e2thstream
+  # deploy:
+  #   needs: build
+  #   runs-on:
+  #    group: setihost-group
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - run: microk8s.kubectl rollout restart deployment e2stream
+  #     - run: microk8s.kubectl rollout restart deployment gbstream
+  #     - run: microk8s.kubectl rollout restart deployment nhstream
+  #     - run: microk8s.kubectl rollout restart deployment e1stream
+  #     - run: microk8s.kubectl rollout restart deployment e1thstream
+  #     - run: microk8s.kubectl rollout restart deployment e2thstream
       
