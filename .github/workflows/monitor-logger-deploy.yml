@@ -17,7 +17,7 @@ jobs:
         username: ${{secrets.Docker_Username}}
         password: ${{secrets.Docker_Password}}
     - name: Build and push
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v5
       with:
           context: .
           file: ./MonitoringData.DataLoggingService/Dockerfile
