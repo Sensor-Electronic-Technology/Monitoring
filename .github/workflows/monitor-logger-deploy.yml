@@ -1,11 +1,12 @@
 name: Monitoring Streams Deployment
 on:
-  push:
-    branches: [ "master" ]
-    paths:
-    - 'MonitoringData.Infrastructure/**'
-    - 'MonitoringData.DataLoggingService/**'
-    - '.github/workflows/monitor-logger-deploy.yml'
+  workflow_dispatch:
+  # push:
+  #   branches: [ "master" ]
+  #   paths:
+  #   - 'MonitoringData.Infrastructure/**'
+  #   - 'MonitoringData.DataLoggingService/**'
+  #   - '.github/workflows/monitor-logger-deploy.yml'
 jobs:
   build:
     runs-on: ubuntu-latest
