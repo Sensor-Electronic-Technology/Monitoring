@@ -23,7 +23,7 @@ jobs:
           context: .
           file: ./MonitoringData.DataLoggingService/Dockerfile
           push: true
-          tags: ${{ secrets.Docker_Username}}/monitor-data-service:dev
+          tags: ${{ secrets.Docker_Username}}/monitoringdatadataloggingservice:latest
   # deploy:
   #   needs: build
   #   runs-on:
