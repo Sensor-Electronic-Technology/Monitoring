@@ -1,9 +1,6 @@
 name: Monitoring Website Deployment
 on:
-  push:
-    branches: [ "master" ]
-    paths:
-    - 'MonitoringWeb.WebApp/**'
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
