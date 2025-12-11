@@ -14,6 +14,12 @@
     <DxTabPage Text="Consumption">
         <UsageTable GasType="@this.GasType"/>
     </DxTabPage>
+    @if (this.GasType == BulkGasType.H2) {
+        <DxTabPage Text="Alert Level Calculator">
+            <BulkH2AlertCalculator/>
+        </DxTabPage>
+    }
+    
 </DxTabs>
 
 @code {

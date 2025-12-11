@@ -22,14 +22,25 @@ public class UsageService {
         this._client = new MongoClient("mongodb://172.20.3.41");
     }
 
-    public async Task<double> GetBulkH2Usage(int days) {
+    public async Task<(double rate,double lastReading)> GetBulkH2Usage(int days,bool includeWeekends = true) {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
         var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
         var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
-        var usage=await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item,startDate:DateTime.Now.AddDays(-days));
-        return usage.Average(e => e.Usage);
+        var date=DateTime.Now.AddDays(-days);
+        var allUsage=await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
+        
+        var usage=allUsage.Where(e => e.Date >= date);
+        if (!includeWeekends)
+            usage = usage.Where(e => e.DayOfWeek != DayOfWeek.Saturday && e.DayOfWeek != DayOfWeek.Sunday);
+        var lastReadingEntry =  analogReadCollection.AsQueryable()
+            .OrderByDescending(r => r.timestamp)
+            .FirstOrDefault();
+        var lastReading=lastReadingEntry?.readings
+            .Where(e => e.MonitorItemId == item._id).Select(e => e.Value)
+            .FirstOrDefault() ?? 0;
+        return new (usage.Average(e => e.Usage),lastReading);
     }
     
     public async Task<IEnumerable<UsageDayRecord>> GetNH3Usage() {

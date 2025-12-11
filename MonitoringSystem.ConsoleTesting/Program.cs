@@ -114,7 +114,7 @@ namespace MonitoringSystem.ConsoleTesting {
            //await TestPopList();
            //await WriteOutAnalogFile("epi1", new DateTime(2024, 1,1), DateTime.Now, @"C:\Users\aelmendo\Documents\MonitorFiles\ep1-rakesh.csv");
 
-           List<Testitem> testItems = [];
+           /*List<Testitem> testItems = [];
            Random rand = new Random();
            for (int i = 0; i < 3; i++) {
                testItems.Add(new Testitem() {
@@ -129,11 +129,13 @@ namespace MonitoringSystem.ConsoleTesting {
                var item=testItems.FirstOrDefault(e => e._id == i);
                item.Value=rand.Next(1,100);
            }
-           Console.WriteLine($"[{string.Join(',', testItems.Select(e=>e.Value))}]");
-           
+           Console.WriteLine($"[{string.Join(',', testItems.Select(e=>e.Value))}]");*/
+
+           await TestExternalEmailCalc(days:14,false);
+
         }
 
-        static async Task TestExternalEmailCalc(int days=14) {
+        static async Task TestExternalEmailCalc(int days=14,bool includeWeekends=false) {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("epi1_data");
             var analogCollection = database.GetCollection<AnalogItem>("analog_items");
@@ -143,7 +145,10 @@ namespace MonitoringSystem.ConsoleTesting {
             var date=DateTime.Now.AddDays(-days);
            
             var allUsage=await GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
-            var usage=allUsage.Where(e=>e.Date>=date).ToList();
+            var usage=allUsage.Where(e => e.Date >= date);
+            if (!includeWeekends)
+                usage = usage.Where(e => e.DayOfWeek != DayOfWeek.Saturday && e.DayOfWeek != DayOfWeek.Sunday);
+
             var rate = usage.Average(e => e.Usage);
             var lastReadingEntry =  analogReadCollection.AsQueryable()
                 .OrderByDescending(r => r.timestamp)
