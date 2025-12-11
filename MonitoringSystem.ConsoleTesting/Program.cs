@@ -28,6 +28,7 @@ using MonitoringSystem.Shared.Data.EntityDtos;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Services;
 using MonitoringSystem.Shared.Data.SettingsModel;
+using MonitoringSystem.Shared.Data.UsageModel;
 using ModbusDevice = MonitoringConfig.Data.Model.ModbusDevice;
 
 namespace MonitoringSystem.ConsoleTesting {
@@ -112,7 +113,218 @@ namespace MonitoringSystem.ConsoleTesting {
            //await CreateSIBulkGasSettings();
            //await TestPopList();
            //await WriteOutAnalogFile("epi1", new DateTime(2024, 1,1), DateTime.Now, @"C:\Users\aelmendo\Documents\MonitorFiles\ep1-rakesh.csv");
+
+           List<Testitem> testItems = [];
+           Random rand = new Random();
+           for (int i = 0; i < 3; i++) {
+               testItems.Add(new Testitem() {
+                   _id=i,
+                   Value=rand.Next(1,100)
+               });
+           }
            
+           Console.WriteLine($"[{string.Join(',', testItems.Select(e=>e.Value))}]");
+           
+           for (int i = 0; i < 3; i++) {
+               var item=testItems.FirstOrDefault(e => e._id == i);
+               item.Value=rand.Next(1,100);
+           }
+           Console.WriteLine($"[{string.Join(',', testItems.Select(e=>e.Value))}]");
+           
+        }
+
+        static async Task TestExternalEmailCalc(int days=14) {
+            IMongoClient client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("epi1_data");
+            var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+            var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
+            var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
+            var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
+            var date=DateTime.Now.AddDays(-days);
+           
+            var allUsage=await GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
+            var usage=allUsage.Where(e=>e.Date>=date).ToList();
+            var rate = usage.Average(e => e.Usage);
+            var lastReadingEntry =  analogReadCollection.AsQueryable()
+                .OrderByDescending(r => r.timestamp)
+                .FirstOrDefault();
+            var lastReading=lastReadingEntry.readings
+                .Where(e => e.MonitorItemId == item._id).Select(e => e.Value)
+                .FirstOrDefault();
+           
+            Console.WriteLine($"Avg {days}Day {rate} PPM/Day");
+
+            double suggestedLevel = 550 + (3 * rate);
+            Console.WriteLine($"Suggested Level: {suggestedLevel}");
+            Console.WriteLine($"SoftWarn: {DateTime.Now.AddDays((lastReading-suggestedLevel)/rate)}))");
+           
+            //var emailDate = DateTime.Now.AddDays(rate*);
+        }
+
+        static async Task SetExternalEmailLevel(AnalogItem item, double level) {
+            IMongoClient client = new MongoClient("mongodb://172.20.3.41");
+            var settingsCollection=client.GetDatabase("monitor_settings")
+                .GetCollection<WebsiteBulkSettings>("bulk_settings");
+            var settingsCollectionV2=client.GetDatabase("monitor_settings")
+                .GetCollection<WebsiteBulkSettings>("bulk_settings_v2");
+            var settings=await settingsCollection.Find(_ => true).FirstOrDefaultAsync();
+            /*settings.H2Settings.ExternalEmailLevel = 1000;
+            settings.H2Settings.MinExternalEmailLevel=750;*/
+            var update = Builders<WebsiteBulkSettings>.Update
+                .Set(e => e.H2Settings, settings.H2Settings);
+            await settingsCollectionV2.InsertOneAsync(settings);
+            Console.WriteLine("Check Database");
+        }
+        
+        static async Task<IEnumerable<UsageDayRecord>> GetUsageRecordsV2(IMongoCollection<UsageDayRecord> usageCollection,
+            IMongoCollection<AnalogReadings> analogReadCollection,
+            double threshold, AnalogItem? item1, AnalogItem? item2 = null, DateTime? startDate = null) {
+            var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
+            var count = await usageCollection.EstimatedDocumentCountAsync();
+            if (count == 0) {//new
+                var stopDate = DateTime.Now.Date;
+                Dictionary<DateTime, List<ValueReturn>> days;
+                List<AnalogReadings> readings;
+                if (startDate.HasValue) {
+                    readings = await analogReadCollection.Find(e => e.timestamp >= startDate && e.timestamp < stopDate)
+                        .ToListAsync();
+                } else {
+                    readings = await analogReadCollection.Find(e => e.timestamp < stopDate)
+                        .ToListAsync();
+                }
+    
+                List<ValueReturn> rawData = new List<ValueReturn>();
+                if (item2 != null) {
+                    foreach (var reading in readings) {
+                        var r1 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item1._id)!.Value;
+                        var r2 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item2._id)!.Value;
+                        var valueReturn = new ValueReturn() {
+                            timestamp = reading.timestamp.AddHours(-5), value = (r1 >= 0.00 ? r1 : 0.00) + (r2 >= 0 ? r2 : 0)
+                        };
+                        rawData.Add(valueReturn);
+                    }
+                } else {
+                    rawData = readings.Select(e => new ValueReturn() {
+                        timestamp = e.timestamp.AddHours(-5),
+                        value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value)
+                    }).ToList();
+                }
+                days = rawData.GroupBy(e =>
+                        e.timestamp.Date)
+                    .ToDictionary(e => e.Key, e => e.ToList());
+                List<UsageDayRecord> dayRecords = new List<UsageDayRecord>();
+                foreach (var day in days) {
+                    UsageDayRecord usageDayRecord = new UsageDayRecord() {
+                        _id = ObjectId.GenerateNewId(),
+                        DayOfMonth = day.Key.Day,
+                        DayOfWeek = day.Key.DayOfWeek,
+                        Date = day.Key,
+                        Month = day.Key.Month,
+                        WeekOfYear = 
+                            CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
+                                CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
+                        Year = day.Key.Year,
+                        DayOfYear = day.Key.DayOfYear,
+                        MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
+                    };
+                    usageDayRecord.ChannelIds.Add(item1!._id);
+                    if (item2 != null) {
+                        usageDayRecord.ChannelIds.Add(item2._id);
+                    }
+    
+                    var first = day.Value[0].value;
+                    var last = day.Value[day.Value.Count() - 1].value;
+                    var max = day.Value.Max(e=>e.value);
+                    var min = day.Value.Min(e => e.value);
+    
+                    double consumed = 0;
+                    if (last < first) {
+                        consumed = first - last;
+                    } else {
+                        consumed = (first - min) + (max - last);
+                    }
+                    usageDayRecord.Usage = consumed;
+                    usageDayRecord.PerHour = consumed/24;
+                    usageDayRecord.PerMin = usageDayRecord.PerHour;
+                    dayRecords.Add(usageDayRecord);
+                }
+                await usageCollection.InsertManyAsync(dayRecords);
+                return dayRecords.AsEnumerable();
+            } else {//Update
+                var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
+                var deltaHours = (DateTime.Now - latest.Date.AddDays(1)).TotalHours;
+                var now = DateTime.Now.Date;
+                if (deltaHours >= 24) {
+                    var start = latest.Date.AddDays(1);
+                    var stop = DateTime.Now.Date.AddSeconds(-1).AddHours(-5);
+                    List<AnalogReadings> readings;
+                    Dictionary<DateTime, List<ValueReturn>> days;
+                    List<ValueReturn> rawData;
+                    if (item2 != null) {
+                        readings = await analogReadCollection.Find(e =>
+                                e.timestamp >= start &&
+                                e.timestamp < stop)
+                            .ToListAsync();
+                        rawData = readings.Select(e => new ValueReturn() {
+                            timestamp = e.timestamp.AddHours(-5),
+                            value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value +
+                                     e.readings.FirstOrDefault(m => m.MonitorItemId == item2._id)!.Value)
+                        }).ToList();
+    
+                    } else {
+                        readings = await analogReadCollection.Find(e =>
+                                e.timestamp >= start.AddHours(5) &&
+                                e.timestamp < stop)
+                            .ToListAsync();
+                        rawData = readings.Select(e => new ValueReturn() {
+                            timestamp = e.timestamp.AddHours(-5),
+                            value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value)
+                        }).ToList();
+                    }
+                    days = rawData.GroupBy(e =>
+                            e.timestamp.Date)
+                        .ToDictionary(e => e.Key, e => e.ToList());
+                    List<UsageDayRecord> dayRecords = new List<UsageDayRecord>();
+                    foreach (var day in days) {
+                        UsageDayRecord usageDayRecord = new UsageDayRecord() {
+                            _id = ObjectId.GenerateNewId(),
+                            DayOfMonth = day.Key.Day,
+                            DayOfWeek = day.Key.DayOfWeek,
+                            Date = day.Key,
+                            Month = day.Key.Month,
+                            WeekOfYear =
+                                CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
+                                    CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
+                            Year = day.Key.Year,
+                            DayOfYear = day.Key.DayOfYear,
+                            MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
+                        };
+                        usageDayRecord.ChannelIds.Add(item1!._id);
+                        if (item2 != null) {
+                            usageDayRecord.ChannelIds.Add(item2._id);
+                        }
+                        var first = day.Value.First().value;
+                        var last = day.Value.Last().value;
+                        var max = day.Value.Max(e=>e.value);
+                        var min = day.Value.Min(e => e.value);
+    
+                        double consumed = 0;
+                        if (last < first) {
+                            consumed = first - last;
+                        } else {
+                            consumed = (first - min) + (max - last);
+                        }
+                        usageDayRecord.Usage = consumed;
+                        usageDayRecord.PerHour = consumed/24;
+                        usageDayRecord.PerMin = usageDayRecord.PerHour/60;
+                        dayRecords.Add(usageDayRecord);
+                    }
+                    await usageCollection.InsertManyAsync(dayRecords);
+                    return dayRecords.AsEnumerable();
+                } else {
+                    return (await usageCollection.Find(_ => true).ToListAsync()).AsEnumerable();
+                }
+            }
         }
         
         static Task TestPopList() {
@@ -1220,5 +1432,11 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
             File.WriteAllLines(fileName, lines);
             Console.WriteLine("Check File");
         }*/
+    }
+
+    public class Testitem {
+        public int _id { get; set; }
+        public double Value { get; set; }
+        
     }
 }

@@ -20,11 +20,11 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
         private DateTime _lastRecord;
         private TimeSpan _recordInterval;
         private bool _firstRecord;
-        private DeviceCheck _deviceCheck=new DeviceCheck();
+        private DeviceCheck _deviceCheck = new DeviceCheck();
         private Dictionary<ObjectId, bool> _lastState = new Dictionary<ObjectId, bool>();
-        
+
         public MonitorBoxLogger(IMonitorDataRepo dataService,
-            ILogger<MonitorBoxLogger> logger, 
+            ILogger<MonitorBoxLogger> logger,
             IAlertService alertService,
             IModbusService modbusService) {
             this._dataService = dataService;
@@ -34,41 +34,48 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             this._loggingEnabled = true;
             this._firstRecord = true;
         }
-        
+
         public async Task Read() {
-            var result = await this._modbusService.Read(this._device.IpAddress!, 
-                this._device.Port, 
+            var result = await this._modbusService.Read(this._device.IpAddress!,
+                this._device.Port,
                 this._device.ModbusConfiguration!);
             var now = DateTime.Now;
             if (result.Success) {
                 this._deviceCheck.Clear();
-                var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs, this._device.ChannelMapping!.DiscreteStart,
-                    (this._device.ChannelMapping!.DiscreteStop - this._device.ChannelMapping!.DiscreteStart) + 1).ToArray();
-                var analogRaw = new ArraySegment<ushort>(result.InputRegisters, this._device.ChannelMapping!.AnalogStart, 
+                var discreteRaw = new ArraySegment<bool>(result.DiscreteInputs,
+                        this._device.ChannelMapping!.DiscreteStart,
+                        (this._device.ChannelMapping!.DiscreteStop - this._device.ChannelMapping!.DiscreteStart) + 1)
+                    .ToArray();
+                var analogRaw = new ArraySegment<ushort>(result.InputRegisters,
+                    this._device.ChannelMapping!.AnalogStart,
                     (this._device.ChannelMapping.AnalogStop - this._device.ChannelMapping!.AnalogStart) + 1).ToArray();
-                var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters, this._device.ChannelMapping!.AlertStart,
+                var alertsRaw = new ArraySegment<ushort>(result.HoldingRegisters,
+                    this._device.ChannelMapping!.AlertStart,
                     (this._device.ChannelMapping!.AlertStop - this._device.ChannelMapping!.AlertStart) + 1).ToArray();
-                var virtualRaw = new ArraySegment<bool>(result.Coils, this._device.ChannelMapping.VirtualStart, 
-                    (this._device.ChannelMapping!.VirtualStop - this._device.ChannelMapping!.VirtualStart) + 1).ToArray();
+                var virtualRaw = new ArraySegment<bool>(result.Coils, this._device.ChannelMapping.VirtualStart,
+                        (this._device.ChannelMapping!.VirtualStop - this._device.ChannelMapping!.VirtualStart) + 1)
+                    .ToArray();
                 this._alerts = new List<AlertRecord>();
                 await this.ProcessAlertReadings(alertsRaw);
-                var analogProcessed=await this.ProcessAnalogReadings(analogRaw, now);
-                var discreteProcessed=await this.ProcessDiscreteReadings(discreteRaw, now);
-                var virtualProcessed=await this.ProcessVirtualReadings(virtualRaw, now);
-                if(CheckSave(now,(analogProcessed.Item2 || discreteProcessed.Item2 || virtualProcessed.Item2))) {
+                var analogProcessed = await this.ProcessAnalogReadings(analogRaw, now);
+                var discreteProcessed = await this.ProcessDiscreteReadings(discreteRaw, now);
+                var virtualProcessed = await this.ProcessVirtualReadings(virtualRaw, now);
+                if (CheckSave(now, (analogProcessed.Item2 || discreteProcessed.Item2 || virtualProcessed.Item2))) {
                     this._lastRecord = now;
                     await this._dataService.InsertOneAsync(analogProcessed.Item1);
                     await this._dataService.InsertOneAsync(discreteProcessed.Item1);
                     await this._dataService.InsertOneAsync(virtualProcessed.Item1);
                     this.LogInformation("Data Recorded");
                 }
+
                 this._logger.LogInformation("Data Read");
-                await this._alertService.ProcessAlerts(this._alerts,now);
+                await this._alertService.ProcessAlerts(this._alerts, now);
             } else {
                 if (this._deviceCheck.CheckTime(now)) {
                     await this._alertService.DeviceOfflineAlert();
                     this.LogInformation("Device Offline Email Sent");
                 }
+
                 this._logger.LogError("Modbus read failed");
             }
         }
@@ -79,11 +86,12 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     MonitorItemId = alert._id,
                     AlertState = this.ToActionType(raw[alert.Register])
                 };
-                this._alerts.Add(new AlertRecord(alert,alertReading.AlertState));
+                this._alerts.Add(new AlertRecord(alert, alertReading.AlertState));
             }
+
             return Task.CompletedTask;
         }
-        
+
         private Task<Tuple<AnalogReadings?, bool>> ProcessAnalogReadings(ushort[] raw, DateTime now) {
             if (this._dataService.AnalogItems.Count == raw.Length) {
                 List<AnalogReading> readings = new List<AnalogReading>();
@@ -93,28 +101,49 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         MonitorItemId = item._id, Value = (float)raw[item.Register] / item.Factor
                     };
                     if (item.Connected) {
-                        var thresholdMet=(item.ValueDirection==ValueDirection.Increasing) ? 
-                            (analogReading.Value >= item.RecordThreshold):(analogReading.Value<=item.RecordThreshold);
+                        var thresholdMet = (item.ValueDirection == ValueDirection.Increasing)
+                            ? (analogReading.Value >= item.RecordThreshold)
+                            : (analogReading.Value <= item.RecordThreshold);
                         if (thresholdMet && ((now - this._lastRecord).TotalSeconds >= item.ThresholdInterval)) {
                             record = true;
                         }
                     }
+
                     readings.Add(analogReading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
-                    if (alertRecord != null) {
-                        alertRecord.ChannelReading = (float)analogReading.Value;
+                    if (item.Identifier == "Bulk H2(PSI)") {
+                        if (alertRecord != null) {
+                            ActionType state = ActionType.Okay;
+                            if ((int)analogReading.Value <= item.Level3SetPoint) {
+                                state = item.Level3Action;
+                            } else if ((int)analogReading.Value <= item.Level2SetPoint && (int)analogReading.Value > item.Level3SetPoint) {
+                                state = item.Level2Action;
+                            } else if ((int)analogReading.Value <= item.Level1SetPoint && (int)analogReading.Value > item.Level2SetPoint) {
+                                state = item.Level1Action;
+                            }
+
+                            alertRecord.ChannelReading = (float)analogReading.Value;
+                            alertRecord.CurrentState = state;
+                        } else {
+                            this.LogError("Analog MonitorAlert not found");
+                        }
                     } else {
-                        this.LogError("Analog MonitorAlert not found");
+                        if (alertRecord != null) {
+                            alertRecord.ChannelReading = (float)analogReading.Value;
+                        } else {
+                            this.LogError("Analog MonitorAlert not found");
+                        }
                     }
                 }
+
                 return Task.FromResult<Tuple<AnalogReadings?, bool>>(new(
-                    new AnalogReadings() { 
-                        readings = readings.ToArray(), 
-                        timestamp = now 
+                    new AnalogReadings() {
+                        readings = readings.ToArray(),
+                        timestamp = now
                     }, record));
             } else {
                 this.LogError("Error: AnalogItems count doesn't match raw data count");
-                return Task.FromResult<Tuple<AnalogReadings?, bool>>(new(null,false));
+                return Task.FromResult<Tuple<AnalogReadings?, bool>>(new(null, false));
             }
         }
 
@@ -133,6 +162,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     } else {
                         record = item.Connected && (reading.Value != this._lastState[item._id]);
                     }
+
                     readings.Add(reading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
@@ -141,10 +171,12 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         this.LogError("Discrete ItemAlert not found");
                     }
                 }
+
                 return Task.FromResult<Tuple<DiscreteReadings?, bool>>(new(
-                    new DiscreteReadings() { 
-                        readings = readings.ToArray(), 
-                        timestamp = now }, 
+                    new DiscreteReadings() {
+                        readings = readings.ToArray(),
+                        timestamp = now
+                    },
                     record));
             } else {
                 this.LogError("Error: DiscreteItems count doesn't match raw data count");
@@ -152,7 +184,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             }
         }
 
-        private Task<Tuple<VirtualReadings?, bool>> ProcessVirtualReadings(bool[] raw, DateTime now) {         
+        private Task<Tuple<VirtualReadings?, bool>> ProcessVirtualReadings(bool[] raw, DateTime now) {
             if (this._dataService.VirtualItems.Count == raw.Length) {
                 bool record = false;
                 List<VirtualReading> readings = new List<VirtualReading>();
@@ -163,7 +195,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                     };
                     record = item.Connected && reading.Value &&
                              ((now - this._lastRecord).TotalSeconds >= item.ThresholdInterval);
-                    
+
                     readings.Add(reading);
                     var alertRecord = this._alerts.FirstOrDefault(e => e.ChannelId == item._id);
                     if (alertRecord != null) {
@@ -172,10 +204,12 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         this.LogError("Virtual ItemAlert not found");
                     }
                 }
+
                 return Task.FromResult<Tuple<VirtualReadings?, bool>>(new(
-                    new VirtualReadings() { 
-                        readings = readings.ToArray(), 
-                        timestamp = now }, 
+                    new VirtualReadings() {
+                        readings = readings.ToArray(),
+                        timestamp = now
+                    },
                     record));
             } else {
                 this.LogError("Error: VirtualItems count doesn't match raw data count");
@@ -183,7 +217,7 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             }
         }
 
-        private bool CheckSave(DateTime now,bool thresholdMet) {
+        private bool CheckSave(DateTime now, bool thresholdMet) {
             if (this._firstRecord) {
                 this._firstRecord = false;
                 return true;
@@ -216,40 +250,43 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 Console.WriteLine(msg);
             }
         }
+
         private ActionType ToActionType(ushort value) {
             switch (value) {
                 case 1: {
-                        return ActionType.Custom;
-                    }
+                    return ActionType.Custom;
+                }
                 case 2: {
-                        return ActionType.Maintenance;
-                    }
+                    return ActionType.Maintenance;
+                }
                 case 3: {
-                        return ActionType.SoftWarn;
-                    }
+                    return ActionType.SoftWarn;
+                }
                 case 4: {
-                        return ActionType.Warning;
-                    }
+                    return ActionType.Warning;
+                }
                 case 5: {
-                        return ActionType.Alarm;
-                    }
+                    return ActionType.Alarm;
+                }
                 case 6: {
-                        return ActionType.Okay;
-                    }
+                    return ActionType.Okay;
+                }
                 default: {
-                        return ActionType.Okay;
-                    }
+                    return ActionType.Okay;
+                }
             }
         }
+
         public async Task Load() {
             await this._dataService.LoadAsync();
             await this._alertService.Load();
             this._device = this._dataService.ManagedDevice;
             this._recordInterval = new TimeSpan(0, 0, this._device.RecordInterval);
             foreach (var item in this._dataService.DiscreteItems) {
-                this._lastState.Add(item._id,false);
+                this._lastState.Add(item._id, false);
             }
         }
+
         public async Task Reload() {
             this.LogInformation("Reloading DataLogger");
             await this._dataService.ReloadAsync();
@@ -263,5 +300,4 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
             }
         }
     }
-    
 }

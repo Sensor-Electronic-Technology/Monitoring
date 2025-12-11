@@ -56,7 +56,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         activeAlert.Latched = true;
                                         activeAlert.TimeLatched = now;
                                     } else {
-                                        if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
+                                        if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight" or "Bulk H2(PSI)-External") {
                                             if ((now - activeAlert.TimeLatched).TotalMinutes >= 5) {
                                                 this._activeAlerts.Remove(activeAlert);
                                             }
@@ -109,23 +109,23 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                 activeAlert.ChannelReading = alert.ChannelReading;
                                                 activeAlert.AlertAction = alert.AlertAction;
                                                 activeAlert.LastAlert = now;
-                                                if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane") {
+                                                if (activeAlert.DisplayName is  "Bulk N2(inH20)" or "Silane" or "Bulk H2(PSI)") {
                                                     if (activeAlert.DisplayName is "Silane") {
                                                         if (activeAlert.CurrentState == ActionType.Okay) {
                                                             sendEmail = true;
                                                         } else {
                                                             sendEmail = activeAlert.CurrentState < alert.CurrentState;
                                                         }
-                                                    } else {
+                                                    }else {
                                                         if (activeAlert.CurrentState == ActionType.Okay) {
                                                             sendEmail = true;
-                                                            sendExEmail = sendEmail;
+                                                            //sendExEmail = sendEmail;
                                                         } else {
                                                             sendEmail = activeAlert.CurrentState < alert.CurrentState;
-                                                            sendExEmail = sendEmail;
+                                                            //sendExEmail = sendEmail;
                                                         }
                                                     }
-                                                } else {
+                                                }else {
                                                     sendEmail = true;
                                                 }
                                                 activeAlert.CurrentState = alert.CurrentState;

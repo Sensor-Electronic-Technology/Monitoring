@@ -21,6 +21,17 @@ public class UsageService {
     public UsageService() {
         this._client = new MongoClient("mongodb://172.20.3.41");
     }
+
+    public async Task<double> GetBulkH2Usage(int days) {
+        var database = this._client.GetDatabase("epi1_data");
+        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
+        var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
+        var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
+        var usage=await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item,startDate:DateTime.Now.AddDays(-days));
+        return usage.Average(e => e.Usage);
+    }
+    
     public async Task<IEnumerable<UsageDayRecord>> GetNH3Usage() {
         var database = this._client.GetDatabase("nh3_data");
         var weightDatabase = this._client.GetDatabase("nh3_logs");
