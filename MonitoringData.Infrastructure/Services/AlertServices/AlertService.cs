@@ -119,10 +119,10 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                     }else {
                                                         if (activeAlert.CurrentState == ActionType.Okay) {
                                                             sendEmail = true;
-                                                            //sendExEmail = sendEmail;
+                                                            sendExEmail = sendEmail;
                                                         } else {
                                                             sendEmail = activeAlert.CurrentState < alert.CurrentState;
-                                                            //sendExEmail = sendEmail;
+                                                            sendExEmail = sendEmail;
                                                         }
                                                     }
                                                 }else {
