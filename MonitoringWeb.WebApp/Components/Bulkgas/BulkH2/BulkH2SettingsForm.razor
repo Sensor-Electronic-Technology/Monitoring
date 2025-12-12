@@ -1,0 +1,67 @@
+﻿@using MonitoringSystem.Shared.Data.EntityDtos
+@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringSystem.Shared.Data.SettingsModel
+@using MonitoringWeb.WebApp.Services
+
+<Spinner/>
+<div class="card-body">
+    <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+        <DxFormLayoutGroup Caption="H2 Alert Levels" BeginRow="true">
+            <DxFormLayoutItem Caption="SoftWarn(Initial Email)">
+                <DxSpinEdit Value="@this._bulkH2SettingsDto.AnalogItem?.Level1SetPoint"
+                            ReadOnly="true"/>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Warning">
+                <DxSpinEdit Value="@this._bulkH2SettingsDto.AnalogItem?.Level2SetPoint"
+                            ShowSpinButtons="false"/>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Alarm">
+                <DxSpinEdit Value="@this._bulkH2SettingsDto.AnalogItem?.Level3SetPoint"
+                            ShowSpinButtons="false"/>
+            </DxFormLayoutItem>
+        </DxFormLayoutGroup>
+
+    <DxFormLayoutGroup Caption="Bulk H2 Calculator Settings" BeginRow="true">
+        <DxFormLayoutItem Caption="Days From Alarm">
+            <DxSpinEdit Value="@this._bulkH2SettingsDto?.BulkH2CalcSettings?.DaysFromAlarm"/>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="Min SoftWarn Level">
+            <DxSpinEdit Value="@this._bulkH2SettingsDto?.BulkH2CalcSettings?.MinSoftWarnLevel"/>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="Include Weekends">
+            <DxCheckBox LabelPosition="LabelPosition.Left"
+                        AllowIndeterminateState="false"
+                        CssClass="fs-6 justify-items-center"
+                        @bind-Checked="@this._includeWeekends">
+                Include Weekends
+            </DxCheckBox>
+        </DxFormLayoutItem>
+    </DxFormLayoutGroup>
+    <DxFormLayoutItem ColSpanLg="12">
+        <DxButton Text="Save Changes"
+                  Click="@(async () => await this._calcService.UpdateSettings(this._bulkH2SettingsDto))"
+                  RenderStyle="ButtonRenderStyle.Primary"/>
+    </DxFormLayoutItem>
+    </DxFormLayout>
+
+</div>
+
+@code {
+    [Inject] private BulkH2CalcService _calcService { get; set; }
+    [Inject] private SpinnerService _spinnerService { get; set; }
+    private BulkH2SettingsDto _bulkH2SettingsDto = new BulkH2SettingsDto();
+    private bool _includeWeekends { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        this._spinnerService.Show();
+        this._bulkH2SettingsDto = await this._calcService.GetSettings();
+        if (this._bulkH2SettingsDto.BulkH2CalcSettings != null) {
+            this._includeWeekends = this._bulkH2SettingsDto.BulkH2CalcSettings.IncludeWeekends;
+        } else {
+            this._includeWeekends = true;
+        }
+
+        this._spinnerService.Hide();
+    }
+
+}

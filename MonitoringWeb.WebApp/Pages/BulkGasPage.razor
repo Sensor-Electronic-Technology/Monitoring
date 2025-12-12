@@ -3,6 +3,7 @@
 @using MonitoringWeb.WebApp.Services
 @using MonitoringWeb.WebApp.Components.Bulkgas
 @using MonitoringSystem.Shared.Data
+@using MonitoringWeb.WebApp.Components.Bulkgas.BulkH2
 @inject ValueChanged<BulkGasType> GasTypeChanged
 @inject NavigationManager uriHelper;
 
@@ -15,11 +16,17 @@
         <UsageTable GasType="@this.GasType"/>
     </DxTabPage>
     @if (this.GasType == BulkGasType.H2) {
-        <DxTabPage Text="Alert Level Calculator">
-            <BulkH2AlertCalculator/>
+        <DxTabPage Text="Alert Level Calculator" >
+            <DxTabs RenderMode="TabsRenderMode.Default" Id="alert-calculator">
+                <DxTabPage Text="Calculator">
+                    <BulkH2AlertCalculator/>
+                </DxTabPage>
+                <DxTabPage Text="Settings">
+                    <BulkH2SettingsForm/>
+                </DxTabPage>
+            </DxTabs>
         </DxTabPage>
     }
-    
 </DxTabs>
 
 @code {

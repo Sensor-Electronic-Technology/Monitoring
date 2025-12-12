@@ -50,6 +50,7 @@ builder.Services.AddSingleton<ValueChanged<TankScale>>();
 #region BulkGas Services
 builder.Services.AddSingleton<UsageService>();
 builder.Services.AddScoped<BulkGasProvider>();
+builder.Services.AddScoped<BulkH2CalcService>();
 #endregion
 #region AmmoniaServices
 builder.Services.AddSingleton<AmmoniaController>();
