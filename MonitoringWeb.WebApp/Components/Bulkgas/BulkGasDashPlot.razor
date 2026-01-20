@@ -198,17 +198,17 @@
         switch (this.GasType) {
             case BulkGasType.SI:
                 this.Header = "Bulk Si";
-                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                plotData=await this.PlotService.GetChannelData(this._bulkGasSettings.DeviceName,
                     this._bulkGasSettings.ChannelName, start, stop);
                 break;
             case BulkGasType.N2:
                 this.Header = "Bulk N2";
-                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                plotData=await this.PlotService.GetChannelData(this._bulkGasSettings.DeviceName,
                     this._bulkGasSettings.ChannelName, start, stop);
                 break;
             case BulkGasType.H2:
                 this.Header = "Bulk H2";
-                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                plotData=await this.PlotService.GetChannelData(this._bulkGasSettings.DeviceName,
                     this._bulkGasSettings.ChannelName, start, stop);
                 break;
             case BulkGasType.NH3:

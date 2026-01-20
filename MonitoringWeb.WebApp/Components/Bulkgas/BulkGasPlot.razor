@@ -212,7 +212,7 @@
     
     private async Task OnClick(PlotRangeDays rangeDays) {
         this.StartDate = DateTime.Now.AddDays(-(int)rangeDays);
-        this.StopDate = DateTime.Now.AddDays((int)rangeDays);
+        this.StopDate = DateTime.Now.AddDays(10);
         await this.Load();
     }
 
@@ -223,24 +223,25 @@
         // 4 hours for standard time, 5 hours for daylight savings time, and 4 hours for plot cutoff
         start = start.IsDaylightSavingTime() ? start.AddHours(8):start.AddHours(9);
         stop = stop.IsDaylightSavingTime() ? stop.AddHours(8):stop.AddHours(9);
+        this.SpinnerService.Show();
         
         PlotData plotData = new PlotData();
         switch (this.GasType) {
             case BulkGasType.SI:
                 this.Header = "Bulk SI";
-                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                plotData=await this.PlotService.GetChannelData(this._bulkGasSettings.DeviceName,
                     this._bulkGasSettings.ChannelName, start, stop);
                 this.Logger.LogInformation("Loaded SI Data");
                 break;
             case BulkGasType.N2:
                 this.Header = "Bulk N2";
-                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                plotData=await this.PlotService.GetChannelData(this._bulkGasSettings.DeviceName,
                     this._bulkGasSettings.ChannelName, start, stop);
                 this.Logger.LogInformation("Loaded N2 Data");
                 break;
             case BulkGasType.H2:
                 this.Header = "Bulk H2";
-                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                plotData=await this.PlotService.GetChannelData(this._bulkGasSettings.DeviceName,
                     this._bulkGasSettings.ChannelName, start, stop);
                 this.Logger.LogInformation("Loaded H2 Data");
                 break;
@@ -266,6 +267,7 @@
             Start=this.StartDate,Stop = this.StopDate
         });
        this.Logger.LogInformation($"{this._bulkGasSettings.DeviceName} Plot Loaded.  Channel: {this._bulkGasSettings.ChannelName}");
+       this.SpinnerService.Hide();
     }
     
     private async Task ReLoad() {
@@ -276,21 +278,22 @@
         start = start.IsDaylightSavingTime() ? start.AddHours(8):start.AddHours(9);
         stop = stop.IsDaylightSavingTime() ? stop.AddHours(8):stop.AddHours(9);
         PlotData plotData = new PlotData();
+        this.SpinnerService.Show();
         switch (this.GasType) {
             case BulkGasType.SI:
                 this.Header = "Bulk SI";
-                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                plotData=await this.PlotService.GetChannelData(this._bulkGasSettings.DeviceName,
                     this._bulkGasSettings.ChannelName, start, stop);
                 this.Logger.LogInformation("Loaded Si Data");
                 break;
             case BulkGasType.N2:
                 this.Header = "Bulk N2";
-                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                plotData=await this.PlotService.GetChannelData(this._bulkGasSettings.DeviceName,
                 this._bulkGasSettings.ChannelName, start, stop);
                 break;
             case BulkGasType.H2:
                 this.Header = "Bulk H2";
-                plotData=await this.PlotService.GetChannelDatav2(this._bulkGasSettings.DeviceName,
+                plotData=await this.PlotService.GetChannelData(this._bulkGasSettings.DeviceName,
                 this._bulkGasSettings.ChannelName, start, stop);
                 break;
             case BulkGasType.NH3:
@@ -312,12 +315,11 @@
         this.PlotStart = this.StartDate;
         this.PlotStop = this.StopDate;
         this.Logger.LogInformation($"{this._bulkGasSettings.DeviceName} Plot Loaded.  Channel: {this._bulkGasSettings.ChannelName}");
-        
+        this.SpinnerService.Hide();
     }
     
     private async Task DownloadHandler() {
         this.SpinnerService.Show();
-        
         var bytes=await this.PlotService.GetBulkGasDownloadData(this.PlotData,this.GasType);
         await this.DownloadService.DownloadFileAsync($"{this.GasType.ToString()}_Data.xlsx", bytes);
         this.SpinnerService.Hide();

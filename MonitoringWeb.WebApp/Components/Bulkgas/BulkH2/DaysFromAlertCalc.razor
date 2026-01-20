@@ -1,0 +1,41 @@
+﻿<DxFormLayoutGroup BeginRow="true" Caption="Average H2 Usage">
+    <DxFormLayoutItem BeginRow="true" ColSpanMd="12"
+                      CssClass="justify-content-center align-items-center">
+        <DxCheckBox LabelPosition="LabelPosition.Left"
+                    AllowIndeterminateState="false"
+                    CssClass="fs-6 justify-items-center"
+                    Checked="@this.IncludeWeekends"
+                    CheckedChanged="@(async (bool newValue) => await this.IncludeWeekendsChanged.InvokeAsync(newValue))">
+            Include Weekends
+        </DxCheckBox>
+    </DxFormLayoutItem>
+    <DxFormLayoutItem Caption="Number of days to average" ColSpanMd="9">
+        <DxStackLayout ItemSpacing="1" Orientation="Orientation.Horizontal">
+            <Items>
+                <DxStackLayoutItem>
+                    <Template>
+                        <input type="range" class="form-range align-content-center"
+                               id="customRange1"
+                               min="3" max="90" value="@this.Days"
+                               @onchange="@(async e => await this.DaysChanged.InvokeAsync(Convert.ToInt32(e.Value ?? 0)))"/>
+                    </Template>
+                </DxStackLayoutItem>
+                <DxStackLayoutItem>
+                    <Template>
+                        <DxSpinEdit MinValue="3" MaxValue="90" Value="@this.Days"
+                                    ValueChanged="@(async (int newValue) => await this.DaysChanged.InvokeAsync(newValue))"/>
+                    </Template>
+                </DxStackLayoutItem>
+            </Items>
+        </DxStackLayout>
+
+    </DxFormLayoutItem>
+
+</DxFormLayoutGroup>
+
+@code {
+    [Parameter] public bool IncludeWeekends { get; set; }
+    [Parameter] public int Days { get; set; }
+    [Parameter] public EventCallback<bool> IncludeWeekendsChanged { get; set; }
+    [Parameter] public EventCallback<int> DaysChanged { get; set; }
+}

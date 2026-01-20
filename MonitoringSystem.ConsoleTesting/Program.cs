@@ -131,8 +131,63 @@ namespace MonitoringSystem.ConsoleTesting {
            }
            Console.WriteLine($"[{string.Join(',', testItems.Select(e=>e.Value))}]");*/
 
-           await TestExternalEmailCalc(days:14,false);
+           //await TestExternalEmailCalc(days:14,false);
+           //await WriteOutNh3Data(new DateTime(2025, 1, 1), DateTime.Now);
+           await TestUsageTableGeneration();
+        }
 
+        static async Task WriteOutNh3Data(DateTime start, DateTime stop) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var logDatabase = client.GetDatabase("nh3_logs");
+            var weightCollection = logDatabase.GetCollection<WeightReading>("weight_readings");
+            List<AItem> analogReadings = new List<AItem>();
+            //var sensor = this._configProvider.Sensors.FirstOrDefault(e => e.Name=="Weight");
+            using var cursor = await weightCollection.FindAsync(e => e.timestamp >= start && e.timestamp <= stop && e.Value<=1000 && e.Value>=0);
+            List<string> lines = new List<string>();
+            while (await cursor.MoveNextAsync()){
+                var batch = cursor.Current;
+                foreach (var readings in batch){
+                    /*var aReading = new AItem() {
+                        TimeStamp = readings.timestamp,
+                        Value = readings.Value,
+                        Name="Toner Weight",
+                    };*/
+                    string line = $"{readings.timestamp.ToLocalTime():g},{readings.Value}";
+                    lines.Add(line);
+                }
+            }
+            await File.WriteAllLinesAsync(@"C:\Users\aelmendo\Documents\MonitorFiles\nh3readings.csv", lines);
+        }
+        
+        static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase(deviceName + "_data");
+
+            var analogItems = database.GetCollection<AnalogItem>("analog_items").Find(_ => true).ToList();
+            var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+            Console.WriteLine("Starting query");
+            var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+            var headers = analogItems.Select(e => e.Identifier).ToList();
+            StringBuilder hbuilder = new StringBuilder();
+            hbuilder.Append("timestamp,");
+            headers.ForEach((id) => {
+                hbuilder.Append(id+",");
+            });
+            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
+            List<string> lines = new List<string>();
+            lines.Add(hbuilder.ToString());
+            foreach(var readings in aReadings) {
+                StringBuilder builder = new StringBuilder();
+                builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
+                foreach(var reading in readings.readings) {
+                    builder.Append($"{reading.Value},");
+                }
+                lines.Add(builder.ToString());
+            }
+            Console.WriteLine("Writing Out Data");
+            await File.WriteAllLinesAsync(fileName, lines);
+            Console.WriteLine("Check File");
         }
 
         static async Task TestExternalEmailCalc(int days=14,bool includeWeekends=false) {
@@ -164,6 +219,18 @@ namespace MonitoringSystem.ConsoleTesting {
             Console.WriteLine($"SoftWarn: {DateTime.Now.AddDays((lastReading-suggestedLevel)/rate)}))");
            
             //var emailDate = DateTime.Now.AddDays(rate*);
+        }
+
+        static async Task TestUsageTableGeneration() {
+            Console.WriteLine("Starting");
+            IMongoClient client = new MongoClient("mongodb://172.20.3.41");
+            var database = client.GetDatabase("epi1_data");
+            var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+            var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
+            var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
+            var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
+            await GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
+            Console.WriteLine("Check Database");
         }
 
         static async Task SetExternalEmailLevel(AnalogItem item, double level) {
@@ -201,8 +268,8 @@ namespace MonitoringSystem.ConsoleTesting {
                 List<ValueReturn> rawData = new List<ValueReturn>();
                 if (item2 != null) {
                     foreach (var reading in readings) {
-                        var r1 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item1._id)!.Value;
-                        var r2 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item2._id)!.Value;
+                        var r1 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item1?._id && e.Value <=4000)?.Value ?? 0.00;
+                        var r2 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item2._id && e.Value <=4000)?.Value ?? 0.00;
                         var valueReturn = new ValueReturn() {
                             timestamp = reading.timestamp.AddHours(-5), value = (r1 >= 0.00 ? r1 : 0.00) + (r2 >= 0 ? r2 : 0)
                         };
@@ -211,7 +278,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 } else {
                     rawData = readings.Select(e => new ValueReturn() {
                         timestamp = e.timestamp.AddHours(-5),
-                        value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value)
+                        value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1?._id && m.Value <=4000)?.Value ?? 0.00)
                     }).ToList();
                 }
                 days = rawData.GroupBy(e =>
@@ -907,36 +974,7 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
             Console.WriteLine("Completed");
         }
         
-        static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
-            var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase(deviceName + "_data");
 
-            var analogItems = database.GetCollection<AnalogItem>("analog_items").Find(_ => true).ToList();
-            var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
-            Console.WriteLine("Starting query");
-            var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
-            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
-            var headers = analogItems.Select(e => e.Identifier).ToList();
-            StringBuilder hbuilder = new StringBuilder();
-            hbuilder.Append("timestamp,");
-            headers.ForEach((id) => {
-                hbuilder.Append(id+",");
-            });
-            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
-            List<string> lines = new List<string>();
-            lines.Add(hbuilder.ToString());
-            foreach(var readings in aReadings) {
-                StringBuilder builder = new StringBuilder();
-                builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
-                foreach(var reading in readings.readings) {
-                    builder.Append($"{reading.Value},");
-                }
-                lines.Add(builder.ToString());
-            }
-            Console.WriteLine("Writing Out Data");
-            await File.WriteAllLinesAsync(fileName, lines);
-            Console.WriteLine("Check File");
-        }
 
         static async Task DtoTesting() {
             var context = new MonitorContext();
@@ -1443,5 +1481,12 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
         public int _id { get; set; }
         public double Value { get; set; }
         
+    }
+
+    public class AItem {
+        public DateTime TimeStamp { get; set; }
+        public string Time { get; set; }
+        public string Name { get; set; }
+        public double Value { get; set; }
     }
 }

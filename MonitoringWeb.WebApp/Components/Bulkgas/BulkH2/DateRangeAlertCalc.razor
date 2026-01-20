@@ -1,0 +1,48 @@
+﻿
+    <DxFormLayout>
+        <DxFormLayoutGroup Caption="Start DateTime" ColSpanMd="12">
+            <DxFormLayoutItem BeginRow="true" ColSpanMd="12"
+                              CssClass="justify-content-center align-items-center">
+                <DxCheckBox LabelPosition="LabelPosition.Left"
+                            AllowIndeterminateState="false"
+                            CssClass="fs-6 justify-items-center"
+                            Checked="@this.IncludeWeekends"
+                            CheckedChanged="@(async (bool newValue) => await this.IncludeWeekendsChanged.InvokeAsync(newValue))">
+                    Include Weekends
+                </DxCheckBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Start Date" ColSpanMd="6">
+                <DxDateEdit Date="@this.StartDate"
+                            DateChanged="@(async (DateTime newValue) => await this.StartDateChanged.InvokeAsync(newValue))"
+                            TimeSectionVisible="false"/>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Stop Date" ColSpanMd="6">
+                <DxDateEdit Date="@this.StopDate"
+                            DateChanged="@(async (DateTime newValue) => await this.StopDateChanged.InvokeAsync(newValue))"
+                            TimeSectionVisible="false"/>
+            </DxFormLayoutItem>
+        </DxFormLayoutGroup>
+
+
+        <DxFormLayoutItem ColSpanMd="12" BeginRow="true">
+            <DxButton RenderStyle="ButtonRenderStyle.Light"
+                      Text="Calculate"
+                      Click="@CalculateClicked"/>
+        </DxFormLayoutItem>
+    </DxFormLayout>
+
+
+@code {
+    [Parameter] public bool IncludeWeekends { get; set; }
+    [Parameter] public DateTime StartDate { get; set; }
+    [Parameter] public DateTime StopDate { get; set; }
+
+    [Parameter] public EventCallback<bool> IncludeWeekendsChanged { get; set; }
+    [Parameter] public EventCallback<DateTime> StartDateChanged { get; set; }
+    [Parameter] public EventCallback<DateTime> StopDateChanged { get; set; }
+    [Parameter] public EventCallback CalculateClicked { get; set; }
+
+
+
+
+}

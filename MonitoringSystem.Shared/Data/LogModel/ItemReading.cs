@@ -30,8 +30,6 @@ public class ItemReadings {
     public DateTime timestamp { get; set; }
 }
 
-
-
 public class AnalogReadings:ItemReadings {
     public AnalogReading[] readings { get; set; }    }
 

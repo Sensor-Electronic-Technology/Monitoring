@@ -15,6 +15,7 @@
 @inject SpinnerService SpinnerService
 @implements IAsyncDisposable 
 
+<Spinner/>
 <div class="row" style="padding: .5rem">
     <DxGrid Data="@_records" 
             AutoCollapseDetailRow="false" 
@@ -114,8 +115,8 @@
     [Parameter]
     public BulkGasType GasType { get; set; }
 
-    IEnumerable<UsageDayRecord>? _records;
-    IEnumerable<UsageDayRecord>? _chartRecords;
+    List<UsageDayRecord>? _records;
+    List<UsageDayRecord>? _chartRecords;
     
     string Units { get; set; }
     string PerDayCaption { get; set; }
@@ -274,6 +275,7 @@
     }
 
     private async Task Load() {
+        this.SpinnerService.Show();
         switch (this.GasType) {
             case BulkGasType.SI: {
                 this._records = await this.UsageService.GetSiUsage();
@@ -297,7 +299,7 @@
             }
         }
         if (this._firstLoad) {
-            var weekCount=this._records.GroupBy(e => e.WeekOfYear).Count();
+            var weekCount=this._records?.GroupBy(e => e.WeekOfYear).Count();
             this._groupPlotBy = weekCount > 15 ? GroupPlotBy.Weeks : GroupPlotBy.Days;
             this._firstLoad = false;
         }
@@ -324,10 +326,11 @@
                 break;
             }
         }
-        this._chartRecords = this._records?.Where(e => e.Date >= this._startDate && e.Date <= this._stopDate);
+        this._chartRecords = this._records?.Where(e => e.Date >= this._startDate && e.Date <= this._stopDate).ToList();
         this.PerDayCaption = this.Units + "/day";
         this.PerHourCaption = this.Units + "/hr";
         await InvokeAsync(StateHasChanged);
+        this.SpinnerService.Hide();
     }
     public ValueTask DisposeAsync() {
         this.GasTypeChanged.OnParentChanged -= this.OnGasTypeChanged;

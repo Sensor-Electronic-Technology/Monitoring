@@ -1,133 +1,100 @@
-﻿@using MonitoringSystem.Shared.Services
-
+﻿@using MonitoringSystem.Shared.Data
+@using MonitoringSystem.Shared.Services
+@using MonitoringWeb.WebApp.Data
+@using MonitoringWeb.WebApp.Services
 
 <div class="container p-4">
-    <div class="row">
-        <div class="col">
-            <div class="row justify-content-center">
+    <DxLoadingPanel Visible="@this._loading"
+                    ApplyBackgroundShading="true">
 
-                <div class="card-body col-md-6 mx-auto border rounded-3 p-4 justify-content-center">
-                    <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
-                        <DxFormLayoutGroup BeginRow="true" Caption="Average H2 Usage">
-                            <DxFormLayoutItem BeginRow="true" ColSpanMd="12"
-                                              CssClass="justify-content-center align-items-center">
-                                <DxCheckBox LabelPosition="LabelPosition.Left"
-                                            AllowIndeterminateState="false"
-                                            CssClass="fs-6 justify-items-center"
-                                            Checked="@this._includeWeekends"
-                                            CheckedChanged="@(async (bool newValue) => await IncludeWeekendsChangedHandler(newValue))">
-                                    Include Weekends
-                                </DxCheckBox>
-                            </DxFormLayoutItem>
-                            <DxFormLayoutItem Caption="Number of days to average" ColSpanMd="9">
-                                <DxStackLayout ItemSpacing="1" Orientation="Orientation.Horizontal">
-                                    <Items>
-                                        <DxStackLayoutItem>
-                                            <Template>
-                                                <input type="range" class="form-range align-content-center"
-                                                       id="customRange1"
-                                                       min="3" max="90" value="@this._days"
-                                                       @onchange="@(async (ChangeEventArgs e) => await DaysChangedHandler(Convert.ToInt32(e?.Value ?? 0)))"/>
-                                            </Template>
-                                        </DxStackLayoutItem>
-                                        <DxStackLayoutItem>
-                                            <Template>
-                                                <DxSpinEdit MinValue="3" MaxValue="90" Value="@this._days"
-                                                            ValueChanged="@(async (int newValue) => await DaysChangedHandler(newValue))"/>
-                                            </Template>
-                                        </DxStackLayoutItem>
-                                    </Items>
-                                </DxStackLayout>
+        <div class="row">
+            <div class="col">
+                <div class="row justify-content-center">
+                    <div class="card-body col-md-6 mx-auto border rounded-3 p-4 justify-content-center">
+                        <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+                            <DxFormLayoutTabPages @bind-ActiveTabIndex="@this._tabIndex">
+                                <DxFormLayoutTabPage Caption="By Average">
+                                    <DaysFromAlertCalc Days="@this._days" 
+                                                       DaysChanged="@(async (int newValue) => await DaysChangedHandler(newValue))"
+                                                       IncludeWeekends="@this._includeWeekends"
+                                                       IncludeWeekendsChanged="@(async (bool newValue) => await IncludeWeekendsChangedHandler(newValue))"/>
+                                </DxFormLayoutTabPage>
+                                <DxFormLayoutTabPage Caption="By Date Range">
+                                    <DateRangeAlertCalc @bind-StartDate="@this._startDate" 
+                                                        @bind-StopDate="@this._stopDate"
+                                                        IncludeWeekends="@this._includeWeekends"
+                                                        IncludeWeekendsChanged="@(async (bool newValue) => await IncludeWeekendsChangedHandler(newValue))"
+                                                        CalculateClicked="@(async () => await Calculate(true,true))"/>
+                                </DxFormLayoutTabPage>
+                            </DxFormLayoutTabPages>
+                            <DxFormLayoutGroup Caption="Estimated Alert Level">
+                                <DxFormLayoutItem Caption="Average PPM/Day" BeginRow="true">
+                                        <DxSpinEdit Value="@this._rate"
+                                                    ValueChanged="@(async (double newValue) => await RateChangedHandler(newValue))"/>
 
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Alert Level" BeginRow="true">
+                                    <DxSpinEdit Value="@this._calculatedValue" ReadOnly="true"/>
+                                </DxFormLayoutItem>
+                            </DxFormLayoutGroup>
+                            <DxFormLayoutItem Caption="Save New Alert Level" BeginRow="true">
+                                <DxButton Text="Sumbit" RenderStyle="ButtonRenderStyle.Primary"/>
                             </DxFormLayoutItem>
-                            <DxFormLayoutItem Caption="Average PPM/Day" ColSpanMd="3">
-                                <div class="row align-items-center">
-                                    <DxSpinEdit Value="@this._rate"
-                                                ValueChanged="@(async (double newValue) => await RateChangedHandler(newValue))"/>
-                                </div>
-                            </DxFormLayoutItem>
-                        </DxFormLayoutGroup>
-                        <DxFormLayoutGroup Caption="Estimated Alert Level">
-                            <DxFormLayoutItem Caption="Alert Level" BeginRow="true">
-                                <DxSpinEdit Value="@this._calculatedValue" ReadOnly="true"></DxSpinEdit>
-                            </DxFormLayoutItem>
-                        </DxFormLayoutGroup>
-                        <DxFormLayoutItem Caption="Save New Alert Level" BeginRow="true">
-                            <DxButton Text="Sumbit" RenderStyle="ButtonRenderStyle.Primary"/>
-                            @*<DxStackLayout ItemSpacing="1" Orientation="Orientation.Horizontal">
-                                <Items>
-                                    <DxStackLayoutItem>
-                                        <Template>
-                                            
-                                        </Template>
-                                    </DxStackLayoutItem>
-                                    <DxStackLayoutItem>
-                                        <Template>
-                                            <DxButton Text="Refresh" RenderStyle="ButtonRenderStyle.Info"/>
-                                        </Template>
-                                    </DxStackLayoutItem>
-                                </Items>
-                            </DxStackLayout>*@
-                        </DxFormLayoutItem>
-                    </DxFormLayout>
+                        </DxFormLayout>
+                    </div>
+                </div>
+            </div>
+            <div class="col justify-content-center border rounded-3 p-4">
+                <div class="row">
+                    <table class="table table-bordered text-center">
+                        <thead>
+                        <tr>
+                            <th scope="col">Alert</th>
+                            <th scope="col">Level</th>
+                            <th scope="col">Date</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>SoftWarn</td>
+                            <td>@this._estimates.SoftWarn</td>
+                            <td>@this._estimates.SoftWarnDate.ToString("d")</td>
+                        </tr>
+                        <tr>
+                            <td>SoftWarn</td>
+                            <td>@this._estimates.Warning</td>
+                            <td>@this._estimates.WarningDate.ToString("d")</td>
+                        </tr>
+                        <tr>
+                            <td>SoftWarn</td>
+                            <td>@this._estimates.Alarm</td>
+                            <td>@this._estimates.AlarmDate.ToString("d")</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-        <div class="col justify-content-center border rounded-3 p-4">
-            <div class="row">
-                <table class="table table-bordered text-center">
-                    <thead>
-                    <tr>
-                        <th scope="col">Alert</th>
-                        <th scope="col">Level</th>
-                        <th scope="col">Date</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>SoftWarn</td>
-                        <td>@this._estimates.SoftWarn</td>
-                        <td>@this._estimates.SoftWarnDate.ToString("d")</td>
-                    </tr>
-                    <tr>
-                        <td>SoftWarn</td>
-                        <td>@this._estimates.Warning</td>
-                        <td>@this._estimates.WarningDate.ToString("d")</td>
-                    </tr>
-                    <tr>
-                        <td>SoftWarn</td>
-                        <td>@this._estimates.Alarm</td>
-                        <td>@this._estimates.AlarmDate.ToString("d")</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    </DxLoadingPanel>
 </div>
 
-@*<div class="row align-items-center">
-                                    <div class="col-6">
-                                        <input type="range" class="form-range" id="customRange1"
-                                               min="3" max="90" value="@this._days"
-                                               @onchange="@(async (ChangeEventArgs e) => await Callback(Convert.ToInt32(e?.Value ?? 0)))"/>
-                                    </div>
-                                    <div class="col-6">
-                                        <DxSpinEdit MinValue="3" MaxValue="90" Value="@this._days" Id="daysId"
-                                                    CssClass="col-sm-9"
-                                                    ValueChanged="@(async (int newValue) => await Callback(newValue))"/>
-                                    </div>
-                                </div>*@
+<UsageTable GasType="@BulkGasType.H2"/>
 
 @code {
-    [Inject] private UsageService _usageService { get; set; }
+    //[Inject] private UsageService _usageService { get; set; }
+    [Inject] private BulkH2CalcService _bulkH2Service { get; set; }
 
+
+    private bool _loading = false;
     int _days = 0;
     double _calculatedValue = 0;
     double _rate = 0.00;
     double _lastReading = 0.00;
     int _daysFromAlarm = 3;
     bool _includeWeekends = true;
+    private DateTime _startDate = DateTime.Now.AddDays(-30);
+    private DateTime _stopDate = DateTime.Now;
+    private int _tabIndex = 0;
 
     Estimates _estimates = new Estimates() {
         SoftWarnDate = DateTime.MinValue,
@@ -137,50 +104,75 @@
 
     protected override async Task OnInitializedAsync() {
         this._days = 10;
-        await this.Calcullate();
+        await this.Calculate();
     }
 
     private async Task DaysChangedHandler(int value) {
         this._days = value;
-        await this.Calcullate();
+        this._startDate = DateTime.Now.AddDays(-value);
+        this._stopDate=DateTime.Now;
+        await this.Calculate();
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task RateChangedHandler(double newRate) {
         this._rate = newRate;
-        await this.Calcullate(false);
+        await this.Calculate(false);
     }
 
     private async Task IncludeWeekendsChangedHandler(bool newValue) {
         this._includeWeekends = newValue;
-        await this.Calcullate();
+        await this.Calculate(dateRangeCalc:this._tabIndex==1);
     }
 
-    private async Task Calcullate(bool updateRate = true) {
+    private async Task Calculate(bool updateRate = true,bool dateRangeCalc=false) {
+        this._loading = true;
+        H2AlertCalcDto calcDto;
+
+        if (updateRate == false) {
+            calcDto = await this._bulkH2Service.CalculateAlertLevels(this._rate);
+            this._estimates = calcDto.Estimates;
+            this._rate = calcDto.Rate;
+        } else {
+            if (dateRangeCalc) {
+                calcDto=await this._bulkH2Service.CalculateAlertLevels(this._startDate, this._stopDate, this._includeWeekends);
+            } else {
+                calcDto=await this._bulkH2Service.CalculateAlertLevels(this._days, this._includeWeekends);
+            }
+        
+            this._days = calcDto.Days;
+            this._estimates = calcDto.Estimates;
+            this._rate = calcDto.Rate;
+        }
+
+
+
+            
+        
+        
+        
+        /*if (dateRangeCalc) {
+            this._days = (this._stopDate - this._startDate).Days;
+        }
         var usage = await this._usageService.GetBulkH2Usage(this._days, this._includeWeekends);
         if (updateRate)
             this._rate = Math.Round(usage.rate, 2);
 
         this._lastReading = Math.Round(usage.lastReading, 2);
-        this._calculatedValue = Math.Round(500 + (this._daysFromAlarm * this._rate), 2);
+        this._calculatedValue = Math.Round(300 + (this._daysFromAlarm * this._rate), 2);*/
+        
+        
 
-        this._estimates.SoftWarnDate = DateTime.Now.AddDays((this._lastReading - this._calculatedValue) / this._rate);
+        /*this._estimates.SoftWarnDate = DateTime.Now.AddDays((this._lastReading - this._calculatedValue) / this._rate);
         this._estimates.WarningDate = DateTime.Now.AddDays((this._lastReading - 700) / this._rate);
         this._estimates.AlarmDate = DateTime.Now.AddDays((this._lastReading - 500) / this._rate);
 
         this._estimates.SoftWarn = this._calculatedValue;
         this._estimates.Warning = 700;
-        this._estimates.Alarm = 500;
+        this._estimates.Alarm = 500;*/
+        this._loading = false;
     }
 
-    class Estimates {
-        public DateTime SoftWarnDate { get; set; }
-        public DateTime WarningDate { get; set; }
-        public DateTime AlarmDate { get; set; }
 
-        public double SoftWarn { get; set; }
-        public double Warning { get; set; }
-        public double Alarm { get; set; }
-    }
 
 }
