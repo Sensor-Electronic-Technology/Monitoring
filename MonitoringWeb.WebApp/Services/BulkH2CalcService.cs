@@ -33,6 +33,14 @@ public class BulkH2CalcService {
             BulkH2CalcSettings = bulkSettings ?? BulkH2CalcSettings.Init()
         };
     }
+    public async Task<bool> SaveNewAlertLevels(Estimates estimates) {
+        var update=Builders<AnalogItem>.Update
+            .Set(e=>e.Level1SetPoint,estimates.SoftWarn)
+            .Set(e=>e.Level2SetPoint,estimates.Warning)
+            .Set(e=>e.Level3SetPoint,estimates.Alarm);
+        var updateResult=await this._analogItemCollection.UpdateOneAsync(e => e.Identifier == "Bulk H2(PSI)", update);
+        return updateResult.IsAcknowledged;
+    }
 
     public async Task<H2AlertCalcDto> CalculateAlertLevels(int days, bool includeWeekends) {
         var usage = await this._usageService.GetBulkH2Usage(days, includeWeekends);
@@ -45,13 +53,15 @@ public class BulkH2CalcService {
         result.Rate = Math.Round(usage.rate, 2);
         result.LastReading = Math.Round(usage.lastReading, 2);
         estimates.SoftWarn = Math.Round(settings.BulkH2CalcSettings.AlarmLevel + (settings.BulkH2CalcSettings.DaysFromAlarm * result.Rate), 2);
-        estimates.Warning = Math.Round(estimates.SoftWarn - result.Rate, 2);
+        estimates.SoftWarn=(int) Math.Ceiling(estimates.SoftWarn/10)*10;
+        estimates.Warning = Math.Round(settings.BulkH2CalcSettings.AlarmLevel + (((double)settings.BulkH2CalcSettings.DaysFromAlarm/2) * result.Rate), 2);
+        estimates.Warning=(int) Math.Ceiling(estimates.Warning/10)*10;
         estimates.Alarm = settings.BulkH2CalcSettings.AlarmLevel;
 
 
         estimates.SoftWarnDate = DateTime.Now.AddDays((result.LastReading - estimates.SoftWarn) / result.Rate);
-        estimates.SoftWarnDate = DateTime.Now.AddDays((result.LastReading - estimates.SoftWarn) / result.Rate);
-        estimates.SoftWarnDate = DateTime.Now.AddDays((result.LastReading - estimates.Alarm) / result.Rate);
+        estimates.WarningDate = DateTime.Now.AddDays((result.LastReading - estimates.Warning) / result.Rate);
+        estimates.AlarmDate = DateTime.Now.AddDays((result.LastReading - estimates.Alarm) / result.Rate);
         result.Estimates = estimates;
         return result;
     }
@@ -68,13 +78,15 @@ public class BulkH2CalcService {
         result.Rate = Math.Round(usage.rate, 2);
         result.LastReading = Math.Round(usage.lastReading, 2);
         estimates.SoftWarn = Math.Round(settings.BulkH2CalcSettings.AlarmLevel + (settings.BulkH2CalcSettings.DaysFromAlarm * result.Rate), 2);
-        estimates.Warning = Math.Round(estimates.SoftWarn - result.Rate, 2);
+        estimates.SoftWarn=(int) Math.Ceiling(estimates.SoftWarn/10)*10;
+        estimates.Warning = Math.Round(settings.BulkH2CalcSettings.AlarmLevel + (((double)settings.BulkH2CalcSettings.DaysFromAlarm/2) * result.Rate), 2);
+        estimates.Warning=(int) Math.Ceiling(estimates.Warning/10)*10;
         estimates.Alarm = settings.BulkH2CalcSettings.AlarmLevel;
 
 
         estimates.SoftWarnDate = DateTime.Now.AddDays((result.LastReading - estimates.SoftWarn) / result.Rate);
-        estimates.SoftWarnDate = DateTime.Now.AddDays((result.LastReading - estimates.SoftWarn) / result.Rate);
-        estimates.SoftWarnDate = DateTime.Now.AddDays((result.LastReading - estimates.Alarm) / result.Rate);
+        estimates.WarningDate = DateTime.Now.AddDays((result.LastReading - estimates.Warning) / result.Rate);
+        estimates.AlarmDate = DateTime.Now.AddDays((result.LastReading - estimates.Alarm) / result.Rate);
         result.Estimates = estimates;
         return result;
     }
@@ -88,7 +100,7 @@ public class BulkH2CalcService {
         result.LastReading = await this._usageService.GetLastReading();
         estimates.SoftWarn = Math.Round(settings.BulkH2CalcSettings.AlarmLevel + (settings.BulkH2CalcSettings.DaysFromAlarm * result.Rate), 2);
         estimates.SoftWarn=(int) Math.Ceiling(estimates.SoftWarn/10)*10;
-        estimates.Warning = Math.Round(estimates.SoftWarn - (1.5*result.Rate), 2);
+        estimates.Warning = Math.Round(settings.BulkH2CalcSettings.AlarmLevel + (((double)settings.BulkH2CalcSettings.DaysFromAlarm/2) * result.Rate), 2);
         estimates.Warning=(int) Math.Ceiling(estimates.Warning/10)*10;
         estimates.Alarm = settings.BulkH2CalcSettings.AlarmLevel;
 
