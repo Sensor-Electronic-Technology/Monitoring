@@ -1,0 +1,36 @@
+﻿<DxCheckBox CheckType="CheckType.Switch"
+            LabelPosition="LabelPosition.Left"
+            Checked="@this.State"
+            CheckedChanged="@(async (bool t) => await this.StateChangedHandler(t))"
+            Alignment="CheckBoxContentAlignment.Center"
+            SizeMode="SizeMode.Large">
+    @this._buttonText
+</DxCheckBox>
+
+@code {
+
+    [Parameter] public string OnText { get; set; } = "On";
+    [Parameter] public string OffText { get; set; } = "Off";
+    [Parameter] public ButtonRenderStyle OnStyle { get; set; } = ButtonRenderStyle.Success;
+    [Parameter] public ButtonRenderStyle OffStyle { get; set; } = ButtonRenderStyle.Warning;
+    [Parameter] public string Caption { get; set; } = "Bypass";
+    [Parameter] public bool State { get; set; } = true;
+    [Parameter] public EventCallback<bool> StateChanged { get; set; }
+
+    private string _buttonText = "";
+    private ButtonRenderStyle _buttonColor = ButtonRenderStyle.Info;
+
+    protected override Task OnInitializedAsync() {
+        this._buttonText = this.State ? this.OnText : this.OffText;
+        this._buttonColor = this.State ? this.OnStyle : this.OffStyle;
+        return base.OnParametersSetAsync();
+    }
+
+    private Task StateChangedHandler(bool state) {
+        this.State = state;
+        this._buttonText = this.State ? this.OnText : this.OffText;
+        this._buttonColor = this.State ? this.OnStyle : this.OffStyle;
+        return this.StateChanged.InvokeAsync(state);
+    }
+
+}

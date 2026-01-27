@@ -88,7 +88,6 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                 };
                 this._alerts.Add(new AlertRecord(alert, alertReading.AlertState));
             }
-
             return Task.CompletedTask;
         }
 

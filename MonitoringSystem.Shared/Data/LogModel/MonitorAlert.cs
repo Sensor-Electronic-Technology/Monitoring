@@ -12,6 +12,7 @@ namespace MonitoringSystem.Shared.Data.LogModel {
         public bool Bypassed { get; set; }
         public int BypassResetTime { get; set; }
         public int Register { get; set; }
+        public DateTime TimeBypassed { get; set; } = DateTime.MaxValue;
         public MonitorAlert Clone() {
             return (MonitorAlert)this.MemberwiseClone();
         }

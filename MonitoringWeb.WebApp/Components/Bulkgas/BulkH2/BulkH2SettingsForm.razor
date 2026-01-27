@@ -5,12 +5,13 @@
 
 
 <div class="card-body">
+
     <DxLoadingPanel Visible="@this._loading"
                     ApplyBackgroundShading="true">
 
 
         <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
-            @if (this._bulkH2SettingsDto.AnalogItem==null) {
+            @if (this._bulkH2SettingsDto.AnalogItem == null) {
                 <h3>Failed to load analog item</h3>
             } else {
                 <DxFormLayoutGroup Caption="H2 Alert Levels" BeginRow="true">

@@ -43,6 +43,8 @@ public class AlertRecord {
         this.Latched = false;
         this.Display = alert.Display;
         this.AlertLatched = false;
+        this.Bypassed = alert.Bypassed;
+        this.BypassResetTime=alert.BypassResetTime;
     }
 
     public AlertRecord(MonitorAlert alert, float reading, ActionType state) {
@@ -57,6 +59,8 @@ public class AlertRecord {
         this.Latched = false;
         this.Display = alert.Display;
         this.AlertLatched = false;
+        this.Bypassed = alert.Bypassed;
+        this.BypassResetTime=alert.BypassResetTime;
     }
 
     public AlertRecord() {
@@ -71,6 +75,8 @@ public class AlertRecord {
         this.Latched = false;
         this.Display = false;
         this.AlertLatched = false;
+        this.Bypassed = false;
+        this.BypassResetTime=24;
     }
 
     public AlertRecord Clone() {

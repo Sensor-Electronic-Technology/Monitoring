@@ -13,7 +13,7 @@
         @*<p style="white-space: pre-line;">@this._msgText</p>*@
         <div class="row justify-content-center">
             <div class="row text-center fw-bold border border-1 w-75">
-                <h5>Are you sure you want to save the following new alert levels?</h5>           
+                <h5>Are you sure you want to save the following new alert levels?</h5>
             </div>
 
             <table class="table table-bordered text-center w-75">
@@ -65,7 +65,7 @@
     </FooterContentTemplate>
 </DxPopup>
 
-<div class="container w-100">
+<div class="row w-100">
     <DxLoadingPanel Visible="@this._loading"
                     ApplyBackgroundShading="true">
         <div class="row justify-content-center w-100">
@@ -74,16 +74,26 @@
             </div>
             <div class="col w-50 border rounded-3">
                 <h5>Instructions</h5>
-                <p><span style="color: #d97945;">**Warning**:</span> This calculator is to be used only by approved parties. 
+                <p><span style="color: #d97945;">**Warning**:</span> This calculator is to be used only by approved
+                    parties.
                     Changing values here could delay bulk H2 shipments causing production delays</p>
-                <p><span style="color: #00fff7;">Notes:</span> This calculator uses a calculated daily usage rate to calculate the SoftWarn level such that it is sent a set number of days before the Alarm Level.  The Warning is then calculated such that it will be sent in the middle of the SoftWarn and Alarm.  The daily usage rate is calculated by averaging a number of days in a date range.  This is done through the user setting the number of days to avergage from the current date, by selecting the date range, or through manually entry. The calculated rate can then be manually fined tuned byt the user</p>
-  
+                <p><span style="color: #00fff7;">Notes:</span>This alert level calculator uses a daily usage rate to
+                    determine the SoftWarn level, so the supplier email is sent a set number of days before the Alarm
+                    level. The Warning level is then set to a level where the second supplier email is sent in the
+                    middle between the SoftWarn and Alarm levels. The daily usage rate is calculated by averaging over a
+                    date range. This is done by setting the number of days to average from the current date, selecting
+                    the date range, or entering the date manually. The calculated rate can then be manually fine-tuned
+                    by the user</p>
+
                 <h5>Usage Rate Calculation Options</h5>
                 <ol>
                     <li>Number of days to average daily usage</li>
                     <ol>
-                        <li>Use the sliding bar to change the number of days to average or Manualy enter the number of days next to the slider</li>
-                        <li>Fine tune the value by adjusting the rate shown in the Average PSI/Day input</li>
+                        <li>Use the sliding bar to change the number of days to average over or manually enter the number of
+                            days int the input box next to the slider
+                        </li>
+                        <li>Press Enter to calculate</li>
+                        <li>Fine tune the value by adjusting the rate shown in the Average PSI/Day input then press Enter to recalculate</li>
                         <li>Press the "Submit" button to save the changes</li>
                     </ol>
                     <li>Date Range</li>
@@ -98,10 +108,13 @@
                         <li>Set the usage rate in the Average PSI/Day input</li>
                     </ul>
                 </ol>
-  
-                <p><span style="color: #c744c7;">Manual Alert Level Setting:</span> It is also possible to bypass the usage rate calculation
-                    and manually enter the SoftWarn and Warning levels.  
-                    To manually enter the SoftWarn and Warning levels go to the "Settings" tab.  Press the "Save Changes"</p>
+
+                <p><span style="color: #c744c7;">Manual Alert Level Setting:</span> It is also possible to bypass the
+                    usage rate calculation
+                    and manually enter the SoftWarn and Warning levels.
+                    To manually enter the SoftWarn and Warning levels go to the "Settings" tab. Press the "Save Changes" 
+                    button to save the changes.
+                </p>
             </div>
             <div class="col border rounded-3">
                 <div class="row justify-content-center">
@@ -109,6 +122,7 @@
                         <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
                             <DxFormLayoutTabPages @bind-ActiveTabIndex="@this._tabIndex">
                                 <DxFormLayoutTabPage Caption="By Average">
+ 
                                     <DaysFromAlertCalc Days="@this._days"
                                                        DaysChanged="@(async (int newValue) => await DaysChangedHandler(newValue))"
                                                        IncludeWeekends="@this._includeWeekends"
@@ -212,7 +226,7 @@
 
 @code {
     [Inject] private BulkH2CalcService _bulkH2Service { get; set; }
-    
+
     private bool _msgBoxVisible = false;
     private string _msgHeader = "";
     private string _msgText = "";
@@ -286,28 +300,24 @@
 
         this._loading = false;
     }
-    
+
     private Task ContinueHandler() {
         this._msgBoxVisible = false;
-        return Task.CompletedTask;
-        //await this._bulkH2Service.SaveNewAlertLevels(this._estimates);
+        //return Task.CompletedTask;
+        return  this._bulkH2Service.SaveNewAlertLevels(this._estimates);
     }
-    
+
     private Task CancelHandler() {
         this._msgBoxVisible = false;
         return Task.CompletedTask;
     }
 
     private Task SubmitHandler() {
-        /*StringBuilder builder = new StringBuilder();
-        builder.Append("Are you sure you want to save the following new alert levels?"+Environment.NewLine);
-        builder.AppendLine($"SoftWarn: {this._estimates.SoftWarn} Warning: {this._estimates.Warning} Alarm: {this._estimates.Alarm}");
-        this._msgText = builder.ToString();*/
         this._msgText = $"Are you sure you want to save the following new alert levels? \n" +
                         $"SoftWarn: {this._estimates.SoftWarn} Warning: {this._estimates.Warning} Alarm: {this._estimates.Alarm}";
-        //await this._bulkH2Service.SaveNewAlertLevels(estimates:_estimates);
-        this._msgHeader="Save New Alert Levels? ";
+        this._msgHeader = "Save New Alert Levels? ";
         this._msgBoxVisible = true;
         return Task.CompletedTask;
     }
+
 }

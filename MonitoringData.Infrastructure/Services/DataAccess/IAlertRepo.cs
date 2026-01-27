@@ -16,6 +16,8 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
     public interface IAlertRepo {
         IList<ActionItem> ActionItems { get; }
         ManagedDevice ManagedDevice { get; }
+        IList<BypassAlert> BypassAlerts { get; }
+        Task ResetBypassAlerts(List<UpdateOneModel<BypassAlert>> updates);
         Task LogAlerts(AlertReadings alerts);
         Task Load();
         Task Reload();
@@ -24,12 +26,14 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
     public class AlertRepo : IAlertRepo {
         private IMongoCollection<ActionItem> _actionItems;
         private IMongoCollection<MonitorAlert> _monitorAlerts;
+        private IMongoCollection<BypassAlert> _bypassAlertCollection;
         private IMongoCollection<AlertReadings> _alertReadings;
         private readonly DataLogConfigProvider _configProvider;
         private ManagedDevice _device;
         private readonly IMongoClient _client;
         public IList<ActionItem> ActionItems { get; private set; }
         public ManagedDevice ManagedDevice => this._device;
+        public IList<BypassAlert> BypassAlerts { get; private set; } = new List<BypassAlert>();
 
         public AlertRepo(IMongoClient client,DataLogConfigProvider configProvider) {
             this._client = client;
@@ -39,6 +43,11 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._actionItems = database.GetCollection<ActionItem>(this._device.CollectionNames[nameof(ActionItem)]);
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
             this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
+            this._bypassAlertCollection = database.GetCollection<BypassAlert>("bypass_alerts");
+        }
+
+        public Task ResetBypassAlerts(List<UpdateOneModel<BypassAlert>> updates) {
+            return this._bypassAlertCollection.BulkWriteAsync(updates);
         }
 
         public async Task LogAlerts(AlertReadings alerts) {
@@ -47,6 +56,7 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
 
         public async Task Load() {
             this.ActionItems = await this._actionItems.Find(_ => true).ToListAsync();
+            this.BypassAlerts = await this._bypassAlertCollection.Find(_ => true).ToListAsync();
         }
 
         public async Task Reload() {
@@ -55,7 +65,9 @@ namespace MonitoringData.Infrastructure.Services.DataAccess {
             this._actionItems = database.GetCollection<ActionItem>(this._device.CollectionNames[nameof(ActionItem)]);
             this._monitorAlerts = database.GetCollection<MonitorAlert>(this._device.CollectionNames[nameof(MonitorAlert)]);
             this._alertReadings = database.GetCollection<AlertReadings>(this._device.CollectionNames[nameof(AlertReadings)]);
+            this._bypassAlertCollection = database.GetCollection<BypassAlert>("bypass_alerts");
             this.ActionItems = await this._actionItems.Find(_ => true).ToListAsync();
+            this.BypassAlerts = await this._bypassAlertCollection.Find(_ => true).ToListAsync();
         }
     }
 }

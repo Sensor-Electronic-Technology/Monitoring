@@ -65,6 +65,7 @@ builder.Services.AddBlazorDownloadFile();
 builder.Services.AddTransient<PlotDataService>();
 builder.Services.AddSingleton<LatestAlertService>();
 builder.Services.AddScoped<SpinnerService>();
+builder.Services.AddScoped<AlertBypassService>();
 builder.Services.AddSidepanel();
 #endregion
 

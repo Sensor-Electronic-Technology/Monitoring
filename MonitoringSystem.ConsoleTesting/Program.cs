@@ -15,6 +15,7 @@ using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using ConsoleTables;
 using MailKit.Net.Smtp;
 using MimeKit;
@@ -133,9 +134,169 @@ namespace MonitoringSystem.ConsoleTesting {
 
            //await TestExternalEmailCalc(days:14,false);
            //await WriteOutNh3Data(new DateTime(2025, 1, 1), DateTime.Now);
-           await TestUsageTableGeneration();
-        }
+           //await TestUsageTableGeneration();
+            //await SetupBypass();
+            /*Console.WriteLine("Starting Bypass Setup");
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var epi1AlertCollection=client.GetDatabase("epi1_data").GetCollection<MonitorAlert>("alert_items");
+            var epi1Alerts = await epi1AlertCollection
+                .Find(e => e._id == ObjectId.Parse("63446c2aca1b9dfb63fcd586")).FirstOrDefaultAsync();
+            var update = Builders<MonitorAlert>.Update
+                .Set(e => e.Bypassed, false)
+                .Set(e => e.BypassResetTime, 24)
+                .Set(e=>e.TimeBypassed,DateTime.MaxValue);
 
+            epi1AlertCollection.UpdateOne(Builders<MonitorAlert>.Filter.Eq(e=>e._id,epi1Alerts._id),update);
+            Console.WriteLine("Check Database and website");
+            /*foreach (var alert in epi1Alerts) {
+                Console.WriteLine(JsonSerializer.Serialize(alert,new JsonSerializerOptions(){WriteIndented = true}));
+            }#1#*/
+
+            await CreateBypassAlerts();
+
+        }
+        static async Task SetupBypass() {
+            Console.WriteLine("Starting Bypass Setup");
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var epi1AlertCollection=client.GetDatabase("epi1_data").GetCollection<MonitorAlert>("alert_items");
+            var epi2AlertCollection=client.GetDatabase("epi2_data").GetCollection<MonitorAlert>("alert_items");
+            var gasBayAlertCollection=client.GetDatabase("gasbay_data").GetCollection<MonitorAlert>("alert_items");
+            var epi1Alerts=await epi1AlertCollection.Find(_=>true).ToListAsync();
+            var epi2Alerts=await epi2AlertCollection.Find(_=>true).ToListAsync();
+            var gasBayAlerts=await gasBayAlertCollection.Find(_=>true).ToListAsync();
+            
+            List<UpdateOneModel<MonitorAlert>> updates=new List<UpdateOneModel<MonitorAlert>>();
+            foreach(var alert in epi1Alerts) {
+                var update = Builders<MonitorAlert>.Update
+                    .Set(e => e.Bypassed, false)
+                    .Set(e => e.BypassResetTime, 24);
+                updates.Add(new UpdateOneModel<MonitorAlert>(Builders<MonitorAlert>.Filter.Eq(e=>e._id,alert._id),update));
+            }
+            await epi1AlertCollection.BulkWriteAsync(updates);
+            updates.Clear();
+            foreach(var alert in epi2Alerts) {
+                var update = Builders<MonitorAlert>.Update
+                    .Set(e => e.Bypassed, false)
+                    .Set(e => e.BypassResetTime, 24);
+                updates.Add(new UpdateOneModel<MonitorAlert>(Builders<MonitorAlert>.Filter.Eq(e=>e._id,alert._id),update));
+            }
+            await epi2AlertCollection.BulkWriteAsync(updates);
+            updates.Clear();
+            foreach(var alert in gasBayAlerts) {
+                var update = Builders<MonitorAlert>.Update
+                    .Set(e => e.Bypassed, false)
+                    .Set(e => e.BypassResetTime, 24);
+                updates.Add(new UpdateOneModel<MonitorAlert>(Builders<MonitorAlert>.Filter.Eq(e=>e._id,alert._id),update));
+            }
+            await gasBayAlertCollection.BulkWriteAsync(updates);
+            updates.Clear();
+            Console.WriteLine("Check Database");
+        }
+        
+        static async Task CreateBypassAlerts() {
+            Console.WriteLine("Starting Bypass Setup");
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var epi1AlertCollection=client.GetDatabase("epi1_data").GetCollection<MonitorAlert>("alert_items");
+            var epi2AlertCollection=client.GetDatabase("epi2_data").GetCollection<MonitorAlert>("alert_items");
+            var gasBayAlertCollection=client.GetDatabase("gasbay_data").GetCollection<MonitorAlert>("alert_items");
+            var nh3AlertCollection=client.GetDatabase("nh3_data").GetCollection<MonitorAlert>("alert_items");
+            var e2thAlertCollection=client.GetDatabase("e1th_data").GetCollection<MonitorAlert>("alert_items");
+            var thAlertCollection=client.GetDatabase("th_data").GetCollection<MonitorAlert>("alert_items");
+            
+            var epi1BypassAlertCollection=client.GetDatabase("epi1_data").GetCollection<BypassAlert>("bypass_alerts");
+            var epi2BypassAlertCollection=client.GetDatabase("epi2_data").GetCollection<BypassAlert>("bypass_alerts");
+            var gasBayBypassAlertCollection=client.GetDatabase("gasbay_data").GetCollection<BypassAlert>("bypass_alerts");
+            var nh3BypassAlertCollection=client.GetDatabase("nh3_data").GetCollection<BypassAlert>("bypass_alerts");
+            var e2thBypassAlertCollection=client.GetDatabase("e2th_data").GetCollection<BypassAlert>("bypass_alerts");
+            var thBypassAlertCollection=client.GetDatabase("th_data").GetCollection<BypassAlert>("bypass_alerts");
+            
+            var epi1Alerts=await epi1AlertCollection.Find(_=>true).ToListAsync();
+            var epi2Alerts=await epi2AlertCollection.Find(_=>true).ToListAsync();
+            var gasBayAlerts=await gasBayAlertCollection.Find(_=>true).ToListAsync();
+            
+            var nh3Alerts=await epi1AlertCollection.Find(_=>true).ToListAsync();
+            var e2thAlerts=await epi2AlertCollection.Find(_=>true).ToListAsync();
+            var thAlerts=await gasBayAlertCollection.Find(_=>true).ToListAsync();
+            
+            List<InsertOneModel<BypassAlert>> updates=new List<InsertOneModel<BypassAlert>>();
+            foreach(var alert in epi1Alerts) {
+                updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
+                    _id = alert._id,
+                    DeviceName = alert.DisplayName,
+                    Bypassed = false,
+                    BypassResetTime = 24,
+                    Enabled = alert.Enabled,
+                    TimeBypassed = DateTime.MaxValue,
+                }));
+            }
+            await epi1BypassAlertCollection.BulkWriteAsync(updates);
+            updates.Clear();
+            foreach(var alert in epi2Alerts) {
+                updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
+                    _id = alert._id,
+                    DeviceName = alert.DisplayName,
+                    Bypassed = false,
+                    BypassResetTime = 24,
+                    Enabled = alert.Enabled,
+                    TimeBypassed = DateTime.MaxValue,
+                }));
+            }
+            await epi2BypassAlertCollection.BulkWriteAsync(updates);
+            updates.Clear();
+            foreach(var alert in gasBayAlerts) {
+                updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
+                    _id = alert._id,
+                    DeviceName = alert.DisplayName,
+                    Bypassed = false,
+                    BypassResetTime = 24,
+                    Enabled = alert.Enabled,
+                    TimeBypassed = DateTime.MaxValue,
+                }));
+            }
+            await gasBayBypassAlertCollection.BulkWriteAsync(updates);
+            updates.Clear();
+            
+            foreach(var alert in thAlerts) {
+                updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
+                    _id = alert._id,
+                    DeviceName = alert.DisplayName,
+                    Bypassed = false,
+                    BypassResetTime = 24,
+                    Enabled = alert.Enabled,
+                    TimeBypassed = DateTime.MaxValue,
+                }));
+            }
+            await thBypassAlertCollection.BulkWriteAsync(updates);
+            updates.Clear();
+            
+            foreach(var alert in e2thAlerts) {
+                updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
+                    _id = alert._id,
+                    DeviceName = alert.DisplayName,
+                    Bypassed = false,
+                    BypassResetTime = 24,
+                    Enabled = alert.Enabled,
+                    TimeBypassed = DateTime.MaxValue,
+                }));
+            }
+            await e2thBypassAlertCollection.BulkWriteAsync(updates);
+            updates.Clear();
+            
+            foreach(var alert in nh3Alerts) {
+                updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
+                    _id = alert._id,
+                    DeviceName = alert.DisplayName,
+                    Bypassed = false,
+                    BypassResetTime = 24,
+                    Enabled = alert.Enabled,
+                    TimeBypassed = DateTime.MaxValue,
+                }));
+            }
+            await nh3BypassAlertCollection.BulkWriteAsync(updates);
+            updates.Clear();
+            
+            Console.WriteLine("Check Database");
+        }
         static async Task WriteOutNh3Data(DateTime start, DateTime stop) {
             var client = new MongoClient("mongodb://172.20.3.41");
             var logDatabase = client.GetDatabase("nh3_logs");

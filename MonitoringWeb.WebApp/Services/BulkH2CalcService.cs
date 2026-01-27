@@ -127,7 +127,7 @@ public class BulkH2CalcService {
 
         var update = Builders<AnalogItem>.Update
             .Set(e => e.Level1SetPoint, analogItem.Level1SetPoint)
-            .Set(e => e.Level2SetPoint, analogItem.Level3SetPoint)
+            .Set(e => e.Level2SetPoint, analogItem.Level2SetPoint)
             .Set(e => e.Level3SetPoint, analogItem.Level3SetPoint);
         return this._analogItemCollection.UpdateOneAsync(e => e._id == analogItem._id, update);
     }

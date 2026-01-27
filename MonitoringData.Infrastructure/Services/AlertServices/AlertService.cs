@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using MonitoringData.Infrastructure.Data;
 using MonitoringData.Infrastructure.Services.DataAccess;
 using MonitoringSystem.Shared.Data;
@@ -45,6 +46,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 if (alert.Enabled) {
                     var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
                     var actionItem = this._alertRepo.ActionItems.FirstOrDefault(e => e.ActionType == alert.CurrentState);
+                    var bypassAlert=this._alertRepo.BypassAlerts.FirstOrDefault(e=>e._id==alert.AlertId);
                     switch (alert.CurrentState) {
                         case ActionType.Okay: {
                                 if (activeAlert != null) {
@@ -56,7 +58,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         activeAlert.Latched = true;
                                         activeAlert.TimeLatched = now;
                                     } else {
-                                        if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight" or "Bulk H2(PSI)-External") {
+                                        if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
                                             if ((now - activeAlert.TimeLatched).TotalMinutes >= 5) {
                                                 this._activeAlerts.Remove(activeAlert);
                                             }
@@ -80,6 +82,10 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                 this._activeAlerts.Add(newAlert);
                                 this._logger.LogInformation("Alert: {Alert} Latched",newAlert.DisplayName);
                             } else {
+                                activeAlert.Bypassed = bypassAlert?.Bypassed ?? false;
+                                activeAlert.TimeBypassed = bypassAlert?.TimeBypassed ?? DateTime.MaxValue ;
+                                activeAlert.BypassResetTime = bypassAlert?.BypassResetTime ?? 24;
+                                
                                 if (activeAlert.CurrentState != alert.CurrentState) {
                                     if (activeAlert.Latched) {
                                         activeAlert.Latched = false;
@@ -101,10 +107,9 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                     sendEmail = activeAlert.CurrentState < alert.CurrentState;
                                                 }
                                                 activeAlert.CurrentState = alert.CurrentState;
-                                                this._logger.LogInformation("Bulk Alert({Alert}) Email Check.  5minutes",activeAlert.DisplayName);
+                                                this._logger.LogInformation("NH3 Alert({Alert}) Email Check.  5minutes",activeAlert.DisplayName);
                                             }
-                                        }else if (activeAlert.DisplayName != "Tank1 Weight" &&
-                                                  activeAlert.DisplayName != "Tank2 Weight") {
+                                        }else {
                                             if ((now - activeAlert.TimeAlertLatched).TotalSeconds >= 30) {
                                                 activeAlert.ChannelReading = alert.ChannelReading;
                                                 activeAlert.AlertAction = alert.AlertAction;
@@ -112,21 +117,44 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                 if (activeAlert.DisplayName is  "Bulk N2(inH20)" or "Silane" or "Bulk H2(PSI)") {
                                                     if (activeAlert.DisplayName is "Silane") {
                                                         if (activeAlert.CurrentState == ActionType.Okay) {
-                                                            sendEmail = true;
+                                                            if (!activeAlert.Bypassed) {
+                                                                sendEmail = true;
+                                                            }
                                                         } else {
-                                                            sendEmail = activeAlert.CurrentState < alert.CurrentState;
+                                                            if (!activeAlert.Bypassed) {
+                                                                sendEmail = activeAlert.CurrentState < alert.CurrentState;
+                                                            }
+                                                        }
+                                                    } else if(activeAlert.DisplayName is "Bulk H2(PSI)") {
+                                                        if (activeAlert.CurrentState == ActionType.Okay) {
+                                                            sendExEmail = true;
+                                                        } else {
+                                                            sendExEmail = activeAlert.CurrentState < alert.CurrentState;
+                                                        }
+
+                                                        if (alert.CurrentState == ActionType.Alarm) {
+                                                            if (!activeAlert.Bypassed) {
+                                                                sendEmail = true;
+                                                            }
                                                         }
                                                     }else {
                                                         if (activeAlert.CurrentState == ActionType.Okay) {
-                                                            sendEmail = true;
+                                                            if (!activeAlert.Bypassed) {
+                                                                sendEmail = true;
+                                                            }
                                                             sendExEmail = sendEmail;
                                                         } else {
-                                                            sendEmail = activeAlert.CurrentState < alert.CurrentState;
+                                                            if (!activeAlert.Bypassed) {
+                                                                sendEmail = activeAlert.CurrentState < alert.CurrentState;
+                                                            }
                                                             sendExEmail = sendEmail;
                                                         }
                                                     }
                                                 }else {
-                                                    sendEmail = true;
+                                                    if (!activeAlert.Bypassed) {
+                                                        sendEmail = true;
+                                                    }
+                                                    
                                                 }
                                                 activeAlert.CurrentState = alert.CurrentState;
                                                 this._logger.LogInformation("Alert({Alert}) Email Check. 30seconds",activeAlert.DisplayName);
@@ -151,7 +179,9 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                             if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
                                                 activeAlert.LastAlert = now;
                                                 activeAlert.ChannelReading = alert.ChannelReading;
-                                                sendEmail = true;
+                                                if (!activeAlert.Bypassed) {
+                                                    sendEmail = true;
+                                                }
                                                 this._logger.LogInformation("Resend Alert: {Alert}",activeAlert.DisplayName);
                                             } else {
                                                 activeAlert.ChannelReading = alert.ChannelReading;
@@ -216,12 +246,6 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                 if (sendEmail) {
                     await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", 
                         messageBuilder);
-
-                    if (sendExEmail) {
-                        var bulkH2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk H2(PSI)");
-                        var bulkN2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk N2(inH20)");
-                        await this.ProcessBulkGasExternalEmail(bulkN2, bulkH2,now);
-                    }
                     
                     this._logger.LogInformation("Email Sent");
                     var alertReadings = alerts.Select(e => new AlertReading() {
@@ -232,6 +256,12 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                     await this._alertRepo.LogAlerts(new AlertReadings() {
                         readings = alertReadings.ToArray(), timestamp = now
                     });
+                }
+                
+                if (sendExEmail) {
+                    var bulkH2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk H2(PSI)");
+                    var bulkN2 = this._activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk N2(inH20)");
+                    await this.ProcessBulkGasExternalEmail(bulkN2, bulkH2,now);
                 }
             } else {
                 monitorData.DeviceState = alerts.FirstOrDefault(e => e.CurrentState == ActionType.Maintenance)!=null ? 
@@ -257,9 +287,27 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             await this._emailService.SendMessageAsync(this._alertRepo.ManagedDevice.DeviceName+" Alerts", messageBuilder);
             await this._monitorHub.Clients.All.ShowCurrent(monitorData);
         }
+
+        private async Task CheckBypassAlert(DateTime now) {
+            var bypassed = this._activeAlerts.Where(e => e.Bypassed).ToList();
+            if (bypassed.Count>0) {
+                List<UpdateOneModel<BypassAlert>> updates=new List<UpdateOneModel<BypassAlert>>();
+                foreach (var alert in bypassed) {
+                    if ((now - alert.TimeBypassed).TotalHours >= alert.BypassResetTime) {
+                        var filter = Builders<BypassAlert>.Filter.Eq(e => e._id,alert.AlertId);
+                        var update = Builders<BypassAlert>.Update
+                            .Set(e => e.Bypassed, false)
+                            .Set(e => e.TimeBypassed,DateTime.MaxValue);
+                        updates.Add(new UpdateOneModel<BypassAlert>(
+                            filter,update));
+                    }
+                }
+                await this._alertRepo.ResetBypassAlerts(updates);
+            }
+        }
         
         private bool CheckBypassReset(AlertRecord alert,DateTime now) {
-            return (now - alert.TimeBypassed).Minutes >= alert.BypassResetTime;
+            return (now - alert.TimeBypassed).Hours >= alert.BypassResetTime;
         }
 
         private async Task ProcessBulkGasExternalEmail(AlertRecord? bulkN2,AlertRecord? bulkH2,DateTime now) {

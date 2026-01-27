@@ -7,16 +7,19 @@
 @inject ValueChanged<BulkGasType> GasTypeChanged
 @inject NavigationManager uriHelper;
 
+
+
 <h3 class="text-center">@this.Header</h3>
+
 <DxTabs RenderMode="TabsRenderMode.Default" @bind-ActiveTabIndex="tabIndex">
     <DxTabPage Text="Plot">
-        <BulkGasPlot GasType="@this.GasType" />
+        <BulkGasPlot GasType="@this.GasType"/>
     </DxTabPage>
     <DxTabPage Text="Consumption">
         <UsageTable GasType="@this.GasType"/>
     </DxTabPage>
     @if (this.GasType == BulkGasType.H2) {
-        <DxTabPage Text="Alert Level Calculator" >
+        <DxTabPage Text="Alert Level Calculator">
             <DxTabs RenderMode="TabsRenderMode.Default" Id="alert-calculator">
                 <DxTabPage Text="Calculator">
                     <BulkH2AlertCalculator/>
