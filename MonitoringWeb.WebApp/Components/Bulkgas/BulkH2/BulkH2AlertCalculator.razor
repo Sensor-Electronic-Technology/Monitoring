@@ -122,7 +122,6 @@
                         <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
                             <DxFormLayoutTabPages @bind-ActiveTabIndex="@this._tabIndex">
                                 <DxFormLayoutTabPage Caption="By Average">
- 
                                     <DaysFromAlertCalc Days="@this._days"
                                                        DaysChanged="@(async (int newValue) => await DaysChangedHandler(newValue))"
                                                        IncludeWeekends="@this._includeWeekends"

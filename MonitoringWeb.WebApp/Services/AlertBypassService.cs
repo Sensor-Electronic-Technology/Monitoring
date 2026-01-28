@@ -1,4 +1,5 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringWeb.WebApp.Data;
 
@@ -38,28 +39,55 @@ public class AlertBypassService {
     
     public async Task<bool> UpdateEpi1ResetTime(BypassAlert alert) {
         var update = Builders<BypassAlert>.Update
-            .Set(e => e.Bypassed, alert.Bypassed);
-        if(alert.Bypassed)
-            update.Set(e=>e.TimeBypassed,DateTime.UtcNow);
+            .Set(e => e.BypassResetTime, alert.BypassResetTime);
         
         var updateResult=await this._epi1AlertCollection.UpdateOneAsync(e => e._id == alert._id, update);
         return updateResult.IsAcknowledged;
     }
     
-    /*public async Task<bool> UpdateEpi2BypassAlert(BypassAlert alert) {
-        var update = Builders<MonitorAlert>.Update
-            .Set(e => e.Enabled, alert.State)
-            .Set(e => e.BypassResetTime, alert.BypassTimer);
-        var updateResult=await this._epi2AlertCollection.UpdateOneAsync(e => e._id == alert.AlertId, update);
+    public async Task<bool> UpdateEpi2State(BypassAlert alert) {
+        var update = Builders<BypassAlert>.Update
+            .Set(e => e.Bypassed, alert.Bypassed)
+            .Set(e => e.TimeBypassed, alert.Bypassed ? DateTime.UtcNow : DateTime.MaxValue);
+        
+        var updateResult=await this._epi2AlertCollection.UpdateOneAsync(e => e._id == alert._id, update);
+        return updateResult.IsAcknowledged;
+    }
+
+    public async Task<bool> UpdateEpi2ResetTime(BypassAlert alert) {
+        var update = Builders<BypassAlert>.Update
+            .Set(e => e.BypassResetTime, alert.BypassResetTime);
+
+        var updateResult = await this._epi2AlertCollection.UpdateOneAsync(e => e._id == alert._id, update);
+        return updateResult.IsAcknowledged;
+    }
+
+    public async Task<bool> UpdateGasBayState(BypassAlert alert) {
+        var update = Builders<BypassAlert>.Update
+            .Set(e => e.Bypassed, alert.Bypassed)
+            .Set(e => e.TimeBypassed, alert.Bypassed ? DateTime.UtcNow : DateTime.MaxValue);
+        
+        var updateResult=await this._gasBayAlertCollection.UpdateOneAsync(e => e._id == alert._id, update);
         return updateResult.IsAcknowledged;
     }
     
-    public async Task<bool> UpdateGasBayBypassAlert(BypassAlert alert) {
-        var update = Builders<MonitorAlert>.Update
-            .Set(e => e.Enabled, alert.State)
-            .Set(e => e.BypassResetTime, alert.BypassTimer);
-        var updateResult=await this._gasBayAlertCollection.UpdateOneAsync(e => e._id == alert.AlertId, update);
+    public async Task<bool> UpdateGasBayResetTime(BypassAlert alert) {
+        var update = Builders<BypassAlert>.Update
+            .Set(e => e.BypassResetTime, alert.BypassResetTime);
+        
+        var updateResult=await this._gasBayAlertCollection.UpdateOneAsync(e => e._id == alert._id, update);
         return updateResult.IsAcknowledged;
-    }*/
+    }
+
+    public async Task<BypassAlert?> FetchUpdatedEpi1BypassAlert(ObjectId id) {
+        return await this._epi1AlertCollection.Find(e => e._id == id).FirstOrDefaultAsync();
+    }
     
+    public async Task<BypassAlert?> FetchUpdatedEpi2BypassAlert(ObjectId id) {
+        return await this._epi2AlertCollection.Find(e => e._id == id).FirstOrDefaultAsync();
+    }
+    
+    public async Task<BypassAlert?> FetchUpdatedGasBayBypassAlert(ObjectId id) {
+        return await this._gasBayAlertCollection.Find(e => e._id == id).FirstOrDefaultAsync();
+    }
 }

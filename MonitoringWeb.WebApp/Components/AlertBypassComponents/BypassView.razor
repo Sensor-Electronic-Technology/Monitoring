@@ -1,0 +1,438 @@
+﻿@page "/bypass"
+@using MongoDB.Bson
+@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringSystem.Shared.Services
+@using MonitoringWeb.WebApp.Data
+@using MonitoringWeb.WebApp.Services
+@inject WebsiteConfigurationProvider ConfigurationProvider
+
+<DxPopup @bind-Visible="@this._popupShown"
+         ShowCloseButton="true"
+         CloseOnOutsideClick="true"
+         CloseOnEscape="true"
+         ShowFooter="true"
+         Width="400px">
+    <HeaderContentTemplate>
+        <div class="row text-center justify-content-center">
+            <h4>Save Error</h4>
+        </div>
+    </HeaderContentTemplate>
+    <BodyContentTemplate>
+        <div class="row">
+            <h5>There was an error saving the bypass settings for @this._deviceName.
+                Please contact Andrew Elmendorf if error persists.</h5>
+        </div>
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <div class="row">
+            <DxButton Text="Ok" Click="@(() => { this._popupShown = false; })"
+                      RenderStyle="ButtonRenderStyle.Primary"/>
+        </div>
+    </FooterContentTemplate>
+</DxPopup>
+<DxAccordion AnimationType="LayoutAnimationType.Slide">
+    <Items>
+        <DxAccordionItem Text="Read Me">
+            <ContentTemplate>
+                <div class="row m-3">
+                    <div class="card">
+                        <div class="card-header text-center bg-secondary text-white">
+                            <h5>Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-start fs-4">
+                                <p><span style="color: #d97945;">**Important**:</span> Bypassing an alert will only
+                                    silence the email
+                                    alert. The light indicators in the respective monitoring box's area will still
+                                    signal according to alert state</p>
+                            </div>
+                            <div class="row text-start fs-4">
+                                <p><span style="color: #7bde2b;">**Notes**::</span> When an alert is bypassed, emails
+                                    for that alert will be disabled immediately. The email alert will automatically be
+                                    re-enabled once the number of hours set by the reset time has elapsed.</p>
+                            </div>
+                            <div class="card">
+                                <div class="card-header text-center bg-info text-white">
+                                    <h5>Available Actions</h5>
+                                </div>
+                                <div class="card-body text-start">
+                                    <ul>
+                                        <li class="fs-4">Bypass/Enable Alert</li>
+                                        <ol class="fs-5">
+                                            <li>Find the alert box corresponding to the alert to be bypassed</li>
+                                            <li>Select the "Bypass" tab</li>
+                                            <li>Click the toggle button to bypass of enable</li>
+                                        </ol>
+                                        <li class="fs-4">Modify Bypass Reset Time</li>
+                                        <ol class="fs-5">
+                                            <li>Find the alert box corresponding to the alert to be modified</li>
+                                            <li>Select the "Reset Time(Hrs)" tab</li>
+                                            <li>Enter the new reset time in hours</li>
+                                            <li>Press the "Save" button</li>
+                                        </ol>
+                                    </ul>
+                                </div>
+
+                            </div>
+
+
+                        </div>
+                    </div>
+
+                </div>
+            </ContentTemplate>
+        </DxAccordionItem>
+    </Items>
+</DxAccordion>
+<DxTabs>
+    <DxTabPage Text="Epi1 Alerts">
+
+
+        <div class="card">
+            <div class="card-header text-center bg-success text-white">
+                <div class="row">
+                    <h3>Epi1 Bypass Settings</h3>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">
+                    @for (int i = 0; i < this._epi1Alerts.Count; i++) {
+                        <div class="col-2 shadow-lg p-1 mb-1 rounded justify-content-center">
+                            @{
+                                var alert = this._epi1Alerts[i];
+                                var savingState = this._epi1SavingStates[i];
+                                <BypassCard BypassAlert="@alert"
+                                            Saving="@savingState.Saving"
+                                            SavingText="@savingState.SavingText"
+                                            StateChanged="@(async ((ObjectId, bool) input) => await this.StateChangedHandler(input, DeviceType.Epi1))"
+                                            ResetTimeChanged="@(async ((ObjectId, int) input) => await this.ResetTimeChangedHandler(input, DeviceType.Epi1))"/>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </DxTabPage>
+    <DxTabPage Text="Epi2 Alerts">
+        <div class="card">
+            <div class="card-header text-center bg-success text-white">
+                <h3>Epi2 Bypass Settings</h3>
+            </div>
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">
+                    @for (int i = 0; i < this._epi2Alerts.Count; i++) {
+                        <div class="col-2 shadow-lg p-1 mb-1 rounded justify-content-center">
+                            @{
+                                var alert = this._epi2Alerts[i];
+                                var savingState = this._epi2SavingStates[i];
+                                <BypassCard BypassAlert="@alert"
+                                            SavingText="@savingState.SavingText"
+                                            Saving="@savingState.Saving"
+                                            StateChanged="@(async ((ObjectId, bool) input) => await this.StateChangedHandler(input, DeviceType.Epi2))"
+                                            ResetTimeChanged="@(async ((ObjectId, int) input) => await this.ResetTimeChangedHandler(input, DeviceType.Epi2))"/>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </DxTabPage>
+
+    <DxTabPage Text="Gasbay Alerts">
+        <div class="card">
+            <div class="card-header text-center bg-success text-white">
+                <h3>Gasbay Bypass Settings</h3>
+            </div>
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">
+                    @for (int i = 0; i < this._gasBayAlerts.Count; i++) {
+                        <div class="col-2 shadow-lg p-1 mb-1 rounded justify-content-center">
+                            @{
+                                var alert = this._gasBayAlerts[i];
+                                var savingState = this._gasBaySavingStates[i];
+                                <BypassCard BypassAlert="@alert"
+                                            Saving="@savingState.Saving"
+                                            SavingText="@savingState.SavingText"
+                                            StateChanged="@(async ((ObjectId, bool) input) => await this.StateChangedHandler(input, DeviceType.Gasbay))"
+                                            ResetTimeChanged="@(async ((ObjectId, int) input) => await this.ResetTimeChangedHandler(input, DeviceType.Gasbay))"/>
+                            }
+                        </div>
+                    }
+                    @*@foreach (var alert in this._gasBayAlerts) {
+                        <div class="col-2 shadow-lg p-1 mb-1 rounded justify-content-center">
+                            @{
+                                <BypassCard BypassAlert="@alert" 
+                                            StateChanged="@(async ((ObjectId, bool) input) => await this.GasBayStateChangedChanged(input))"
+                                            ResetTimeChanged="@(async ((ObjectId, int) input) => await this.GasBayResetTimeChangedChanged(input))"/>
+                            }
+
+                        </div>
+                    }*@
+                </div>
+            </div>
+        </div>
+    </DxTabPage>
+</DxTabs>
+
+@code {
+    [Inject] private AlertBypassService _alertBypassService { get; set; }
+
+    private List<BypassAlert> _epi1Alerts { get; set; } = [];
+    private List<BypassAlert> _epi2Alerts { get; set; } = [];
+    private List<BypassAlert> _gasBayAlerts { get; set; } = [];
+
+    private List<SavingState> _epi1SavingStates { get; set; } = new List<SavingState>();
+    private List<SavingState> _epi2SavingStates { get; set; } = new List<SavingState>();
+    private List<SavingState> _gasBaySavingStates { get; set; } = new List<SavingState>();
+
+    private int _savingDisplayTime = 500;
+    private bool _popupShown = false;
+    private string _deviceName = "";
+
+    protected override async Task OnInitializedAsync() {
+        this._epi1Alerts = await this._alertBypassService.GetEpi1MonitorAlerts();
+        this._epi2Alerts = await this._alertBypassService.GetEpi2MonitorAlerts();
+        this._gasBayAlerts = await this._alertBypassService.GetGasBayMonitorAlerts();
+
+        this._epi1Alerts.ForEach(alert => {
+            var savingState = new SavingState() {
+                Id = alert._id.ToString(),
+                SavingText = $"Saving {alert.DeviceName}. . . . . . .",
+                Saving = false
+            };
+            this._epi1SavingStates.Add(savingState);
+        });
+
+        this._epi2Alerts.ForEach(alert => {
+            var savingState = new SavingState() {
+                Id = alert._id.ToString(),
+                SavingText = $"Saving {alert.DeviceName}. . . . . . .",
+                Saving = false
+            };
+            this._epi2SavingStates.Add(savingState);
+        });
+
+        this._gasBayAlerts.ForEach(alert => {
+            var savingState = new SavingState() {
+                Id = alert._id.ToString(),
+                SavingText = $"Saving {alert.DeviceName}. . . . . . .",
+                Saving = false
+            };
+            this._gasBaySavingStates.Add(savingState);
+        });
+        await base.OnInitializedAsync();
+    }
+
+    private async Task StateChangedHandler((ObjectId id, bool state) input, DeviceType deviceType) {
+        var alert = this.GetBypassAlert(deviceType, input.id);
+        var savingState = this.GetSavingState(deviceType, input.id);
+        if (alert != null && savingState != null) {
+            savingState.Saving = true;
+            await Task.Delay(this._savingDisplayTime);
+            alert.Bypassed = input.state;
+            if (await this.UpdateDeviceState(deviceType, alert)) {
+                var response = await this.RefreshAlert(deviceType, alert._id);
+                alert.CopyFrom(response);
+                savingState.Saving = false;
+                await InvokeAsync(StateHasChanged);
+            } else {
+                this._deviceName = alert.DeviceName;
+                this._popupShown = true;
+                savingState.Saving = false;
+            }
+        } else {
+            this._deviceName = "Device Not Found";
+            this._popupShown = true;
+        }
+    }
+
+    private async Task ResetTimeChangedHandler((ObjectId id, int resetTime) input, DeviceType deviceType) {
+        var alert = this.GetBypassAlert(deviceType, input.id);
+        var savingState = this.GetSavingState(deviceType, input.id);
+        if (alert != null && savingState != null) {
+            savingState.Saving = true;
+            await Task.Delay(this._savingDisplayTime);
+            alert.BypassResetTime = input.resetTime;
+            if (await this.UpdateDeviceResetTime(deviceType, alert)) {
+                var response = await this.RefreshAlert(deviceType, alert._id);
+                alert.CopyFrom(response);
+                savingState.Saving = false;
+                await InvokeAsync(StateHasChanged);
+            } else {
+                this._deviceName = alert.DeviceName;
+                this._popupShown = true;
+                savingState.Saving = false;
+            }
+        } else {
+            this._deviceName = "Device Not Found";
+            this._popupShown = true;
+        }
+    }
+
+    /*private async Task Epi1StateChangedChanged((ObjectId id,bool state) input) {
+        var alert = this._epi1Alerts.FirstOrDefault(e => e._id == input.id);
+        var savingState=this._epi1SavingStates.FirstOrDefault(e=>e.Id==input.id.ToString());
+        if (alert != null && savingState!=null) {
+            savingState.Saving = true;
+            await Task.Delay(this._savingDisplayTime);
+            alert.Bypassed = input.state;
+            if (await this._alertBypassService.UpdateEpi1State(alert)) {
+                var response = await this._alertBypassService.FetchUpdatedEpi1BypassAlert(alert._id);
+                alert.CopyFrom(response);
+                savingState.Saving=false;
+                await InvokeAsync(StateHasChanged);
+            } else {
+                this._deviceName = alert.DeviceName;
+                this._popupShown = true;
+                savingState.Saving=false;
+            }
+        } else {
+            this._deviceName = "Device Not Found";
+            this._popupShown = true;
+        }
+
+    }
+    
+    private async Task Epi1ResetTimeChangedChanged((ObjectId id,int resetTime) input) {
+        var alert = this._epi1Alerts.FirstOrDefault(e => e._id == input.id);
+        var savingState=this._epi1SavingStates.FirstOrDefault(e=>e.Id==input.id.ToString());
+        if (alert != null && savingState!=null) {
+            savingState.Saving = true;
+            await Task.Delay(this._savingDisplayTime);
+            alert.BypassResetTime = input.resetTime;
+            if (await this._alertBypassService.UpdateEpi1ResetTime(alert)) {
+                var response = await this._alertBypassService.FetchUpdatedEpi1BypassAlert(alert._id);
+                alert.CopyFrom(response);
+                savingState.Saving=false;
+                await InvokeAsync(StateHasChanged);
+            } else {
+                this._deviceName = alert.DeviceName;
+                this._popupShown = true;
+                savingState.Saving=false;
+            }
+        } else {
+            this._deviceName = "Device Not Found";
+            this._popupShown = true;
+        }
+    }
+    
+    private async Task Epi2StateChangedChanged((ObjectId id,bool state) input) {
+        var alert = this._epi2Alerts.FirstOrDefault(e => e._id == input.id);
+        var savingState=this._epi2SavingStates.FirstOrDefault(e=>e.Id==input.id.ToString());
+        if (alert != null && savingState!=null) {
+            savingState.Saving = true;
+            await Task.Delay(this._savingDisplayTime);
+            alert.Bypassed = input.state;
+            await this._alertBypassService.UpdateEpi2State(alert);
+            savingState.Saving=false;
+        }
+        
+        if (alert != null && savingState!=null) {
+            savingState.Saving = true;
+            await Task.Delay(this._savingDisplayTime);
+            alert.BypassResetTime = input.state;
+            if (await this._alertBypassService.UpdateEpi2State(alert)) {
+                var response = await this._alertBypassService.FetchUpdatedEpi1BypassAlert(alert._id);
+                alert.CopyFrom(response);
+                savingState.Saving=false;
+                await InvokeAsync(StateHasChanged);
+            } else {
+                this._deviceName = alert.DeviceName;
+                this._popupShown = true;
+                savingState.Saving=false;
+            }
+        } else {
+            this._deviceName = "Device Not Found";
+            this._popupShown = true;
+        }
+    }
+    
+    private async Task Epi2ResetTimeChangedChanged((ObjectId id,int resetTime) input) {
+        var alert = this._epi2Alerts.FirstOrDefault(e => e._id == input.id);
+        var savingState=this._epi2SavingStates.FirstOrDefault(e=>e.Id==input.id.ToString());
+        if (alert != null && savingState!=null) {
+            savingState.Saving = true;
+            await Task.Delay(this._savingDisplayTime);
+            alert.BypassResetTime = input.resetTime;
+            await this._alertBypassService.UpdateEpi2ResetTime(alert);
+            savingState.Saving=false;
+        }
+    }
+    
+    private async Task GasBayStateChangedChanged((ObjectId id,bool state) input) {
+        var alert = this._gasBayAlerts.FirstOrDefault(e => e._id == input.id);
+        var savingState=this._gasBaySavingStates.FirstOrDefault(e=>e.Id==input.id.ToString());
+        if (alert != null && savingState!=null) {
+            savingState.Saving = true;
+            await Task.Delay(this._savingDisplayTime);
+            alert.Bypassed = input.state;
+            await this._alertBypassService.UpdateGasBayState(alert);
+            savingState.Saving=false;
+        }
+    }
+    
+    private async Task GasBayResetTimeChangedChanged((ObjectId id,int resetTime) input) {
+        var alert = this._gasBayAlerts.FirstOrDefault(e => e._id == input.id);
+        var savingState=this._gasBaySavingStates.FirstOrDefault(e=>e.Id==input.id.ToString());
+        if (alert != null && savingState!=null) {
+            savingState.Saving = true;
+            await Task.Delay(this._savingDisplayTime);
+            alert.BypassResetTime = input.resetTime;
+            await this._alertBypassService.UpdateGasBayResetTime(alert);
+            savingState.Saving=false;
+        }
+    }*/
+
+    private BypassAlert? GetBypassAlert(DeviceType deviceType, ObjectId id) =>
+        deviceType switch {
+            DeviceType.Epi1 => this._epi1Alerts.FirstOrDefault(e => e._id == id),
+            DeviceType.Epi2 => this._epi2Alerts.FirstOrDefault(e => e._id == id),
+            DeviceType.Gasbay => this._gasBayAlerts.FirstOrDefault(e => e._id == id),
+            _ => throw new ArgumentOutOfRangeException(nameof(deviceType), deviceType, null)
+        };
+
+    private SavingState? GetSavingState(DeviceType deviceType, ObjectId id) =>
+        deviceType switch {
+            DeviceType.Epi1 => this._epi1SavingStates.FirstOrDefault(e => e.Id == id.ToString()),
+            DeviceType.Epi2 => this._epi2SavingStates.FirstOrDefault(e => e.Id == id.ToString()),
+            DeviceType.Gasbay => this._gasBaySavingStates.FirstOrDefault(e => e.Id == id.ToString()),
+            _ => throw new ArgumentOutOfRangeException(nameof(deviceType), deviceType, null)
+        };
+
+    private Task<bool> UpdateDeviceState(DeviceType deviceType, BypassAlert alert) =>
+        deviceType switch {
+            DeviceType.Epi1 => this._alertBypassService.UpdateEpi1State(alert),
+            DeviceType.Epi2 => this._alertBypassService.UpdateEpi2State(alert),
+            DeviceType.Gasbay => this._alertBypassService.UpdateGasBayState(alert),
+            _ => throw new ArgumentOutOfRangeException(nameof(deviceType), deviceType, null)
+        };
+
+    private Task<bool> UpdateDeviceResetTime(DeviceType deviceType, BypassAlert alert) =>
+        deviceType switch {
+            DeviceType.Epi1 => this._alertBypassService.UpdateEpi1ResetTime(alert),
+            DeviceType.Epi2 => this._alertBypassService.UpdateEpi2ResetTime(alert),
+            DeviceType.Gasbay => this._alertBypassService.UpdateGasBayResetTime(alert),
+            _ => throw new ArgumentOutOfRangeException(nameof(deviceType), deviceType, null)
+        };
+
+    private Task<BypassAlert?> RefreshAlert(DeviceType deviceType, ObjectId alertId) =>
+        deviceType switch {
+            DeviceType.Epi1 => this._alertBypassService.FetchUpdatedEpi1BypassAlert(alertId),
+            DeviceType.Epi2 => this._alertBypassService.FetchUpdatedEpi2BypassAlert(alertId),
+            DeviceType.Gasbay => this._alertBypassService.FetchUpdatedGasBayBypassAlert(alertId),
+            _ => throw new ArgumentOutOfRangeException(nameof(deviceType), deviceType, null)
+        };
+
+    public class SavingState {
+        public bool Saving { get; set; }
+        public string SavingText = "Saving...";
+        public string Id { get; set; } = "";
+    }
+
+    public enum DeviceType {
+        Epi1,
+        Epi2,
+        Gasbay
+    }
+
+}

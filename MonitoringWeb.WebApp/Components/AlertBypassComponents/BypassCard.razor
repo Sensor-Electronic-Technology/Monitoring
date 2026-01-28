@@ -1,0 +1,148 @@
+﻿@using System.Timers
+@using MongoDB.Bson
+@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringWeb.WebApp.Data
+@using Timer=System.Timers.Timer
+
+<DxLoadingPanel Visible="@this.Saving" Text="@this.SavingText" ApplyBackgroundShading="true">
+    <div class="card m-1 border border-1">
+        @if (this.BypassAlert == null) {
+            <div class="card-header bg-warning text-white text-center">
+                <h5>Error: Null Alert</h5>
+            </div>
+        } else {
+            <div class="card-header bg-warning text-white text-center">
+                <h5>@this.BypassAlert.DeviceName</h5>
+            </div>
+            <div class="card-body">
+                <DxTabs>
+                    <DxTabPage Text="Bypass">
+                        <div class="card-body p-3 m-3">
+                            <div id="@("flyout-switch-target-" + this.BypassAlert._id.ToString())">
+                                <ToggleButton Caption="Alert"
+                                              OnText="Bypassed"
+                                              OffText="Enabled"
+                                              OnStyle="ButtonRenderStyle.Danger"
+                                              OffStyle="ButtonRenderStyle.Success"
+                                              State="@this._state"
+                                              StateChanged="@(async (bool t) => await this.StateChangedhandler(t))"/>
+                            </div>
+
+                            <DxFlyout @bind-IsOpen="@this._bypassFlyoutOpen"
+                                      Id="bypass-flyout-overview"
+                                      PositionTarget="@("#flyout-switch-target-" + this.BypassAlert._id.ToString())"
+                                      CloseMode="FlyoutCloseMode.None"
+                                      HeaderVisible="true"
+                                      HeaderText="Bypass Alert"
+                                      BodyText="@(this._state ? "Alert Bypassed Saved" : "Alert Enabled Saved")"
+                                      Closed="BypassFlybackClosedHandler"
+                                      Width="150px">
+                            </DxFlyout>
+                        </div>
+                    </DxTabPage>
+                    <DxTabPage Text="Reset Time(Hrs)">
+                        <div class="card-body p-3 m-3">
+                            <div class="row" id="@("flyout-reset-timer-target-" + this.BypassAlert._id.ToString())">
+                                <div class="col-8 m-0">
+                                    <DxSpinEdit @bind-Value="@this._resetTime"
+                                                ShowSpinButtons="true"
+                                                MaxValue="168"
+                                                MinValue="1"
+                                                Increment="1"/>
+                                </div>
+                                <div class="col-4">
+                                    <DxButton Text="Save" SizeMode="SizeMode.Small"
+                                              RenderStyle="ButtonRenderStyle.Info"
+                                              Click="@(async () => await this.ResetTimeSaveHandler())"/>
+                                </div>
+                            </div>
+                            <DxFlyout @bind-IsOpen="@this._resetFlyoutOpen"
+                                      Id="reset-flyout-overview"
+                                      PositionTarget="@("#flyout-reset-timer-target-" + this.BypassAlert._id.ToString())"
+                                      CloseMode="FlyoutCloseMode.None"
+                                      HeaderVisible="true"
+                                      HeaderText="Bypass Reset Time"
+                                      BodyText="Bypass Reset Time Saved"
+                                      Width="250px"
+                                      SizeMode="SizeMode.Small"
+                                      Closed="ResetFlybackClosedHandler">
+                            </DxFlyout>
+                        </div>
+                    </DxTabPage>
+                </DxTabs>
+            </div>
+        }
+    </div>
+</DxLoadingPanel>
+
+@code {
+    [Parameter] public BypassAlert? BypassAlert { get; set; }
+    [Parameter] public EventCallback<(ObjectId id, bool state)> StateChanged { get; set; }
+    [Parameter] public EventCallback<(ObjectId id, int hrs)> ResetTimeChanged { get; set; }
+    [Parameter] public bool Saving { get; set; }
+    [Parameter] public string SavingText { get; set; } = "Saving....";
+
+    private bool _bypassFlyoutOpen = false;
+    private bool _resetFlyoutOpen = false;
+    private bool _state = true;
+    private int _resetTime = 300;
+    private Timer _bypassTimer = new Timer(3000);
+    private Timer _resetTimer = new Timer(3000);
+
+    protected override Task OnInitializedAsync() {
+        this._state = this.BypassAlert?.Bypassed ?? false;
+        this._resetTime = this.BypassAlert?.BypassResetTime ?? 24;
+
+        this._bypassTimer.Elapsed += this.BypassTimerCallback;
+        this._bypassTimer.AutoReset = false;
+
+        this._resetTimer.Elapsed += this.ResetTimerCallback;
+        this._resetTimer.AutoReset = false;
+
+        return base.OnInitializedAsync();
+    }
+
+    private Task StateChangedhandler(bool state) {
+        if (this.BypassAlert == null) return Task.CompletedTask;
+        /*this._bypassFlyoutOpen = true;
+        this._bypassTimer.Start();*/
+        this._state = state;
+        this.BypassAlert.Bypassed = state;
+        return this.StateChanged.InvokeAsync(new(this.BypassAlert._id, state));
+    }
+
+    private Task ResetTimeSaveHandler() {
+        if (this.BypassAlert == null) return Task.CompletedTask;
+        /*this._resetFlyoutOpen = true;
+        this._resetTimer.Start();*/
+        this.BypassAlert.BypassResetTime = this._resetTime;
+        return this.ResetTimeChanged.InvokeAsync(new(this.BypassAlert._id, this._resetTime));
+    }
+
+    private void BypassTimerCallback(object source, ElapsedEventArgs e) {
+        this._bypassFlyoutOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ResetTimerCallback(object source, ElapsedEventArgs e) {
+        this._resetFlyoutOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void BypassFlybackClosedHandler() {
+        if (this._bypassFlyoutOpen)
+            this._bypassFlyoutOpen = false;
+
+        if (this._bypassTimer.Enabled)
+            this._bypassTimer.Stop();
+    }
+
+    private void ResetFlybackClosedHandler() {
+        if (this._resetFlyoutOpen)
+            this._resetFlyoutOpen = false;
+
+        if (this._resetTimer.Enabled)
+            this._resetTimer.Stop();
+    }
+
+}
