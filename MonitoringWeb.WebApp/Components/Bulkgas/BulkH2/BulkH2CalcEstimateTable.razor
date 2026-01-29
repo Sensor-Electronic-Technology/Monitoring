@@ -1,0 +1,74 @@
+﻿@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringWeb.WebApp.Data
+@if (this.Estimates == null || this.AnalogItem == null) {
+    <h5><span style="color: #c2274c;">**Error**:</span> Estimates or Analog item not loaded</h5>
+} else {
+    <div class="row text-center border border-1" style="margin: 1rem">
+        <h5> Current H2 Level(PSI) @this.LastReading</h5>
+    </div>
+    <div class="row justify-content-center">
+        <div class="row text-center border border-1 w-75">
+            <h6>Current Alert Levels</h6>
+        </div>
+        <table class="table table-bordered text-center w-75">
+            <thead>
+            <tr>
+                <th scope="col">Alert</th>
+                <th scope="col">Level</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>SoftWarn</td>
+                <td>@this.AnalogItem?.Level1SetPoint</td>
+            </tr>
+            <tr>
+                <td>Warning</td>
+                <td>@this.AnalogItem?.Level2SetPoint</td>
+            </tr>
+            <tr>
+                <td>Alarm</td>
+                <td>@this.AnalogItem?.Level3SetPoint</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="row justify-content-center">
+        <div class="row text-center border border-1 w-75">
+            <h5>New Alert Levels and Estimate Alert Dates</h5>
+        </div>
+        <table class="table table-bordered text-center w-75">
+            <thead>
+            <tr>
+                <th scope="col">Alert</th>
+                <th scope="col">Level</th>
+                <th scope="col">Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>SoftWarn</td>
+                <td>@this.Estimates.SoftWarn</td>
+                <td>@this.Estimates.SoftWarnDate.ToString("d")</td>
+            </tr>
+            <tr>
+                <td>Warning</td>
+                <td>@this.Estimates.Warning</td>
+                <td>@this.Estimates.WarningDate.ToString("d")</td>
+            </tr>
+            <tr>
+                <td>Alarm</td>
+                <td>@this.Estimates.Alarm</td>
+                <td>@this.Estimates.AlarmDate.ToString("d")</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+}
+
+
+@code {
+    [Parameter] public Estimates? Estimates { get; set; }
+    [Parameter] public AnalogItem? AnalogItem { get; set; }
+    [Parameter] public double LastReading { get; set; }
+}

@@ -1,0 +1,250 @@
+﻿@using MonitoringSystem.Shared.Data.LogModel
+@using MonitoringWeb.WebApp.Data
+@using MonitoringWeb.WebApp.Services
+
+<DxPopup
+    @bind-Visible="@this._msgBoxVisible"
+    ShowFooter="true"
+    HeaderText="@this._msgHeader">
+    <BodyContentTemplate>
+        @*<p style="white-space: pre-line;">@this._msgText</p>*@
+        <div class="row justify-content-center">
+            <div class="row text-center fw-bold border border-1 w-75">
+                <h5>Are you sure you want to save the following new alert levels?</h5>
+            </div>
+
+            <table class="table table-bordered text-center w-75">
+                <thead>
+                <tr>
+                    <th scope="col">Alert</th>
+                    <th scope="col">Level</th>
+                    <th scope="col">Estimated Dates</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>SoftWarn</td>
+                    <td>@this.Estimates.SoftWarn</td>
+                    <td>@this.Estimates.SoftWarnDate.ToString("d")</td>
+                </tr>
+                <tr>
+                    <td>Warning</td>
+                    <td>@this.Estimates.Warning</td>
+                    <td>@this.Estimates.WarningDate.ToString("d")</td>
+                </tr>
+                <tr>
+                    <td>Alarm</td>
+                    <td>@this.Estimates.Alarm</td>
+                    <td>@this.Estimates.AlarmDate.ToString("d")</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </BodyContentTemplate>
+
+    <FooterContentTemplate Context="Context">
+        <div class="row">
+            <div class="col w-50">
+                <DxButton CssClass="popup-button my-1 ms-2"
+                          RenderStyle="ButtonRenderStyle.Primary"
+                          Text="Continue"
+                          Click="@(async () => await ContinueHandler())"/>
+
+            </div>
+            <div class="col w-50">
+                <DxButton CssClass="popup-button my-1 ms-2"
+                          RenderStyle="ButtonRenderStyle.Primary"
+                          Text="Cancel"
+                          Click="@(async () => await CancelHandler())"/>
+            </div>
+        </div>
+
+    </FooterContentTemplate>
+</DxPopup>
+
+<DxLoadingPanel Visible="@this._loading"
+                Text="Calculating..."
+                ApplyBackgroundShading="true">
+    <div class="card">
+        <div class="card-header text-center bg-success text-white border rounded-1">
+            <h5>Calculator</h5>
+        </div>
+        <div class="card-body">
+            <DxFormLayout>
+                <DxFormLayoutTabPages @bind-ActiveTabIndex="@this._tabIndex">
+                    <DxFormLayoutTabPage Caption="By Average">
+                        <DaysFromAlertCalc Days="@this._days"
+                                           DaysChanged="@(async (int newValue) => await DaysChangedHandler(newValue))"
+                                           IncludeWeekends="@this._includeWeekends"
+                                           IncludeWeekendsChanged="@(async (bool newValue) => await IncludeWeekendsChangedHandler(newValue))"/>
+                    </DxFormLayoutTabPage>
+                    <DxFormLayoutTabPage Caption="By Date Range">
+                        <DateRangeAlertCalc @bind-StartDate="@this._startDate"
+                                            @bind-StopDate="@this._stopDate"
+                                            IncludeWeekends="@this._includeWeekends"
+                                            IncludeWeekendsChanged="@(async (bool newValue) => await IncludeWeekendsChangedHandler(newValue))"
+                                            CalculateClicked="@(async () => await Calculate(true, true))"/>
+                    </DxFormLayoutTabPage>
+                </DxFormLayoutTabPages>
+                <DxFormLayoutGroup Caption="Estimated Alert Level">
+                    <DxFormLayoutItem Caption="Average PSI/Day" BeginRow="true">
+                        <DxSpinEdit Value="@this._rate"
+                                    ValueChanged="@(async (double newValue) => await RateChangedHandler(newValue))"/>
+
+                    </DxFormLayoutItem>
+                    <DxFormLayoutTabPages>
+                        <DxFormLayoutTabPage Caption="SoftWarn Level">
+                            <DxFormLayoutItem Caption="SoftWarn Level" BeginRow="true">
+                                <DxSpinEdit Value="@this._calculatedValue"
+                                            ValueChanged="@(async (double newValue) => await RateChangedHandler(newValue))"/>
+                            </DxFormLayoutItem>
+                        </DxFormLayoutTabPage>
+                        <DxFormLayoutTabPage Caption="Modify Calculated Levels">
+                            <DxFormLayoutGroup Caption="H2 Alert Levels" BeginRow="true">
+                                <DxFormLayoutItem Caption="SoftWarn(Initial Email)">
+                                    <DxSpinEdit @bind-Value="@this.Estimates.SoftWarn"
+                                                ShowSpinButtons="false"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Warning">
+                                    <DxSpinEdit @bind-Value="@this.Estimates.Warning"
+                                                ShowSpinButtons="false"/>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Alarm">
+                                    <DxSpinEdit @bind-Value="@this.Estimates.Alarm"
+                                                ShowSpinButtons="false"/>
+                                </DxFormLayoutItem>
+                            </DxFormLayoutGroup>
+                        </DxFormLayoutTabPage>
+                    </DxFormLayoutTabPages>
+                </DxFormLayoutGroup>
+                <DxFormLayoutItem Caption="Save New Alert Level" BeginRow="true" ColSpanMd="12">
+                    <DxButton Text="Submit"
+                              Click="@(async () => await SubmitHandler())"
+                              RenderStyle="ButtonRenderStyle.Primary" CssClass="w-100"/>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </div>
+    </div>
+</DxLoadingPanel>
+
+
+@code {
+    [Inject] private BulkH2CalcService _bulkH2Service { get; set; }
+
+    [Parameter]
+    public Estimates Estimates { get; set; } = new Estimates() {
+        SoftWarnDate = DateTime.MinValue,
+        WarningDate = DateTime.MinValue,
+        AlarmDate = DateTime.MinValue,
+    };
+
+    [Parameter] public double LastReading { get; set; } = 0.00;
+
+    [Parameter] public EventCallback<Estimates> EstimatesChanged { get; set; }
+    [Parameter] public EventCallback<AnalogItem> AnalogItemLoaded { get; set; }
+    [Parameter] public EventCallback<double> LastReadingChanged { get; set; }
+
+    private bool _msgBoxVisible = false;
+    private string _msgHeader = "";
+    private string _msgText = "";
+
+    private bool _loading = false;
+    private string _loadingText = "Loading. . . . ";
+    int _days = 0;
+    double _calculatedValue = 0;
+    double _rate = 0.00;
+    int _daysFromAlarm = 3;
+    bool _includeWeekends = true;
+
+    private DateTime _startDate = DateTime.Now.AddDays(-30);
+    private DateTime _stopDate = DateTime.Now;
+    private int _tabIndex = 0;
+    private AnalogItem? _analogItem;
+
+
+    protected override async Task OnInitializedAsync() {
+        this._loadingText = "Loading . . . . ";
+        this._loading = true;
+
+        this._days = 10;
+        var settings = await this._bulkH2Service.GetSettings();
+        this._analogItem = settings.AnalogItem;
+        await this.AnalogItemLoaded.InvokeAsync(this._analogItem);
+        this._loadingText = "Calculating . . . . ";
+        await this.Calculate();
+        this._loading = false;
+    }
+
+    private async Task DaysChangedHandler(int value) {
+        this._days = value;
+        this._startDate = DateTime.Now.AddDays(-value);
+        this._stopDate = DateTime.Now;
+        await this.Calculate();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RateChangedHandler(double newRate) {
+        this._loadingText = "Calculating . . . . ";
+        this._loading = true;
+        this._rate = newRate;
+        await this.Calculate(false);
+        this._loading = false;
+    }
+
+    private async Task IncludeWeekendsChangedHandler(bool newValue) {
+        this._loadingText = "Calculating . . . . ";
+        this._loading = true;
+        this._includeWeekends = newValue;
+        await this.Calculate(dateRangeCalc: this._tabIndex == 1);
+        this._loading = false;
+    }
+
+    private async Task Calculate(bool updateRate = true, bool dateRangeCalc = false) {
+        H2AlertCalcDto calcDto;
+
+        if (updateRate == false) {
+            calcDto = await this._bulkH2Service.CalculateAlertLevels(this._rate);
+            this.Estimates = calcDto.Estimates;
+            this._rate = calcDto.Rate;
+            this._calculatedValue = calcDto.Estimates.SoftWarn;
+            this.LastReading = calcDto.LastReading;
+            await this.EstimatesChanged.InvokeAsync(calcDto.Estimates);
+            await this.LastReadingChanged.InvokeAsync(calcDto.LastReading);
+        } else {
+            if (dateRangeCalc) {
+                calcDto = await this._bulkH2Service.CalculateAlertLevels(this._startDate, this._stopDate, this._includeWeekends);
+            } else {
+                calcDto = await this._bulkH2Service.CalculateAlertLevels(this._days, this._includeWeekends);
+            }
+
+            this._days = calcDto.Days;
+            this.Estimates = calcDto.Estimates;
+            this._rate = calcDto.Rate;
+            this._calculatedValue = calcDto.Estimates.SoftWarn;
+            this.LastReading = calcDto.LastReading;
+            
+            await this.EstimatesChanged.InvokeAsync(calcDto.Estimates);
+            await this.LastReadingChanged.InvokeAsync(calcDto.LastReading);
+        }
+    }
+
+    private Task ContinueHandler() {
+        this._msgBoxVisible = false;
+        return Task.CompletedTask;
+        //return this._bulkH2Service.SaveNewAlertLevels(this.Estimates);
+    }
+
+    private Task CancelHandler() {
+        this._msgBoxVisible = false;
+        return Task.CompletedTask;
+    }
+
+    private Task SubmitHandler() {
+        this._msgText = $"Are you sure you want to save the following new alert levels? \n" +
+                        $"SoftWarn: {this.Estimates.SoftWarn} Warning: {this.Estimates.Warning} Alarm: {this.Estimates.Alarm}";
+        this._msgHeader = "Save New Alert Levels? ";
+        this._msgBoxVisible = true;
+        return Task.CompletedTask;
+    }
+
+}

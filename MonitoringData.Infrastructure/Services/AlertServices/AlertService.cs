@@ -154,7 +154,6 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                                     if (!activeAlert.Bypassed) {
                                                         sendEmail = true;
                                                     }
-                                                    
                                                 }
                                                 activeAlert.CurrentState = alert.CurrentState;
                                                 this._logger.LogInformation("Alert({Alert}) Email Check. 30seconds",activeAlert.DisplayName);
@@ -162,6 +161,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                         }
                                     }
                                 } else {
+                                    //Current state has not changed - determine if repeat interval has passed and send email if needed
                                     if (activeAlert.AlertLatched) {
                                         activeAlert.AlertLatched = false;
                                         activeAlert.TimeAlertLatched = now;
@@ -173,8 +173,10 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                                     }
                                     if (actionItem != null) {
                                         if (activeAlert.DisplayName is "Bulk H2(PSI)" or "Bulk N2(inH20)" or "Silane" or "Tank1 Weight" or "Tank2 Weight") {
+                                            //Is BulkGas - Do not repeat emails at set interval
                                             activeAlert.ChannelReading = alert.ChannelReading;
                                         } else {
+                                            //Is not BulkGas - Repeat emails at set interval
                                             var emailPeriod = actionItem.EmailPeriod<=0 ? 30 : actionItem.EmailPeriod;
                                             if ((now - activeAlert.LastAlert).TotalMinutes >= emailPeriod) {
                                                 activeAlert.LastAlert = now;

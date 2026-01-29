@@ -32,7 +32,12 @@
 </DxPopup>
 <DxAccordion AnimationType="LayoutAnimationType.Slide">
     <Items>
-        <DxAccordionItem Text="Read Me">
+        <DxAccordionItem >
+            <HeaderTextTemplate>
+                <div class="card-header m-0 p-0 bg-danger">
+                    <h4>Read Me</h4>
+                </div>
+            </HeaderTextTemplate>
             <ContentTemplate>
                 <div class="row m-3">
                     <div class="card">
@@ -74,11 +79,8 @@
                                 </div>
 
                             </div>
-
-
                         </div>
                     </div>
-
                 </div>
             </ContentTemplate>
         </DxAccordionItem>
@@ -86,8 +88,6 @@
 </DxAccordion>
 <DxTabs>
     <DxTabPage Text="Epi1 Alerts">
-
-
         <div class="card">
             <div class="card-header text-center bg-success text-white">
                 <div class="row">
@@ -158,16 +158,6 @@
                             }
                         </div>
                     }
-                    @*@foreach (var alert in this._gasBayAlerts) {
-                        <div class="col-2 shadow-lg p-1 mb-1 rounded justify-content-center">
-                            @{
-                                <BypassCard BypassAlert="@alert" 
-                                            StateChanged="@(async ((ObjectId, bool) input) => await this.GasBayStateChangedChanged(input))"
-                                            ResetTimeChanged="@(async ((ObjectId, int) input) => await this.GasBayResetTimeChangedChanged(input))"/>
-                            }
-
-                        </div>
-                    }*@
                 </div>
             </div>
         </div>

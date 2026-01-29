@@ -1,0 +1,136 @@
+﻿<div class="card">
+    <div class="card-header bg-info text-white text-center border-1 rounded-3">
+        <h5>Instructions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <p><span style="color: #d97945;">**Warning**:</span> This calculator is to be used only by
+                approved
+                parties.
+                Changing values here could delay bulk H2 shipments causing production delays</p>
+            <p><span style="color: #00fff7;">**Notes**:</span>This alert level calculator uses a daily usage rate to
+                determine the SoftWarn level, so the supplier email is sent a set number of days before
+                the Alarm level. The Warning level is then set to a value that triggers the second supplier email, midway
+                between the SoftWarn and Alarm levels. The daily usage rate is calculated by averaging over a date range.
+                This is done by setting the number of days to average from the current date, selecting the date range,
+                or entering the date manually. The user can manually fine-tune the calculated rate and alert levels
+            </p>
+        </div>
+        <div class="row">
+            <div class="card border border-1 p-1">
+                <div class="card-header bg-success text-white text-center border-1 rounded-3">
+                    <h5>Usage Rate Calculation Options</h5>
+                </div>
+                <div class="card-body fs-5 border-1">
+                    <DxAccordion>
+                        <Items>
+                            <DxAccordionItem Text="Usage Rate from Number of Days">
+                                <ContentTemplate>
+                                    <div class="row fs-5 m-3">
+                                        <ol>
+                                            <li>Use the sliding bar to change the number of days to
+                                                average over or
+                                                manually enter the number of
+                                                days int the input box next to the slider
+                                            </li>
+                                            <li>Press Enter to calculate</li>
+                                            <li>Fine tune the value by adjusting the rate shown in the
+                                                Average
+                                                PSI/Day
+                                                input then press Enter to recalculate
+                                            </li>
+                                            <li>Alternatively, fine tune the the alert level(s) by
+                                                selecting the
+                                                "Modify
+                                                Calculated Levels" tab and manually adjusting the
+                                                calculated levels
+                                            </li>
+                                            <ul>
+                                                <li><span style="color: #d97945;">**Warning**:</span>:
+                                                    Changing the
+                                                    levels manually will not change the estimated email
+                                                    dates
+                                                </li>
+                                            </ul>
+                                            <li>Press the "Submit" button to save the changes</li>
+                                        </ol>
+                                    </div>
+                                </ContentTemplate>
+                            </DxAccordionItem>
+                            <DxAccordionItem Text="Usage Rate from Date Range">
+                                <ContentTemplate>
+                                    <div class="row fs-5 m-3">
+                                        <ol>
+                                            <li>Select the start and stop dates to average the daily
+                                                usage
+                                            </li>
+                                            <li>Press the "Calculate" button</li>
+                                            <li>Fine tune the value by adjusting the rate shown in the
+                                                "Average
+                                                PSI/Day"
+                                                input
+                                            </li>
+                                            <li>Alternatively, fine tune the the alert level(s) by
+                                                selecting the
+                                                "Modify
+                                                Calculated Levels" tab and manually adjusting the
+                                                calculated levels
+                                            </li>
+                                            <ul>
+                                                <li><span style="color: #d97945;">**Warning**:</span>:
+                                                    Changing the
+                                                    levels manually will not change the estimated email
+                                                    dates
+                                                </li>
+                                            </ul>
+                                            <li>Press the "Submit" button to save the changes</li>
+                                        </ol>
+                                    </div>
+                                </ContentTemplate>
+                            </DxAccordionItem>
+                            <DxAccordionItem Text="Manually Set Usage Rate">
+                                <ContentTemplate>
+                                    <div class="row fs-5 m-3">
+                                        <ol>
+                                            <li>Set the usage rate in the "Average PSI/Day" input</li>
+                                            <ul>
+                                                <li>This can be done after estimating from a day range,
+                                                    estimating from a number of days before the current
+                                                    date, or at
+                                                    the start
+                                                </li>
+                                                <li>Once you calculate the rate from other options any
+                                                    manually
+                                                    enter value will be lost
+                                                </li>
+                                            </ul>
+                                            <li>Press the "Submit" button to save the changes</li>
+                                        </ol>
+                                    </div>
+                                </ContentTemplate>
+                            </DxAccordionItem>
+                        </Items>
+                    </DxAccordion>
+                </div>
+                <div class="card-footer">
+                    <p><span style="color: #c744c7;">Manual Alert Level Setting:</span> It is also
+                        possible to
+                        bypass the
+                        usage rate calculation and manually enter the SoftWarn, Warning, and Alarm
+                        levels.
+                        To manually enter the SoftWarn, Warning, and Alarm levels go to the "Settings"
+                        tab and
+                        adjust the
+                        values.
+                        Press the "Save Changes" button to save the changes.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+
+}

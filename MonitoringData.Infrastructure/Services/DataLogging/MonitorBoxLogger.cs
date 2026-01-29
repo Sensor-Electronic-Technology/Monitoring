@@ -120,7 +120,6 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                             } else if ((int)analogReading.Value <= item.Level1SetPoint && (int)analogReading.Value > item.Level2SetPoint) {
                                 state = item.Level1Action;
                             }
-
                             alertRecord.ChannelReading = (float)analogReading.Value;
                             alertRecord.CurrentState = state;
                         } else {

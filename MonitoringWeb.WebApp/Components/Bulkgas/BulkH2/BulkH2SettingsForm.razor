@@ -7,27 +7,21 @@
 <div class="card-body">
 
     <DxLoadingPanel Visible="@this._loading"
+                    Text="Loading..."
                     ApplyBackgroundShading="true">
-
-
         <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
             @if (this._bulkH2SettingsDto.AnalogItem == null) {
                 <h3>Failed to load analog item</h3>
             } else {
                 <DxFormLayoutGroup Caption="H2 Alert Levels" BeginRow="true">
                     <DxFormLayoutItem Caption="SoftWarn(Initial Email)">
-                        <DxSpinEdit Value="@this._bulkH2SettingsDto.AnalogItem?.Level1SetPoint"
-                                    ReadOnly="true"/>
+                        <DxSpinEdit @bind-Value="@this._level1SetPoint" ShowSpinButtons="false"/>
                     </DxFormLayoutItem>
                     <DxFormLayoutItem Caption="Warning">
-                        <DxSpinEdit Value="@this._bulkH2SettingsDto.AnalogItem?.Level2SetPoint"
-                                    ShowSpinButtons="false"
-                                    ReadOnly="true"/>
+                        <DxSpinEdit @bind-Value="@this._level2SetPoint" ShowSpinButtons="false"/>
                     </DxFormLayoutItem>
                     <DxFormLayoutItem Caption="Alarm">
-                        <DxSpinEdit Value="@this._bulkH2SettingsDto.AnalogItem?.Level3SetPoint"
-                                    ShowSpinButtons="false"
-                                    ReadOnly="true"/>
+                        <DxSpinEdit @bind-Value="@this._level3SetPoint" ShowSpinButtons="false"/>
                     </DxFormLayoutItem>
                     <DxFormLayoutItem ColSpanLg="12">
                         <DxButton Text="Save Changes"
@@ -68,15 +62,23 @@
 
     [Inject] private BulkH2CalcService _calcService { get; set; }
     private BulkH2SettingsDto _bulkH2SettingsDto = new BulkH2SettingsDto();
+    private double _level1SetPoint = 0;
+    private double _level2SetPoint = 0;
+    private double _level3SetPoint = 0;
     private bool _loading = false;
+    private string _loadingText="Loading. . . . .";
     private bool _analogItemLoaded = false;
 
     protected override async Task OnInitializedAsync() {
-        //this.SpinnerService.Show();
+        this._loadingText = "Loading. . . . .";
+        this._loading = true;
         this._bulkH2SettingsDto = await this._calcService.GetSettings();
+        this._level1SetPoint = this._bulkH2SettingsDto.AnalogItem?.Level1SetPoint ?? 0;
+        this._level2SetPoint = this._bulkH2SettingsDto.AnalogItem?.Level2SetPoint ?? 0;
+        this._level3SetPoint = this._bulkH2SettingsDto.AnalogItem?.Level3SetPoint ?? 0;
+        this._loading = false;
     }
-
-
+    
     private async Task SaveBulksSettingsHandler() {
         this._loading = true;
         await this._calcService.UpdateSettings(this._bulkH2SettingsDto.BulkH2CalcSettings);
@@ -84,7 +86,13 @@
     }
 
     private async Task SaveAnalogItemHandler() {
-        await this._calcService.UpdateAnalogItem(this._bulkH2SettingsDto.AnalogItem);
+        this._loadingText = "Saving. . . . .";
+        this._loading = true;
+        if (this._bulkH2SettingsDto.AnalogItem != null) {
+            await this._calcService.UpdateAnalogItem(this._bulkH2SettingsDto.AnalogItem._id,
+                this._level1SetPoint,this._level2SetPoint,this._level3SetPoint);
+        }
+        this._loading = false;
     }
 
 }

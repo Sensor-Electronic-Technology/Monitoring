@@ -27,9 +27,9 @@ namespace MonitoringData.DataLoggingService {
             foreach (var change in cursor.ToEnumerable()) {
                 var collectionName = change.CollectionNamespace.CollectionName;
                 var reload= collectionName is "analog_items" or "discrete_items" or "alert_items" 
-                                            or "virtual_items" or "action_item";
+                                            or "virtual_items" or "action_item" or "bypass_alerts";
                 if (reload) {
-                   // this._applicationLifetime.StopApplication();
+                   //this._applicationLifetime.StopApplication();
                     this._logger.LogCritical("Reloading...");
                     /*await this._mediator.Publish<ReloadConsumer>(new ReloadConsumer(), stoppingToken);*/
                     this._applicationLifetime.StopApplication();

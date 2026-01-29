@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.EntityDtos;
@@ -111,6 +112,7 @@ public class BulkH2CalcService {
         result.Estimates = estimates;
         return result;
     }
+    
 
     public Task UpdateSettings(BulkH2CalcSettings settings) {
         var update = Builders<BulkH2CalcSettings>.Update
@@ -122,14 +124,12 @@ public class BulkH2CalcService {
             new UpdateOptions { IsUpsert = true });
     }
 
-    public Task UpdateAnalogItem(AnalogItem? analogItem) {
-        if (analogItem == null) return Task.CompletedTask;
-
+    public Task UpdateAnalogItem(ObjectId id, double level1SetPoint, double level2SetPoint,double level3SetPoint) {
         var update = Builders<AnalogItem>.Update
-            .Set(e => e.Level1SetPoint, analogItem.Level1SetPoint)
-            .Set(e => e.Level2SetPoint, analogItem.Level2SetPoint)
-            .Set(e => e.Level3SetPoint, analogItem.Level3SetPoint);
-        return this._analogItemCollection.UpdateOneAsync(e => e._id == analogItem._id, update);
+            .Set(e => e.Level1SetPoint, (float)level1SetPoint)
+            .Set(e => e.Level2SetPoint, (float)level2SetPoint)
+            .Set(e => e.Level3SetPoint, (float)level3SetPoint);
+        return this._analogItemCollection.UpdateOneAsync(e => e._id == id, update);
     }
 
     public async Task<List<AnalogItem>> GetAnalogItems() {
