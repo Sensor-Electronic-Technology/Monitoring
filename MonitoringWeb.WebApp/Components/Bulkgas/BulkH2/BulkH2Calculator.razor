@@ -65,8 +65,8 @@
 <DxLoadingPanel Visible="@this._loading"
                 Text="Calculating..."
                 ApplyBackgroundShading="true">
-    <div class="card border border-1">
-        <div class="card-header text-center bg-success text-white rounded-3">
+    <div class="card border">
+        <div class="card-header text-center bg-success text-white rounded rounded-3">
             <h5>Calculator</h5>
         </div>
         <div class="card-body">
@@ -83,7 +83,7 @@
                                             @bind-StopDate="@this._stopDate"
                                             IncludeWeekends="@this._includeWeekends"
                                             IncludeWeekendsChanged="@(async (bool newValue) => await IncludeWeekendsChangedHandler(newValue))"
-                                            CalculateClicked="@(async () => await Calculate(true, true))"/>
+                                            CalculateClicked="@(async () => await this.DateRangeCalcClickedHandler())"/>
                     </DxFormLayoutTabPage>
                 </DxFormLayoutTabPages>
                 <DxFormLayoutGroup Caption="Estimated Alert Level">
@@ -165,7 +165,6 @@
     protected override async Task OnInitializedAsync() {
         this._loadingText = "Loading . . . . ";
         this._loading = true;
-
         this._days = 10;
         var settings = await this._bulkH2Service.GetSettings();
         this._analogItem = settings.AnalogItem;
@@ -176,11 +175,21 @@
     }
 
     private async Task DaysChangedHandler(int value) {
+        this._loadingText = "Calculating . . . . ";
+        this._loading = true;
         this._days = value;
         this._startDate = DateTime.Now.AddDays(-value);
         this._stopDate = DateTime.Now;
         await this.Calculate();
+        this._loading = false;
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DateRangeCalcClickedHandler() {
+        this._loadingText="Calculating . . . . ";
+        this._loading = true;
+        await this.Calculate(true, true);
+        this._loading = false;
     }
 
     private async Task RateChangedHandler(double newRate) {
