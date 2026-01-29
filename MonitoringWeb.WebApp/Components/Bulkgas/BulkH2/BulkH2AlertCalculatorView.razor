@@ -8,15 +8,15 @@
 <div class="row w-100">
     <div class="row justify-content-center w-100">
         <div class="card">
-            <div class="card-header bg-primary text-white text-center border-1 rounded-3">
+            <div class="card-header bg-primary text-white text-center rounded-3">
                 <h3> Alert Level Calculator</h3>
             </div>
             <div class="card-body">
                 <div class="row justify-content-center w-100">
-                    <div class="col-5 border rounded-3 fs-5 m-0 overflow-auto">
+                    <div class="col-5 fs-5">
                         <BulkH2CalcInstructions/>
                     </div>
-                    <div class="col-4 border rounded-3">
+                    <div class="col-4">
                         <div class="row justify-content-center border rounded-1">
                             <BulkH2Calculator LastReading="@this._lastReading"
                                               LastReadingChanged="@this.LastReadingChangedHandler"
@@ -25,7 +25,7 @@
                                               EstimatesChanged="@this.EstimatesChangedHandler"/>
                         </div>
                     </div>
-                    <div class="col-3 justify-content-center border rounded-1">
+                    <div class="col-3 justify-content-center ">
                         <BulkH2CalcEstimateTable AnalogItem="@_analogItem" Estimates="@_estimates"
                                                  LastReading="@_lastReading"/>
                     </div>
@@ -35,49 +35,16 @@
                 <DxAccordion LoadChildItemsOnDemand="true">
                     <Items>
                         <DxAccordionItem Text="Usage Table">
-                            <UsageTable GasType="@BulkGasType.H2"/>
+                            <ContentTemplate>
+                                <UsageTable GasType="@BulkGasType.H2"/>
+                            </ContentTemplate>
                         </DxAccordionItem>
                     </Items>
                 </DxAccordion>
             </div>
         </div>
-        @*<div class="row text-center justify-content-center border rounded-3">
-            <h3> Alert Level Calculator</h3>
-        </div>
-        <div class="col-4 border rounded-3 fs-5 overflow-scroll">
-            <BulkH2CalcInstructions/>
-        </div>
-        <div class="col-4 border rounded-3">
-            <div class="row justify-content-center">
-                <BulkH2Calculator LastReading="@this._lastReading"
-                                  LastReadingChanged="@this.LastReadingChangedHandler"
-                                  AnalogItemLoaded="@this.AnalogItemLoadingHandler"
-                                  Estimates="@this._estimates"
-                                  EstimatesChanged="@this.EstimatesChangedHandler"/>
-                $1$<div class="card-body col-md-6 mx-auto border rounded-3 p-4 justify-content-center">
-                        <BulkH2Calculator LastReading="@this._lastReading"
-                                          LastReadingChanged="@this.LastReadingChangedHandler"
-                                          AnalogItemLoaded="@this.AnalogItemLoadingHandler"
-                                          Estimates="@this._estimates"
-                                          EstimatesChanged="@this.EstimatesChangedHandler"/>
-                    </div>#1#
-            </div>
-        </div>
-        <div class="col-4 justify-content-center border rounded-3">
-            <BulkH2CalcEstimateTable AnalogItem="@_analogItem" Estimates="@_estimates" LastReading="@_lastReading"/>
-        </div>*@
     </div>
 </div>
-
-@*<div class="row w-100 m-3">
-    <DxAccordion LoadChildItemsOnDemand="true">
-        <Items>
-            <DxAccordionItem Text="Usage Table">
-                <UsageTable GasType="@BulkGasType.H2"/>
-            </DxAccordionItem>
-        </Items>
-    </DxAccordion>
-</div>*@
 
 @code {
 

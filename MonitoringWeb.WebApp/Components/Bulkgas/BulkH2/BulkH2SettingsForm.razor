@@ -66,7 +66,7 @@
     private double _level2SetPoint = 0;
     private double _level3SetPoint = 0;
     private bool _loading = false;
-    private string _loadingText="Loading. . . . .";
+    private string _loadingText = "Loading. . . . .";
     private bool _analogItemLoaded = false;
 
     protected override async Task OnInitializedAsync() {
@@ -78,11 +78,11 @@
         this._level3SetPoint = this._bulkH2SettingsDto.AnalogItem?.Level3SetPoint ?? 0;
         this._loading = false;
     }
-    
+
     private async Task SaveBulksSettingsHandler() {
         this._loading = true;
         await this._calcService.UpdateSettings(this._bulkH2SettingsDto.BulkH2CalcSettings);
-        this._loading=false;
+        this._loading = false;
     }
 
     private async Task SaveAnalogItemHandler() {
@@ -90,8 +90,9 @@
         this._loading = true;
         if (this._bulkH2SettingsDto.AnalogItem != null) {
             await this._calcService.UpdateAnalogItem(this._bulkH2SettingsDto.AnalogItem._id,
-                this._level1SetPoint,this._level2SetPoint,this._level3SetPoint);
+                this._level1SetPoint, this._level2SetPoint, this._level3SetPoint);
         }
+
         this._loading = false;
     }
 
