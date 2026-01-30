@@ -139,10 +139,14 @@
     };
 
     [Parameter] public double LastReading { get; set; } = 0.00;
-
     [Parameter] public EventCallback<Estimates> EstimatesChanged { get; set; }
     [Parameter] public EventCallback<AnalogItem> AnalogItemLoaded { get; set; }
     [Parameter] public EventCallback<double> LastReadingChanged { get; set; }
+
+    [Parameter] public EventCallback<string> LoadingTextChanged { get; set; }
+    [Parameter] public EventCallback<bool> LoadingChanged { get; set; }
+
+
 
     private bool _msgBoxVisible = false;
     private string _msgHeader = "";
@@ -163,49 +167,44 @@
 
 
     protected override async Task OnInitializedAsync() {
-        this._loadingText = "Loading . . . . ";
-        this._loading = true;
+        await this.ShowHideLoading(true,"Loading. . . . . . ");
         this._days = 10;
         var settings = await this._bulkH2Service.GetSettings();
         this._analogItem = settings.AnalogItem;
         await this.AnalogItemLoaded.InvokeAsync(this._analogItem);
-        this._loadingText = "Calculating . . . . ";
+        await this.ShowHideLoading(true,"Calculating. . . . . .");
         await this.Calculate();
-        this._loading = false;
+        await this.ShowHideLoading(false);
     }
 
     private async Task DaysChangedHandler(int value) {
-        this._loadingText = "Calculating . . . . ";
-        this._loading = true;
+        await this.ShowHideLoading(true);
         this._days = value;
         this._startDate = DateTime.Now.AddDays(-value);
         this._stopDate = DateTime.Now;
         await this.Calculate();
-        this._loading = false;
+        await this.ShowHideLoading(false);
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task DateRangeCalcClickedHandler() {
-        this._loadingText="Calculating . . . . ";
-        this._loading = true;
+        await this.ShowHideLoading(true);
         await this.Calculate(true, true);
-        this._loading = false;
+        await this.ShowHideLoading(false);
     }
 
     private async Task RateChangedHandler(double newRate) {
-        this._loadingText = "Calculating . . . . ";
-        this._loading = true;
+        await this.ShowHideLoading(true);
         this._rate = newRate;
         await this.Calculate(false);
-        this._loading = false;
+        await this.ShowHideLoading(false);
     }
 
     private async Task IncludeWeekendsChangedHandler(bool newValue) {
-        this._loadingText = "Calculating . . . . ";
-        this._loading = true;
+        await this.ShowHideLoading(true);
         this._includeWeekends = newValue;
         await this.Calculate(dateRangeCalc: this._tabIndex == 1);
-        this._loading = false;
+        await this.ShowHideLoading(false);
     }
 
     private async Task Calculate(bool updateRate = true, bool dateRangeCalc = false) {
@@ -231,7 +230,7 @@
             this._rate = calcDto.Rate;
             this._calculatedValue = calcDto.Estimates.SoftWarn;
             this.LastReading = calcDto.LastReading;
-            
+
             await this.EstimatesChanged.InvokeAsync(calcDto.Estimates);
             await this.LastReadingChanged.InvokeAsync(calcDto.LastReading);
         }
@@ -254,6 +253,18 @@
         this._msgHeader = "Save New Alert Levels? ";
         this._msgBoxVisible = true;
         return Task.CompletedTask;
+    }
+
+    public async Task ShowHideLoading(bool show,string loadingText="Calculating. . . . . ") {
+        if (show) {
+            this._loadingText = loadingText;
+            await this.LoadingTextChanged.InvokeAsync(this._loadingText);
+            this._loading = show;
+            await this.LoadingChanged.InvokeAsync(this._loading);
+        } else {
+            this._loading = show;
+            await this.LoadingChanged.InvokeAsync(this._loading);
+        }
     }
 
 }

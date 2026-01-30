@@ -27,12 +27,17 @@
                                                                   LastReadingChanged="@this.LastReadingChangedHandler"
                                                                   AnalogItemLoaded="@this.AnalogItemLoadingHandler"
                                                                   Estimates="@this._estimates"
-                                                                  EstimatesChanged="@this.EstimatesChangedHandler"/>
+                                                                  EstimatesChanged="@this.EstimatesChangedHandler"
+                                                                  LoadingChanged="@(async (bool state) => await this.LoadingChanged(state))"
+                                                                  LoadingTextChanged="@(async (string text) => await this.LoadingTextChanged(text))"/>
                                             </div>
                                         </div>
                                         <div class="col-4 justify-content-center ">
-                                            <BulkH2CalcEstimateTable AnalogItem="@_analogItem" Estimates="@_estimates"
-                                                                     LastReading="@_lastReading"/>
+                                            <BulkH2CalcEstimateTable AnalogItem="@_analogItem" 
+                                                                     Estimates="@_estimates"
+                                                                     LastReading="@_lastReading"
+                                                                     LoadingText="@this._loadingText"
+                                                                     Loading="@this._loading"/>
                                         </div>
                                     </div>
                                 </div>
@@ -54,6 +59,9 @@
 
 
 @code {
+
+    private bool _loading = false;
+    private string _loadingText = "Calculating. . . . .";
 
     private Estimates _estimates = new Estimates() {
         SoftWarnDate = DateTime.MinValue,
@@ -77,6 +85,16 @@
     private Task LastReadingChangedHandler(double lastReading) {
         this._lastReading = lastReading;
         return InvokeAsync(StateHasChanged);
+    }
+
+    private Task LoadingChanged(bool state) {
+        this._loading = state;
+        return Task.CompletedTask;
+    }
+
+    private Task LoadingTextChanged(string loadingText) {
+        this._loadingText = loadingText;
+        return Task.CompletedTask;
     }
 
 }

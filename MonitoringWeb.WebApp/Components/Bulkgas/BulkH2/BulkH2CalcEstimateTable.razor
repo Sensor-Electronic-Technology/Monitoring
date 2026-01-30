@@ -2,13 +2,19 @@
 @using MonitoringWeb.WebApp.Data
 
 
+<DxLoadingPanel Visible="@this.Loading" Text="@this.LoadingText" ApplyBackgroundShading="true">
 @if (this.Estimates == null || this.AnalogItem == null) {
     <h5><span style="color: #c2274c;">**Error**:</span> Estimates or Analog item not loaded</h5>
 } else {
     <div class="card border-1">
         <div class="card-header bg-info text-white text-center rounded-3">
-            <h5> Current H2 Level(PSI) @this.LastReading</h5>
+            <h5> Current and Calculated Alert Levels</h5>
         </div>
+
+        <div class="card-header m-3 bg-warning text-white text-center rounded-3">
+            <h5> Current H2 Level(PSI): @(Math.Round(this.LastReading,2))</h5>
+        </div>
+        
         <div class="card-body rounded-3 justify-content-center">
 
             <div class="card m-3">
@@ -44,7 +50,7 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-header text-center bg-info text-white rounded-3">
+                <div class="card-header text-center bg-success text-white rounded-3">
                     <h5>New Alert Levels and Estimate Alert Dates</h5>
                 </div>
                 <div class="card-body">
@@ -82,10 +88,13 @@
         </div>
     </div>
 }
+</DxLoadingPanel>
 
 
 @code {
     [Parameter] public Estimates? Estimates { get; set; }
     [Parameter] public AnalogItem? AnalogItem { get; set; }
     [Parameter] public double LastReading { get; set; }
+    [Parameter] public bool Loading { get; set; } = false;
+    [Parameter] public string LoadingText { get; set; } = "Calculating . . . . ";
 }
