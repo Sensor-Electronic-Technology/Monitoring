@@ -8,37 +8,35 @@
 <div class="row w-100 m-1">
     <DxAccordion LoadChildItemsOnDemand="true">
         <Items>
-            <DxAccordionItem Text="Alert Calculator" Expanded="true" >
+            <DxAccordionItem Text="Alert Calculator" Expanded="true">
                 <ContentTemplate>
-                    <div class="row justify-content-center w-100">
-                        <div class="row justify-content-center w-100">
-                            <div class="card">
-                                <div class="card-header bg-primary text-white text-center rounded rounded-3">
-                                    <h3> Alert Level Calculator</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row justify-content-center w-100">
-                                        <div class="col-4 fs-5">
-                                            <BulkH2CalcInstructions/>
+                    <div class="row d-flex justify-content-center p-3">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white text-center rounded rounded-3">
+                                <h3> Alert Level Calculator</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row justify-content-center w-100">
+                                    <div class="col-4 fs-5">
+                                        <BulkH2CalcInstructions/>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="row justify-content-center">
+                                            <BulkH2Calculator LastReading="@this._lastReading"
+                                                              LastReadingChanged="@this.LastReadingChangedHandler"
+                                                              AnalogItemLoaded="@this.AnalogItemLoadingHandler"
+                                                              Estimates="@this._estimates"
+                                                              EstimatesChanged="@this.EstimatesChangedHandler"
+                                                              LoadingChanged="@(async (bool state) => await this.LoadingChanged(state))"
+                                                              LoadingTextChanged="@(async (string text) => await this.LoadingTextChanged(text))"/>
                                         </div>
-                                        <div class="col-4">
-                                            <div class="row justify-content-center">
-                                                <BulkH2Calculator LastReading="@this._lastReading"
-                                                                  LastReadingChanged="@this.LastReadingChangedHandler"
-                                                                  AnalogItemLoaded="@this.AnalogItemLoadingHandler"
-                                                                  Estimates="@this._estimates"
-                                                                  EstimatesChanged="@this.EstimatesChangedHandler"
-                                                                  LoadingChanged="@(async (bool state) => await this.LoadingChanged(state))"
-                                                                  LoadingTextChanged="@(async (string text) => await this.LoadingTextChanged(text))"/>
-                                            </div>
-                                        </div>
-                                        <div class="col-4 justify-content-center ">
-                                            <BulkH2CalcEstimateTable AnalogItem="@_analogItem" 
-                                                                     Estimates="@_estimates"
-                                                                     LastReading="@_lastReading"
-                                                                     LoadingText="@this._loadingText"
-                                                                     Loading="@this._loading"/>
-                                        </div>
+                                    </div>
+                                    <div class="col-4 justify-content-center ">
+                                        <BulkH2CalcEstimateTable AnalogItem="@_analogItem"
+                                                                 Estimates="@_estimates"
+                                                                 LastReading="@_lastReading"
+                                                                 LoadingText="@this._loadingText"
+                                                                 Loading="@this._loading"/>
                                     </div>
                                 </div>
                             </div>
@@ -49,7 +47,9 @@
             </DxAccordionItem>
             <DxAccordionItem Text="Usage Table">
                 <ContentTemplate>
-                    <UsageTable GasType="@BulkGasType.H2"/>
+                    <div class="row d-flex justify-content-center">
+                        <UsageTable GasType="@BulkGasType.H2"/>
+                    </div>
                 </ContentTemplate>
             </DxAccordionItem>
         </Items>

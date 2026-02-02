@@ -16,74 +16,82 @@
         </div>
         
         <div class="card-body rounded-3 justify-content-center">
-
-            <div class="card m-3">
-                <div class="card-header text-center bg-info text-white rounded rounded-3">
-                    <h6>Current Alert Levels</h6>
-                </div>
-
-                <div class="card-body ">
-                    <div class="row justify-content-center">
-                        <table class="table table-bordered text-center w-75">
-                            <thead>
-                            <tr>
-                                <th scope="col">Alert</th>
-                                <th scope="col">Level</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>SoftWarn</td>
-                                <td>@this.AnalogItem?.Level1SetPoint</td>
-                            </tr>
-                            <tr>
-                                <td>Warning</td>
-                                <td>@this.AnalogItem?.Level2SetPoint</td>
-                            </tr>
-                            <tr>
-                                <td>Alarm</td>
-                                <td>@this.AnalogItem?.Level3SetPoint</td>
-                            </tr>
-                            </tbody>
-                        </table>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="card">
+                        <div class="card-header text-center bg-success text-white rounded-3">
+                            <h5>New Alert Levels and Estimate Alert Dates</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row justify-content-center fs-6">
+                                <table class="table table-bordered text-center w-75">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Alert</th>
+                                        <th scope="col">Level</th>
+                                        <th scope="col">Date</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>SoftWarn</td>
+                                        <td>@this.Estimates.SoftWarn</td>
+                                        <td>@this.Estimates.SoftWarnDate.ToString("d")</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Warning</td>
+                                        <td>@this.Estimates.Warning</td>
+                                        <td>@this.Estimates.WarningDate.ToString("d")</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Alarm</td>
+                                        <td>@this.Estimates.Alarm</td>
+                                        <td>@this.Estimates.AlarmDate.ToString("d")</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="card">
-                <div class="card-header text-center bg-success text-white rounded-3">
-                    <h5>New Alert Levels and Estimate Alert Dates</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row justify-content-center">
-                        <table class="table table-bordered text-center w-75">
-                            <thead>
-                            <tr>
-                                <th scope="col">Alert</th>
-                                <th scope="col">Level</th>
-                                <th scope="col">Date</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>SoftWarn</td>
-                                <td>@this.Estimates.SoftWarn</td>
-                                <td>@this.Estimates.SoftWarnDate.ToString("d")</td>
-                            </tr>
-                            <tr>
-                                <td>Warning</td>
-                                <td>@this.Estimates.Warning</td>
-                                <td>@this.Estimates.WarningDate.ToString("d")</td>
-                            </tr>
-                            <tr>
-                                <td>Alarm</td>
-                                <td>@this.Estimates.Alarm</td>
-                                <td>@this.Estimates.AlarmDate.ToString("d")</td>
-                            </tr>
-                            </tbody>
-                        </table>
+                <div class="col-sm-6">
+                    <div class="card m-3">
+                        <div class="card-header text-center bg-info text-white rounded rounded-3">
+                            <h6>Current Alert Levels</h6>
+                        </div>
+
+                        <div class="card-body ">
+                            <div class="row justify-content-center">
+                                <table class="table table-bordered text-center w-75">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Alert</th>
+                                        <th scope="col">Level</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>SoftWarn</td>
+                                        <td>@this.AnalogItem?.Level1SetPoint</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Warning</td>
+                                        <td>@this.AnalogItem?.Level2SetPoint</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Alarm</td>
+                                        <td>@this.AnalogItem?.Level3SetPoint</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
+            
+            
 
         </div>
     </div>
