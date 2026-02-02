@@ -21,11 +21,11 @@ jobs:
           file: ./MonitoringWeb.WebApp/Dockerfile
           push: true
           tags: ${{ secrets.Docker_Username}}/monitorwebapp:dev
-  deploy:
-    needs: build
-    runs-on:
-     group: setihost-group
-    steps:
-      - uses: actions/checkout@v3
-      - run: microk8s.kubectl rollout restart deployment webapp
+  # deploy:
+  #   needs: build
+  #   runs-on:
+  #    group: setihost-group
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - run: microk8s.kubectl rollout restart deployment webapp
       
