@@ -81,7 +81,7 @@
 
     private async Task SaveBulksSettingsHandler() {
         this._loading = true;
-        //await this._calcService.UpdateSettings(this._bulkH2SettingsDto.BulkH2CalcSettings);
+        await this._calcService.UpdateSettings(this._bulkH2SettingsDto.BulkH2CalcSettings);
         this._loading = false;
     }
 
@@ -89,8 +89,8 @@
         this._loadingText = "Saving. . . . .";
         this._loading = true;
         if (this._bulkH2SettingsDto.AnalogItem != null) {
-            /*await this._calcService.UpdateAnalogItem(this._bulkH2SettingsDto.AnalogItem._id,
-                this._level1SetPoint, this._level2SetPoint, this._level3SetPoint);*/
+            await this._calcService.UpdateAnalogItem(this._bulkH2SettingsDto.AnalogItem._id,
+                this._level1SetPoint, this._level2SetPoint, this._level3SetPoint);
         }
 
         this._loading = false;

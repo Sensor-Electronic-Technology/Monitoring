@@ -238,8 +238,7 @@
 
     private Task ContinueHandler() {
         this._msgBoxVisible = false;
-        return Task.CompletedTask;
-        //return this._bulkH2Service.SaveNewAlertLevels(this.Estimates);
+        return this._bulkH2Service.SaveNewAlertLevels(this.Estimates);
     }
 
     private Task CancelHandler() {
