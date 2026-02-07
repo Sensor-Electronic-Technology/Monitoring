@@ -33,10 +33,9 @@ public class SmtpEmailService:IEmailService {
                 await client.ConnectAsync(this._settings.SmtpHost, this._settings.SmtpPort,false);
                 var message =new MimeMessage();
                 message.From.Add(this._from);
-                MailboxAddress address=new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com");
-                message.To.Add(address);
-                //message.To.AddRange(this._recipients);
-                
+                /*MailboxAddress address=new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com");
+                message.To.Add(address);*/
+                message.To.AddRange(this._recipients);
                 BodyBuilder builder = new BodyBuilder();
                 var bodyImage = await builder.LinkedResources.AddAsync("GasDetectorMap.png");
                 bodyImage.ContentId = MimeUtils.GenerateMessageId();

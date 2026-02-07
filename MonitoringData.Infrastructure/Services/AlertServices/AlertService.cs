@@ -296,7 +296,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             if (bypassed.Count>0) {
                 List<UpdateOneModel<BypassAlert>> updates=new List<UpdateOneModel<BypassAlert>>();
                 foreach (var alert in bypassed) {
-                    if ((now - alert.TimeBypassed).TotalMinutes >= alert.BypassResetTime) {
+                    if ((now - alert.TimeBypassed).TotalHours >= alert.BypassResetTime) {
                         var filter = Builders<BypassAlert>.Filter.Eq(e => e._id,alert.AlertId);
                         var update = Builders<BypassAlert>.Update
                             .Set(e => e.Bypassed, false)
