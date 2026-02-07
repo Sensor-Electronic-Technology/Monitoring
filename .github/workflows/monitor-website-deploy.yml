@@ -20,7 +20,7 @@ jobs:
           context: .
           file: ./MonitoringWeb.WebApp/Dockerfile
           push: true
-          tags: ${{ secrets.Docker_Username}}/monitorwebapp:dev
+          tags: ${{ secrets.Docker_Username}}/monitorwebapp:latestv2
   # deploy:
   #   needs: build
   #   runs-on:
