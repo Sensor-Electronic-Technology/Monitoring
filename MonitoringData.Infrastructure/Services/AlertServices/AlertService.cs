@@ -42,6 +42,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             messageBuilder.StartMessage(this._alertRepo.ManagedDevice.DeviceName ?? "DeviceNameNotFound");
             bool sendEmail = false;
             bool sendExEmail = false;
+            await this.CheckBypassAlert(now);
             foreach (var alert in alerts) {
                 if (alert.Enabled) {
                     var activeAlert = this._activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
@@ -295,7 +296,7 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
             if (bypassed.Count>0) {
                 List<UpdateOneModel<BypassAlert>> updates=new List<UpdateOneModel<BypassAlert>>();
                 foreach (var alert in bypassed) {
-                    if ((now - alert.TimeBypassed).TotalHours >= alert.BypassResetTime) {
+                    if ((now - alert.TimeBypassed).TotalMinutes >= alert.BypassResetTime) {
                         var filter = Builders<BypassAlert>.Filter.Eq(e => e._id,alert.AlertId);
                         var update = Builders<BypassAlert>.Update
                             .Set(e => e.Bypassed, false)
