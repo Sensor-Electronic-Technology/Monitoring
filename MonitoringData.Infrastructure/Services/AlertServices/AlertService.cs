@@ -305,7 +305,10 @@ namespace MonitoringData.Infrastructure.Services.AlertServices {
                             filter,update));
                     }
                 }
-                await this._alertRepo.ResetBypassAlerts(updates);
+
+                if (updates.Count > 0) {
+                    await this._alertRepo.ResetBypassAlerts(updates);
+                }
             }
         }
         
