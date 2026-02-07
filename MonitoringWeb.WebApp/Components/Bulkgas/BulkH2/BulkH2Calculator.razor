@@ -254,7 +254,7 @@
         return Task.CompletedTask;
     }
 
-    public async Task ShowHideLoading(bool show,string loadingText="Calculating. . . . . ") {
+    private async Task ShowHideLoading(bool show,string loadingText="Calculating. . . . . ") {
         if (show) {
             this._loadingText = loadingText;
             await this.LoadingTextChanged.InvokeAsync(this._loadingText);
