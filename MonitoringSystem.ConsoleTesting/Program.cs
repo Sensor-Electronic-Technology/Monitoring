@@ -152,9 +152,16 @@ namespace MonitoringSystem.ConsoleTesting {
                 Console.WriteLine(JsonSerializer.Serialize(alert,new JsonSerializerOptions(){WriteIndented = true}));
             }#1#*/
 
-            await CreateBypassAlerts();
-
+            //await CreateBypassAlerts();
+            string startStr = "4/8/2026  3:14:08 AM";
+            string endStr = "4/10/2026  8:45:24 AM";
+            var client = new MongoClient("mongodb://172.20.3.41");
+            var epi1AlertCollection=client.GetDatabase("epi1_data").GetCollection<MonitorAlert>("analog_");
+            await WriteOutAnalogFile("epi1", DateTime.Now.AddDays(-3), DateTime.Now, @"C:\Users\aelmendo\Documents\MonitorFiles\ep1-Purge.csv");
         }
+
+
+        
         static async Task SetupBypass() {
             Console.WriteLine("Starting Bypass Setup");
             var client = new MongoClient("mongodb://172.20.3.41");
