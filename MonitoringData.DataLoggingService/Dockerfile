@@ -4,7 +4,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
+ENV TZ="America/New_York"
+
 RUN apt-get update && apt-get install -y --no-install-recommends gss-ntlmssp
+RUN apt-get install -y tzdata
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
