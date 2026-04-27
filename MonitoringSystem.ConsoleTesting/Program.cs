@@ -156,9 +156,11 @@ namespace MonitoringSystem.ConsoleTesting {
 
 
             UsageService usageService = new UsageService();
-            await usageService.UpdateAllUsageTables();
+            await usageService.GetH2Usage();
             //var records =await  usageService.GetH2Usage();
             //await OutputExcelTable(records);
+
+            //await WriteOutAnalogFile("epi1", new DateTime(2026, 4,5), DateTime.Now, @"C:\Users\aelmendo\Documents\MonitorFiles\ep1-bad-data.csv");
         }
 
         static async Task<List<UsageDayRecord>> GetUsageRecordsV2(IMongoCollection<UsageDayRecord> usageCollection,
