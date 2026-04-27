@@ -4,10 +4,10 @@ using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.Services;
 using MonitoringSystem.Shared.SignalR;
 using MonitoringWeb.WebApp.Hubs;
-namespace MonitoringWeb.WebApp.Services; 
 
+namespace MonitoringWeb.WebApp.Services.Hosted;
 
-public class AmmoniaHubService:BackgroundService,IAsyncDisposable {
+public class AmmoniaHubService : BackgroundService, IAsyncDisposable {
     private readonly ILogger<AmmoniaHubService> _logger;
     private readonly IHubContext<AmmoniaHub, ISendTankWeightsCommand> _hubContext;
     private readonly ManagedDevice _device;
@@ -21,7 +21,7 @@ public class AmmoniaHubService:BackgroundService,IAsyncDisposable {
         this._logger = logger;
         this._device = configurationProvider.GetDevice("nh3");
     }
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         await this.HubSetup();
         /*_timer = new Timer(FireSignalRAsync, null, TimeSpan.Zero,
@@ -35,9 +35,10 @@ public class AmmoniaHubService:BackgroundService,IAsyncDisposable {
         for (int i = 0; i < 4; i++) {
             tankWeights.Add(Convert.ToInt32(rand.NextInt64(400, 1000)));
         }
+
         await this._hubContext.Clients.All.SendTankWeights(tankWeights);
     }
-    
+
     private async Task HubSetup() {
         var hubAddress = this._device.HubAddress;
         if (hubAddress != null) {
@@ -60,16 +61,15 @@ public class AmmoniaHubService:BackgroundService,IAsyncDisposable {
                 await this._hubConnection.StartAsync();
                 this._logger.LogInformation(hubAddress + " Connection");
             } catch {
-                this._logger.LogError(hubAddress+" hub connection failed");
+                this._logger.LogError(hubAddress + " hub connection failed");
             }
         }
     }
 
     async Task OnShowCurrent(MonitorData data) {
         List<int> tankWeights = new List<int>();
-
         for (int i = 0; i < 4; i++) {
-            var tankWeight=data.analogData.FirstOrDefault(e => e.Item == "Tank"+(i+1)+" Weight");
+            var tankWeight = data.analogData.FirstOrDefault(e => e.Item == "Tank" + (i + 1) + " Weight");
             if (tankWeight != null) {
                 string textValue = tankWeight.Value;
                 textValue = textValue.Replace(",", string.Empty);
@@ -84,6 +84,7 @@ public class AmmoniaHubService:BackgroundService,IAsyncDisposable {
                 tankWeights.Add(0);
             }
         }
+
         await this._hubContext.Clients.All.SendTankWeights(tankWeights);
     }
 

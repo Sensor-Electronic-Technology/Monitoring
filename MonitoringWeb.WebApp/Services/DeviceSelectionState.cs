@@ -1,6 +1,6 @@
 ﻿using MonitoringSystem.Shared.Data.EntityDtos;
 
-namespace MonitoringWeb.WebApp.Services; 
+namespace MonitoringWeb.WebApp.Services;
 
 public class DeviceSelectionState {
     public ModbusDeviceDto? SelectedDevice { get; private set; }
@@ -10,9 +10,9 @@ public class DeviceSelectionState {
         this.SelectedDevice = device;
         this.NotifyStateChanged();
     }
-    
+
     private void NotifyStateChanged() {
-        this.OnChange?.Invoke();   
+        this.OnChange?.Invoke();
     }
 }
 

@@ -4,12 +4,12 @@ using MongoDB.Driver.GridFS;
 using MonitoringSystem.Shared.Data;
 using MonitoringWeb.WebApp.Data;
 
-namespace MonitoringWeb.WebApp.Services; 
+namespace MonitoringWeb.WebApp.Services;
 
 public class FileHandlerService {
     private ILogger<FileHandlerService> _logger;
     private IGridFSBucket _bucket;
-    
+
     public FileHandlerService(IMongoClient client, IOptions<MonitorWebsiteSettings> settings,
         ILogger<FileHandlerService> logger) {
         var database = client.GetDatabase(settings.Value.DatabaseName);
@@ -18,13 +18,13 @@ public class FileHandlerService {
         });
     }
 
-    public async Task UploadNewImage(IFormFile file,string filename) {
-        var stream=file.OpenReadStream();
+    public async Task UploadNewImage(IFormFile file, string filename) {
+        var stream = file.OpenReadStream();
         await this._bucket.UploadFromStreamAsync(filename, stream);
     }
 
-    public async Task DownloadLatestImage(string filename,string path) {
-        using (var stream = new FileStream(path, FileMode.Append, 
+    public async Task DownloadLatestImage(string filename, string path) {
+        using (var stream = new FileStream(path, FileMode.Append,
                    FileAccess.Write)) {
             await this._bucket.DownloadToStreamByNameAsync(filename, stream);
             stream.Close();

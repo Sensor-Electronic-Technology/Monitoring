@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MonitoringSystem.Shared.Data;
 using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Data.UsageModel;
 using NWaves.Filters;
@@ -22,125 +23,89 @@ public class UsageService {
         this._client = new MongoClient("mongodb://172.20.3.41");
     }
 
-    public async Task<(double rate,double lastReading)> GetBulkH2Usage(int days,bool includeWeekends = true) {
-        var database = this._client.GetDatabase("epi1_data");
-        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
-        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
-        var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
-        var date=DateTime.Now.AddDays(-days);
-        var allUsage=await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
-        
-        var usage=allUsage.Where(e => e.Date >= date);
-        if (!includeWeekends)
-            usage = usage.Where(e => e.DayOfWeek != DayOfWeek.Saturday && e.DayOfWeek != DayOfWeek.Sunday);
-        var lastReadingEntry =  analogReadCollection.AsQueryable()
-            .OrderByDescending(r => r.timestamp)
-            .FirstOrDefault();
-        var lastReading=lastReadingEntry?.readings
-            .Where(e => e.MonitorItemId == item._id).Select(e => e.Value)
-            .FirstOrDefault() ?? 0;
-        return new (usage.Average(e => e.Usage),lastReading);
+    public async Task UpdateAllUsageTables() {
+        /*this._logger.LogInformation("Updating usage tables");
+        this._logger.LogInformation("Updating N2 usage");*/
+        Console.WriteLine("Updating N2 usage");
+        await GetN2Usage();
+        //this._logger.LogInformation("Updating H2 usage");
+        Console.WriteLine("Updating H2 usage");
+        await GetH2Usage();
+        //this._logger.LogInformation("Updating NH3 usage");
+        Console.WriteLine("Updating NH3 usage");
+        await GetNH3Usage();
+        //this._logger.LogInformation("Updating SI usage");
+        Console.WriteLine("Updating SI usage");
+        await GetSiUsage();
+        Console.WriteLine("Done");
+        //this._logger.LogInformation("Updating usage tables complete");
     }
-    
-    public async Task<double> GetLastReading() {
-        var database = this._client.GetDatabase("epi1_data");
-        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
-        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
 
-        var lastReadingEntry =  analogReadCollection.AsQueryable()
-            .OrderByDescending(r => r.timestamp)
-            .FirstOrDefault();
-        var lastReading=lastReadingEntry?.readings
-            .Where(e => e.MonitorItemId == item._id).Select(e => e.Value)
-            .FirstOrDefault() ?? 0;
-        return lastReading;
-    }
-    
-    public async Task<(double rate,double lastReading)> GetBulkH2Usage(DateTime startDate,DateTime stopDate,bool includeWeekends = true) {
-        var database = this._client.GetDatabase("epi1_data");
-        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
-        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
-        var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
-
-        var allUsage=await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
-        
-        var usage=allUsage.Where(e => e.Date >= startDate && e.Date <= stopDate);
-        if (!includeWeekends)
-            usage = usage.Where(e => e.DayOfWeek != DayOfWeek.Saturday && e.DayOfWeek != DayOfWeek.Sunday);
-        var lastReadingEntry =  analogReadCollection.AsQueryable()
-            .OrderByDescending(r => r.timestamp)
-            .FirstOrDefault();
-        var lastReading=lastReadingEntry?.readings
-            .Where(e => e.MonitorItemId == item._id).Select(e => e.Value)
-            .FirstOrDefault() ?? 0;
-        return new (usage.Average(e => e.Usage),lastReading);
-    }
-    
-    public async Task<List<UsageDayRecord>> GetNH3Usage() {
+    private async Task<List<UsageDayRecord>> GetNH3Usage() {
         var database = this._client.GetDatabase("nh3_data");
         var weightDatabase = this._client.GetDatabase("nh3_logs");
         var weightCollection = weightDatabase.GetCollection<WeightReading>("weight_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("nh3_usage");
-        return await this.GetNh3UsageRecords(usageCollection, weightCollection,9);
+        var usageCollection = database.GetCollection<UsageDayRecord>("nh3_usage_v2");
+        return await this.GetNh3UsageRecords(usageCollection, weightCollection, 9);
     }
-    
-    public async Task<List<UsageDayRecord>> GetH2Usage() {
+
+    private async Task<List<UsageDayRecord>> GetH2Usage() {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
+        var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage_v2");
         var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
-        return await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
+        return await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, 3000, item);
     }
-    
-    public async Task<List<UsageDayRecord>> GetSiUsage() {
+
+    private async Task<List<UsageDayRecord>> GetSiUsage() {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("si_usage");
+        var usageCollection = database.GetCollection<UsageDayRecord>("si_usage_v2");
         var item = await analogCollection.Find(e => e.Identifier == "Silane").FirstOrDefaultAsync();
-        return await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0,item,startDate:new DateTime(2024,6,1));
+        return await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, 2500, item,
+            startDate: new DateTime(2024, 6, 1));
     }
-    
-    public async Task<List<UsageDayRecord>> GetH2Usage(DateTime start,DateTime stop) {
+
+    private async Task<List<UsageDayRecord>> GetN2Usage() {
+        var database = this._client.GetDatabase("epi1_data");
+        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
+        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
+        var usageCollection = database.GetCollection<UsageDayRecord>("n2_usage_v2");
+        var item = await analogCollection.Find(e => e.Identifier == "Bulk N2(inH20)").FirstOrDefaultAsync();
+        return await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, 300, item);
+    }
+
+    public async Task<List<UsageDayRecord>> GetH2Usage(DateTime start, DateTime stop) {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
         var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
         var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
-        return (await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, item))
+        return (await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, 3000, item))
             .Where(e => e.Date >= start && e.Date < stop).ToList();
-    }
-    
-    public async Task<List<UsageDayRecord>> GetN2Usage() {
-        var database = this._client.GetDatabase("epi1_data");
-        var analogCollection = database.GetCollection<AnalogItem>("analog_items");
-        var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("n2_usage");
-        var item = await analogCollection.Find(e => e.Identifier == "Bulk N2(inH20)").FirstOrDefaultAsync();
-        return await this.GetUsageRecordsV2(usageCollection,analogReadCollection,0, item);
     }
 
     private async Task<List<UsageDayRecord>> GetNh3UsageRecords(IMongoCollection<UsageDayRecord> usageCollection,
         IMongoCollection<WeightReading> weightReadingCollection, int window) {
         var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
         var count = await usageCollection.EstimatedDocumentCountAsync();
-        if (count == 0) {//new
+        if (count == 0) {
+            //new
             var stopDate = DateTime.Now.Date;
             Dictionary<DateTime, List<ValueReturn>> days;
             List<WeightReading> readings;
-            readings = await weightReadingCollection.Find(e => e.timestamp < stopDate && e.Value<=900)
+            readings = await weightReadingCollection.Find(e => e.timestamp < stopDate && e.Value > 0 && e.Value <= 900)
                 .ToListAsync();
             List<ValueReturn> rawData = new List<ValueReturn>();
             List<float> floats = new List<float>();
             foreach (var reading in readings) {
                 floats.Add(Convert.ToSingle(reading.Value));
             }
+
             var filter = new MedianFilter2(window);
-            var filteredValues=filter.ApplyTo(new DiscreteSignal(1, floats));
+            var filteredValues = filter.ApplyTo(new DiscreteSignal(1, floats));
             for (int i = 0; i < readings.Count; i++) {
                 rawData.Add(new ValueReturn() {
                     timestamp = readings[i].timestamp,
@@ -159,59 +124,61 @@ public class UsageService {
                     DayOfWeek = day.Key.DayOfWeek,
                     Date = day.Key,
                     Month = day.Key.Month,
-                    WeekOfYear = 
+                    WeekOfYear =
                         CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
                             CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
                     Year = day.Key.Year,
                     DayOfYear = day.Key.DayOfYear,
                     MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
                 };
-
                 var first = day.Value[0].value;
                 var last = day.Value[day.Value.Count() - 1].value;
-                var max = day.Value.Max(e=>e.value);
+                var max = day.Value.Max(e => e.value);
                 var min = day.Value.Min(e => e.value);
-
                 double consumed = 0;
                 if (last < first) {
                     consumed = first - last;
                 } else {
                     consumed = (first - min) + (max - last);
                 }
+
                 usageDayRecord.Usage = consumed;
-                usageDayRecord.PerHour = consumed/24;
+                usageDayRecord.PerHour = consumed / 24;
                 usageDayRecord.PerMin = usageDayRecord.PerHour;
                 dayRecords.Add(usageDayRecord);
             }
+
             await usageCollection.InsertManyAsync(dayRecords);
             return dayRecords;
-        } else {//Update
+        } else {
+            //Update
             var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
-            var deltaHours = (DateTime.Now - latest.Date.AddDays(1)).TotalHours;
-            var now = DateTime.Now.Date;
+            //var deltaHours = (DateTime.Now.ToUniversalTime() - latest.Date.AddDays(1)).TotalHours;
+            var deltaHours = (DateTime.Now.ToUniversalTime() - latest.Date.AddDays(1)).TotalHours;
             if (deltaHours >= 24) {
                 var start = latest.Date.AddDays(1);
                 var stop = DateTime.Now.Date.AddSeconds(-1).AddHours(-5);
                 List<WeightReading> readings;
                 Dictionary<DateTime, List<ValueReturn>> days;
-                List<ValueReturn> rawData=new List<ValueReturn>();
-                
+                List<ValueReturn> rawData = new List<ValueReturn>();
                 readings = await weightReadingCollection.Find(e =>
                         e.timestamp >= start.AddHours(5) &&
-                        e.timestamp < stop)
+                        e.timestamp < stop && e.Value > 0 && e.Value <= 900)
                     .ToListAsync();
                 List<float> floats = new List<float>();
                 foreach (var reading in readings) {
                     floats.Add(Convert.ToSingle(reading.Value));
                 }
+
                 var filter = new MedianFilter2(window);
-                var filteredValues=filter.ApplyTo(new DiscreteSignal(1, floats));
+                var filteredValues = filter.ApplyTo(new DiscreteSignal(1, floats));
                 for (int i = 0; i < readings.Count; i++) {
                     rawData.Add(new ValueReturn() {
                         timestamp = readings[i].timestamp,
                         value = filteredValues[i]
                     });
                 }
+
                 days = rawData.GroupBy(e =>
                         e.timestamp.Date)
                     .ToDictionary(e => e.Key, e => e.ToList());
@@ -232,20 +199,21 @@ public class UsageService {
                     };
                     var first = day.Value.First().value;
                     var last = day.Value.Last().value;
-                    var max = day.Value.Max(e=>e.value);
+                    var max = day.Value.Max(e => e.value);
                     var min = day.Value.Min(e => e.value);
-                    
                     double consumed = 0;
                     if (last < first) {
                         consumed = first - last;
                     } else {
                         consumed = (first - min) + (max - last);
                     }
+
                     usageDayRecord.Usage = consumed;
-                    usageDayRecord.PerHour = consumed/24;
-                    usageDayRecord.PerMin = usageDayRecord.PerHour/60;
+                    usageDayRecord.PerHour = consumed / 24;
+                    usageDayRecord.PerMin = usageDayRecord.PerHour / 60;
                     dayRecords.Add(usageDayRecord);
                 }
+
                 await usageCollection.InsertManyAsync(dayRecords);
                 return dayRecords;
             } else {
@@ -253,193 +221,47 @@ public class UsageService {
             }
         }
     }
-    
-        private async Task<List<UsageDayRecord>> GetUsageRecordsV2(IMongoCollection<UsageDayRecord> usageCollection,
-            IMongoCollection<AnalogReadings> analogReadCollection,
-            double threshold, AnalogItem? item1, AnalogItem? item2 = null, DateTime? startDate = null) {
-            var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
-            var count = await usageCollection.EstimatedDocumentCountAsync();
-            if (count == 0) {//new
-                var stopDate = DateTime.Now.Date;
-                Dictionary<DateTime, List<ValueReturn>> days;
-                List<AnalogReadings> readings;
-                if (startDate.HasValue) {
-                    readings = await analogReadCollection.Find(e => e.timestamp >= startDate && e.timestamp < stopDate)
-                        .ToListAsync();
-                } else {
-                    readings = await analogReadCollection.Find(e => e.timestamp < stopDate)
-                        .ToListAsync();
-                }
-    
-                List<ValueReturn> rawData = new List<ValueReturn>();
-                if (item2 != null) {
-                    foreach (var reading in readings) {
-                        var r1 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item1?._id && e.Value <=4000)?.Value ?? 0.00;
-                        var r2 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item2._id && e.Value <=4000)?.Value ?? 0.00;
-                        var valueReturn = new ValueReturn() {
-                            timestamp = reading.timestamp.AddHours(-5), value = (r1 >= 0.00 ? r1 : 0.00) + (r2 >= 0 ? r2 : 0)
-                        };
-                        rawData.Add(valueReturn);
-                    }
-                } else {
-                    rawData = readings.Select(e => new ValueReturn() {
-                        timestamp = e.timestamp.AddHours(-5),
-                        value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1?._id && m.Value <=4000)?.Value ?? 0.00)
-                    }).ToList();
-                }
-                days = rawData.GroupBy(e =>
-                        e.timestamp.Date)
-                    .ToDictionary(e => e.Key, e => e.ToList());
-                List<UsageDayRecord> dayRecords = new List<UsageDayRecord>();
-                foreach (var day in days) {
-                    UsageDayRecord usageDayRecord = new UsageDayRecord() {
-                        _id = ObjectId.GenerateNewId(),
-                        DayOfMonth = day.Key.Day,
-                        DayOfWeek = day.Key.DayOfWeek,
-                        Date = day.Key,
-                        Month = day.Key.Month,
-                        WeekOfYear = 
-                            CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
-                                CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
-                        Year = day.Key.Year,
-                        DayOfYear = day.Key.DayOfYear,
-                        MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
-                    };
-                    usageDayRecord.ChannelIds.Add(item1!._id);
-                    if (item2 != null) {
-                        usageDayRecord.ChannelIds.Add(item2._id);
-                    }
-    
-                    var first = day.Value[0].value;
-                    var last = day.Value[day.Value.Count() - 1].value;
-                    var max = day.Value.Max(e=>e.value);
-                    var min = day.Value.Min(e => e.value);
-    
-                    double consumed = 0;
-                    if (last < first) {
-                        consumed = first - last;
-                    } else {
-                        consumed = (first - min) + (max - last);
-                    }
-                    usageDayRecord.Usage = consumed;
-                    usageDayRecord.PerHour = consumed/24;
-                    usageDayRecord.PerMin = usageDayRecord.PerHour;
-                    dayRecords.Add(usageDayRecord);
-                }
-                await usageCollection.InsertManyAsync(dayRecords);
-                return dayRecords;
-            } else {//Update
-                var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
-                var deltaHours = (DateTime.Now - latest.Date.AddDays(1)).TotalHours;
-                var now = DateTime.Now.Date;
-                if (deltaHours >= 24) {
-                    var start = latest.Date.AddDays(1);
-                    var stop = DateTime.Now.Date.AddSeconds(-1).AddHours(-5);
-                    List<AnalogReadings> readings;
-                    Dictionary<DateTime, List<ValueReturn>> days;
-                    List<ValueReturn> rawData;
-                    if (item2 != null) {
-                        readings = await analogReadCollection.Find(e =>
-                                e.timestamp >= start &&
-                                e.timestamp < stop)
-                            .ToListAsync();
-                        rawData = readings.Select(e => new ValueReturn() {
-                            timestamp = e.timestamp.AddHours(-5),
-                            value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value +
-                                     e.readings.FirstOrDefault(m => m.MonitorItemId == item2._id)!.Value)
-                        }).ToList();
-    
-                    } else {
-                        readings = await analogReadCollection.Find(e =>
-                                e.timestamp >= start.AddHours(5) &&
-                                e.timestamp < stop)
-                            .ToListAsync();
-                        rawData = readings.Select(e => new ValueReturn() {
-                            timestamp = e.timestamp.AddHours(-5),
-                            value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value)
-                        }).ToList();
-                    }
-                    days = rawData.GroupBy(e =>
-                            e.timestamp.Date)
-                        .ToDictionary(e => e.Key, e => e.ToList());
-                    List<UsageDayRecord> dayRecords = new List<UsageDayRecord>();
-                    foreach (var day in days) {
-                        UsageDayRecord usageDayRecord = new UsageDayRecord() {
-                            _id = ObjectId.GenerateNewId(),
-                            DayOfMonth = day.Key.Day,
-                            DayOfWeek = day.Key.DayOfWeek,
-                            Date = day.Key,
-                            Month = day.Key.Month,
-                            WeekOfYear =
-                                CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
-                                    CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
-                            Year = day.Key.Year,
-                            DayOfYear = day.Key.DayOfYear,
-                            MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
-                        };
-                        usageDayRecord.ChannelIds.Add(item1!._id);
-                        if (item2 != null) {
-                            usageDayRecord.ChannelIds.Add(item2._id);
-                        }
-                        var first = day.Value.First().value;
-                        var last = day.Value.Last().value;
-                        var max = day.Value.Max(e=>e.value);
-                        var min = day.Value.Min(e => e.value);
-    
-                        double consumed = 0;
-                        if (last < first) {
-                            consumed = first - last;
-                        } else {
-                            consumed = (first - min) + (max - last);
-                        }
-                        usageDayRecord.Usage = consumed;
-                        usageDayRecord.PerHour = consumed/24;
-                        usageDayRecord.PerMin = usageDayRecord.PerHour/60;
-                        dayRecords.Add(usageDayRecord);
-                    }
-                    await usageCollection.InsertManyAsync(dayRecords);
-                    return dayRecords;
-                } else {
-                    return (await usageCollection.Find(_ => true).ToListAsync());
-                }
-            }
-        }
 
-    private async Task<IEnumerable<UsageDayRecord>> GetUsageRecords(
-        IMongoCollection<UsageDayRecord> usageCollection,
-        IMongoCollection<AnalogReadings> analogReadCollection, 
-        double threshold,AnalogItem? item1, AnalogItem? item2 = null,DateTime? startDate=null) {
+    private async Task<List<UsageDayRecord>> GetUsageRecordsV2(IMongoCollection<UsageDayRecord> usageCollection,
+        IMongoCollection<AnalogReadings> analogReadCollection,
+        double minThreshold, double threshold, AnalogItem? item1, AnalogItem? item2 = null,
+        DateTime? startDate = null) {
         var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
         var count = await usageCollection.EstimatedDocumentCountAsync();
-        if (count == 0) {//Create
-            var stopDate = DateTime.Now.Date.AddHours(-5);
+        if (count == 0) {
+            //new
+            var stopDate = DateTime.Now.Date;
             Dictionary<DateTime, List<ValueReturn>> days;
             List<AnalogReadings> readings;
             if (startDate.HasValue) {
-                readings = await analogReadCollection.Find(e=>e.timestamp>=startDate && e.timestamp<stopDate)
+                readings = await analogReadCollection.Find(e => e.timestamp >= startDate && e.timestamp < stopDate)
                     .ToListAsync();
             } else {
-                readings = await analogReadCollection.Find(e=>e.timestamp<stopDate)
+                readings = await analogReadCollection.Find(e => e.timestamp < stopDate)
                     .ToListAsync();
             }
 
-            List<ValueReturn> rawData=new List<ValueReturn>();
+            List<ValueReturn> rawData = new List<ValueReturn>();
             if (item2 != null) {
                 foreach (var reading in readings) {
-                    var r1 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item1._id)!.Value;
-                    var r2 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item2._id)!.Value;
+                    var r1 = reading.readings.FirstOrDefault(e =>
+                        e.MonitorItemId == item1?._id && e.Value > minThreshold && e.Value <= threshold)?.Value ?? 0.00;
+                    var r2 = reading.readings.FirstOrDefault(e =>
+                        e.MonitorItemId == item2._id && e.Value > minThreshold && e.Value <= threshold)?.Value ?? 0.00;
                     var valueReturn = new ValueReturn() {
-                        timestamp = reading.timestamp,
-                        value=(r1>=0.00 ? r1:0.00)+(r2>=0 ? r2:0)
+                        timestamp = reading.timestamp.AddHours(-5),
+                        value = (r1 >= 0.00 ? r1 : 0.00) + (r2 >= 0 ? r2 : 0)
                     };
                     rawData.Add(valueReturn);
                 }
             } else {
                 rawData = readings.Select(e => new ValueReturn() {
-                    timestamp = e.timestamp,
-                    value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value)
+                    timestamp = e.timestamp.AddHours(-5),
+                    value = (e.readings.FirstOrDefault(m =>
+                        m.MonitorItemId == item1?._id && m.Value > minThreshold && m.Value <= threshold)?.Value ?? 0.00)
                 }).ToList();
             }
+
             days = rawData.GroupBy(e =>
                     e.timestamp.Date)
                 .ToDictionary(e => e.Key, e => e.ToList());
@@ -451,7 +273,7 @@ public class UsageService {
                     DayOfWeek = day.Key.DayOfWeek,
                     Date = day.Key,
                     Month = day.Key.Month,
-                    WeekOfYear = 
+                    WeekOfYear =
                         CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
                             CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
                     Year = day.Key.Year,
@@ -462,12 +284,189 @@ public class UsageService {
                 if (item2 != null) {
                     usageDayRecord.ChannelIds.Add(item2._id);
                 }
+
+                //var first = day.Value[0].value;
+                //var last = day.Value[day.Value.Count() - 1].value;
+                var first = day.Value.First().value;
+                var last = day.Value.Last().value;
+                var max = day.Value.Max(e => e.value);
+                var min = day.Value.Min(e => e.value);
+                double consumed = 0;
+                if (last < first) {
+                    consumed = first - last;
+                } else {
+                    consumed = (first - min) + (max - last);
+                }
+
+                usageDayRecord.Usage = consumed;
+                usageDayRecord.PerHour = consumed / 24;
+                usageDayRecord.PerMin = usageDayRecord.PerHour;
+                dayRecords.Add(usageDayRecord);
+            }
+
+            await usageCollection.InsertManyAsync(dayRecords);
+            return dayRecords;
+        } else {
+            //Update
+            var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
+            var deltaHours = (DateTime.Now.ToUniversalTime() - latest.Date.AddDays(1)).TotalHours;
+            Console.WriteLine($"Latest: {latest.Date.AddDays(1)} Current: {DateTime.Now.ToUniversalTime()}");
+            Console.WriteLine($"Delta: {deltaHours}");
+            var now = DateTime.Now.Date;
+            if (deltaHours >= 24) {
+                var start = latest.Date.AddDays(1);
+                var stop = DateTime.Now.Date.AddSeconds(-1).AddHours(-5);
+                List<AnalogReadings> readings;
+                Dictionary<DateTime, List<ValueReturn>> days;
+                List<ValueReturn> rawData;
+                if (item2 != null) {
+                    readings = await analogReadCollection.Find(e =>
+                            e.timestamp >= start &&
+                            e.timestamp < stop)
+                        .ToListAsync();
+                    rawData = readings.Select(e => new ValueReturn() {
+                        timestamp = e.timestamp.AddHours(-5),
+                        value = (e.readings.FirstOrDefault(m =>
+                                         m.MonitorItemId == item1._id && m.Value > minThreshold &&
+                                         m.Value <= threshold)!
+                                     .Value +
+                                 e.readings.FirstOrDefault(m =>
+                                         m.MonitorItemId == item2._id && m.Value > minThreshold &&
+                                         m.Value <= threshold)!
+                                     .Value)
+                    }).ToList();
+                } else {
+                    readings = await analogReadCollection.Find(e =>
+                            e.timestamp >= start.AddHours(5) &&
+                            e.timestamp < stop.AddHours(5))
+                        .ToListAsync();
+                    rawData = readings.Select(e => new ValueReturn() {
+                        timestamp = e.timestamp.AddHours(-5),
+                        value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value)
+                    }).ToList();
+                }
+
+                days = rawData.GroupBy(e =>
+                        e.timestamp.Date)
+                    .ToDictionary(e => e.Key, e => e.ToList());
+                List<UsageDayRecord> dayRecords = new List<UsageDayRecord>();
+                foreach (var day in days) {
+                    UsageDayRecord usageDayRecord = new UsageDayRecord() {
+                        _id = ObjectId.GenerateNewId(),
+                        DayOfMonth = day.Key.Day,
+                        DayOfWeek = day.Key.DayOfWeek,
+                        Date = day.Key,
+                        Month = day.Key.Month,
+                        WeekOfYear =
+                            CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
+                                CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
+                        Year = day.Key.Year,
+                        DayOfYear = day.Key.DayOfYear,
+                        MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
+                    };
+                    usageDayRecord.ChannelIds.Add(item1!._id);
+                    if (item2 != null) {
+                        usageDayRecord.ChannelIds.Add(item2._id);
+                    }
+
+                    var first = day.Value.First().value;
+                    var last = day.Value.Last().value;
+                    var max = day.Value.Max(e => e.value);
+                    var min = day.Value.Min(e => e.value);
+                    double consumed = 0;
+                    if (last < first) {
+                        consumed = first - last;
+                    } else {
+                        consumed = (first - min) + (max - last);
+                    }
+
+                    usageDayRecord.Usage = consumed;
+                    usageDayRecord.PerHour = consumed / 24;
+                    usageDayRecord.PerMin = usageDayRecord.PerHour / 60;
+                    dayRecords.Add(usageDayRecord);
+                }
+
+                await usageCollection.InsertManyAsync(dayRecords);
+                return dayRecords;
+            } else {
+                return await usageCollection.Find(_ => true).ToListAsync();
+            }
+        }
+    }
+}
+
+public class ValueReturn {
+    public DateTime timestamp { get; set; }
+    public double value { get; set; }
+}
+
+/*
+    private async Task<IEnumerable<UsageDayRecord>> GetUsageRecords(
+        IMongoCollection<UsageDayRecord> usageCollection,
+        IMongoCollection<AnalogReadings> analogReadCollection,
+        double threshold, AnalogItem? item1, AnalogItem? item2 = null, DateTime? startDate = null) {
+        var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
+        var count = await usageCollection.EstimatedDocumentCountAsync();
+        if (count == 0) {
+            //Create
+            var stopDate = DateTime.Now.Date.AddHours(-5);
+            Dictionary<DateTime, List<ValueReturn>> days;
+            List<AnalogReadings> readings;
+            if (startDate.HasValue) {
+                readings = await analogReadCollection.Find(e => e.timestamp >= startDate && e.timestamp < stopDate)
+                    .ToListAsync();
+            } else {
+                readings = await analogReadCollection.Find(e => e.timestamp < stopDate)
+                    .ToListAsync();
+            }
+
+            List<ValueReturn> rawData = new List<ValueReturn>();
+            if (item2 != null) {
+                foreach (var reading in readings) {
+                    var r1 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item1._id)!.Value;
+                    var r2 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item2._id)!.Value;
+                    var valueReturn = new ValueReturn() {
+                        timestamp = reading.timestamp,
+                        value = (r1 >= 0.00 ? r1 : 0.00) + (r2 >= 0 ? r2 : 0)
+                    };
+                    rawData.Add(valueReturn);
+                }
+            } else {
+                rawData = readings.Select(e => new ValueReturn() {
+                    timestamp = e.timestamp,
+                    value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value)
+                }).ToList();
+            }
+
+            days = rawData.GroupBy(e =>
+                    e.timestamp.Date)
+                .ToDictionary(e => e.Key, e => e.ToList());
+            List<UsageDayRecord> dayRecords = new List<UsageDayRecord>();
+            foreach (var day in days) {
+                UsageDayRecord usageDayRecord = new UsageDayRecord() {
+                    _id = ObjectId.GenerateNewId(),
+                    DayOfMonth = day.Key.Day,
+                    DayOfWeek = day.Key.DayOfWeek,
+                    Date = day.Key,
+                    Month = day.Key.Month,
+                    WeekOfYear =
+                        CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
+                            CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
+                    Year = day.Key.Year,
+                    DayOfYear = day.Key.DayOfYear,
+                    MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
+                };
+                usageDayRecord.ChannelIds.Add(item1!._id);
+                if (item2 != null) {
+                    usageDayRecord.ChannelIds.Add(item2._id);
+                }
+
                 List<double> rates = new List<double>();
                 for (int i = 1; i < day.Value.Count(); i++) {
-                    var dlb = (day.Value[i].value - day.Value[i-1].value);
-                    var dt = (day.Value[i].timestamp - day.Value[i-1].timestamp).TotalMinutes;
+                    var dlb = (day.Value[i].value - day.Value[i - 1].value);
+                    var dt = (day.Value[i].timestamp - day.Value[i - 1].timestamp).TotalMinutes;
                     if (dlb <= threshold) {
-                        if (dt>=1) {
+                        if (dt >= 1) {
                             var rate = dlb / dt;
                             rates.Add(rate);
                         }
@@ -475,15 +474,17 @@ public class UsageService {
                         rates.Add(0);
                     }
                 }
+
                 usageDayRecord.PerMin = Math.Abs(rates.Average());
                 usageDayRecord.PerHour = usageDayRecord.PerMin * 60;
                 usageDayRecord.Usage = usageDayRecord.PerHour * 24;
                 dayRecords.Add(usageDayRecord);
             }
+
             await usageCollection.InsertManyAsync(dayRecords);
             return dayRecords.AsEnumerable();
-            
-        } else {//Update
+        } else {
+            //Update
             var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
             var deltaHours = (DateTime.Now - latest.Date.AddDays(1)).TotalHours;
             var now = DateTime.Now.Date;
@@ -513,6 +514,7 @@ public class UsageService {
                         value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value)
                     }).ToList();
                 }
+
                 days = rawData.GroupBy(e =>
                         e.timestamp.Date)
                     .ToDictionary(e => e.Key, e => e.ToList());
@@ -535,12 +537,13 @@ public class UsageService {
                     if (item2 != null) {
                         usageDayRecord.ChannelIds.Add(item2._id);
                     }
+
                     List<double> rates = new List<double>();
                     for (int i = 1; i < day.Value.Count(); i++) {
-                        var dlb = (day.Value[i].value - day.Value[i-1].value);
-                        var dt = (day.Value[i].timestamp - day.Value[i-1].timestamp).TotalMinutes;
+                        var dlb = (day.Value[i].value - day.Value[i - 1].value);
+                        var dt = (day.Value[i].timestamp - day.Value[i - 1].timestamp).TotalMinutes;
                         if (dlb <= threshold) {
-                            if (dt>=1) {
+                            if (dt >= 1) {
                                 var rate = dlb / dt;
                                 rates.Add(rate);
                             }
@@ -548,11 +551,13 @@ public class UsageService {
                             rates.Add(0);
                         }
                     }
+
                     usageDayRecord.PerMin = Math.Abs(rates.Average());
                     usageDayRecord.PerHour = usageDayRecord.PerMin * 60;
                     usageDayRecord.Usage = usageDayRecord.PerHour * 24;
                     dayRecords.Add(usageDayRecord);
                 }
+
                 await usageCollection.InsertManyAsync(dayRecords);
                 return dayRecords.AsEnumerable();
             } else {
@@ -560,9 +565,4 @@ public class UsageService {
             }
         }
     }
-}
-
-public class ValueReturn {
-    public DateTime timestamp { get; set; }
-    public double value { get; set; }
-}
+ */

@@ -13,9 +13,9 @@ namespace MonitoringWeb.WebApp.Services;
 public class BulkH2CalcService {
     private readonly IMongoCollection<AnalogItem> _analogItemCollection;
     private readonly IMongoCollection<BulkH2CalcSettings> _bulkH2CalcSettingsCollection;
-    private readonly UsageService _usageService;
+    private readonly UsageDataService _usageService;
 
-    public BulkH2CalcService(IMongoClient client, UsageService usageService, IOptions<MonitorWebsiteSettings> options) {
+    public BulkH2CalcService(IMongoClient client, UsageDataService usageService, IOptions<MonitorWebsiteSettings> options) {
         var epiDatabase = client.GetDatabase("epi1_data");
         this._analogItemCollection = epiDatabase.GetCollection<AnalogItem>("analog_items");
         var database = client.GetDatabase(options.Value.DatabaseName);

@@ -2,7 +2,6 @@
 using MongoDB.Driver;
 using MonitoringSystem.Shared.Data;
 using System;
-
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -16,6 +15,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using ClosedXML.Excel;
 using ConsoleTables;
 using MailKit.Net.Smtp;
 using MimeKit;
@@ -61,7 +61,7 @@ namespace MonitoringSystem.ConsoleTesting {
                     count++;
                 }
             }
-            
+
             Console.WriteLine($"Null Count: {count}");*/
             /*var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("monitor_settings");
@@ -108,33 +108,32 @@ namespace MonitoringSystem.ConsoleTesting {
             //ExchangeEmailService emailService = new ExchangeEmailService();
             //await emailService.SendMessageAsync("Gas Refill","Nitrogen","74","inH20","Now");
             //await emailService.SendTestMessageAsync();
-           //await UpdateBulkEmailSettings();
-           //await CreateBulkEmailSettings();
-           //await CreateNH3BulkGasSettings();
-           //await CreateSIBulkGasSettings();
-           //await TestPopList();
-           //await WriteOutAnalogFile("epi1", new DateTime(2024, 1,1), DateTime.Now, @"C:\Users\aelmendo\Documents\MonitorFiles\ep1-rakesh.csv");
+            //await UpdateBulkEmailSettings();
+            //await CreateBulkEmailSettings();
+            //await CreateNH3BulkGasSettings();
+            //await CreateSIBulkGasSettings();
+            //await TestPopList();
+            //await WriteOutAnalogFile("epi1", new DateTime(2024, 1,1), DateTime.Now, @"C:\Users\aelmendo\Documents\MonitorFiles\ep1-rakesh.csv");
+            /*List<Testitem> testItems = [];
+            Random rand = new Random();
+            for (int i = 0; i < 3; i++) {
+                testItems.Add(new Testitem() {
+                    _id=i,
+                    Value=rand.Next(1,100)
+                });
+            }
 
-           /*List<Testitem> testItems = [];
-           Random rand = new Random();
-           for (int i = 0; i < 3; i++) {
-               testItems.Add(new Testitem() {
-                   _id=i,
-                   Value=rand.Next(1,100)
-               });
-           }
-           
-           Console.WriteLine($"[{string.Join(',', testItems.Select(e=>e.Value))}]");
-           
-           for (int i = 0; i < 3; i++) {
-               var item=testItems.FirstOrDefault(e => e._id == i);
-               item.Value=rand.Next(1,100);
-           }
-           Console.WriteLine($"[{string.Join(',', testItems.Select(e=>e.Value))}]");*/
+            Console.WriteLine($"[{string.Join(',', testItems.Select(e=>e.Value))}]");
 
-           //await TestExternalEmailCalc(days:14,false);
-           //await WriteOutNh3Data(new DateTime(2025, 1, 1), DateTime.Now);
-           //await TestUsageTableGeneration();
+            for (int i = 0; i < 3; i++) {
+                var item=testItems.FirstOrDefault(e => e._id == i);
+                item.Value=rand.Next(1,100);
+            }
+            Console.WriteLine($"[{string.Join(',', testItems.Select(e=>e.Value))}]");*/
+
+            //await TestExternalEmailCalc(days:14,false);
+            //await WriteOutNh3Data(new DateTime(2025, 1, 1), DateTime.Now);
+            //await TestUsageTableGeneration();
             //await SetupBypass();
             /*Console.WriteLine("Starting Bypass Setup");
             var client = new MongoClient("mongodb://172.20.3.41");
@@ -153,80 +152,262 @@ namespace MonitoringSystem.ConsoleTesting {
             }#1#*/
 
             //await CreateBypassAlerts();
-            string startStr = "4/8/2026  3:14:08 AM";
-            string endStr = "4/10/2026  8:45:24 AM";
-            var client = new MongoClient("mongodb://172.20.3.41");
-            var epi1AlertCollection=client.GetDatabase("epi1_data").GetCollection<MonitorAlert>("analog_");
-            await WriteOutAnalogFile("epi1", DateTime.Now.AddDays(-3), DateTime.Now, @"C:\Users\aelmendo\Documents\MonitorFiles\ep1-Purge.csv");
+            
+
+
+            UsageService usageService = new UsageService();
+            await usageService.UpdateAllUsageTables();
+            //var records =await  usageService.GetH2Usage();
+            //await OutputExcelTable(records);
         }
 
+        static async Task<List<UsageDayRecord>> GetUsageRecordsV2(IMongoCollection<UsageDayRecord> usageCollection,
+            IMongoCollection<AnalogReadings> analogReadCollection,
+            double minThreshold, double threshold, AnalogItem? item1, AnalogItem? item2 = null,
+            DateTime? startDate = null) {
+            var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
+            
+            //new
+            var stopDate = DateTime.Now.Date;
+            Dictionary<DateTime, List<ValueReturn>> days;
+            List<AnalogReadings> readings;
+            
+            
+            IAsyncCursor<AnalogReadings> cursor;
+            if (startDate.HasValue) {
+                cursor = await analogReadCollection.FindAsync(e =>
+                    e.timestamp >= startDate && e.timestamp < stopDate);
+            } else {
+                cursor = await analogReadCollection.FindAsync(e => e.timestamp < stopDate);
+            }
 
+            List<ValueReturn> rawData = new List<ValueReturn>();
+            if (item2 != null) {
+                while (await cursor.MoveNextAsync()) {
+                    foreach (var reading in cursor.Current) {
+                        var r1 = reading.readings.FirstOrDefault(e =>
+                                         e.MonitorItemId == item1?._id && e.Value > minThreshold && e.Value <= threshold)
+                                     ?.Value ??
+                                 0.00;
+                        var r2 = reading.readings.FirstOrDefault(e =>
+                                         e.MonitorItemId == item2._id && e.Value > minThreshold && e.Value <= threshold)
+                                     ?.Value ??
+                                 0.00;
+                        var valueReturn = new ValueReturn() {
+                            timestamp = reading.timestamp.AddHours(-5),
+                            value = (r1 >= 0.00 ? r1 : 0.00) + (r2 >= 0 ? r2 : 0)
+                        };
+                        rawData.Add(valueReturn);
+                    }
+                }
+                /*foreach (var reading in readings) {
+                    var r1 = reading.readings.FirstOrDefault(e =>
+                                     e.MonitorItemId == item1?._id && e.Value > minThreshold && e.Value <= threshold)
+                                 ?.Value ??
+                             0.00;
+                    var r2 = reading.readings.FirstOrDefault(e =>
+                                     e.MonitorItemId == item2._id && e.Value > minThreshold && e.Value <= threshold)
+                                 ?.Value ??
+                             0.00;
+                    var valueReturn = new ValueReturn() {
+                        timestamp = reading.timestamp.AddHours(-5),
+                        value = (r1 >= 0.00 ? r1 : 0.00) + (r2 >= 0 ? r2 : 0)
+                    };
+                    rawData.Add(valueReturn);
+                }*/
+            } else {
+                Console.WriteLine("Fetching Raw Data");
+                while (await cursor.MoveNextAsync()) {
+                    foreach (var reading in cursor.Current) {
+                        rawData.Add(new ValueReturn() {
+                            timestamp = reading.timestamp.AddHours(-5),
+                            value = (reading.readings.FirstOrDefault(m =>
+                                             m.MonitorItemId == item1?._id && m.Value > minThreshold && m.Value <= threshold)
+                                         ?.Value ??
+                                     0.00)
+                        });
+                    }
+                }
+                /*rawData = readings.Select(e => new ValueReturn() {
+                    timestamp = e.timestamp.AddHours(-5),
+                    value = (e.readings.FirstOrDefault(m =>
+                                     m.MonitorItemId == item1?._id && m.Value > minThreshold && m.Value <= threshold)
+                                 ?.Value ??
+                             0.00)
+                }).ToList();*/
+                Console.WriteLine($"Raw Data Fetched.  Count {rawData.Count}");
+            }
+
+            days = rawData.GroupBy(e =>
+                    e.timestamp.Date)
+                .ToDictionary(e => e.Key, e => e.ToList());
+            Console.WriteLine($"Raw Data Grouped.  Count {days.Count}");
+            List<UsageDayRecord> dayRecords = new List<UsageDayRecord>();
+            foreach (var day in days) {
+                UsageDayRecord usageDayRecord = new UsageDayRecord() {
+                    _id = ObjectId.GenerateNewId(),
+                    DayOfMonth = day.Key.Day,
+                    DayOfWeek = day.Key.DayOfWeek,
+                    Date = day.Key,
+                    Month = day.Key.Month,
+                    WeekOfYear =
+                        CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
+                            CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
+                    Year = day.Key.Year,
+                    DayOfYear = day.Key.DayOfYear,
+                    MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
+                };
+                usageDayRecord.ChannelIds.Add(item1!._id);
+                if (item2 != null) {
+                    usageDayRecord.ChannelIds.Add(item2._id);
+                }
+                
+                var first = day.Value.First().value;
+                var last = day.Value.Last().value;
+                var max = day.Value.Max(e => e.value);
+                var min = day.Value.Min(e => e.value);
+                double consumed = 0;
+                if (last < first) {
+                    consumed = first - last;
+                } else {
+                    consumed = (first - min) + (max - last);
+                }
+
+                usageDayRecord.Usage = consumed;
+                usageDayRecord.PerHour = consumed / 24;
+                usageDayRecord.PerMin = usageDayRecord.PerHour;
+                dayRecords.Add(usageDayRecord);
+            }
+
+            //await usageCollection.InsertManyAsync(dayRecords);
+            return dayRecords;
+        }
+
+        static async Task OutputExcelTable(List<UsageDayRecord> records) {
+            var wb = new XLWorkbook();
+            var worksheet = wb.Worksheets.Add("Consumption");
+            worksheet.Cell(1, 1).Value = "Date";
+            worksheet.Cell(1, 2).Value = "Year";
+            worksheet.Cell(1, 3).Value = "Month";
+            worksheet.Cell(1, 4).Value = "WeekOfYear";
+            worksheet.Cell(1, 5).Value = "DayOfWeek";
+            worksheet.Cell(1, 6).Value = "PerHour";
+            worksheet.Cell(1, 7).Value = "PerDay";
+            int count = 2;
         
+            foreach (var item in records) {
+                worksheet.Cell(count, 1).Value = item.Date;
+                worksheet.Cell(count, 2).Value = item.Year;
+                worksheet.Cell(count, 3).Value = item.Month;
+                worksheet.Cell(count, 4).Value = item.WeekOfYear;
+                worksheet.Cell(count, 5).Value = item.DayOfWeek;
+                worksheet.Cell(count, 6).Value = item.PerHour;
+                worksheet.Cell(count, 7).Value = item.Usage;
+                count++;
+            }
+            
+            worksheet.Cell(1, 10).Value = "Week";
+            //worksheet.Cell(1, 11).Value = "Month";
+            worksheet.Cell(1, 11).Value = "Avg. Daily";
+            worksheet.Cell(1, 12).Value = "Week Total";
+            var weeks = records.GroupBy(e => e.WeekOfYear, e => new {
+                month = e.Month, day = e.Date.DayOfYear, hour = e.PerHour, daily = e.Usage
+            }).ToDictionary(e => e.Key, e => e.ToArray());
+            count = 2;
+            foreach (var week in weeks) {
+                worksheet.Cell(count, 10).Value = week.Key;
+                worksheet.Cell(count, 11).Value = week.Value.Average(e => e.daily);
+                worksheet.Cell(count, 12).Value = week.Value.Sum(e => e.daily);
+                count++;
+            }
+
+            worksheet.Cell(1, 14).Value = "Month";
+            worksheet.Cell(1, 15).Value = "Avg. Daily";
+            worksheet.Cell(1, 16).Value = "Month Total";
+            var months = records.GroupBy(e => e.Month, e => new {
+                month = e.Month, day = e.Date.DayOfYear, hour = e.PerHour, daily = e.Usage
+            }).ToDictionary(e => e.Key, e => e.ToArray());
+            count = 2;
+            foreach (var month in months) {
+                worksheet.Cell(count, 14).Value = month.Key;
+                worksheet.Cell(count, 15).Value = month.Value.Average(e => e.daily);
+                worksheet.Cell(count, 16).Value = month.Value.Sum(e => e.daily);
+                count++;
+            }
+            wb.SaveAs(@"C:\Users\aelmendo\Documents\EpiData\H2Usage.xlsx");
+
+            /*var stream = new MemoryStream();
+            wb.SaveAs(stream);
+            var bytes = stream.ToArray();*/
+        }
+
         static async Task SetupBypass() {
             Console.WriteLine("Starting Bypass Setup");
             var client = new MongoClient("mongodb://172.20.3.41");
-            var epi1AlertCollection=client.GetDatabase("epi1_data").GetCollection<MonitorAlert>("alert_items");
-            var epi2AlertCollection=client.GetDatabase("epi2_data").GetCollection<MonitorAlert>("alert_items");
-            var gasBayAlertCollection=client.GetDatabase("gasbay_data").GetCollection<MonitorAlert>("alert_items");
-            var epi1Alerts=await epi1AlertCollection.Find(_=>true).ToListAsync();
-            var epi2Alerts=await epi2AlertCollection.Find(_=>true).ToListAsync();
-            var gasBayAlerts=await gasBayAlertCollection.Find(_=>true).ToListAsync();
-            
-            List<UpdateOneModel<MonitorAlert>> updates=new List<UpdateOneModel<MonitorAlert>>();
-            foreach(var alert in epi1Alerts) {
+            var epi1AlertCollection = client.GetDatabase("epi1_data").GetCollection<MonitorAlert>("alert_items");
+            var epi2AlertCollection = client.GetDatabase("epi2_data").GetCollection<MonitorAlert>("alert_items");
+            var gasBayAlertCollection = client.GetDatabase("gasbay_data").GetCollection<MonitorAlert>("alert_items");
+            var epi1Alerts = await epi1AlertCollection.Find(_ => true).ToListAsync();
+            var epi2Alerts = await epi2AlertCollection.Find(_ => true).ToListAsync();
+            var gasBayAlerts = await gasBayAlertCollection.Find(_ => true).ToListAsync();
+            List<UpdateOneModel<MonitorAlert>> updates = new List<UpdateOneModel<MonitorAlert>>();
+            foreach (var alert in epi1Alerts) {
                 var update = Builders<MonitorAlert>.Update
                     .Set(e => e.Bypassed, false)
                     .Set(e => e.BypassResetTime, 24);
-                updates.Add(new UpdateOneModel<MonitorAlert>(Builders<MonitorAlert>.Filter.Eq(e=>e._id,alert._id),update));
+                updates.Add(new UpdateOneModel<MonitorAlert>(Builders<MonitorAlert>.Filter.Eq(e => e._id, alert._id),
+                    update));
             }
+
             await epi1AlertCollection.BulkWriteAsync(updates);
             updates.Clear();
-            foreach(var alert in epi2Alerts) {
+            foreach (var alert in epi2Alerts) {
                 var update = Builders<MonitorAlert>.Update
                     .Set(e => e.Bypassed, false)
                     .Set(e => e.BypassResetTime, 24);
-                updates.Add(new UpdateOneModel<MonitorAlert>(Builders<MonitorAlert>.Filter.Eq(e=>e._id,alert._id),update));
+                updates.Add(new UpdateOneModel<MonitorAlert>(Builders<MonitorAlert>.Filter.Eq(e => e._id, alert._id),
+                    update));
             }
+
             await epi2AlertCollection.BulkWriteAsync(updates);
             updates.Clear();
-            foreach(var alert in gasBayAlerts) {
+            foreach (var alert in gasBayAlerts) {
                 var update = Builders<MonitorAlert>.Update
                     .Set(e => e.Bypassed, false)
                     .Set(e => e.BypassResetTime, 24);
-                updates.Add(new UpdateOneModel<MonitorAlert>(Builders<MonitorAlert>.Filter.Eq(e=>e._id,alert._id),update));
+                updates.Add(new UpdateOneModel<MonitorAlert>(Builders<MonitorAlert>.Filter.Eq(e => e._id, alert._id),
+                    update));
             }
+
             await gasBayAlertCollection.BulkWriteAsync(updates);
             updates.Clear();
             Console.WriteLine("Check Database");
         }
-        
+
         static async Task CreateBypassAlerts() {
             Console.WriteLine("Starting Bypass Setup");
             var client = new MongoClient("mongodb://172.20.3.41");
-            var epi1AlertCollection=client.GetDatabase("epi1_data").GetCollection<MonitorAlert>("alert_items");
-            var epi2AlertCollection=client.GetDatabase("epi2_data").GetCollection<MonitorAlert>("alert_items");
-            var gasBayAlertCollection=client.GetDatabase("gasbay_data").GetCollection<MonitorAlert>("alert_items");
-            var nh3AlertCollection=client.GetDatabase("nh3_data").GetCollection<MonitorAlert>("alert_items");
-            var e2thAlertCollection=client.GetDatabase("e1th_data").GetCollection<MonitorAlert>("alert_items");
-            var thAlertCollection=client.GetDatabase("th_data").GetCollection<MonitorAlert>("alert_items");
-            
-            var epi1BypassAlertCollection=client.GetDatabase("epi1_data").GetCollection<BypassAlert>("bypass_alerts");
-            var epi2BypassAlertCollection=client.GetDatabase("epi2_data").GetCollection<BypassAlert>("bypass_alerts");
-            var gasBayBypassAlertCollection=client.GetDatabase("gasbay_data").GetCollection<BypassAlert>("bypass_alerts");
-            var nh3BypassAlertCollection=client.GetDatabase("nh3_data").GetCollection<BypassAlert>("bypass_alerts");
-            var e2thBypassAlertCollection=client.GetDatabase("e2th_data").GetCollection<BypassAlert>("bypass_alerts");
-            var thBypassAlertCollection=client.GetDatabase("th_data").GetCollection<BypassAlert>("bypass_alerts");
-            
-            var epi1Alerts=await epi1AlertCollection.Find(_=>true).ToListAsync();
-            var epi2Alerts=await epi2AlertCollection.Find(_=>true).ToListAsync();
-            var gasBayAlerts=await gasBayAlertCollection.Find(_=>true).ToListAsync();
-            
-            var nh3Alerts=await epi1AlertCollection.Find(_=>true).ToListAsync();
-            var e2thAlerts=await epi2AlertCollection.Find(_=>true).ToListAsync();
-            var thAlerts=await gasBayAlertCollection.Find(_=>true).ToListAsync();
-            
-            List<InsertOneModel<BypassAlert>> updates=new List<InsertOneModel<BypassAlert>>();
-            foreach(var alert in epi1Alerts) {
+            var epi1AlertCollection = client.GetDatabase("epi1_data").GetCollection<MonitorAlert>("alert_items");
+            var epi2AlertCollection = client.GetDatabase("epi2_data").GetCollection<MonitorAlert>("alert_items");
+            var gasBayAlertCollection = client.GetDatabase("gasbay_data").GetCollection<MonitorAlert>("alert_items");
+            var nh3AlertCollection = client.GetDatabase("nh3_data").GetCollection<MonitorAlert>("alert_items");
+            var e2thAlertCollection = client.GetDatabase("e1th_data").GetCollection<MonitorAlert>("alert_items");
+            var thAlertCollection = client.GetDatabase("th_data").GetCollection<MonitorAlert>("alert_items");
+            var epi1BypassAlertCollection = client.GetDatabase("epi1_data").GetCollection<BypassAlert>("bypass_alerts");
+            var epi2BypassAlertCollection = client.GetDatabase("epi2_data").GetCollection<BypassAlert>("bypass_alerts");
+            var gasBayBypassAlertCollection =
+                client.GetDatabase("gasbay_data").GetCollection<BypassAlert>("bypass_alerts");
+            var nh3BypassAlertCollection = client.GetDatabase("nh3_data").GetCollection<BypassAlert>("bypass_alerts");
+            var e2thBypassAlertCollection = client.GetDatabase("e2th_data").GetCollection<BypassAlert>("bypass_alerts");
+            var thBypassAlertCollection = client.GetDatabase("th_data").GetCollection<BypassAlert>("bypass_alerts");
+            var epi1Alerts = await epi1AlertCollection.Find(_ => true).ToListAsync();
+            var epi2Alerts = await epi2AlertCollection.Find(_ => true).ToListAsync();
+            var gasBayAlerts = await gasBayAlertCollection.Find(_ => true).ToListAsync();
+            var nh3Alerts = await epi1AlertCollection.Find(_ => true).ToListAsync();
+            var e2thAlerts = await epi2AlertCollection.Find(_ => true).ToListAsync();
+            var thAlerts = await gasBayAlertCollection.Find(_ => true).ToListAsync();
+            List<InsertOneModel<BypassAlert>> updates = new List<InsertOneModel<BypassAlert>>();
+            foreach (var alert in epi1Alerts) {
                 updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
                     _id = alert._id,
                     DeviceName = alert.DisplayName,
@@ -236,9 +417,10 @@ namespace MonitoringSystem.ConsoleTesting {
                     TimeBypassed = DateTime.MaxValue,
                 }));
             }
+
             await epi1BypassAlertCollection.BulkWriteAsync(updates);
             updates.Clear();
-            foreach(var alert in epi2Alerts) {
+            foreach (var alert in epi2Alerts) {
                 updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
                     _id = alert._id,
                     DeviceName = alert.DisplayName,
@@ -248,9 +430,10 @@ namespace MonitoringSystem.ConsoleTesting {
                     TimeBypassed = DateTime.MaxValue,
                 }));
             }
+
             await epi2BypassAlertCollection.BulkWriteAsync(updates);
             updates.Clear();
-            foreach(var alert in gasBayAlerts) {
+            foreach (var alert in gasBayAlerts) {
                 updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
                     _id = alert._id,
                     DeviceName = alert.DisplayName,
@@ -260,10 +443,10 @@ namespace MonitoringSystem.ConsoleTesting {
                     TimeBypassed = DateTime.MaxValue,
                 }));
             }
+
             await gasBayBypassAlertCollection.BulkWriteAsync(updates);
             updates.Clear();
-            
-            foreach(var alert in thAlerts) {
+            foreach (var alert in thAlerts) {
                 updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
                     _id = alert._id,
                     DeviceName = alert.DisplayName,
@@ -273,10 +456,10 @@ namespace MonitoringSystem.ConsoleTesting {
                     TimeBypassed = DateTime.MaxValue,
                 }));
             }
+
             await thBypassAlertCollection.BulkWriteAsync(updates);
             updates.Clear();
-            
-            foreach(var alert in e2thAlerts) {
+            foreach (var alert in e2thAlerts) {
                 updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
                     _id = alert._id,
                     DeviceName = alert.DisplayName,
@@ -286,10 +469,10 @@ namespace MonitoringSystem.ConsoleTesting {
                     TimeBypassed = DateTime.MaxValue,
                 }));
             }
+
             await e2thBypassAlertCollection.BulkWriteAsync(updates);
             updates.Clear();
-            
-            foreach(var alert in nh3Alerts) {
+            foreach (var alert in nh3Alerts) {
                 updates.Add(new InsertOneModel<BypassAlert>(new BypassAlert() {
                     _id = alert._id,
                     DeviceName = alert.DisplayName,
@@ -299,22 +482,24 @@ namespace MonitoringSystem.ConsoleTesting {
                     TimeBypassed = DateTime.MaxValue,
                 }));
             }
+
             await nh3BypassAlertCollection.BulkWriteAsync(updates);
             updates.Clear();
-            
             Console.WriteLine("Check Database");
         }
+
         static async Task WriteOutNh3Data(DateTime start, DateTime stop) {
             var client = new MongoClient("mongodb://172.20.3.41");
             var logDatabase = client.GetDatabase("nh3_logs");
             var weightCollection = logDatabase.GetCollection<WeightReading>("weight_readings");
             List<AItem> analogReadings = new List<AItem>();
             //var sensor = this._configProvider.Sensors.FirstOrDefault(e => e.Name=="Weight");
-            using var cursor = await weightCollection.FindAsync(e => e.timestamp >= start && e.timestamp <= stop && e.Value<=1000 && e.Value>=0);
+            using var cursor = await weightCollection.FindAsync(e =>
+                e.timestamp >= start && e.timestamp <= stop && e.Value <= 1000 && e.Value >= 0);
             List<string> lines = new List<string>();
-            while (await cursor.MoveNextAsync()){
+            while (await cursor.MoveNextAsync()) {
                 var batch = cursor.Current;
-                foreach (var readings in batch){
+                foreach (var readings in batch) {
                     /*var aReading = new AItem() {
                         TimeStamp = readings.timestamp,
                         Value = readings.Value,
@@ -324,68 +509,67 @@ namespace MonitoringSystem.ConsoleTesting {
                     lines.Add(line);
                 }
             }
+
             await File.WriteAllLinesAsync(@"C:\Users\aelmendo\Documents\MonitorFiles\nh3readings.csv", lines);
         }
-        
+
         static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase(deviceName + "_data");
-
             var analogItems = database.GetCollection<AnalogItem>("analog_items").Find(_ => true).ToList();
             var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
             Console.WriteLine("Starting query");
-            var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+            var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop))
+                .ToListAsync();
             //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
             var headers = analogItems.Select(e => e.Identifier).ToList();
             StringBuilder hbuilder = new StringBuilder();
+            hbuilder.Append("Id,");
             hbuilder.Append("timestamp,");
-            headers.ForEach((id) => {
-                hbuilder.Append(id+",");
-            });
+            headers.ForEach((id) => { hbuilder.Append(id + ","); });
             Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
             List<string> lines = new List<string>();
             lines.Add(hbuilder.ToString());
-            foreach(var readings in aReadings) {
+            foreach (var readings in aReadings) {
                 StringBuilder builder = new StringBuilder();
-                builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
-                foreach(var reading in readings.readings) {
+                builder.Append(readings._id.ToString() + ",");
+                builder.Append(readings.timestamp.ToLocalTime().ToString() + ",");
+                foreach (var reading in readings.readings) {
                     builder.Append($"{reading.Value},");
                 }
+
                 lines.Add(builder.ToString());
             }
+
             Console.WriteLine("Writing Out Data");
             await File.WriteAllLinesAsync(fileName, lines);
             Console.WriteLine("Check File");
         }
 
-        static async Task TestExternalEmailCalc(int days=14,bool includeWeekends=false) {
+        static async Task TestExternalEmailCalc(int days = 14, bool includeWeekends = false) {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("epi1_data");
             var analogCollection = database.GetCollection<AnalogItem>("analog_items");
             var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
             var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
             var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
-            var date=DateTime.Now.AddDays(-days);
-           
-            var allUsage=await GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
-            var usage=allUsage.Where(e => e.Date >= date);
+            var date = DateTime.Now.AddDays(-days);
+            var allUsage = await GetUsageRecordsV2(usageCollection, analogReadCollection, 0, item);
+            var usage = allUsage.Where(e => e.Date >= date);
             if (!includeWeekends)
                 usage = usage.Where(e => e.DayOfWeek != DayOfWeek.Saturday && e.DayOfWeek != DayOfWeek.Sunday);
-
             var rate = usage.Average(e => e.Usage);
-            var lastReadingEntry =  analogReadCollection.AsQueryable()
+            var lastReadingEntry = analogReadCollection.AsQueryable()
                 .OrderByDescending(r => r.timestamp)
                 .FirstOrDefault();
-            var lastReading=lastReadingEntry.readings
+            var lastReading = lastReadingEntry.readings
                 .Where(e => e.MonitorItemId == item._id).Select(e => e.Value)
                 .FirstOrDefault();
-           
             Console.WriteLine($"Avg {days}Day {rate} PPM/Day");
-
             double suggestedLevel = 550 + (3 * rate);
             Console.WriteLine($"Suggested Level: {suggestedLevel}");
-            Console.WriteLine($"SoftWarn: {DateTime.Now.AddDays((lastReading-suggestedLevel)/rate)}))");
-           
+            Console.WriteLine($"SoftWarn: {DateTime.Now.AddDays((lastReading - suggestedLevel) / rate)}))");
+
             //var emailDate = DateTime.Now.AddDays(rate*);
         }
 
@@ -397,17 +581,17 @@ namespace MonitoringSystem.ConsoleTesting {
             var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
             var usageCollection = database.GetCollection<UsageDayRecord>("h2_usage");
             var item = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
-            await GetUsageRecordsV2(usageCollection,analogReadCollection,0,item);
+            await GetUsageRecordsV2(usageCollection, analogReadCollection, 0, item);
             Console.WriteLine("Check Database");
         }
 
         static async Task SetExternalEmailLevel(AnalogItem item, double level) {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
-            var settingsCollection=client.GetDatabase("monitor_settings")
+            var settingsCollection = client.GetDatabase("monitor_settings")
                 .GetCollection<WebsiteBulkSettings>("bulk_settings");
-            var settingsCollectionV2=client.GetDatabase("monitor_settings")
+            var settingsCollectionV2 = client.GetDatabase("monitor_settings")
                 .GetCollection<WebsiteBulkSettings>("bulk_settings_v2");
-            var settings=await settingsCollection.Find(_ => true).FirstOrDefaultAsync();
+            var settings = await settingsCollection.Find(_ => true).FirstOrDefaultAsync();
             /*settings.H2Settings.ExternalEmailLevel = 1000;
             settings.H2Settings.MinExternalEmailLevel=750;*/
             var update = Builders<WebsiteBulkSettings>.Update
@@ -415,13 +599,15 @@ namespace MonitoringSystem.ConsoleTesting {
             await settingsCollectionV2.InsertOneAsync(settings);
             Console.WriteLine("Check Database");
         }
-        
-        static async Task<IEnumerable<UsageDayRecord>> GetUsageRecordsV2(IMongoCollection<UsageDayRecord> usageCollection,
+
+        static async Task<IEnumerable<UsageDayRecord>> GetUsageRecordsV2(
+            IMongoCollection<UsageDayRecord> usageCollection,
             IMongoCollection<AnalogReadings> analogReadCollection,
             double threshold, AnalogItem? item1, AnalogItem? item2 = null, DateTime? startDate = null) {
             var sort = Builders<UsageDayRecord>.Sort.Descending(e => e.Date);
             var count = await usageCollection.EstimatedDocumentCountAsync();
-            if (count == 0) {//new
+            if (count == 0) {
+                //new
                 var stopDate = DateTime.Now.Date;
                 Dictionary<DateTime, List<ValueReturn>> days;
                 List<AnalogReadings> readings;
@@ -432,23 +618,29 @@ namespace MonitoringSystem.ConsoleTesting {
                     readings = await analogReadCollection.Find(e => e.timestamp < stopDate)
                         .ToListAsync();
                 }
-    
+
                 List<ValueReturn> rawData = new List<ValueReturn>();
                 if (item2 != null) {
                     foreach (var reading in readings) {
-                        var r1 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item1?._id && e.Value <=4000)?.Value ?? 0.00;
-                        var r2 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item2._id && e.Value <=4000)?.Value ?? 0.00;
+                        var r1 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item1?._id && e.Value <= 4000)
+                            ?.Value ?? 0.00;
+                        var r2 = reading.readings.FirstOrDefault(e => e.MonitorItemId == item2._id && e.Value <= 4000)
+                            ?.Value ?? 0.00;
                         var valueReturn = new ValueReturn() {
-                            timestamp = reading.timestamp.AddHours(-5), value = (r1 >= 0.00 ? r1 : 0.00) + (r2 >= 0 ? r2 : 0)
+                            timestamp = reading.timestamp.AddHours(-5),
+                            value = (r1 >= 0.00 ? r1 : 0.00) + (r2 >= 0 ? r2 : 0)
                         };
                         rawData.Add(valueReturn);
                     }
                 } else {
                     rawData = readings.Select(e => new ValueReturn() {
                         timestamp = e.timestamp.AddHours(-5),
-                        value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1?._id && m.Value <=4000)?.Value ?? 0.00)
+                        value =
+                            (e.readings.FirstOrDefault(m => m.MonitorItemId == item1?._id && m.Value <= 4000)?.Value ??
+                             0.00)
                     }).ToList();
                 }
+
                 days = rawData.GroupBy(e =>
                         e.timestamp.Date)
                     .ToDictionary(e => e.Key, e => e.ToList());
@@ -460,7 +652,7 @@ namespace MonitoringSystem.ConsoleTesting {
                         DayOfWeek = day.Key.DayOfWeek,
                         Date = day.Key,
                         Month = day.Key.Month,
-                        WeekOfYear = 
+                        WeekOfYear =
                             CultureInfo.CurrentCulture.DateTimeFormat.Calendar.GetWeekOfYear(day.Key,
                                 CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
                         Year = day.Key.Year,
@@ -471,26 +663,28 @@ namespace MonitoringSystem.ConsoleTesting {
                     if (item2 != null) {
                         usageDayRecord.ChannelIds.Add(item2._id);
                     }
-    
+
                     var first = day.Value[0].value;
                     var last = day.Value[day.Value.Count() - 1].value;
-                    var max = day.Value.Max(e=>e.value);
+                    var max = day.Value.Max(e => e.value);
                     var min = day.Value.Min(e => e.value);
-    
                     double consumed = 0;
                     if (last < first) {
                         consumed = first - last;
                     } else {
                         consumed = (first - min) + (max - last);
                     }
+
                     usageDayRecord.Usage = consumed;
-                    usageDayRecord.PerHour = consumed/24;
+                    usageDayRecord.PerHour = consumed / 24;
                     usageDayRecord.PerMin = usageDayRecord.PerHour;
                     dayRecords.Add(usageDayRecord);
                 }
+
                 await usageCollection.InsertManyAsync(dayRecords);
                 return dayRecords.AsEnumerable();
-            } else {//Update
+            } else {
+                //Update
                 var latest = await usageCollection.Find(_ => true).Sort(sort).FirstAsync();
                 var deltaHours = (DateTime.Now - latest.Date.AddDays(1)).TotalHours;
                 var now = DateTime.Now.Date;
@@ -510,7 +704,6 @@ namespace MonitoringSystem.ConsoleTesting {
                             value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value +
                                      e.readings.FirstOrDefault(m => m.MonitorItemId == item2._id)!.Value)
                         }).ToList();
-    
                     } else {
                         readings = await analogReadCollection.Find(e =>
                                 e.timestamp >= start.AddHours(5) &&
@@ -521,6 +714,7 @@ namespace MonitoringSystem.ConsoleTesting {
                             value = (e.readings.FirstOrDefault(m => m.MonitorItemId == item1._id)!.Value)
                         }).ToList();
                     }
+
                     days = rawData.GroupBy(e =>
                             e.timestamp.Date)
                         .ToDictionary(e => e.Key, e => e.ToList());
@@ -543,22 +737,24 @@ namespace MonitoringSystem.ConsoleTesting {
                         if (item2 != null) {
                             usageDayRecord.ChannelIds.Add(item2._id);
                         }
+
                         var first = day.Value.First().value;
                         var last = day.Value.Last().value;
-                        var max = day.Value.Max(e=>e.value);
+                        var max = day.Value.Max(e => e.value);
                         var min = day.Value.Min(e => e.value);
-    
                         double consumed = 0;
                         if (last < first) {
                             consumed = first - last;
                         } else {
                             consumed = (first - min) + (max - last);
                         }
+
                         usageDayRecord.Usage = consumed;
-                        usageDayRecord.PerHour = consumed/24;
-                        usageDayRecord.PerMin = usageDayRecord.PerHour/60;
+                        usageDayRecord.PerHour = consumed / 24;
+                        usageDayRecord.PerMin = usageDayRecord.PerHour / 60;
                         dayRecords.Add(usageDayRecord);
                     }
+
                     await usageCollection.InsertManyAsync(dayRecords);
                     return dayRecords.AsEnumerable();
                 } else {
@@ -566,9 +762,9 @@ namespace MonitoringSystem.ConsoleTesting {
                 }
             }
         }
-        
+
         static Task TestPopList() {
-            List<int> values = new List<int>(capacity:5);
+            List<int> values = new List<int>(capacity: 5);
             for (int i = 0; i < 10; i++) {
                 values.Add(i);
                 if (values.Count > 5) {
@@ -589,33 +785,29 @@ namespace MonitoringSystem.ConsoleTesting {
             var e1Database = client.GetDatabase("epi1_data");
             var settingsDatabase = client.GetDatabase("monitor_settings");
             var settingsCollection = settingsDatabase.GetCollection<WebsiteBulkSettings>("bulk_settings");
-
             var analogCollection = e1Database.GetCollection<AnalogItem>("analog_items");
             var n2Channel = await analogCollection.Find(e => e.Identifier == "Bulk N2(inH20)").FirstOrDefaultAsync();
             var h2Channel = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
-            
-            var settings=await settingsCollection.Find(_ => true)
+            var settings = await settingsCollection.Find(_ => true)
                 .FirstOrDefaultAsync();
-            
             var update = Builders<WebsiteBulkSettings>.Update
                 .Set(e => e.H2Settings.YAxisMin, 0)
                 .Set(e => e.H2Settings.YAxisMax, 3000)
                 .Set(e => e.N2Settings.YAxisMin, 0)
                 .Set(e => e.N2Settings.YAxisMax, 200);
-
-            await settingsCollection.UpdateOneAsync(e=>e._id==settings._id, update);
+            await settingsCollection.UpdateOneAsync(e => e._id == settings._id, update);
             Console.WriteLine("Check Database");
         }
-        
+
         /*static async Task UpdateBulkEmailSettings() {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var e1Database = client.GetDatabase("epi1_data");
             var settingsDatabase = client.GetDatabase("monitor_settings");
             var settingsCollection = settingsDatabase.GetCollection<WebsiteBulkSettings>("bulk_settings");
-            
+
             var settings=await settingsCollection.Find(_ => true)
                 .FirstOrDefaultAsync();
-            
+
             var recp = new List<string>() {
                 "ronnie.huffstetler@airgas.com",
                 "ANW.Planning.Group@airgas.com"
@@ -637,46 +829,39 @@ namespace MonitoringSystem.ConsoleTesting {
             await settingsCollection.UpdateOneAsync(e=>e._id==settings._id, update);
             Console.WriteLine("Check Database");
         }*/
-        
+
         static async Task CreateBulkEmailSettings() {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var settingsDatabase = client.GetDatabase("monitor_settings");
             var settingsCollection = settingsDatabase.GetCollection<BulkEmailSettings>("bulk_email_settings");
-            
-            var settings=await settingsCollection.Find(_ => true)
+            var settings = await settingsCollection.Find(_ => true)
                 .FirstOrDefaultAsync();
-            
             var recp = new List<string>() {
                 "ronnie.huffstetler@airgas.com",
                 "ANW.Planning.Group@airgas.com"
             };
-
             var cc = new List<string>() {
                 "nculbertson@s-et.com",
                 "aelmendorf@s-et.com"
             };
-
             BulkEmailSettings emailSettings = new BulkEmailSettings();
             emailSettings.ToAddresses = recp;
             emailSettings.CcAddresses = cc;
             emailSettings.Message = "";
-
             await settingsCollection.InsertOneAsync(emailSettings);
             Console.WriteLine("Check Database");
         }
+
         static async Task CreateSIBulkGasSettings() {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("epi1_data");
             var settingsDatabase = client.GetDatabase("monitor_settings");
             var settingsCollection = settingsDatabase.GetCollection<WebsiteBulkSettings>("bulk_settings");
-
             var analogCollection = database.GetCollection<AnalogItem>("analog_items");
             var channel = await analogCollection
                 .Find(e => e.Identifier == "Silane")
                 .FirstOrDefaultAsync();
-
             var websiteBulkSettings = await settingsCollection.Find(_ => true).FirstAsync();
-                
             BulkGasSettings nh3 = new BulkGasSettings();
             nh3.BulkGasType = BulkGasType.SI;
             nh3.Name = channel.Identifier;
@@ -692,65 +877,51 @@ namespace MonitoringSystem.ConsoleTesting {
             nh3Soft.ActionType = ActionType.SoftWarn;
             nh3Soft.Default = true;
             nh3Soft.SetPoint = (int)channel.Level1SetPoint;
-            
             BulkGasAlert nh3Warn = new BulkGasAlert();
             nh3Warn.Label = ActionType.Warning.ToString();
             nh3Warn.ActionType = ActionType.Warning;
             nh3Warn.Default = true;
             nh3Warn.SetPoint = (int)channel.Level2SetPoint;
-
             BulkGasAlert nh3Alarm = new BulkGasAlert();
             nh3Alarm.Label = ActionType.Alarm.ToString();
             nh3Alarm.ActionType = ActionType.Alarm;
             nh3Alarm.Default = true;
             nh3Alarm.SetPoint = (int)channel.Level3SetPoint;
-
             RefLine nh3AlarmLine = new RefLine();
             nh3AlarmLine.Value = nh3Alarm.SetPoint;
             nh3AlarmLine.Color = KnownColor.Red;
             nh3AlarmLine.Label = "Halt Production";
-            
             RefLine nh3WarnLine = new RefLine();
             nh3WarnLine.Value = nh3Warn.SetPoint;
             nh3WarnLine.Color = KnownColor.Yellow;
             nh3WarnLine.Label = "Prepare To Halt";
-            
             RefLine nh3SoftLine = new RefLine();
             nh3SoftLine.Value = nh3Soft.SetPoint;
             nh3SoftLine.Color = KnownColor.Wheat;
             nh3SoftLine.Label = "Notify";
-            
-            
-            nh3.SoftAlert=nh3Soft;
-            nh3.WarnAlert=nh3Warn;
-            nh3.AlrmAlert=nh3Alarm;
-
-
+            nh3.SoftAlert = nh3Soft;
+            nh3.WarnAlert = nh3Warn;
+            nh3.AlrmAlert = nh3Alarm;
             nh3.SoftRefLine = nh3SoftLine;
             nh3.WarnRefLine = nh3WarnLine;
             nh3.AlrmRefLine = nh3AlarmLine;
-
             var update = Builders<WebsiteBulkSettings>.Update
                 .Set(e => e.SiSettings, nh3);
-            var filter=Builders<WebsiteBulkSettings>.Filter.Eq(e => e._id, websiteBulkSettings._id);
-
+            var filter = Builders<WebsiteBulkSettings>.Filter.Eq(e => e._id, websiteBulkSettings._id);
             await settingsCollection.UpdateOneAsync(filter, update);
             Console.WriteLine("Check Database");
         }
-        
-                static async Task CreateNH3BulkGasSettings() {
+
+        static async Task CreateNH3BulkGasSettings() {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("nh3_data");
             var settingsDatabase = client.GetDatabase("monitor_settings");
             var settingsCollection = settingsDatabase.GetCollection<WebsiteBulkSettings>("bulk_settings");
-
             var analogCollection = database.GetCollection<AnalogItem>("analog_items");
             var channel = await analogCollection
                 .Find(e => e.Identifier == "Tank1 Weight")
                 .FirstOrDefaultAsync();
-
             var websiteBulkSettings = await settingsCollection.Find(_ => true).FirstAsync();
-                
             BulkGasSettings nh3 = new BulkGasSettings();
             nh3.BulkGasType = BulkGasType.H2;
             nh3.Name = channel.Identifier;
@@ -765,67 +936,55 @@ namespace MonitoringSystem.ConsoleTesting {
             nh3Soft.ActionType = ActionType.SoftWarn;
             nh3Soft.Default = true;
             nh3Soft.SetPoint = (int)channel.Level1SetPoint;
-            
             BulkGasAlert nh3Warn = new BulkGasAlert();
             nh3Warn.Label = ActionType.Warning.ToString();
             nh3Warn.ActionType = ActionType.Warning;
             nh3Warn.Default = true;
             nh3Warn.SetPoint = (int)channel.Level2SetPoint;
-
             BulkGasAlert nh3Alarm = new BulkGasAlert();
             nh3Alarm.Label = ActionType.Alarm.ToString();
             nh3Alarm.ActionType = ActionType.Alarm;
             nh3Alarm.Default = true;
             nh3Alarm.SetPoint = (int)channel.Level3SetPoint;
-
             RefLine nh3AlarmLine = new RefLine();
             nh3AlarmLine.Value = nh3Alarm.SetPoint;
             nh3AlarmLine.Color = KnownColor.Red;
             nh3AlarmLine.Label = "Halt Production";
-            
             RefLine nh3WarnLine = new RefLine();
             nh3WarnLine.Value = nh3Warn.SetPoint;
             nh3WarnLine.Color = KnownColor.Yellow;
             nh3WarnLine.Label = "Prepare To Halt";
-            
             RefLine nh3SoftLine = new RefLine();
             nh3SoftLine.Value = nh3Soft.SetPoint;
             nh3SoftLine.Color = KnownColor.Wheat;
             nh3SoftLine.Label = "Notify";
-            
-            
-            nh3.SoftAlert=nh3Soft;
-            nh3.WarnAlert=nh3Warn;
-            nh3.AlrmAlert=nh3Alarm;
-
-
+            nh3.SoftAlert = nh3Soft;
+            nh3.WarnAlert = nh3Warn;
+            nh3.AlrmAlert = nh3Alarm;
             nh3.SoftRefLine = nh3SoftLine;
             nh3.WarnRefLine = nh3WarnLine;
             nh3.AlrmRefLine = nh3AlarmLine;
-            
-            var update=Builders<WebsiteBulkSettings>.Update
+            var update = Builders<WebsiteBulkSettings>.Update
                 .Set(e => e.NHSettings, nh3)
-                .Set(e=>e.N2Settings.ChannelName,"Bulk N2(inH20)")
-                .Set(e=>e.N2Settings.DeviceName,"epi1_data")
-                .Set(e=>e.H2Settings.ChannelName,"Bulk H2(PSI)")
-                .Set(e=>e.H2Settings.DeviceName,"epi1_data");
-            var filter=Builders<WebsiteBulkSettings>.Filter.Eq(e => e._id, websiteBulkSettings._id);
-
+                .Set(e => e.N2Settings.ChannelName, "Bulk N2(inH20)")
+                .Set(e => e.N2Settings.DeviceName, "epi1_data")
+                .Set(e => e.H2Settings.ChannelName, "Bulk H2(PSI)")
+                .Set(e => e.H2Settings.DeviceName, "epi1_data");
+            var filter = Builders<WebsiteBulkSettings>.Filter.Eq(e => e._id, websiteBulkSettings._id);
             await settingsCollection.UpdateOneAsync(filter, update);
             Console.WriteLine("Check Database");
         }
+
         static async Task CreateBulkGasSettings() {
             IMongoClient client = new MongoClient("mongodb://172.20.3.41");
             var e1Database = client.GetDatabase("epi1_data");
             var settingsDatabase = client.GetDatabase("monitor_settings");
             var settingsCollection = settingsDatabase.GetCollection<WebsiteBulkSettings>("bulk_settings");
-
             var analogCollection = e1Database.GetCollection<AnalogItem>("analog_items");
             var n2Channel = await analogCollection.Find(e => e.Identifier == "Bulk N2(inH20)").FirstOrDefaultAsync();
             var h2Channel = await analogCollection.Find(e => e.Identifier == "Bulk H2(PSI)").FirstOrDefaultAsync();
-
             WebsiteBulkSettings webBulkSettings = new WebsiteBulkSettings();
-            webBulkSettings.RefreshTime = 1800000;//30min
+            webBulkSettings.RefreshTime = 1800000; //30min
             BulkGasSettings h2 = new BulkGasSettings();
             h2.BulkGasType = BulkGasType.H2;
             h2.Name = h2Channel.Identifier;
@@ -839,46 +998,34 @@ namespace MonitoringSystem.ConsoleTesting {
             h2soft.ActionType = ActionType.SoftWarn;
             h2soft.Default = true;
             h2soft.SetPoint = (int)h2Channel.Level1SetPoint;
-            
             BulkGasAlert h2warn = new BulkGasAlert();
             h2warn.Label = ActionType.Warning.ToString();
             h2warn.ActionType = ActionType.Warning;
             h2warn.Default = true;
             h2warn.SetPoint = (int)h2Channel.Level2SetPoint;
-
             BulkGasAlert h2alarm = new BulkGasAlert();
             h2alarm.Label = ActionType.Alarm.ToString();
             h2alarm.ActionType = ActionType.Alarm;
             h2alarm.Default = true;
             h2alarm.SetPoint = (int)h2Channel.Level3SetPoint;
-
             RefLine h2alarmLine = new RefLine();
             h2alarmLine.Value = h2alarm.SetPoint;
             h2alarmLine.Color = KnownColor.Red;
             h2alarmLine.Label = "Halt Production";
-            
             RefLine h2warnLine = new RefLine();
             h2warnLine.Value = h2warn.SetPoint;
             h2warnLine.Color = KnownColor.Yellow;
             h2warnLine.Label = "Prepare To Halt";
-            
             RefLine h2softLine = new RefLine();
             h2softLine.Value = h2soft.SetPoint;
             h2softLine.Color = KnownColor.Wheat;
             h2softLine.Label = "Notify";
-            
-            
-            h2.SoftAlert=h2soft;
-            h2.WarnAlert=h2warn;
-            h2.AlrmAlert=h2alarm;
-
-
+            h2.SoftAlert = h2soft;
+            h2.WarnAlert = h2warn;
+            h2.AlrmAlert = h2alarm;
             h2.SoftRefLine = h2softLine;
             h2.WarnRefLine = h2warnLine;
             h2.AlrmRefLine = h2alarmLine;
-
-
-
             BulkGasSettings n2 = new BulkGasSettings();
             n2.BulkGasType = BulkGasType.N2;
             n2.Name = n2Channel.Identifier;
@@ -892,43 +1039,34 @@ namespace MonitoringSystem.ConsoleTesting {
             n2soft.ActionType = ActionType.SoftWarn;
             n2soft.Default = true;
             n2soft.SetPoint = (int)n2Channel.Level1SetPoint;
-            
             BulkGasAlert n2warn = new BulkGasAlert();
             n2warn.Label = ActionType.Warning.ToString();
             n2warn.ActionType = ActionType.Warning;
             n2warn.Default = true;
             n2warn.SetPoint = (int)n2Channel.Level2SetPoint;
-
             BulkGasAlert n2alarm = new BulkGasAlert();
             n2alarm.Label = ActionType.Alarm.ToString();
             n2alarm.ActionType = ActionType.Alarm;
             n2alarm.Default = true;
             n2alarm.SetPoint = (int)n2Channel.Level3SetPoint;
-
             RefLine n2alarmLine = new RefLine();
             n2alarmLine.Value = n2alarm.SetPoint;
             n2alarmLine.Color = KnownColor.Red;
             n2alarmLine.Label = "Halt Production";
-            
             RefLine n2warnLine = new RefLine();
             n2warnLine.Value = n2warn.SetPoint;
             n2warnLine.Color = KnownColor.Yellow;
             n2warnLine.Label = "Prepare To Halt";
-            
             RefLine n2softLine = new RefLine();
             n2softLine.Value = n2soft.SetPoint;
             n2softLine.Color = KnownColor.Wheat;
             n2softLine.Label = "Notify";
-
-            n2.SoftAlert=n2soft;
-            n2.WarnAlert=n2warn;
-            n2.AlrmAlert=n2alarm;
-
-
+            n2.SoftAlert = n2soft;
+            n2.WarnAlert = n2warn;
+            n2.AlrmAlert = n2alarm;
             n2.SoftRefLine = n2softLine;
             n2.WarnRefLine = n2warnLine;
             n2.AlrmRefLine = n2alarmLine;
-            
             webBulkSettings.H2Settings = h2;
             webBulkSettings.N2Settings = n2;
             await settingsCollection.InsertOneAsync(webBulkSettings);
@@ -955,28 +1093,27 @@ namespace MonitoringSystem.ConsoleTesting {
             var h2Id = ObjectId.GenerateNewId();
             List<AlertRecord> activeAlerts = new List<AlertRecord>();
             List<AlertRecord> alerts = new List<AlertRecord>() {
-                        new AlertRecord() {
-                            AlertId = h2Id,
-                            Bypassed = false,
-                            Enabled = true,
-                            CurrentState = ActionType.SoftWarn,
-                            DisplayName = "Bulk H2(PSI)",
-                            ChannelReading = 1000.0f,
-                            Latched = false
-                        },
-                        new AlertRecord() {
-                            AlertId = n2Id,
-                            Bypassed = false,
-                            Enabled = true,
-                            CurrentState = ActionType.SoftWarn,
-                            DisplayName = "Bulk N2(inH20)",
-                            ChannelReading = 74.0f,
-                            Latched = false
-                        }
+                new AlertRecord() {
+                    AlertId = h2Id,
+                    Bypassed = false,
+                    Enabled = true,
+                    CurrentState = ActionType.SoftWarn,
+                    DisplayName = "Bulk H2(PSI)",
+                    ChannelReading = 1000.0f,
+                    Latched = false
+                },
+                new AlertRecord() {
+                    AlertId = n2Id,
+                    Bypassed = false,
+                    Enabled = true,
+                    CurrentState = ActionType.SoftWarn,
+                    DisplayName = "Bulk N2(inH20)",
+                    ChannelReading = 74.0f,
+                    Latched = false
+                }
             };
-            activeAlerts=await ProcessAlerts(alerts, activeAlerts, DateTime.Now);
+            activeAlerts = await ProcessAlerts(alerts, activeAlerts, DateTime.Now);
             await Task.Delay(5000);
-
             alerts = new List<AlertRecord>() {
                 new AlertRecord() {
                     AlertId = h2Id,
@@ -997,48 +1134,51 @@ namespace MonitoringSystem.ConsoleTesting {
                     Latched = false
                 }
             };
-            activeAlerts=await ProcessAlerts(alerts, activeAlerts, DateTime.Now);
+            activeAlerts = await ProcessAlerts(alerts, activeAlerts, DateTime.Now);
             await Task.Delay(5000);
         }
 
-        public static async Task<List<AlertRecord>> ProcessAlerts(List<AlertRecord> alerts,List<AlertRecord> activeAlerts,DateTime now) {
-            bool sendEmail = false;     
+        public static async Task<List<AlertRecord>> ProcessAlerts(List<AlertRecord> alerts,
+            List<AlertRecord> activeAlerts, DateTime now) {
+            bool sendEmail = false;
             foreach (var alert in alerts) {
                 if (alert.Enabled) {
                     var activeAlert = activeAlerts.FirstOrDefault(e => e.AlertId == alert.AlertId);
                     switch (alert.CurrentState) {
                         case ActionType.Okay: {
-                                if (activeAlert != null) {
-                                    if (!activeAlert.Latched) {
-                                        activeAlert.Latched = true;
-                                        activeAlert.TimeLatched = now;
-                                    }
+                            if (activeAlert != null) {
+                                if (!activeAlert.Latched) {
+                                    activeAlert.Latched = true;
+                                    activeAlert.TimeLatched = now;
                                 }
-                                break;
                             }
+
+                            break;
+                        }
                         case ActionType.Alarm:
                         case ActionType.Warning:
                         case ActionType.SoftWarn: {
-                                if (activeAlert != null) {
-                                    if (activeAlert.CurrentState != alert.CurrentState) {
-                                        activeAlert.CurrentState = alert.CurrentState;
-                                        activeAlert.ChannelReading = alert.ChannelReading;
-                                        activeAlert.AlertAction = alert.AlertAction;
-                                        activeAlert.LastAlert = now;
-                                        sendEmail = true;
-                                    } else {
-                                        if (activeAlert.Latched) {
-                                            activeAlert.Latched = false;
-                                            activeAlert.TimeLatched = now;
-                                        }
-                                    }
-                                } else {
-                                    alert.LastAlert = now;
-                                    activeAlerts.Add(alert.Clone());
+                            if (activeAlert != null) {
+                                if (activeAlert.CurrentState != alert.CurrentState) {
+                                    activeAlert.CurrentState = alert.CurrentState;
+                                    activeAlert.ChannelReading = alert.ChannelReading;
+                                    activeAlert.AlertAction = alert.AlertAction;
+                                    activeAlert.LastAlert = now;
                                     sendEmail = true;
+                                } else {
+                                    if (activeAlert.Latched) {
+                                        activeAlert.Latched = false;
+                                        activeAlert.TimeLatched = now;
+                                    }
                                 }
-                                break;
+                            } else {
+                                alert.LastAlert = now;
+                                activeAlerts.Add(alert.Clone());
+                                sendEmail = true;
                             }
+
+                            break;
+                        }
                         case ActionType.Maintenance:
                         case ActionType.Custom:
                         default:
@@ -1047,76 +1187,80 @@ namespace MonitoringSystem.ConsoleTesting {
                     }
                 }
             }
+
             if (activeAlerts.Any()) {
                 if (sendEmail) {
                     var bulkH2 = activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk H2(PSI)");
                     var bulkN2 = activeAlerts.FirstOrDefault(e => e.DisplayName == "Bulk N2(inH20)");
-                    await ProcessBulkGasExternalEmail(bulkN2, bulkH2,now);
+                    await ProcessBulkGasExternalEmail(bulkN2, bulkH2, now);
                     Console.WriteLine("Email Sent");
                 }
             }
+
             return activeAlerts;
         }
-        
-        private static async Task ProcessBulkGasExternalEmail(AlertRecord? bulkN2,AlertRecord? bulkH2,DateTime now) {
+
+        private static async Task ProcessBulkGasExternalEmail(AlertRecord? bulkN2, AlertRecord? bulkH2, DateTime now) {
             if (bulkN2 != null) {
                 if (bulkN2.LastAlert == now) {
                     switch (bulkN2.CurrentState) {
                         case ActionType.Warning: {
-                            await SendExternalEmail("Nitrogen EMERGENCY Gas Refill Request", 
+                            await SendExternalEmail("Nitrogen EMERGENCY Gas Refill Request",
                                 "Nitrogen",
-                                bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
+                                bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture), "inH2O",
                                 "Immediately");
                             break;
                         }
                         case ActionType.SoftWarn: {
-                            await SendExternalEmail("Nitrogen Gas Refill Request", 
+                            await SendExternalEmail("Nitrogen Gas Refill Request",
                                 "Nitrogen",
-                                bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture),"inH2O", 
+                                bulkN2.ChannelReading.ToString(CultureInfo.InvariantCulture), "inH2O",
                                 "within the next 24 Hrs");
                             break;
                         }
-                        default: break;//do nothing
+                        default: break; //do nothing
                     }
                 }
             }
+
             if (bulkH2 != null) {
                 if (bulkH2.LastAlert == now) {
                     switch (bulkH2.CurrentState) {
                         case ActionType.Warning: {
-                            await SendExternalEmail("Hydrogen Gas EMERGENCY Refill Request", 
+                            await SendExternalEmail("Hydrogen Gas EMERGENCY Refill Request",
                                 "Hydrogen",
-                                bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
+                                bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture), "PSI",
                                 "Immediately");
                             break;
                         }
                         case ActionType.SoftWarn: {
-                            await SendExternalEmail("Hydrogen Gas Refill Request", 
+                            await SendExternalEmail("Hydrogen Gas Refill Request",
                                 "Hydrogen",
-                                bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture),"PSI", 
+                                bulkH2.ChannelReading.ToString(CultureInfo.InvariantCulture), "PSI",
                                 "within the next 24 Hrs");
                             break;
                         }
-                        default: break;//do nothing
+                        default: break; //do nothing
                     }
                 }
             }
         }
-        
-        static async Task SendExternalEmail(string subject,string gas,string currentValue,string units,string time) {
+
+        static async Task SendExternalEmail(string subject, string gas, string currentValue, string units,
+            string time) {
             SmtpClient client = new SmtpClient();
             client.CheckCertificateRevocation = false;
             client.ServerCertificateValidationCallback = MyServerCertificateValidationCallback;
-            await client.ConnectAsync("10.92.3.215",25,false);
+            await client.ConnectAsync("10.92.3.215", 25, false);
             MimeMessage mailMessage = new MimeMessage();
             BodyBuilder bodyBuilder = new BodyBuilder();
-            mailMessage.To.Add(new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com"));
-            mailMessage.To.Add(new MailboxAddress("Norman Culbertson","nculbertson@s-et.com"));
-            mailMessage.To.Add(new MailboxAddress("Rakesh Jain","rakesh@s-et.com"));
-            mailMessage.From.Add(new MailboxAddress("Monitor Alerts","monitoring@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Andrew Elmendorf", "aelmendorf@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Norman Culbertson", "nculbertson@s-et.com"));
+            mailMessage.To.Add(new MailboxAddress("Rakesh Jain", "rakesh@s-et.com"));
+            mailMessage.From.Add(new MailboxAddress("Monitor Alerts", "monitoring@s-et.com"));
             mailMessage.Subject = subject;
             mailMessage.Body = new TextPart("plain") {
-                    Text = @$"
+                Text = @$"
 This is an automated message notifying AirGas that Sensor Electronic Technology’s {gas} tanks need a refill {time}
 
 Current {gas} Value: {currentValue} {units}
@@ -1131,17 +1275,17 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
         }
 
         static async Task TestModbus() {
-            using var client = new TcpClient("172.20.5.24",502);
+            using var client = new TcpClient("172.20.5.24", 502);
             client.ReceiveTimeout = 500;
             var modbus = ModbusIpMaster.CreateIp(client);
-            var reg = await modbus.ReadHoldingRegistersAsync((byte)1,0,12);
+            var reg = await modbus.ReadHoldingRegistersAsync((byte)1, 0, 12);
             foreach (var value in reg) {
-                Console.Write($"{(float)value/100.00}, ");
+                Console.Write($"{(float)value / 100.00}, ");
             }
+
             Console.WriteLine();
             Console.WriteLine("Completed");
         }
-        
 
 
         static async Task DtoTesting() {
@@ -1151,12 +1295,11 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
                 .Include(e => e.AnalogAlert)
                 .Include(e => e.DeviceAction)
                 .FirstOrDefaultAsync(e => e.Id.ToString() == "86B0087A-7376-4FE7-B711-08DA81EB180E");
-
             if (level != null) {
                 var dto = level.ToDto();
                 var temp = dto.ToEntity();
                 context.Update(temp);
-                var ret=await context.SaveChangesAsync();
+                var ret = await context.SaveChangesAsync();
                 if (ret > 0) {
                     Console.WriteLine("Changes Saved, Checked Database");
                 } else {
@@ -1166,6 +1309,7 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
                 Console.WriteLine("Level not found");
             }
         }
+
         static async Task RemoteAlertTesting() {
             ModbusService modservice = new ModbusService();
             Console.WriteLine("Epi1 Running");
@@ -1174,14 +1318,12 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.39", 502, 1, 2, false);
-            
             Console.WriteLine("Gasbay running");
             await modservice.WriteCoil("172.20.5.42", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.42", 502, 1, 0, true);
             await Task.Delay(1000);
             await modservice.WriteCoil("172.20.5.42", 502, 1, 0, false);
             await modservice.WriteCoil("172.20.5.42", 502, 1, 2, false);
-
             Console.WriteLine("Epi2 running");
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, true);
             await modservice.WriteCoil("172.20.5.201", 502, 1, 0, true);
@@ -1190,46 +1332,44 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
             await modservice.WriteCoil("172.20.5.201", 502, 1, 2, false);
             Console.WriteLine("Test Done");
         }
-        
+
         static async Task TestSmptEmail() {
             SmtpClient client = new SmtpClient();
             /*await client.ConnectAsync("smtp.gmail.com", 25, false);
             //await client.AuthenticateAsync("seti.monitoring@gmail.com", "Today@seti!");*/
             client.CheckCertificateRevocation = false;
             client.ServerCertificateValidationCallback = MyServerCertificateValidationCallback;
-            await client.ConnectAsync("192.168.0.123",25,false);
-            
+            await client.ConnectAsync("192.168.0.123", 25, false);
+
             //await client.AuthenticateAsync("600076@seoulsemicon.com", "Drizzle3219753!");
             MimeMessage mailMessage = new MimeMessage();
             BodyBuilder bodyBuilder = new BodyBuilder();
-            mailMessage.To.Add(new MailboxAddress("Andrew Elmendorf","aelmendorf@s-et.com"));
-            mailMessage.From.Add(new MailboxAddress("Monitor Alerts","monitoring@s-et.com"));
-
+            mailMessage.To.Add(new MailboxAddress("Andrew Elmendorf", "aelmendorf@s-et.com"));
+            mailMessage.From.Add(new MailboxAddress("Monitor Alerts", "monitoring@s-et.com"));
             MessageBuilder builder = new MessageBuilder();
             builder.StartMessage("A Test");
-            builder.AppendAlert("Alert 2","Alarm","50");
-            builder.AppendStatus("Alert 1","Okay","0");
-            builder.AppendStatus("Alert 2","Alarm","55");
-            
+            builder.AppendAlert("Alert 2", "Alarm", "50");
+            builder.AppendStatus("Alert 1", "Okay", "0");
+            builder.AppendStatus("Alert 2", "Alarm", "55");
+
             //bodyBuilder.HtmlBody=builder.FinishMessage();
             mailMessage.Body = bodyBuilder.ToMessageBody();
             await client.SendAsync(mailMessage);
             await client.DisconnectAsync(true);
             Console.WriteLine("Check Mail");
         }
-        
-        static bool MyServerCertificateValidationCallback (object sender, 
-            X509Certificate certificate, 
-            X509Chain chain, 
-            SslPolicyErrors sslPolicyErrors)
-        {
+
+        static bool MyServerCertificateValidationCallback(object sender,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors) {
             if (sslPolicyErrors == SslPolicyErrors.None)
                 return true;
 
             // Note: The following code casts to an X509Certificate2 because it's easier to get the
             // values for comparison, but it's possible to get them from an X509Certificate as well.
             if (certificate is X509Certificate2 certificate2) {
-                var cn = certificate2.GetNameInfo (X509NameType.SimpleName, false);
+                var cn = certificate2.GetNameInfo(X509NameType.SimpleName, false);
                 var fingerprint = certificate2.Thumbprint;
                 var serial = certificate2.SerialNumber;
                 var issuer = certificate2.Issuer;
@@ -1242,40 +1382,41 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
                        fingerprint == "EC14ED8D2253824E6522D19EC815AD72CC767759";*/
                 return true;
             }
+
             return false;
         }
-        
-        static async Task BuildSettingsDB() { 
+
+        static async Task BuildSettingsDB() {
             var context = new MonitorContext();
             var devices = context.Devices.OfType<ModbusDevice>()
-                .Include(e=>e.NetworkConfiguration)
-                .Include(e=>e.ModbusConfiguration)
-                .Include(e=>e.ChannelRegisterMap)
+                .Include(e => e.NetworkConfiguration)
+                .Include(e => e.ModbusConfiguration)
+                .Include(e => e.ChannelRegisterMap)
                 .ToList();
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("monitor_settings_dev");
             var monitorDevCollection = database.GetCollection<ManagedDevice>("monitor_devices");
             var sensorCollection = database.GetCollection<SensorType>("sensor_types");
-            var sensors=await context.Sensors.Select(e => new SensorType() {
-                Name=e.Name,
+            var sensors = await context.Sensors.Select(e => new SensorType() {
+                Name = e.Name,
                 EntityId = e.Id.ToString(),
-                Offset=e.Offset,
-                Slope=e.Slope,
-                Units=e.Units,
-                YAxisStart=e.YAxisMin,
-                YAxisStop=e.YAxisMin
+                Offset = e.Offset,
+                Slope = e.Slope,
+                Units = e.Units,
+                YAxisStart = e.YAxisMin,
+                YAxisStop = e.YAxisMin
             }).ToListAsync();
-            foreach(var sensor in sensors) {
-                sensor._id=ObjectId.GenerateNewId();
+            foreach (var sensor in sensors) {
+                sensor._id = ObjectId.GenerateNewId();
             }
-            
+
             List<ManagedDevice> monitorDevices = new List<ManagedDevice>();
             foreach (var device in devices) {
                 var channels = await context.Channels
                     .Include(e => ((AnalogInput)e).Sensor)
-                    .Where(e=>e.ModbusDeviceId==device.Id)
+                    .Where(e => e.ModbusDeviceId == device.Id)
                     .ToListAsync();
-                var remoteActions = channels.OfType<VirtualInput>().Select(e => 
+                var remoteActions = channels.OfType<VirtualInput>().Select(e =>
                     new RemoteAction() {
                         Name = e.DisplayName,
                         Register = e.ModbusAddress.Address,
@@ -1287,61 +1428,64 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
                 Console.WriteLine($"Sensor Count: {entitySensors.Count()}");
                 ManagedDevice dev = new ManagedDevice();
                 dev.DeviceId = device.Id.ToString();
-                dev.DatabaseName = device.Name.ToLower()+"_data_dev";
+                dev.DatabaseName = device.Name.ToLower() + "_data_dev";
                 dev.DeviceName = device.Name;
                 dev.DeviceType = device.GetType().Name;
                 dev.ChannelMapping = new ChannelMappingConfigDto() {
                     AlertRegisterType = device.ChannelRegisterMap.AlertRegisterType,
-                    AnalogRegisterType=device.ChannelRegisterMap.AnalogRegisterType,
+                    AnalogRegisterType = device.ChannelRegisterMap.AnalogRegisterType,
                     DiscreteRegisterType = device.ChannelRegisterMap.DiscreteRegisterType,
-                    VirtualRegisterType=device.ChannelRegisterMap.DiscreteRegisterType,
-                    AlertStart=device.ChannelRegisterMap.AlertStart,
-                    AlertStop=device.ChannelRegisterMap.AlertStart,
-                    AnalogStart=device.ChannelRegisterMap.AnalogStart,
-                    AnalogStop=device.ChannelRegisterMap.AnalogStop,
-                    DiscreteStart=device.ChannelRegisterMap.DiscreteStart,
-                    DiscreteStop=device.ChannelRegisterMap.DiscreteStop,
-                    VirtualStart=device.ChannelRegisterMap.VirtualStart,
-                    VirtualStop=device.ChannelRegisterMap.VirtualStop,
+                    VirtualRegisterType = device.ChannelRegisterMap.DiscreteRegisterType,
+                    AlertStart = device.ChannelRegisterMap.AlertStart,
+                    AlertStop = device.ChannelRegisterMap.AlertStart,
+                    AnalogStart = device.ChannelRegisterMap.AnalogStart,
+                    AnalogStop = device.ChannelRegisterMap.AnalogStop,
+                    DiscreteStart = device.ChannelRegisterMap.DiscreteStart,
+                    DiscreteStop = device.ChannelRegisterMap.DiscreteStop,
+                    VirtualStart = device.ChannelRegisterMap.VirtualStart,
+                    VirtualStop = device.ChannelRegisterMap.VirtualStop,
                 };
                 dev.ModbusConfiguration = new ModbusConfigDto() {
                     HoldingRegisters = device.ModbusConfiguration.HoldingRegisters,
                     DiscreteInputs = device.ModbusConfiguration.DiscreteInputs,
-                    Coils=device.ModbusConfiguration.Coils,
+                    Coils = device.ModbusConfiguration.Coils,
                     InputRegisters = device.ModbusConfiguration.InputRegisters,
-                    SlaveAddress=device.ModbusConfiguration.SlaveAddress
+                    SlaveAddress = device.ModbusConfiguration.SlaveAddress
                 };
                 dev.IpAddress = device.NetworkConfiguration.IpAddress;
                 dev.Port = device.NetworkConfiguration.Port;
                 dev.HubAddress = device.HubAddress;
                 dev.HubName = device.HubName;
                 foreach (var sensorid in entitySensors) {
-                    var found=sensors.FirstOrDefault(e => e.EntityId.ToLower() == sensorid.ToString());
+                    var found = sensors.FirstOrDefault(e => e.EntityId.ToLower() == sensorid.ToString());
                     Console.WriteLine($"SensorId: {sensorid.ToString()}");
                     if (found is not null) {
                         Console.WriteLine($"Found: {found.EntityId}");
                         dev.SensorTypes.Add(found._id);
                     }
                 }
+
                 dev.RemoteActions = remoteActions;
                 dev.CollectionNames = new Dictionary<string, string>() {
-                    [nameof(AnalogItem)]="analog_items",
-                    [nameof(DiscreteItem)]="discrete_items",
-                    [nameof(VirtualItem)]="virtual_items",
-                    [nameof(OutputItem)]="output_items",
-                    [nameof(ActionItem)]="action_items",
-                    [nameof(MonitorAlert)]="alert_items",
-                    [nameof(AnalogReadings)]="analog_readings",
-                    [nameof(DiscreteReadings)]="discrete_readings",
-                    [nameof(VirtualReadings)]="virtual_readings",
-                    [nameof(AlertReadings)]="alert_readings"
+                    [nameof(AnalogItem)] = "analog_items",
+                    [nameof(DiscreteItem)] = "discrete_items",
+                    [nameof(VirtualItem)] = "virtual_items",
+                    [nameof(OutputItem)] = "output_items",
+                    [nameof(ActionItem)] = "action_items",
+                    [nameof(MonitorAlert)] = "alert_items",
+                    [nameof(AnalogReadings)] = "analog_readings",
+                    [nameof(DiscreteReadings)] = "discrete_readings",
+                    [nameof(VirtualReadings)] = "virtual_readings",
+                    [nameof(AlertReadings)] = "alert_readings"
                 };
                 monitorDevices.Add(dev);
             }
+
             await monitorDevCollection.InsertManyAsync(monitorDevices);
             await sensorCollection.InsertManyAsync(sensors);
             Console.WriteLine("Check Database");
         }
+
         public static async Task ToggleRemote() {
             ModbusService modservice = new ModbusService();
             /*var netConfig = gasbay.NetworkConfiguration;
@@ -1361,6 +1505,7 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
             //await AlertItemTypeUpdate("gasbay");
             Console.WriteLine("Done");
         }
+
         /*static async Task BuildSensorCollection() {
             var client = new MongoClient("mongodb://172.20.3.41");
             var database = client.GetDatabase("monitor_settings");
@@ -1402,28 +1547,26 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
                 Username = "Joe Dion",
                 Address = "jdion@s-et.com"
             });
-
             recipients.Add(new EmailRecipient() {
                 Username = "Lachab",
-                Address="mlachab@s-et.com"
+                Address = "mlachab@s-et.com"
             });
             await emailCollection.InsertManyAsync(recipients);
             Console.WriteLine("Check Database");
             Console.ReadKey();
         }
-       public static async Task CreateMongoDB(string deviceName) {
+
+        public static async Task CreateMongoDB(string deviceName) {
             using var context = new MonitorContext();
             var client = new MongoClient("mongodb://172.20.3.41");
             var device = context.Devices.OfType<MonitorBox>()
                 .AsNoTracking()
                 .FirstOrDefault(e => e.Name == deviceName);
-
-            if(device is not null) {
+            if (device is not null) {
                 Console.WriteLine($"Device {device.Name} found");
                 var database = client.GetDatabase($"{device.Name.ToLower()}_data_dev");
                 Console.WriteLine("Creating Collections");
                 Console.WriteLine($"Device {device.Name.ToLower()} found");
-
                 Console.WriteLine("Creating Collections");
                 await database.CreateCollectionAsync("analog_items");
                 await database.CreateCollectionAsync("discrete_items");
@@ -1431,29 +1574,27 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
                 await database.CreateCollectionAsync("virtual_items");
                 await database.CreateCollectionAsync("action_items");
                 await database.CreateCollectionAsync("alert_items");
-
                 await database.CreateCollectionAsync("analog_readings",
                     new CreateCollectionOptions() {
-                        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+                        TimeSeriesOptions =
+                            new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
                     });
-
                 await database.CreateCollectionAsync("discrete_readings",
                     new CreateCollectionOptions() {
-                        TimeSeriesOptions = new TimeSeriesOptions("timestamp",granularity: TimeSeriesGranularity.Seconds)
+                        TimeSeriesOptions =
+                            new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
                     });
-
                 await database.CreateCollectionAsync("virtual_readings",
                     new CreateCollectionOptions() {
-                        TimeSeriesOptions = new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
+                        TimeSeriesOptions =
+                            new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
                     });
-                
                 await database.CreateCollectionAsync("alert_readings",
                     new CreateCollectionOptions() {
-                        TimeSeriesOptions = new TimeSeriesOptions("timestamp",granularity: TimeSeriesGranularity.Seconds)
+                        TimeSeriesOptions =
+                            new TimeSeriesOptions("timestamp", granularity: TimeSeriesGranularity.Seconds)
                     });
-
                 Console.WriteLine("Collections Created, Populating configurations");
-
                 IMongoCollection<AnalogItem> analogItems = database.GetCollection<AnalogItem>("analog_items");
                 var analogChannels = await context.Channels.OfType<AnalogInput>()
                     .AsNoTracking()
@@ -1467,13 +1608,12 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
                         ItemId = e.Id.ToString(),
                         Factor = 10,
                         Display = e.Display,
-                        Level1Action= ActionType.SoftWarn,
-                        Level2Action=ActionType.Warning,
-                        Level3Action=ActionType.Alarm,
-                        Register=e.ModbusAddress.Address,
-                        RegisterLength= e.ModbusAddress.RegisterLength
+                        Level1Action = ActionType.SoftWarn,
+                        Level2Action = ActionType.Warning,
+                        Level3Action = ActionType.Alarm,
+                        Register = e.ModbusAddress.Address,
+                        RegisterLength = e.ModbusAddress.RegisterLength
                     }).ToListAsync();
-                
                 /*var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items");
                 var discreteChannels = await context.Channels.OfType<DiscreteInput>()
                     .AsNoTracking()
@@ -1551,104 +1691,104 @@ Please send the delivery schedule to Norman Culbertson at nculbertson@s-et.com
             } else {
                 Console.WriteLine("Error: Device not found");
             }
+
             Console.ReadKey();
         }
-       /*static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
-            var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase(deviceName + "_data");
+        /*static async Task WriteOutAnalogFile(string deviceName, DateTime start, DateTime stop, string fileName) {
+             var client = new MongoClient("mongodb://172.20.3.41");
+             var database = client.GetDatabase(deviceName + "_data");
 
-            var analogItems = database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToList();
-            var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
-            Console.WriteLine("Starting query");
-            var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
-            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
-            var headers = analogItems.Select(e => e.identifier).ToList();
-            StringBuilder hbuilder = new StringBuilder();
-            hbuilder.Append("timestamp,");
-            headers.ForEach((id) => {
-                hbuilder.Append($"{id},");
-            });
-            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
-            List<string> lines = new List<string>();
-            lines.Add(hbuilder.ToString());
-            foreach(var readings in aReadings) {
-                StringBuilder builder = new StringBuilder();
-                builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
-                foreach(var reading in readings.readings) {
-                    builder.Append($"{reading.value},");
-                }
-                lines.Add(builder.ToString());
-            }
-            Console.WriteLine("Writing Out Data");
-            File.WriteAllLines(fileName, lines);
-            Console.WriteLine("Check File");
-        }
-       static async Task WriteOutDiscreteData(string deviceName, DateTime start, DateTime stop, string fileName) {
-            var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase(deviceName + "_data");
+             var analogItems = database.GetCollection<AnalogChannel>("analog_items").Find(_ => true).ToList();
+             var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+             Console.WriteLine("Starting query");
+             var aReadings = await (await analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+             //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+             var headers = analogItems.Select(e => e.identifier).ToList();
+             StringBuilder hbuilder = new StringBuilder();
+             hbuilder.Append("timestamp,");
+             headers.ForEach((id) => {
+                 hbuilder.Append($"{id},");
+             });
+             Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
+             List<string> lines = new List<string>();
+             lines.Add(hbuilder.ToString());
+             foreach(var readings in aReadings) {
+                 StringBuilder builder = new StringBuilder();
+                 builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
+                 foreach(var reading in readings.readings) {
+                     builder.Append($"{reading.value},");
+                 }
+                 lines.Add(builder.ToString());
+             }
+             Console.WriteLine("Writing Out Data");
+             File.WriteAllLines(fileName, lines);
+             Console.WriteLine("Check File");
+         }
+        static async Task WriteOutDiscreteData(string deviceName, DateTime start, DateTime stop, string fileName) {
+             var client = new MongoClient("mongodb://172.20.3.41");
+             var database = client.GetDatabase(deviceName + "_data");
 
-            var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items").Find(_ => true).ToList();
-            var discreteReadings = database.GetCollection<DiscreteReadings>("discrete_readings");
-            Console.WriteLine("Starting query");
-            var dReadings = await (await discreteReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
-            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
-            var headers = discreteItems.Select(e => e.identifier).ToList();
-            StringBuilder hbuilder = new StringBuilder();
-            hbuilder.Append("timestamp,");
-            headers.ForEach((id) => {
-                hbuilder.Append($"{id},");
-            });
-            Console.WriteLine($"Query Completed.  Count: {dReadings.Count()}");
-            List<string> lines = new List<string>();
-            lines.Add(hbuilder.ToString());
-            foreach(var readings in dReadings) {
-                StringBuilder builder = new StringBuilder();
-                builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
-                foreach(var reading in readings.readings) {
-                    builder.Append($"{reading.value},");
-                }
-                lines.Add(builder.ToString());
-            }
-            Console.WriteLine("Writing Out Data");
-            await File.WriteAllLinesAsync(fileName, lines);
-            Console.WriteLine("Check File");
-        }
-        static async Task WriteOutAlertsFile(string deviceName, DateTime start, DateTime stop, string fileName) {
-            var client = new MongoClient("mongodb://172.20.3.41");
-            var database = client.GetDatabase(deviceName + "_data");
+             var discreteItems = database.GetCollection<DiscreteChannel>("discrete_items").Find(_ => true).ToList();
+             var discreteReadings = database.GetCollection<DiscreteReadings>("discrete_readings");
+             Console.WriteLine("Starting query");
+             var dReadings = await (await discreteReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+             //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+             var headers = discreteItems.Select(e => e.identifier).ToList();
+             StringBuilder hbuilder = new StringBuilder();
+             hbuilder.Append("timestamp,");
+             headers.ForEach((id) => {
+                 hbuilder.Append($"{id},");
+             });
+             Console.WriteLine($"Query Completed.  Count: {dReadings.Count()}");
+             List<string> lines = new List<string>();
+             lines.Add(hbuilder.ToString());
+             foreach(var readings in dReadings) {
+                 StringBuilder builder = new StringBuilder();
+                 builder.Append(readings.timestamp.ToLocalTime().ToString()+",");
+                 foreach(var reading in readings.readings) {
+                     builder.Append($"{reading.value},");
+                 }
+                 lines.Add(builder.ToString());
+             }
+             Console.WriteLine("Writing Out Data");
+             await File.WriteAllLinesAsync(fileName, lines);
+             Console.WriteLine("Check File");
+         }
+         static async Task WriteOutAlertsFile(string deviceName, DateTime start, DateTime stop, string fileName) {
+             var client = new MongoClient("mongodb://172.20.3.41");
+             var database = client.GetDatabase(deviceName + "_data");
 
-            var alertItems = database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToList();
-            var alertReadings = database.GetCollection<AlertReadings>("alert_readings");
-            Console.WriteLine("Starting query");
-            var aReadings = await (await alertReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
-            //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
-            var headers = alertItems.Select(e => e.displayName).ToList();
-            StringBuilder hbuilder = new StringBuilder();
-            hbuilder.Append("timestamp,");
-            headers.ForEach((id) => {
-                hbuilder.Append($"{id},");
-            });
-            Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
-            List<string> lines = new List<string>();
-            lines.Add(hbuilder.ToString());
-            foreach (var readings in aReadings) {
-                StringBuilder builder = new StringBuilder();
-                builder.Append(readings.timestamp.ToLocalTime().ToString() + ",");
-                foreach (var reading in readings.readings) {
-                    builder.Append($"{reading.reading},");
-                }
-                lines.Add(builder.ToString());
-            }
-            Console.WriteLine("Writing Out Data");
-            File.WriteAllLines(fileName, lines);
-            Console.WriteLine("Check File");
-        }*/
+             var alertItems = database.GetCollection<MonitorAlert>("alert_items").Find(_ => true).ToList();
+             var alertReadings = database.GetCollection<AlertReadings>("alert_readings");
+             Console.WriteLine("Starting query");
+             var aReadings = await (await alertReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop)).ToListAsync();
+             //var aReadings = await (await analogReadings.FindAsync(_=>true)).ToListAsync();
+             var headers = alertItems.Select(e => e.displayName).ToList();
+             StringBuilder hbuilder = new StringBuilder();
+             hbuilder.Append("timestamp,");
+             headers.ForEach((id) => {
+                 hbuilder.Append($"{id},");
+             });
+             Console.WriteLine($"Query Completed.  Count: {aReadings.Count()}");
+             List<string> lines = new List<string>();
+             lines.Add(hbuilder.ToString());
+             foreach (var readings in aReadings) {
+                 StringBuilder builder = new StringBuilder();
+                 builder.Append(readings.timestamp.ToLocalTime().ToString() + ",");
+                 foreach (var reading in readings.readings) {
+                     builder.Append($"{reading.reading},");
+                 }
+                 lines.Add(builder.ToString());
+             }
+             Console.WriteLine("Writing Out Data");
+             File.WriteAllLines(fileName, lines);
+             Console.WriteLine("Check File");
+         }*/
     }
 
     public class Testitem {
         public int _id { get; set; }
         public double Value { get; set; }
-        
     }
 
     public class AItem {

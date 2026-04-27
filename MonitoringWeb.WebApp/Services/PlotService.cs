@@ -64,7 +64,6 @@ public class PlotDataService {
     public async Task<byte[]> GetThDownloadData(string deviceData, DateTime start, DateTime stop) {
         var client = new MongoClient("mongodb://172.20.3.41");
         var database = client.GetDatabase(deviceData);
-
         var analogItems = database.GetCollection<AnalogItem>("analog_items").Find(e => e.Display == true).ToList();
         var analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
         var aReadings = await analogReadings.Find(e => e.timestamp >= start && e.timestamp <= stop)
@@ -155,7 +154,7 @@ public class PlotDataService {
 
         return analogReadings;
     }
-    
+
     public async Task<PlotData> GetChannelData(string deviceData, string chName, DateTime start, DateTime stop) {
         var client = new MongoClient("mongodb://172.20.3.41");
         var database = client.GetDatabase(deviceData);
@@ -235,9 +234,8 @@ public class PlotDataService {
 
             return new PlotData(sensor, analogReadings);
         }
-        
     }
-    
+
     public async Task<PlotData> GetNH3Data(DateTime start, DateTime stop) {
         var client = new MongoClient("mongodb://172.20.3.41");
         var logDatabase = client.GetDatabase("nh3_logs");
@@ -335,7 +333,6 @@ public class PlotDataService {
                     };
                     aReading1.Time = double.Parse(aReading1.TimeStamp.ToString("yyyyMMddHHmmss"));
                     analogReadings.Add(aReading1);
-
                     var aReading2 = new AnalogReadingDto() {
                         Name = tank2.Identifier,
                         TimeStamp = readings.timestamp.ToLocalTime(),
@@ -343,7 +340,6 @@ public class PlotDataService {
                     };
                     aReading2.Time = double.Parse(aReading2.TimeStamp.ToString("yyyyMMddHHmmss"));
                     analogReadings.Add(aReading2);
-
                     var aReading3 = new AnalogReadingDto() {
                         Name = "Combined",
                         TimeStamp = readings.timestamp.ToLocalTime(),
@@ -438,86 +434,56 @@ public class PlotDataService {
 
         return analogReadings;
     }
-    
-        /*public async Task<IEnumerable<AnalogReadingDto>> GetChannelData(string deviceData, string chName, DateTime start,
-        DateTime stop) {
-        var client = new MongoClient("mongodb://172.20.3.41");
-        var database = client.GetDatabase(deviceData);
-        this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
-        this._analogItems = database.GetCollection<AnalogItem>("analog_items");
-        List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
-        var h2psi = await this._analogItems.Find(e => e.Identifier == chName).FirstOrDefaultAsync();
-        using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
-        while (await cursor.MoveNextAsync()) {
-            var batch = cursor.Current;
-            foreach (var readings in batch) {
-                var reading = readings.readings.FirstOrDefault(e => e.MonitorItemId == h2psi._id);
-                if (reading != null) {
-                    var aReading = new AnalogReadingDto() {
-                        Name = h2psi.Identifier,
-                        TimeStamp = readings.timestamp.ToLocalTime(),
-                        Value = reading.Value
-                    };
-                    aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
-                    analogReadings.Add(aReading);
-                }
+
+    /*public async Task<IEnumerable<AnalogReadingDto>> GetChannelData(string deviceData, string chName, DateTime start,
+    DateTime stop) {
+    var client = new MongoClient("mongodb://172.20.3.41");
+    var database = client.GetDatabase(deviceData);
+    this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+    this._analogItems = database.GetCollection<AnalogItem>("analog_items");
+    List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
+    var h2psi = await this._analogItems.Find(e => e.Identifier == chName).FirstOrDefaultAsync();
+    using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
+    while (await cursor.MoveNextAsync()) {
+        var batch = cursor.Current;
+        foreach (var readings in batch) {
+            var reading = readings.readings.FirstOrDefault(e => e.MonitorItemId == h2psi._id);
+            if (reading != null) {
+                var aReading = new AnalogReadingDto() {
+                    Name = h2psi.Identifier,
+                    TimeStamp = readings.timestamp.ToLocalTime(),
+                    Value = reading.Value
+                };
+                aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
+                analogReadings.Add(aReading);
             }
         }
-
-        return analogReadings;
     }
 
-    public async Task<PlotData> GetChannelDatav2(string deviceData, string chName, DateTime start, DateTime stop) {
-        var client = new MongoClient("mongodb://172.20.3.41");
-        var database = client.GetDatabase(deviceData);
-        this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
-        this._analogItems = database.GetCollection<AnalogItem>("analog_items");
-        List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
-        var channel = await this._analogItems.Find(e => e.Identifier == chName).FirstOrDefaultAsync();
-        var sensor = this._configProvider.Sensors.FirstOrDefault(e => e._id == channel.SensorId);
+    return analogReadings;
+}
+
+public async Task<PlotData> GetChannelDatav2(string deviceData, string chName, DateTime start, DateTime stop) {
+    var client = new MongoClient("mongodb://172.20.3.41");
+    var database = client.GetDatabase(deviceData);
+    this._analogReadings = database.GetCollection<AnalogReadings>("analog_readings");
+    this._analogItems = database.GetCollection<AnalogItem>("analog_items");
+    List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
+    var channel = await this._analogItems.Find(e => e.Identifier == chName).FirstOrDefaultAsync();
+    var sensor = this._configProvider.Sensors.FirstOrDefault(e => e._id == channel.SensorId);
 
 
-        using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
-        while (await cursor.MoveNextAsync()) {
-            var batch = cursor.Current;
-            foreach (var readings in batch) {
-                var reading = readings.readings.FirstOrDefault(e => e.MonitorItemId == channel._id);
-                if (reading != null) {
-                    var aReading = new AnalogReadingDto() {
-                        Name = channel.Identifier,
-                        Value = reading.Value
-                    };
-                    aReading.TimeStamp = readings.timestamp;
-                    /*if (aReading.TimeStamp.IsDaylightSavingTime()) {
-                        aReading.TimeStamp = readings.timestamp.AddHours(-4);
-                    } else {
-                        aReading.TimeStamp = readings.timestamp.AddHours(-5);
-                    }#1#
-                    aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
-                    analogReadings.Add(aReading);
-                }
-            }
-        }
-
-        return new PlotData(sensor, analogReadings);
-    }*/
-        
-        /*public async Task<PlotData> GetNH3Data(DateTime start, DateTime stop) {
-        var client = new MongoClient("mongodb://172.20.3.41");
-        var logDatabase = client.GetDatabase("nh3_logs");
-        var weightCollection = logDatabase.GetCollection<WeightReading>("weight_readings");
-        List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
-        var sensor = this._configProvider.Sensors.FirstOrDefault(e => e.Name == "Weight");
-        using var cursor =
-            await weightCollection.FindAsync(e => e.timestamp >= start && e.timestamp <= stop && e.Value <= 900);
-        while (await cursor.MoveNextAsync()) {
-            var batch = cursor.Current;
-            foreach (var readings in batch) {
+    using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
+    while (await cursor.MoveNextAsync()) {
+        var batch = cursor.Current;
+        foreach (var readings in batch) {
+            var reading = readings.readings.FirstOrDefault(e => e.MonitorItemId == channel._id);
+            if (reading != null) {
                 var aReading = new AnalogReadingDto() {
-                    Name = "Toner Weight",
-                    Value = readings.Value
+                    Name = channel.Identifier,
+                    Value = reading.Value
                 };
-                aReading.TimeStamp = readings.timestamp.ToLocalTime();
+                aReading.TimeStamp = readings.timestamp;
                 /*if (aReading.TimeStamp.IsDaylightSavingTime()) {
                     aReading.TimeStamp = readings.timestamp.AddHours(-4);
                 } else {
@@ -527,7 +493,37 @@ public class PlotDataService {
                 analogReadings.Add(aReading);
             }
         }
+    }
 
-        return new PlotData(sensor, analogReadings);
-    }*/
+    return new PlotData(sensor, analogReadings);
+}*/
+
+    /*public async Task<PlotData> GetNH3Data(DateTime start, DateTime stop) {
+    var client = new MongoClient("mongodb://172.20.3.41");
+    var logDatabase = client.GetDatabase("nh3_logs");
+    var weightCollection = logDatabase.GetCollection<WeightReading>("weight_readings");
+    List<AnalogReadingDto> analogReadings = new List<AnalogReadingDto>();
+    var sensor = this._configProvider.Sensors.FirstOrDefault(e => e.Name == "Weight");
+    using var cursor =
+        await weightCollection.FindAsync(e => e.timestamp >= start && e.timestamp <= stop && e.Value <= 900);
+    while (await cursor.MoveNextAsync()) {
+        var batch = cursor.Current;
+        foreach (var readings in batch) {
+            var aReading = new AnalogReadingDto() {
+                Name = "Toner Weight",
+                Value = readings.Value
+            };
+            aReading.TimeStamp = readings.timestamp.ToLocalTime();
+            /*if (aReading.TimeStamp.IsDaylightSavingTime()) {
+                aReading.TimeStamp = readings.timestamp.AddHours(-4);
+            } else {
+                aReading.TimeStamp = readings.timestamp.AddHours(-5);
+            }#1#
+            aReading.Time = double.Parse(aReading.TimeStamp.ToString("yyyyMMddHHmmss"));
+            analogReadings.Add(aReading);
+        }
+    }
+
+    return new PlotData(sensor, analogReadings);
+}*/
 }

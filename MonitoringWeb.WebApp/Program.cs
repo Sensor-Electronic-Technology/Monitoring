@@ -11,6 +11,7 @@ using MonitoringSystem.Shared.Services;
 using MonitoringWeb.WebApp.Data;
 using MonitoringWeb.WebApp.Hubs;
 using MonitoringWeb.WebApp.Services;
+using MonitoringWeb.WebApp.Services.Hosted;
 
 //github action deploy website test 1
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,7 @@ builder.Services.Configure<DevExpress.Blazor.Configuration.GlobalOptions>(option
     options.BootstrapVersion = DevExpress.Blazor.BootstrapVersion.v5;
 });
 builder.Services.AddHostedService<AmmoniaHubService>();
+builder.Services.AddHostedService<UsageUpdateService>();
 #region API Configuration
 if (builder.Services.All(x => x.ServiceType != typeof(HttpClient))) {
     builder.Services.AddScoped<HttpClient>(s => {
@@ -49,6 +51,7 @@ builder.Services.AddSingleton<ValueChanged<TankScale>>();
 #endregion
 #region BulkGas Services
 builder.Services.AddSingleton<UsageService>();
+builder.Services.AddScoped<UsageDataService>();
 builder.Services.AddScoped<BulkGasProvider>();
 builder.Services.AddScoped<BulkH2CalcService>();
 #endregion
