@@ -62,7 +62,7 @@ public class UsageService {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("si_usage");
+        var usageCollection = database.GetCollection<UsageDayRecord>("si_usage_v2");
         var item = await analogCollection.Find(e => e.Identifier == "Silane").FirstOrDefaultAsync();
         return await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, 2500, item,
             startDate: new DateTime(2024, 6, 1));
@@ -72,7 +72,7 @@ public class UsageService {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("n2_usage");
+        var usageCollection = database.GetCollection<UsageDayRecord>("n2_usage_v2");
         var item = await analogCollection.Find(e => e.Identifier == "Bulk N2(inH20)").FirstOrDefaultAsync();
         return await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, 300, item);
     }

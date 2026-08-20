@@ -125,6 +125,13 @@ namespace MonitoringData.Infrastructure.Services.DataLogging {
                         } else {
                             this.LogError("Analog MonitorAlert not found");
                         }
+                    }else if (item.Identifier == "Bulk N2(inH20)") {
+                        if (alertRecord != null) {
+                            alertRecord.ChannelReading = (float)analogReading.Value;
+                            alertRecord.CurrentState = ActionType.Okay;
+                        }else {
+                            this.LogError("Analog MonitorAlert not found");
+                        }
                     } else {
                         if (alertRecord != null) {
                             alertRecord.ChannelReading = (float)analogReading.Value;

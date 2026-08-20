@@ -156,7 +156,7 @@ namespace MonitoringSystem.ConsoleTesting {
 
 
             UsageService usageService = new UsageService();
-            await usageService.GetH2Usage();
+            await usageService.UpdateAllUsageTables();
             //var records =await  usageService.GetH2Usage();
             //await OutputExcelTable(records);
 
