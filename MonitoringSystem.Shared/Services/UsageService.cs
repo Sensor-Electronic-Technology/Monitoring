@@ -62,7 +62,7 @@ public class UsageService {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("si_usage_v2");
+        var usageCollection = database.GetCollection<UsageDayRecord>("si_usage");
         var item = await analogCollection.Find(e => e.Identifier == "Silane").FirstOrDefaultAsync();
         return await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, 2500, item,
             startDate: new DateTime(2024, 6, 1));
@@ -72,9 +72,9 @@ public class UsageService {
         var database = this._client.GetDatabase("epi1_data");
         var analogCollection = database.GetCollection<AnalogItem>("analog_items");
         var analogReadCollection = database.GetCollection<AnalogReadings>("analog_readings");
-        var usageCollection = database.GetCollection<UsageDayRecord>("n2_usage_v2");
+        var usageCollection = database.GetCollection<UsageDayRecord>("n2_usage");
         var item = await analogCollection.Find(e => e.Identifier == "Bulk N2(inH20)").FirstOrDefaultAsync();
-        return await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 0, 300, item);
+        return await this.GetUsageRecordsV2(usageCollection, analogReadCollection, 1, 300, item);
     }
 
     public async Task<List<UsageDayRecord>> GetH2Usage(DateTime start, DateTime stop) {
@@ -281,7 +281,8 @@ public class UsageService {
                     DayOfYear = day.Key.DayOfYear,
                     MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
                 };
-                if (day.Value.Count == 0) {
+                var filtered=RemoveTrendOutliers(day.Value, 10);
+                if (filtered.Count == 0) {
                     usageDayRecord.Usage = 1;
                     usageDayRecord.PerHour = 1;
                     usageDayRecord.PerMin = 1;
@@ -291,17 +292,23 @@ public class UsageService {
                     if (item2 != null) {
                         usageDayRecord.ChannelIds.Add(item2._id);
                     }
+
                     
-                    var first = day.Value.First().value;
+                    /*var first = day.Value.First().value;
                     var last = day.Value.Last().value;
                     var max = day.Value.Max(e => e.value);
-                    var min = day.Value.Min(e => e.value);
+                    var min = day.Value.Min(e => e.value);*/
+                    var first = filtered.First().value;
+                    var last = filtered.Last().value;
+                    var max = filtered.Max(e => e.value);
+                    var min = filtered.Min(e => e.value);
                     double consumed = 0;
                     if (last < first) {
                         consumed = first - last;
                     } else {
                         consumed = (first - min) + (max - last);
                     }
+
                     usageDayRecord.Usage = consumed;
                     usageDayRecord.PerHour = consumed / 24;
                     usageDayRecord.PerMin = usageDayRecord.PerHour;
@@ -369,7 +376,40 @@ public class UsageService {
                         DayOfYear = day.Key.DayOfYear,
                         MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(day.Key.Month)
                     };
-                    usageDayRecord.ChannelIds.Add(item1!._id);
+                    var filtered=RemoveTrendOutliers(day.Value, 10);
+                    if (filtered.Count == 0) {
+                        usageDayRecord.Usage = 1;
+                        usageDayRecord.PerHour = 1;
+                        usageDayRecord.PerMin = 1;
+                        dayRecords.Add(usageDayRecord);
+                    } else {
+                        usageDayRecord.ChannelIds.Add(item1!._id);
+                        if (item2 != null) {
+                            usageDayRecord.ChannelIds.Add(item2._id);
+                        }
+
+                    
+                        /*var first = day.Value.First().value;
+                        var last = day.Value.Last().value;
+                        var max = day.Value.Max(e => e.value);
+                        var min = day.Value.Min(e => e.value);*/
+                        var first = filtered.First().value;
+                        var last = filtered.Last().value;
+                        var max = filtered.Max(e => e.value);
+                        var min = filtered.Min(e => e.value);
+                        double consumed = 0;
+                        if (last < first) {
+                            consumed = first - last;
+                        } else {
+                            consumed = (first - min) + (max - last);
+                        }
+
+                        usageDayRecord.Usage = consumed;
+                        usageDayRecord.PerHour = consumed / 24;
+                        usageDayRecord.PerMin = usageDayRecord.PerHour;
+                        dayRecords.Add(usageDayRecord);
+                    }
+                    /*usageDayRecord.ChannelIds.Add(item1!._id);
                     if (item2 != null) {
                         usageDayRecord.ChannelIds.Add(item2._id);
                     }
@@ -388,7 +428,7 @@ public class UsageService {
                     usageDayRecord.Usage = consumed;
                     usageDayRecord.PerHour = consumed / 24;
                     usageDayRecord.PerMin = usageDayRecord.PerHour / 60;
-                    dayRecords.Add(usageDayRecord);
+                    dayRecords.Add(usageDayRecord);*/
                 }
 
                 await usageCollection.InsertManyAsync(dayRecords);
@@ -397,6 +437,22 @@ public class UsageService {
                 return await usageCollection.Find(_ => true).ToListAsync();
             }
         }
+    }
+
+    public static List<ValueReturn> RemoveTrendOutliers(List<ValueReturn> points, int windowSize = 5) {
+        if (points == null || points.Count == 0) return new List<ValueReturn>();
+        List<ValueReturn> filteredList = new List<ValueReturn>();
+        for (int i = 0; i < points.Count; i++) {
+            int start = Math.Max(0, i - windowSize / 2);
+            int end = Math.Min(points.Count - 1, i + windowSize / 2);
+            int count = end - start + 1;
+            double localAverage = points.Skip(start).Take(count).Average(p => p.value);
+            double threshold = localAverage * 0.95;
+            if (points[i].value >= threshold) {
+                filteredList.Add(points[i]);
+            }
+        }
+        return filteredList;
     }
 }
 

@@ -156,9 +156,9 @@ namespace MonitoringSystem.ConsoleTesting {
 
 
             UsageService usageService = new UsageService();
-            await usageService.UpdateAllUsageTables();
+            var records=await usageService.GetN2Usage();
             //var records =await  usageService.GetH2Usage();
-            //await OutputExcelTable(records);
+            await OutputExcelTable(records);
 
             //await WriteOutAnalogFile("epi1", new DateTime(2026, 4,5), DateTime.Now, @"C:\Users\aelmendo\Documents\MonitorFiles\ep1-bad-data.csv");
         }
@@ -336,7 +336,7 @@ namespace MonitoringSystem.ConsoleTesting {
                 worksheet.Cell(count, 16).Value = month.Value.Sum(e => e.daily);
                 count++;
             }
-            wb.SaveAs(@"C:\Users\aelmendo\Documents\EpiData\H2Usage.xlsx");
+            wb.SaveAs(@"/home/aelmendorf/Documents/N2Usage.xlsx");
 
             /*var stream = new MemoryStream();
             wb.SaveAs(stream);
