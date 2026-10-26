@@ -18,6 +18,7 @@ using System.Text.Json;
 using ClosedXML.Excel;
 using ConsoleTables;
 using MailKit.Net.Smtp;
+using MathNet.Numerics.Statistics;
 using MimeKit;
 using Modbus.Device;
 using MongoDB.Bson;
@@ -30,6 +31,7 @@ using MonitoringSystem.Shared.Data.LogModel;
 using MonitoringSystem.Shared.Services;
 using MonitoringSystem.Shared.Data.SettingsModel;
 using MonitoringSystem.Shared.Data.UsageModel;
+using MonitoringSystem.Shared.Extensions;
 using ModbusDevice = MonitoringConfig.Data.Model.ModbusDevice;
 
 namespace MonitoringSystem.ConsoleTesting {
@@ -160,7 +162,27 @@ namespace MonitoringSystem.ConsoleTesting {
             //var records =await  usageService.GetH2Usage();
             await OutputExcelTable(records);
 
+
+
             //await WriteOutAnalogFile("epi1", new DateTime(2026, 4,5), DateTime.Now, @"C:\Users\aelmendo\Documents\MonitorFiles\ep1-bad-data.csv");
+        }
+        
+        public static List<double> RemoveTrendOutliers(List<double> points, int windowSize = 5) {
+            if (points == null || points.Count == 0) return new List<double>();
+            List<double> filteredList = new List<double>();
+            for (int i = 0; i < points.Count; i++) {
+                int start = Math.Max(0, i - windowSize / 2);
+                int end = Math.Min(points.Count - 1, i + windowSize / 2);
+                
+                int count = end - start + 1;
+                Console.WriteLine($"[{start},{end},{count}]");
+                double localAverage = points.Skip(start).Take(count).Average();
+                double threshold = localAverage * 0.95;
+                if (points[i] >= threshold) {
+                    filteredList.Add(points[i]);
+                }
+            }
+            return filteredList;
         }
 
         static async Task<List<UsageDayRecord>> GetUsageRecordsV2(IMongoCollection<UsageDayRecord> usageCollection,

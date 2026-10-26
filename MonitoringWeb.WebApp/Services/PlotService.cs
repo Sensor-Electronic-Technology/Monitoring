@@ -207,8 +207,9 @@ public class PlotDataService {
                     }
                 }
             }
-
-            return new PlotData(sensor, analogReadings);
+            Console.WriteLine("Filtering.....");
+            var filtered=analogReadings.Filter(e => e.Value, 10, 0.95).ToList();
+            return new PlotData(sensor, filtered);
         } else {
             using var cursor = await this._analogReadings.FindAsync(e => e.timestamp >= start && e.timestamp <= stop);
             while (await cursor.MoveNextAsync()) {
@@ -232,7 +233,10 @@ public class PlotDataService {
                 }
             }
 
-            return new PlotData(sensor, analogReadings);
+            Console.WriteLine("Filtering.....");
+            var filtered=analogReadings.Filter(e => e.Value, 10, 0.95).ToList();
+            return new PlotData(sensor, filtered);
+            /*return new PlotData(sensor, analogReadings);*/
         }
     }
 

@@ -445,6 +445,7 @@ public class UsageService {
         for (int i = 0; i < points.Count; i++) {
             int start = Math.Max(0, i - windowSize / 2);
             int end = Math.Min(points.Count - 1, i + windowSize / 2);
+            
             int count = end - start + 1;
             double localAverage = points.Skip(start).Take(count).Average(p => p.value);
             double threshold = localAverage * 0.95;
