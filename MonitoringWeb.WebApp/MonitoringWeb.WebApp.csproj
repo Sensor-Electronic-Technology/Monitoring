@@ -22,9 +22,6 @@
     <ProjectReference Include="..\MonitoringSystem.Shared\MonitoringSystem.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Update="wwwroot\images\GasDetectorMap.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\.dockerignore">
       <Link>.dockerignore</Link>
     </Content>
@@ -54,6 +51,9 @@
     </Content>
     <Content Update="wwwroot\Videos\remove_tank_v2.mp4">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\GasDetectorMap.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
