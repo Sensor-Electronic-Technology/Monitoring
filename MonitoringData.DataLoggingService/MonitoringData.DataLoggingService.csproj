@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-MonitoringData.DataLoggingService-D5276EDF-5BE2-441F-A5F3-FB9D44E210DD</UserSecretsId>
@@ -20,6 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="GasDetectorMap.png" />
+    <Content Include="..\.dockerignore">
+      <Link>.dockerignore</Link>
+    </Content>
     <Content Include="GasDetectorMap.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
